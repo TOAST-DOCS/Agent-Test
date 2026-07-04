@@ -7,6 +7,7 @@ posts an inline review comment there; accepting the `suggestion` block
 removes the marker in one click.
 
 <a id="t3"></a>
+<!-- heading-lint: T3 L10 — 리뷰 후 이 라인 삭제 (suggestion accept 시 자동 제거) -->
 ####### T3 seven hashes exceeds CommonMark h6 cap
 
 Body prose for T3.
@@ -17,6 +18,7 @@ Body prose for T3.
 The 4-backtick fence below has no matching closer anywhere in the file
 and no shorter fence-of-same-char candidate to guess from — pure F1.
 
+<!-- heading-lint: F1 L20 — 리뷰 후 이 라인 삭제 (suggestion accept 시 자동 제거) -->
 ````
 $ line 1 inside the never-closed fence
 $ line 2 still inside
