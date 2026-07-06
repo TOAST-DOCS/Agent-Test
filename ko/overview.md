@@ -28,6 +28,8 @@
 
 ![샘플 이미지](../static/images/image-1704.jpg)
 
+테스트 중.
+
 <a id="flavor"></a>
 ### 인스턴스 타입(Instance flavor)
 
