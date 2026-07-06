@@ -7,7 +7,6 @@ extends it to 4 backticks so the fence closes there. Inline review
 comment on the extended line offers a one-click revert if the guess is
 wrong.
 
-````
 $ echo "code inside the 4-backtick fence"
 
 <a id="after-fence"></a>
