@@ -239,3 +239,7 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
+
+### 샘플 이미지
+
+![샘플 이미지](../static/images/image-1758.jpg)
