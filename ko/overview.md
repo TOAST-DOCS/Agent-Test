@@ -26,7 +26,7 @@
 
 ### 샘플 이미지
 
-![샘플 이미지](../static/images/image-1758.jpg)
+![샘플 이미지](../static/images/image-1704.jpg)
 
 <a id="flavor"></a>
 ### 인스턴스 타입(Instance flavor)
