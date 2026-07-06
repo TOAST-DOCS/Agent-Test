@@ -24,6 +24,10 @@
 
 모든 이미지는 인스턴스의 가상 하드웨어에서 최적으로 실행되도록 설정돼 있으며, NHN Cloud의 보안 검증을 거쳤기 때문에 안전하게 사용할 수 있습니다. 이미지에 대한 자세한 설명은 [이미지 개요](/Compute/Image/ko/overview/)를 참고합니다.
 
+### 샘플 이미지
+
+![샘플 이미지](../static/images/image-1758.jpg)
+
 <a id="flavor"></a>
 ### 인스턴스 타입(Instance flavor)
 
@@ -239,7 +243,3 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
-
-### 샘플 이미지
-
-![샘플 이미지](../static/images/image-1758.jpg)
