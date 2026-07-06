@@ -7,6 +7,7 @@ extends it to 4 backticks so the fence closes there. Inline review
 comment on the extended line offers a one-click revert if the guess is
 wrong.
 
+<!-- heading-lint: F1 L10 — 리뷰 후 이 라인 삭제 (suggestion accept 시 자동 제거) -->
 ````
 $ echo "code inside the 4-backtick fence"
 
