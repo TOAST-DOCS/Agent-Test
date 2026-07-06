@@ -254,4 +254,5 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 
 ```
 $ sudo update-grub
+<!-- heading-lint: F1 L257 — 리뷰 후 이 라인 삭제 (suggestion accept 시 자동 제거) -->
 ```
