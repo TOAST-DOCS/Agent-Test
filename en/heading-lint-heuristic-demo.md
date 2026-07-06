@@ -9,7 +9,6 @@ wrong.
 
 ````
 $ echo "code inside the 4-backtick fence"
-````
 
 <a id="after-fence"></a>
 ## After the fence
