@@ -7,8 +7,7 @@ posts an inline review comment there; accepting the `suggestion` block
 removes the marker in one click.
 
 <a id="t3"></a>
-<!-- heading-lint: T3 L10 — 리뷰 후 이 라인 삭제 (suggestion accept 시 자동 제거) -->
-####### T3 seven hashes exceeds CommonMark h6 cap
+###### T3 seven hashes exceeds CommonMark h6 cap
 
 Body prose for T3.
 
