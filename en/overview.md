@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=103a3e0d52e0 -->
+
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
@@ -23,6 +25,12 @@ Instance properties and usage change depending on these components. While settin
 An image is a virtual disk that contains an operating system. NHN Cloud currently supports Debian, Ubuntu, Rocky, and Windows.
 
 All images are configured to run optimally on an instance's virtual hardware and are safe to use as they have undergone security inspection by NHN Cloud. For more details on images, see [Image Overview](/Compute/Image/en/overview/).
+
+<a id="components-1"></a>
+
+### Sample Image
+
+<!-- TODO: translate body -->
 
 <a id="flavor"></a>
 ### Flavor
@@ -75,6 +83,12 @@ The default security group is configured to ignore all inbound network traffic. 
 
 An instance must be connected to at least one network defined in the VPC in order to communicate externally. An instance that is not connected to a network cannot be accessed. To create or modify networks, see [VPC Overview](/Network/VPC/en/overview/).
 
+<a id="public-only-notice"></a>
+
+## Public Deployment Only Note
+
+<!-- TODO: translate body -->
+
 <a id="pricing"></a>
 ## Pricing
 
@@ -95,6 +109,8 @@ For more details on pricing, see [Pricing](https://www.toast.com/kr/service/comp
 
 You can access your Linux instances using an SSH client. An instance cannot be accessed if its security group does not have SSH ports (22 by default) allowed. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to allow SSH access. If a floating IP is not assigned to an instance, the instance cannot be accessed from outside NHN Cloud. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to assign floating IP.
 
+<a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
+
 #### How to Access Linux Instances from Mac or Linux Using an SSH Client
 
 Generally, Mac and Linux have SSH clients installed by default. Use a key pair's private key to access an instance from an SSH client as shown below.
@@ -110,6 +126,8 @@ Debian instances
 Rocky instances
 
 	$ ssh -i my_private_key.pem rocky@<instance IP>
+
+<a id="how-to-access-linux-instances-from-windows-using-putty-ssh-client"></a>
 
 #### How to Access Linux Instances from Windows Using PuTTY SSH Client
 
@@ -198,6 +216,8 @@ Your key pair's private key that you input in **Confirm Password** is not sent t
 
 Click **Connect** next to **Confirm Password** to receive the rdp file configured for remote desktop access and run it to access your Windows server. Use `Administrator` for your Windows server ID, and use the password that you checked from the NHN Cloud console.
 
+<a id="how-to-connect-serial-console"></a>
+
 ### How to Connect Serial Console
 
 You can connect to your instance via the serial console in situations where the SSH client is unavailable, such as a boot failure or network configuration issue.
@@ -213,6 +233,8 @@ The serial console feature has the following limitations:
 > [Caution]
 > Changing the boot method while accessing an instance via the serial console may result in a boot failure, and users are responsible for any resulting consequences.
 > Under normal circumstances, we recommend using an SSH client connection.
+
+<a id="change-grub-bootloader-settings"></a>
 
 #### Change GRUB Bootloader Settings
 
