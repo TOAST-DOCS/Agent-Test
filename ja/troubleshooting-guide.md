@@ -1,5 +1,3 @@
-<!-- pre-align:aligned sig=ec416b7f4d48 -->
-
 ## Compute > Instance > 問題解決ガイド
 
 NHN Cloudの使用時に問題が発生した場合、それを解決する方法を説明します。

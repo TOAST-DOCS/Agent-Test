@@ -24,12 +24,6 @@
 
 모든 이미지는 인스턴스의 가상 하드웨어에서 최적으로 실행되도록 설정돼 있으며, NHN Cloud의 보안 검증을 거쳤기 때문에 안전하게 사용할 수 있습니다. 이미지에 대한 자세한 설명은 [이미지 개요](/Compute/Image/ko/overview/)를 참고합니다.
 
-### 샘플 이미지
-
-![샘플 이미지](../static/images/image-1704.jpg)
-
-테스트 중.
-
 <a id="flavor"></a>
 ### 인스턴스 타입(Instance flavor)
 
@@ -80,16 +74,6 @@ NHN Cloud는 물리 하드웨어 문제로 생기는 장애에 대비하기 위�
 ### 네트워크
 
 인스턴스가 외부와 통신하려면 VPC에서 정의된 네트워크 중 적어도 하나 이상에 연결되어 있어야 합니다. 네트워크에 연결되어 있지 않은 인스턴스에는 접근할 수 없습니다. 네트워크를 새로 생성하거나 변경하려면 [VPC 개요](/Network/VPC/ko/overview/)를 참고합니다.
-
-<!-- @if:this-is-only-public -->
-<a id="public-only-notice"></a>
-## 퍼블릭 배포 전용 안내
-
-이 섹션은 `this-is-only-public` 플래그로 빌드한 사이트에서만 표시됩니다. 다른 존/환경 문서에는 노출되지 않습니다.
-
-* 예: 공용 리전에만 적용되는 정책 · 가격 · SLA 안내
-* 예: 상용 배포 대상에만 노출할 프로모션 문구
-<!-- @endif -->
 
 <a id="pricing"></a>
 ## 과금
@@ -151,11 +135,6 @@ PuTTY에서는 키페어 개인 키를 PuTTY의 개인 키 형식으로 바꿔�
 
 > [주의]
 인스턴스에 자동으로 로그인하도록 설정하려면 암호어구를 사용하지 않아야 합니다. 암호어구를 사용하면 로그인할 때 개인 키에 대한 비밀번호를 직접 입력해야 합니다.
-
-
-```
-#echo hello
-```
 
 ##### 2. PuTTY용 개인 키를 PuTTY에 등록
 
@@ -255,5 +234,4 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 
 ```
 $ sudo update-grub
-<!-- heading-lint: F1 L257 — 리뷰 후 이 라인 삭제 (suggestion accept 시 자동 제거) -->
 ```
