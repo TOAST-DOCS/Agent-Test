@@ -1,5 +1,3 @@
-<!-- pre-align:aligned sig=0e29c2b2f6b1 -->
-
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > Kernel Version Upgrade Guide
 
@@ -60,8 +58,6 @@ Delete the cache where metadata for existing downloaded packages is stored.
 <a id="install-the-kernel"></a>
 ### Install the kernel
 
-<a id="install-the-kernel-by-specifying-a-version"></a>
-
 #### Install the kernel by specifying a version
 
 > [Note]
@@ -97,8 +93,6 @@ kernel-tools-libs.x86_64                                                        
 kernelshark.x86_64
 ```
 
-<a id="install-the-kernel-without-specifying-a-version"></a>
-
 #### Install the kernel without specifying a version
 If you don't specify a version, the package is searched based on the latest version of the major version.
 
@@ -130,8 +124,6 @@ kernel-tools.x86_64                                                             
 kernel-tools-libs.x86_64                                                                     4.18.0-553.16.1.el8_10                                                            baseos
 kernelshark.x86_64
 ```
-
-<a id="install-the-latest-kernel"></a>
 
 #### Install the latest kernel
 If you don't specify a version, the latest version is installed. 
@@ -169,8 +161,6 @@ Installed:
 Complete!
 ```
 
-<a id="check-package-installation"></a>
-
 #### Check package installation
 
 Check that the kernel packages are installed correctly.
@@ -201,8 +191,6 @@ dnf, yum will automatically update the GRUB2 configuration file.
 [root@rocky810 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
 
-<a id="check-for-kernel-updates"></a>
-
 #### Check for kernel updates
 
 Verify that the kernel version has been updated properly.
@@ -216,8 +204,6 @@ Verify that the kernel version has been updated properly.
 ### Change the kernel boot order
 
 If you have multiple kernels installed, change the boot order so that you can boot into the desired kernel.
-
-<a id="rocky-versions-below-810"></a>
 
 #### Rocky versions below 8.10
 
@@ -259,8 +245,6 @@ Reboot the OS for the boot order change to take effect.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
-
-<a id="rocky-810-and-later-versions"></a>
 
 #### Rocky 8.10 and later versions
 
@@ -383,8 +367,6 @@ Delete the cache where metadata for existing downloaded packages is stored.
 <a id="install-the-kernel"></a>
 ### Install the kernel
 
-<a id="install-the-kernel-install-the-kernel-by-specifying-a-version"></a>
-
 #### Install the kernel by specifying a version
 
 > [Note]
@@ -435,8 +417,6 @@ kernel-uki-virt-addons.x86_64                                              5.14.
 kernelshark.x86_64                                                         1:1.2-10.el9                                                   appstream
 ```
 
-<a id="install-the-kernel-install-the-kernel-without-specifying-a-version"></a>
-
 #### Install the kernel without specifying a version
 If you don't specify a version, the package is searched based on the latest version of the major version.
 
@@ -484,8 +464,6 @@ kernel-uki-virt.x86_64                                                     5.14.
 kernel-uki-virt-addons.x86_64                                              5.14.0-503.23.2.el9_5                                          baseos
 kernelshark.x86_64                                                         1:1.2-10.el9                                                   appstream
 ```
-
-<a id="install-the-kernel-install-the-latest-kernel"></a>
 
 #### Install the latest kernel
 If you don't specify a version, the latest version is installed. 
@@ -548,8 +526,6 @@ Installed:
 Complete!
 ```
 
-<a id="install-the-kernel-check-package-installation"></a>
-
 #### Check package installation
 
 Check that the kernel packages are installed correctly.
@@ -580,8 +556,6 @@ dnf, yum will automatically update the GRUB2 configuration file.
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
-
-<a id="select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
 
 #### Check for kernel updates
 
