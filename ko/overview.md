@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=8d9da15cb474 -->
+
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 개요
 
@@ -25,7 +27,7 @@
 모든 이미지는 인스턴스의 가상 하드웨어에서 최적으로 실행되도록 설정돼 있으며, NHN Cloud의 보안 검증을 거쳤기 때문에 안전하게 사용할 수 있습니다. 이미지에 대한 자세한 설명은 [이미지 개요](/Compute/Image/ko/overview/)를 참고합니다.
 
 <a id="flavor"></a>
-###인스턴스 타입(Instance flavor)
+### 인스턴스 타입(Instance flavor)
 
 NHN Cloud는 고객의 사용 용도에 맞는 다양한 인스턴스 타입을 제공합니다. 운용할 서비스 또는 애플리케이션의 특성에 따라 적절한 타입의 인스턴스를 생성할 수 있습니다. 이미 생성된 인스턴스의 타입도 웹 콘솔에서 쉽게 변경할 수 있습니다.
 
@@ -95,6 +97,8 @@ NHN Cloud는 물리 하드웨어 문제로 생기는 장애에 대비하기 위�
 
 Linux 인스턴스에 접속할 때는 SSH 클라이언트를 이용합니다. 인스턴스의 보안 그룹에 SSH 접근 포트(기본값 22)가 열려 있지 않다면 접속할 수 없습니다. SSH 접근을 허용하는 방법에 대해서는 [VPC 개요](/Network/VPC/ko/overview/)를 참고합니다. 인스턴스에 플로팅 IP가 할당되어 있지 않다면 NHN Cloud 외부에서 접속할 수 없습니다. 플로팅 IP를 할당하는 방법에 대해서는 [VPC 개요](/Network/VPC/ko/overview/)를 참고합니다.
 
+<a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
+
 #### Mac 또는 Linux의 SSH 클라이언트로 Linux 인스턴스에 접속하는 방법
 
 Mac이나 Linux에는 보통 SSH 클라이언트가 기본적으로 설치되어 있습니다. SSH 클라이언트에서 아래와 같이 키페어의 개인 키를 이용하여 접속합니다.
@@ -110,6 +114,8 @@ Debian 인스턴스
 Rocky 인스턴스
 
 	$ ssh -i my_private_key.pem rocky@<인스턴스의 IP>
+
+<a id="how-to-access-linux-instances-from-windows-using-putty-ssh-client"></a>
 
 #### Windows에서 PuTTY SSH 클라이언트로 Linux 인스턴스에 접속하는 방법
 
@@ -201,6 +207,8 @@ Windows 서버에 접속하려면, NHN Cloud 콘솔에서 접속하려는 Window
 
 **비밀번호 확인** 옆의 **연결** 버튼을 클릭해 원격 데스크톱 접속 설정이 저장된 .rdp 파일을 받아서 실행하면 Windows 서버에 접속합니다. Windows 서버의 ID는 `Administrator`이며, 비밀번호는 NHN Cloud 콘솔에서 확인한 비밀번호를 이용합니다.
 
+<a id="how-to-connect-serial-console"></a>
+
 ### 시리얼 콘솔 접속 방법
 
 부팅 실패, 네트워크 구성 문제와 같이 SSH 클라이언트를 사용할 수 없는 상황에서 시리얼 콘솔에 연결하여 인스턴스에 접속할 수 있습니다. 
@@ -217,6 +225,8 @@ Windows 서버에 접속하려면, NHN Cloud 콘솔에서 접속하려는 Window
 > 시리얼 콘솔로 인스턴스에 접속하여 부팅 방법 변경 시 부팅에 실패할 수 있으며, 이에 따른 결과에 대한 책임은 사용자에게 있습니다.
 > 일반적인 상황에서는 SSH 클라이언트 접속 사용을 권장합니다.
 
+<a id="change-grub-bootloader-settings"></a>
+
 #### GRUB 부트로더 설정 변경
 
 2024년 11월 26일 배포 이전에 생성한 인스턴스에서 부트로더를 조작하기 위해서는 GRUB 설정이 필요합니다.
@@ -228,7 +238,7 @@ $ sudo vi /etc/default/grub.d/50-cloudimg-settings.cfg
 GRUB_TIMEOUT=3
 GRUB_TERMINAL="console serial"
 GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
-````
+```
 
 변경된 설정을 적용합니다. OS에 따라 GRUB 설정 적용 명령어가 다를 수 있습니다.
 
