@@ -1,9 +1,7 @@
-<!-- pre-align:aligned sig=37a1cc5adce7 -->
-
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. Instances can be created within minutes and can be scaled up or down at any time as needed.
 
 <a id="components"></a>
 ## Components
@@ -16,6 +14,7 @@ An instance consists of the following components:
 - **Key Pair**: Key used to access an instance
 - **Security Groups**: Network security settings for an instance
 - **Network**: Virtual network where an instance will be connected
+- **Tags** (tags): User-defined labels for classifying and searching instances
 
 Instance properties and usage change depending on these components. While settings for these components, with the exception of image and availability zone, can be modified after the creation of an instance, some flavors cannot be modified after an instance has been created. For more details on modifying instance flavors, see [Modify Flavor in the Console Guide](./console-guide/#modify-flavor).
 
@@ -63,6 +62,16 @@ The default security group is configured to ignore all inbound network traffic. 
 
 An instance must be connected to at least one network defined in the VPC in order to communicate externally. An instance that is not connected to a network cannot be accessed. To create or modify networks, see [VPC Overview](/Network/VPC/en/overview/).
 
+<!-- @if:this-is-only-public -->
+<a id="public-only-notice"></a>
+## Public Distribution Only Notice
+
+This section is only displayed on sites built with the `this-is-only-public` flag. It is not exposed in other zone/environment documentation.
+
+* Example: Policies, pricing, and SLA notices that apply only to public regions
+* Example: Promotional text to be exposed only for commercial deployment targets
+<!-- @endif -->
+
 <a id="pricing"></a>
 ## Pricing
 
@@ -75,6 +84,16 @@ Instances are charged using the following criteria.
 
 For more details on pricing, see [Pricing](https://www.toast.com/kr/service/compute/instance#price).
 
+<a id="backup-and-snapshot"></a>
+## Backup and Snapshot
+
+To safely protect your instance data, we recommend regular backups and snapshot creation. Backups and snapshots differ as follows:
+
+- **Backup**: Periodically copies the root block storage of an instance according to a specified schedule and stores it in a separate storage. Suitable for long-term retention and disaster recovery.
+- **Snapshot**: Saves the state of an instance at a specific point in time as-is. Suitable for use as a rollback point before system changes.
+
+Backups and snapshots are retained even if the original instance is deleted, so they can be used to restore an instance even after deletion. For more details, see [Backup Service Overview](/Storage/Backup/en/overview/).
+
 <a id="how-to-access-instances"></a>
 ## How to Access Instances
 
@@ -82,8 +101,6 @@ For more details on pricing, see [Pricing](https://www.toast.com/kr/service/comp
 ### How to Access Linux Instances
 
 You can access your Linux instances using an SSH client. An instance cannot be accessed if its security group does not have SSH ports (22 by default) allowed. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to allow SSH access. If a floating IP is not assigned to an instance, the instance cannot be accessed from outside NHN Cloud. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to assign floating IP.
-
-<a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
 
 #### How to Access Linux Instances from Mac or Linux Using an SSH Client
 
@@ -100,8 +117,6 @@ Debian instances
 Rocky instances
 
 	$ ssh -i my_private_key.pem rocky@<instance IP>
-
-<a id="how-to-access-linux-instances-from-windows-using-putty-ssh-client"></a>
 
 #### How to Access Linux Instances from Windows Using PuTTY SSH Client
 
@@ -127,6 +142,11 @@ Under **Actions**, click **Save private key** next to **Save the generated key**
 
 > [Caution]
 If you wish to be able to automatically log in to your instance, you should not set a key passphrase. When a passphrase is used, you must manually enter the private key's passphrase during login.
+
+
+```
+#echo hello
+```
 
 ##### 2. Register Your PuTTY-Compatible Private Key With Putty
 
@@ -190,8 +210,6 @@ Your key pair's private key that you input in **Confirm Password** is not sent t
 
 Click **Connect** next to **Confirm Password** to receive the rdp file configured for remote desktop access and run it to access your Windows server. Use `Administrator` for your Windows server ID, and use the password that you checked from the NHN Cloud console.
 
-<a id="how-to-connect-serial-console"></a>
-
 ### How to Connect Serial Console
 
 You can connect to your instance via the serial console in situations where the SSH client is unavailable, such as a boot failure or network configuration issue.
@@ -207,8 +225,6 @@ The serial console feature has the following limitations:
 > [Caution]
 > Changing the boot method while accessing an instance via the serial console may result in a boot failure, and users are responsible for any resulting consequences.
 > Under normal circumstances, we recommend using an SSH client connection.
-
-<a id="change-grub-bootloader-settings"></a>
 
 #### Change GRUB Bootloader Settings
 
@@ -227,4 +243,5 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 
 ```
 $ sudo update-grub
+<!-- heading-lint: F1 L257 — 리뷰 후 이 라인 삭제 (suggestion accept 시 자동 제거) -->
 ```
