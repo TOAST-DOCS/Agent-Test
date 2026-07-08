@@ -1,5 +1,3 @@
-<!-- pre-align:aligned sig=0e29c2b2f6b1 -->
-
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > カーネルバージョンアップガイド
 
@@ -60,8 +58,6 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
 <a id="install-the-kernel"></a>
 ### カーネルインストール
 
-<a id="install-the-kernel-by-specifying-a-version"></a>
-
 #### バージョンを指定してカーネルをインストール
 
 > [参考]
@@ -97,8 +93,6 @@ kernel-tools-libs.x86_64                                                        
 kernelshark.x86_64
 ```
 
-<a id="install-the-kernel-without-specifying-a-version"></a>
-
 #### バージョンを指定せずにカーネルをインストール
 バージョンを指定しない場合、majorバージョンの最新バージョンを基準にパッケージを検索します。
 
@@ -131,8 +125,6 @@ kernel-tools-libs.x86_64                                                        
 kernelshark.x86_64
 ```
 
-
-<a id="install-the-latest-kernel"></a>
 
 #### 最新カーネルインストール
 バージョンを指定しない場合、最新バージョンでインストールします。
@@ -171,8 +163,6 @@ Complete!
 ```
 
 
-<a id="check-package-installation"></a>
-
 #### パッケージのインストール確認
 
 カーネルパッケージが正常にインストールされたか確認します。
@@ -203,8 +193,6 @@ dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
 [root@rocky810 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
 
-<a id="check-for-kernel-updates"></a>
-
 #### カーネルアップデート確認
 
 カーネルバージョンが正常にアップデートされたか確認します。
@@ -218,8 +206,6 @@ dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
 ### カーネル起動順序の変更
 
 複数のカーネルがインストールされている場合、希望のカーネルで起動できるように起動順序を変更します。
-
-<a id="rocky-versions-below-810"></a>
 
 #### Rocky 8.10未満のバージョン
 
@@ -261,8 +247,6 @@ The default is /boot/loader/entries/ea5b6e1e7bc09da25505ebb3a26a8bf4-4.18.0-553.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
-
-<a id="rocky-810-and-later-versions"></a>
 
 #### Rocky 8.10以上バージョン
 
@@ -386,8 +370,6 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
 <a id="install-the-kernel"></a>
 ### カーネルインストール
 
-<a id="install-the-kernel-install-the-kernel-by-specifying-a-version"></a>
-
 #### バージョンを指定してカーネルをインストール
 
 > [参考]
@@ -439,8 +421,6 @@ kernel-uki-virt-addons.x86_64                                              5.14.
 kernelshark.x86_64                                                         1:1.2-10.el9                                                   appstream
 ```
 
-<a id="install-the-kernel-install-the-kernel-without-specifying-a-version"></a>
-
 #### バージョンを指定せずにカーネルをインストール
 バージョンを指定しない場合、majorバージョンの最新バージョンを基準にパッケージを検索します。
 
@@ -488,8 +468,6 @@ kernel-uki-virt.x86_64                                                     5.14.
 kernel-uki-virt-addons.x86_64                                              5.14.0-503.23.2.el9_5                                          baseos
 kernelshark.x86_64                                                         1:1.2-10.el9                                                   appstream
 ```
-
-<a id="install-the-kernel-install-the-latest-kernel"></a>
 
 #### 最新カーネルインストール
 バージョンを指定しない場合、最新バージョンでインストールします。
@@ -554,8 +532,6 @@ Complete!
 
 
 
-<a id="install-the-kernel-check-package-installation"></a>
-
 #### パッケージのインストール確認
 
 カーネルパッケージが正常にインストールされたか確認します。
@@ -586,8 +562,6 @@ dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
-
-<a id="select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
 
 #### カーネルアップデート確認
 
