@@ -1,31 +1,32 @@
 <a id="compute-instance-overview"></a>
-## Compute > Instance > Overview { #compute-instance-overview }
+## Compute > Instance > Overview
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. You can create an instance in a few minutes and scale it up or down at any time as needed.
 
 <a id="components"></a>
-## Components { #components }
+## Components
 
 An instance consists of the following components:
 
 - **Image**: Virtual disk that contains the operating system of an instance
 - **Flavor**: Virtual hardware performance specifications of an instance
-- **Availability Zone** (AZ): Physical location where an instance will be created
+- **Availability Zone** (AZ): Physical location where an instance is created
 - **Key Pair**: Key used to access an instance
 - **Security Groups**: Network security settings for an instance
-- **Network**: Virtual network where an instance will be connected
+- **Network**: Virtual network to which an instance is connected
+- **Tags**: User-defined labels for classifying and searching instances
 
 Instance properties and usage change depending on these components. While settings for these components, with the exception of image and availability zone, can be modified after the creation of an instance, some flavors cannot be modified after an instance has been created. For more details on modifying instance flavors, see [Modify Flavor in the Console Guide](./console-guide/#modify-flavor).
 
 <a id="image"></a>
-### Image { #image }
+### Image
 
 An image is a virtual disk that contains an operating system. NHN Cloud currently supports Debian, Ubuntu, Rocky, and Windows.
 
 All images are configured to run optimally on an instance's virtual hardware and are safe to use as they have undergone security inspection by NHN Cloud. For more details on images, see [Image Overview](/Compute/Image/en/overview/).
 
 <a id="flavor"></a>
-### Flavor { #flavor }
+### Flavor
 
 NHN Cloud provides various instance flavors to support a wide range of use cases. Instances can be created with flavors that best match the requirements of your services or applications. Flavors can be easily modified from the web console, even after an instance has been created.
 
@@ -39,7 +40,7 @@ NHN Cloud provides various instance flavors to support a wide range of use cases
 | x1 | A flavor that supports high-end CPU and memory. Recommended for services or applications that require high performance.                                                                                        |
 
 <a id="availability-zone"></a>
-### Availability Zone { #availability-zone }
+### Availability Zone
 
 NHN Cloud has divided the entire system into multiple availability zones to prepare for potential failures caused by physical hardware issues. Each availability zone has its own storage system, network switch, data center space, and power supply units. A failure that occurs within one availability zone does not affect other zones, thereby increasing the availability of the whole service. You can ensure increased service availability by creating instances across multiple availability zones.
 
@@ -50,7 +51,7 @@ The following properties hold across different availability zones.
 - Floating IP can be shared across different availability zones. If one availability zone experiences a failure, floating IP can quickly be relocated to another availability zone in order to minimize downtime.
 
 <a id="key-pair"></a>
-### Key Pair { #key-pair }
+### Key Pair
 
 A key pair is a pair of [PKI](https://en.wikipedia.org/wiki/Public_key_infrastructure)-based public and private SSH keys. To access an instance created in NHN Cloud, a key pair is required instead of keyboard-inputted ID/PW authentication which is vulnerable to security attacks. You can safely access an instance once you have been authenticated after sending the instance your login information encoded by your key pair's private key. For more details on how to access instances using key pairs, see [How to Access Instances](#how-to-access-instances).
 
@@ -63,7 +64,7 @@ When a key pair is newly generated, its private key is downloaded. As private ke
 > Key pair is a resource assigned to the user account, so it's not deleted when you delete a project.
 
 <a id="security-groups"></a>
-### Security Groups { #security-groups }
+### Security Groups
 
 A security group is a virtual firewall that determines network traffic delivered to an instance. For more details on security groups, see [VPC Overview](/Network/VPC/en/overview/).
 
@@ -71,12 +72,22 @@ A security group is a virtual firewall that determines network traffic delivered
 The default security group is configured to ignore all inbound network traffic. Before accessing an instance using SSH, configure the instance's security group to allow access to the SSH port.
 
 <a id="network"></a>
-### Network { #network }
+### Network
 
 An instance must be connected to at least one network defined in the VPC in order to communicate externally. An instance that is not connected to a network cannot be accessed. To create or modify networks, see [VPC Overview](/Network/VPC/en/overview/).
 
+<!-- @if:this-is-only-public -->
+<a id="public-only-notice"></a>
+## Notice for Public Deployments Only
+
+This section is displayed only on sites built with the `this-is-only-public` flag. It is not shown in documents for other zones/environments.
+
+* Example: policy, pricing, and SLA notices that apply only to public regions
+* Example: promotional text to be displayed only for commercial deployment targets
+<!-- @endif -->
+
 <a id="pricing"></a>
-## Pricing { #pricing }
+## Pricing
 
 Instances are charged using the following criteria.
 
@@ -87,15 +98,24 @@ Instances are charged using the following criteria.
 
 For more details on pricing, see [Pricing](https://www.toast.com/kr/service/compute/instance#price).
 
+<a id="backup-and-snapshot"></a>
+## Backup and Snapshot
+
+We recommend that you create regular backups and snapshots to protect the data in your instances. Backups and snapshots differ in the following ways:
+
+- **Backup**: Periodically copies the instance's root block storage according to a specified schedule and stores it in a separate storage location. Suitable for long-term retention and disaster recovery.
+- **Snapshot**: Saves the state of an instance at a specific point in time. Suitable for use as a rollback point before system changes.
+
+Backups and snapshots are retained even if the original instance is deleted, so you can use them to restore the instance even after deletion. For more information, see [Backup Service Overview](/Storage/Backup/en/overview/).
+
 <a id="how-to-access-instances"></a>
-## How to Access Instances { #how-to-access-instances }
+## How to Access Instances
 
 <a id="how-to-access-linux-instances"></a>
-### How to Access Linux Instances { #how-to-access-linux-instances }
+### How to Access Linux Instances
 
 You can access your Linux instances using an SSH client. An instance cannot be accessed if its security group does not have SSH ports (22 by default) allowed. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to allow SSH access. If a floating IP is not assigned to an instance, the instance cannot be accessed from outside NHN Cloud. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to assign floating IP.
 
-<a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
 #### How to Access Linux Instances from Mac or Linux Using an SSH Client
 
 Generally, Mac and Linux have SSH clients installed by default. Use a key pair's private key to access an instance from an SSH client as shown below.
@@ -112,7 +132,6 @@ Rocky instances
 
 	$ ssh -i my_private_key.pem rocky@<instance IP>
 
-<a id="how-to-access-linux-instances-from-windows-using-putty-ssh-client"></a>
 #### How to Access Linux Instances from Windows Using PuTTY SSH Client
 
 PuTTY SSH client is a widely used SSH client program for Windows. Install [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) before proceeding to the next steps.
@@ -137,6 +156,10 @@ Under **Actions**, click **Save private key** next to **Save the generated key**
 
 > [Caution]
 If you wish to be able to automatically log in to your instance, you should not set a key passphrase. When a passphrase is used, you must manually enter the private key's passphrase during login.
+
+```
+#echo hello
+```
 
 ##### 2. Register Your PuTTY-Compatible Private Key With Putty
 
@@ -192,7 +215,7 @@ If all of the information is correct, save the session. Under **Load, save or de
 Now click **Open** to access your instance.
 
 <a id="how-to-access-windows-instances"></a>
-### How to Access Windows Instances { #how-to-access-windows-instances }
+### How to Access Windows Instances
 
 To access your Windows server, select a Windows instance to access from the NHN Cloud console. In the instance details page under the **Access Information** tab, click **Confirm Password** to check the password set in the Windows server.
 
@@ -200,8 +223,7 @@ Your key pair's private key that you input in **Confirm Password** is not sent t
 
 Click **Connect** next to **Confirm Password** to receive the rdp file configured for remote desktop access and run it to access your Windows server. Use `Administrator` for your Windows server ID, and use the password that you checked from the NHN Cloud console.
 
-<a id="how-to-connect-serial-console"></a>
-### How to Connect Serial Console { #how-to-connect-serial-console }
+### How to Access the Serial Console
 
 You can connect to your instance via the serial console in situations where the SSH client is unavailable, such as a boot failure or network configuration issue.
 
@@ -217,7 +239,6 @@ The serial console feature has the following limitations:
 > Changing the boot method while accessing an instance via the serial console may result in a boot failure, and users are responsible for any resulting consequences.
 > Under normal circumstances, we recommend using an SSH client connection.
 
-<a id="change-grub-bootloader-settings"></a>
 #### Change GRUB Bootloader Settings
 
 GRUB configuration is required to manipulate the bootloader on instances created before the November 26, 2024 deployment.
@@ -233,6 +254,5 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 
 Apply the changed setting. The command to apply GRUB settings may vary depending on the OS.
 
-```
 $ sudo update-grub
-```
+<!-- heading-lint: F1 L257 — Delete this line after review (automatically removed when suggestion is accepted) -->
