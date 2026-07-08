@@ -6,6 +6,8 @@
 
 아래 설정들을 통하여 인스턴스를 생성하거나 인스턴스 템플릿(Instance Template)을 통해 인스턴스를 생성할 수 있습니다. 인스턴스 템플릿을 통해 인스턴스를 생성하려면 인스턴스 생성 화면에서 **인스턴스 템플릿 사용**을 선택합니다. 인스턴스 템플릿 생성 방법은 [인스턴스 템플릿 콘솔 가이드](/Compute/Instance%20Template/ko/console-guide/)를 참고합니다.
 
+![인스턴스 생성 가이드 표지](../static/images/image-1704.jpg)
+
 <a id="os-settings"></a>
 ### OS 설정
 
@@ -205,6 +207,8 @@ rem cmd
 <a id="additional-instance-features"></a>
 ## 인스턴스 추가 기능
 
+![인스턴스 추가 기능 섹션 표지](../static/images/image-1791.jpg)
+
 <a id="change-instance-status"></a>
 ### 인스턴스 상태 변경
 
@@ -310,6 +314,8 @@ rem cmd
 
 <a id="key-pairs"></a>
 ## 키페어
+
+![키페어 섹션 표지](../static/images/ko/image-1461.jpg)
 
 <a id="import-key-pairs-windows"></a>
 ### 키페어 가져오기(Windows 사용자)
