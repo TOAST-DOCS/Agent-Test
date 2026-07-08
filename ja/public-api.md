@@ -22,6 +22,8 @@ GET /v2/{tenantId}/flavors
 X-Auth-Token: {tokenId}
 ```
 
+<a id="request"></a>
+
 #### リクエスト
 
 このAPIはリクエスト本文を要求しません。
@@ -32,6 +34,8 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | トークンID |
 | minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズよりブロックストレージサイズが大きいタイプのみ返す |
 | minRam | Query | Integer | - | 最小RAMサイズ(MB)<br>指定したサイズよりRAMサイズが大きいタイプのみ返す |
+
+<a id="response"></a>
 
 #### レスポンス
 
@@ -94,6 +98,8 @@ GET /v2/{tenantId}/flavors/detail
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-flavors-with-details-request"></a>
+
 #### リクエスト
 
 このAPIはリクエスト本文を要求しません。
@@ -104,6 +110,8 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | トークンID |
 | minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズよりブロックストレージサイズが大きいタイプのみ返す |
 | minRam | Query | Integer | - | 最小RAMサイズ(MB)<br>指定したサイズよりRAMサイズが大きいタイプのみ返す |
+
+<a id="list-flavors-with-details-response"></a>
 
 #### レスポンス
 
@@ -199,6 +207,8 @@ GET /v2/{tenantId}/os-availability-zone
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-availability-zones-request"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -206,6 +216,8 @@ X-Auth-Token: {tokenId}
 |---|---|---|---|---|
 | tenantId | URL | String | O | テナントID |
 | tokenId | Header | String | O | トークンID |
+
+<a id="list-availability-zones-response"></a>
 
 #### レスポンス
 | 名前 | 種類 | 形式 | 説明 |
@@ -252,6 +264,8 @@ GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-key-pairs-request"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -259,6 +273,8 @@ X-Auth-Token: {tokenId}
 |---|---|---|---|---|
 | tenantId | URL | String | O | テナントID |
 | tokenId | Header | String | O | トークンID |
+
+<a id="list-key-pairs-response"></a>
 
 #### レスポンス
 
@@ -299,6 +315,8 @@ GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="show-key-pair-request"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -307,6 +325,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | テナントID |
 | keypairName | URL | String | O | キーペア名 |
 | tokenId | Header | String | O | トークンID |
+
+<a id="show-key-pair-response"></a>
 
 #### レスポンス
 
@@ -355,6 +375,8 @@ POST /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="createregister-key-pair-request"></a>
+
 #### リクエスト
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -379,6 +401,8 @@ X-Auth-Token: {tokenId}
 
 </p>
 </details>
+
+<a id="createregister-key-pair-response"></a>
 
 #### レスポンス
 
@@ -417,6 +441,8 @@ DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="delete-key-pair-request"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -425,6 +451,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | テナントID |
 | keypairName | URL | String | O | キーペア名 |
 | tokenId | Header | String | O | トークンID |
+
+<a id="delete-key-pair-response"></a>
 
 #### レスポンス
 このAPIはレスポンス本文を返しません。
@@ -467,6 +495,8 @@ GET /v2/{tenantId}/servers
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-instances-request"></a>
+
 #### リクエスト
 
 このAPIはリクエスト本文を要求しません。
@@ -483,6 +513,8 @@ X-Auth-Token: {tokenId}
 | status | Query | Enum | - | インスタンスの状態<br>指定された状態のインスタンスリストを返す |
 | limit | Query | Integer | - | インスタンスリスト数<br>指定された数のインスタンスリストを返す |
 | marker | Query | UUID | - | リストの最初のインスタンスUUID<br>ソート基準に従って`marker`に指定されたインスタンスから`limit`数分のインスタンスリストを返す |
+
+<a id="list-instances-response"></a>
 
 #### レスポンス
 
@@ -532,9 +564,13 @@ GET /v2/{tenantId}/servers/detail
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-instances-with-details-request"></a>
+
 #### リクエスト
 
 インスタンスリスト表示と同じリクエスト形式です。
+
+<a id="list-instances-with-details-response"></a>
 
 #### レスポンス
 
@@ -684,6 +720,8 @@ GET /v2/{tenantId}/servers/{serverId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="get-instance-request"></a>
+
 #### リクエスト
 
 このAPIはリクエスト本文を要求しません。
@@ -693,6 +731,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | テナントID |
 | serverId | URL | UUID | O | インスタンスID |
 | tokenId | Header | String | O | トークンID |
+
+<a id="get-instance-response"></a>
 
 #### レスポンス
 
@@ -859,6 +899,8 @@ POST /v2/{tenantId}/servers
 X-Auth-Token: {tokenId}
 ```
 
+<a id="create-instance-request"></a>
+
 #### リクエスト
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -934,6 +976,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="create-instance-response"></a>
+
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                          |
@@ -981,6 +1025,8 @@ PUT /v2/{tenantId}/servers/{serverId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="modify-instance-request"></a>
+
 #### リクエスト
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1005,6 +1051,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="modify-instance-response"></a>
+
 #### レスポンス
 インスタンスの表示と同じです。
 
@@ -1019,6 +1067,8 @@ DELETE /v2/{tenantId}/servers/{serverId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="delete-instance-request"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -1027,6 +1077,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | テナントID |
 | serverId | URL | UUID | O | 削除するインスタンスID |
 | tokenId | Header | String | O | トークンID |
+
+<a id="delete-instance-response"></a>
 
 #### レスポンス
 このAPIはレスポンス本文を返しません。
@@ -1043,6 +1095,8 @@ GET /v2/{tenantId}/servers/{serverId}/os-volume_attachments
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-additional-block-storage-attached-to-the-instance-request"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -1053,6 +1107,8 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | トークンID |
 | limit | Query | Integer | - | 照会するリストの数 |
 | offset | Query | Integer | - | 返されるリストの開始点<br>全てのリストの中からoffset番目のブロックストレージから返す |
+
+<a id="list-additional-block-storage-attached-to-the-instance-response"></a>
 
 #### レスポンス
 
@@ -1098,6 +1154,8 @@ GET /v2/{tenantId}/servers/{serverId}/os-volume_attachments/{volumeId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-additional-block-storage-attached-to-the-instance-request-2"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -1107,6 +1165,8 @@ X-Auth-Token: {tokenId}
 | serverId | URL | UUID | O | インスタンスID |
 | volumeId | URL | UUID | O | 照会するブロックストレージID |
 | tokenId | Header | String | O | トークンID |
+
+<a id="list-additional-block-storage-attached-to-the-instance-response-2"></a>
 
 #### レスポンス
 
@@ -1144,6 +1204,8 @@ POST /v2/{tenantId}/servers/{serverId}/os-volume_attachments
 X-Auth-Token: {tokenId}
 ```
 
+<a id="attach-additional-block-storage-to-the-instance-request"></a>
+
 #### リクエスト
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1167,6 +1229,8 @@ X-Auth-Token: {tokenId}
 
 </p>
 </details>
+
+<a id="attach-additional-block-storage-to-the-instance-response"></a>
 
 #### レスポンス
 
@@ -1204,6 +1268,8 @@ DELETE /v2/{tenantId}/servers/{serverId}/os-volume_attachments/{volumeId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="detach-block-storage-from-the-instance-request"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -1213,6 +1279,8 @@ X-Auth-Token: {tokenId}
 | serverId | URL | UUID | O | インスタンスID |
 | volumeId | URL | UUID | O | 接続を切るブロックストレージID |
 | tokenId | Header | String | O | トークンID |
+
+<a id="detach-block-storage-from-the-instance-response"></a>
 
 #### レスポンス
 このAPIはレスポンス本文を返しません。
@@ -1238,6 +1306,8 @@ POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
 
+<a id="start-stopped-instance-request"></a>
+
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|--|
@@ -1258,6 +1328,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="start-stopped-instance-response"></a>
+
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
@@ -1272,6 +1344,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="start-terminated-instance-request"></a>
 
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1293,6 +1367,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="start-terminated-instance-response"></a>
+
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
@@ -1307,6 +1383,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="stop-instance-request"></a>
 
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1328,12 +1406,20 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="stop-instance-response"></a>
+
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
 ---
 
-### インスタンス停止
+<a id="additional-instance-features-1"></a>
+
+### インスタンス終了
+
+<!-- TODO: translate body -->
+
+**インスタンス停止**
 
 インスタンスを終了し、状態を**SHELVED_OFFLOADED**に変更します。このAPIを呼び出すためには、インスタンスの状態が**ACTIVE**でなければなりません。
 
@@ -1341,6 +1427,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-1-request"></a>
 
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明         |
@@ -1362,10 +1450,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="additional-instance-features-1-response"></a>
+
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
 ---
+
+<a id="additional-instance-features-2"></a>
 
 ### インスタンス再起動
 
@@ -1385,6 +1477,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-2-request"></a>
 
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1409,10 +1503,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="additional-instance-features-2-response"></a>
+
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
 ---
+
+<a id="additional-instance-features-3"></a>
 
 ### インスタンスタイプ変更
 
@@ -1425,6 +1523,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-3-request"></a>
 
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明                                                                                                                                                                                                                |
@@ -1449,10 +1549,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="additional-instance-features-3-response"></a>
+
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
 ---
+
+<a id="additional-instance-features-4"></a>
 
 ### インスタンスイメージ作成
 
@@ -1469,6 +1573,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-4-request"></a>
 
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1498,6 +1604,8 @@ X-Auth-Token: {tokenId}
 </details>
 
 
+<a id="additional-instance-features-4-response"></a>
+
 #### レスポンス
 
 このAPIはレスポンス本文を返しません。作成されたイメージはレスポンスヘッダの`Location`で確認します。
@@ -1508,6 +1616,8 @@ X-Auth-Token: {tokenId}
 
 ---
 
+<a id="additional-instance-features-5"></a>
+
 ### セキュリティグループ追加
 
 インスタンスにセキュリティグループを追加します。追加したセキュリティグループはインスタンスのすべてのポートに適用されます。
@@ -1516,6 +1626,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-5-request"></a>
 
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1541,10 +1653,14 @@ X-Auth-Token: {tokenId}
 </details>
 
 
+<a id="additional-instance-features-5-response"></a>
+
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
 ---
+
+<a id="additional-instance-features-6"></a>
 
 ### セキュリティグループ削除
 
@@ -1554,6 +1670,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-6-request"></a>
 
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1579,6 +1697,8 @@ X-Auth-Token: {tokenId}
 </details>
 
 
+<a id="additional-instance-features-6-response"></a>
+
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
@@ -1597,12 +1717,16 @@ X-Auth-Token: {tokenId}
 | login_username | **接続情報**のユーザー名                          |
 
 > [注意]インスタンスメタデータの変更及び削除の際、関連サービス及び機能に影響が発生する可能性があり、これによる結果に対する責任はユーザーにあります。
+<a id="view-a-list-of-instance-metadata"></a>
+
 ### インスタンスメタデータリスト表示
 
 ```
 GET /v2/{tenantId}/servers/{serverId}/metadata
 X-Auth-Token: {tokenId}
 ```
+
+<a id="view-a-list-of-instance-metadata-request"></a>
 
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
@@ -1612,6 +1736,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | テナントID                                           |
 | serverId | URL | UUID | O | インスタンスID                                          |
 | tokenId  | Header | String | O | トークンID                                            |
+
+<a id="view-a-list-of-instance-metadata-response"></a>
 
 #### レスポンス
 
@@ -1652,6 +1778,8 @@ GET /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="restart-instance-request"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -1661,6 +1789,8 @@ X-Auth-Token: {tokenId}
 | serverId | URL | UUID | O | インスタンスID                  |
 | key      | URL | String | O | インスタンスに作成または修正するメタデータのキー |
 | tokenId  | Header | String | O | トークンID                    |
+
+<a id="restart-instance-response"></a>
 
 #### レスポンス
 
@@ -1693,6 +1823,8 @@ PUT /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="change-instance-flavor-request"></a>
+
 #### リクエスト
 | 名前     | 種類 | 形式 | 必須 | 説明                                             |
 |----------|---|---|---|--------------------------------------------------|
@@ -1717,6 +1849,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+
+<a id="change-instance-flavor-response"></a>
 
 #### レスポンス
 
@@ -1749,6 +1883,8 @@ DELETE /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="create-instance-image-request"></a>
+
 #### リクエスト
 このAPIはリクエスト本文を要求しません。
 
@@ -1759,9 +1895,13 @@ X-Auth-Token: {tokenId}
 | key      | URL | String | O | インスタンスから削除するメタデータのキー |
 | tokenId  | Header | String | O | トークンID               |
 
+<a id="create-instance-image-response"></a>
+
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
+
+<a id="placement-policy"></a>
 
 ## 配置ポリシー
 
@@ -1775,6 +1915,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/os-server-groups
 X-Auth-Token: {tokenId}
 ```
+
+<a id="add-security-group-request"></a>
 
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1802,6 +1944,8 @@ X-Auth-Token: {tokenId}
 
 </p>
 </details>
+
+<a id="add-security-group-response"></a>
 
 #### レスポンス
 
@@ -1842,6 +1986,8 @@ GET /v2/{tenantId}/os-server-groups
 X-Auth-Token: {tokenId}
 ```
 
+<a id="delete-security-group-request"></a>
+
 #### リクエスト
 
 このAPIはリクエスト本文を要求しません。
@@ -1850,6 +1996,8 @@ X-Auth-Token: {tokenId}
 |-----|-----|-----|-----|-----|
 | tenantId | URL | String | O | テナントID |
 | tokenId | Header | String | O | トークンID |
+
+<a id="delete-security-group-response"></a>
 
 #### レスポンス
 
@@ -1896,12 +2044,16 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="view-placement-policies"></a>
+
 ### 配置ポリシー表示
 
 ```
 GET /v2/{tenantId}/os-server-groups/{servergroupId}
 X-Auth-Token: {tokenId}
 ```
+
+<a id="view-placement-policies-request"></a>
 
 #### リクエスト
 
@@ -1912,6 +2064,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | テナントID |
 | servergroupId | URL | String | O | 配置ポリシーID |
 | tokenId | Header | String | O | トークンID |
+
+<a id="view-placement-policies-response"></a>
 
 #### レスポンス
 
@@ -1947,12 +2101,16 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="deleting-a-placement-policy"></a>
+
 ### 配置ポリシーを削除する
 
 ```
 DELETE /v2/{tenantId}/os-server-groups/{servergroupId}
 X-Auth-Token: {tokenId}
 ```
+
+<a id="deleting-a-placement-policy-request"></a>
 
 #### リクエスト
 
@@ -1963,6 +2121,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | テナントID |
 | servergroupId | URL | String | O | 配置ポリシーID |
 | tokenId | Header | String | O | トークンID |
+
+<a id="deleting-a-placement-policy-response"></a>
 
 #### レスポンス
 

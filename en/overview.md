@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=8d9da15cb474 -->
+
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
@@ -95,6 +97,8 @@ For more details on pricing, see [Pricing](https://www.toast.com/kr/service/comp
 
 You can access your Linux instances using an SSH client. An instance cannot be accessed if its security group does not have SSH ports (22 by default) allowed. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to allow SSH access. If a floating IP is not assigned to an instance, the instance cannot be accessed from outside NHN Cloud. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to assign floating IP.
 
+<a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
+
 #### How to Access Linux Instances from Mac or Linux Using an SSH Client
 
 Generally, Mac and Linux have SSH clients installed by default. Use a key pair's private key to access an instance from an SSH client as shown below.
@@ -110,6 +114,8 @@ Debian instances
 Rocky instances
 
 	$ ssh -i my_private_key.pem rocky@<instance IP>
+
+<a id="how-to-access-linux-instances-from-windows-using-putty-ssh-client"></a>
 
 #### How to Access Linux Instances from Windows Using PuTTY SSH Client
 
@@ -198,6 +204,8 @@ Your key pair's private key that you input in **Confirm Password** is not sent t
 
 Click **Connect** next to **Confirm Password** to receive the rdp file configured for remote desktop access and run it to access your Windows server. Use `Administrator` for your Windows server ID, and use the password that you checked from the NHN Cloud console.
 
+<a id="how-to-connect-serial-console"></a>
+
 ### How to Connect Serial Console
 
 You can connect to your instance via the serial console in situations where the SSH client is unavailable, such as a boot failure or network configuration issue.
@@ -213,6 +221,8 @@ The serial console feature has the following limitations:
 > [Caution]
 > Changing the boot method while accessing an instance via the serial console may result in a boot failure, and users are responsible for any resulting consequences.
 > Under normal circumstances, we recommend using an SSH client connection.
+
+<a id="change-grub-bootloader-settings"></a>
 
 #### Change GRUB Bootloader Settings
 
