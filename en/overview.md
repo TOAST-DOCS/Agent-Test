@@ -1,19 +1,20 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview { #compute-instance-overview }
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. You can create an instance in minutes and scale it up or down at any time as needed.
 
 <a id="components"></a>
 ## Components { #components }
 
 An instance consists of the following components:
 
-- **Image**: Virtual disk that contains the operating system of an instance
+- **Image**: A virtual disk that contains the operating system of an instance
 - **Flavor**: Virtual hardware performance specifications of an instance
-- **Availability Zone** (AZ): Physical location where an instance will be created
-- **Key Pair**: Key used to access an instance
+- **Availability Zone** (AZ): The physical location where an instance is created
+- **Key Pair** (key-pair): Key used to access an instance
 - **Security Groups**: Network security settings for an instance
-- **Network**: Virtual network where an instance will be connected
+- **Network**: The virtual network to which an instance is connected
+- **Tags**: User-defined labels for classifying and searching instances
 
 Instance properties and usage change depending on these components. While settings for these components, with the exception of image and availability zone, can be modified after the creation of an instance, some flavors cannot be modified after an instance has been created. For more details on modifying instance flavors, see [Modify Flavor in the Console Guide](./console-guide/#modify-flavor).
 
@@ -75,6 +76,16 @@ The default security group is configured to ignore all inbound network traffic. 
 
 An instance must be connected to at least one network defined in the VPC in order to communicate externally. An instance that is not connected to a network cannot be accessed. To create or modify networks, see [VPC Overview](/Network/VPC/en/overview/).
 
+<!-- @if:this-is-only-public -->
+<a id="public-only-notice"></a>
+## Public deployment only notice { #public-only-notice }
+
+This section appears only on sites built with the `this-is-only-public` flag. It does not appear in documentation for other zones or environments.
+
+* Example: Policy, pricing, and SLA notices that apply only to public regions
+* Example: Promotional text to be displayed only for commercial deployment targets
+<!-- @endif -->
+
 <a id="pricing"></a>
 ## Pricing { #pricing }
 
@@ -86,6 +97,16 @@ Instances are charged using the following criteria.
 * Terminated instances are not billed.
 
 For more details on pricing, see [Pricing](https://www.toast.com/kr/service/compute/instance#price).
+
+<a id="backup-and-snapshot"></a>
+## Backup and Snapshot { #backup-and-snapshot }
+
+We recommend that you regularly create backups and snapshots to protect the data in your instance. Backups and snapshots differ as follows:
+
+- **Backup**: Periodically copies the instance's root block storage according to a specified schedule and stores it in a separate storage location. Suitable for long-term retention and disaster recovery.
+- **Snapshot**: Saves the state of an instance at a specific point in time. Suitable for use as a rollback point before system changes.
+
+Backups and snapshots are retained even if the original instance is deleted, so you can use them to restore an instance after deletion. For more information, see [Backup Service Overview](/Storage/Backup/en/overview/).
 
 <a id="how-to-access-instances"></a>
 ## How to Access Instances { #how-to-access-instances }
@@ -137,6 +158,10 @@ Under **Actions**, click **Save private key** next to **Save the generated key**
 
 > [Caution]
 If you wish to be able to automatically log in to your instance, you should not set a key passphrase. When a passphrase is used, you must manually enter the private key's passphrase during login.
+
+```
+#echo hello
+```
 
 ##### 2. Register Your PuTTY-Compatible Private Key With Putty
 
@@ -235,4 +260,5 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 
 ```
 $ sudo update-grub
+<!-- heading-lint: F1 L257 — Delete this line after review (automatically removed when suggestion is accepted) -->
 ```
