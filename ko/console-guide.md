@@ -1,5 +1,5 @@
 <a id="compute-instance-console-guide"></a>
-## Compute > Instance > 콘솔 사용 가이드 { #compute-instance-console-guide }
+## Compute > Instance > 콘솔 사용 가이드 상세 안내 { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
 ## 인스턴스 생성 { #create-instances }
