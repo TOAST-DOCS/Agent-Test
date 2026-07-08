@@ -56,4 +56,25 @@ done
 if (( DRY_RUN )); then
   echo
   echo "(dry-run) 실제로 복사하려면 --dry-run 없이 다시 실행하세요."
+  exit 0
 fi
+
+cd "$REPO_ROOT"
+
+if git diff --quiet && git diff --cached --quiet; then
+  echo
+  echo "변경 사항이 없습니다. commit/push 을 건너뜁니다."
+  exit 0
+fi
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+
+echo
+echo "git add ${LANGS[*]}"
+git add "${LANGS[@]}"
+
+echo "git commit"
+git commit -m "restore: alpha-origin 에서 ko/en/ja 복원"
+
+echo "git push origin $branch"
+git push origin "$branch"

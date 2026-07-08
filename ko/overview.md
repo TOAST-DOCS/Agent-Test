@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=8d9da15cb474 -->
+
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 개요
 
@@ -95,6 +97,8 @@ NHN Cloud는 물리 하드웨어 문제로 생기는 장애에 대비하기 위�
 
 Linux 인스턴스에 접속할 때는 SSH 클라이언트를 이용합니다. 인스턴스의 보안 그룹에 SSH 접근 포트(기본값 22)가 열려 있지 않다면 접속할 수 없습니다. SSH 접근을 허용하는 방법에 대해서는 [VPC 개요](/Network/VPC/ko/overview/)를 참고합니다. 인스턴스에 플로팅 IP가 할당되어 있지 않다면 NHN Cloud 외부에서 접속할 수 없습니다. 플로팅 IP를 할당하는 방법에 대해서는 [VPC 개요](/Network/VPC/ko/overview/)를 참고합니다.
 
+<a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
+
 #### Mac 또는 Linux의 SSH 클라이언트로 Linux 인스턴스에 접속하는 방법
 
 Mac이나 Linux에는 보통 SSH 클라이언트가 기본적으로 설치되어 있습니다. SSH 클라이언트에서 아래와 같이 키페어의 개인 키를 이용하여 접속합니다.
@@ -110,6 +114,8 @@ Debian 인스턴스
 Rocky 인스턴스
 
 	$ ssh -i my_private_key.pem rocky@<인스턴스의 IP>
+
+<a id="how-to-access-linux-instances-from-windows-using-putty-ssh-client"></a>
 
 #### Windows에서 PuTTY SSH 클라이언트로 Linux 인스턴스에 접속하는 방법
 
@@ -201,6 +207,8 @@ Windows 서버에 접속하려면, NHN Cloud 콘솔에서 접속하려는 Window
 
 **비밀번호 확인** 옆의 **연결** 버튼을 클릭해 원격 데스크톱 접속 설정이 저장된 .rdp 파일을 받아서 실행하면 Windows 서버에 접속합니다. Windows 서버의 ID는 `Administrator`이며, 비밀번호는 NHN Cloud 콘솔에서 확인한 비밀번호를 이용합니다.
 
+<a id="how-to-connect-serial-console"></a>
+
 ### 시리얼 콘솔 접속 방법
 
 부팅 실패, 네트워크 구성 문제와 같이 SSH 클라이언트를 사용할 수 없는 상황에서 시리얼 콘솔에 연결하여 인스턴스에 접속할 수 있습니다. 
@@ -216,6 +224,8 @@ Windows 서버에 접속하려면, NHN Cloud 콘솔에서 접속하려는 Window
 > [주의]
 > 시리얼 콘솔로 인스턴스에 접속하여 부팅 방법 변경 시 부팅에 실패할 수 있으며, 이에 따른 결과에 대한 책임은 사용자에게 있습니다.
 > 일반적인 상황에서는 SSH 클라이언트 접속 사용을 권장합니다.
+
+<a id="change-grub-bootloader-settings"></a>
 
 #### GRUB 부트로더 설정 변경
 
