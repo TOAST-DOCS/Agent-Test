@@ -1,5 +1,5 @@
 <a id="compute-instance-console-guide"></a>
-## Compute > Instance > Console Guide
+## Compute > Instance > Console Guide Details
 
 <a id="create-instances"></a>
 ## Create Instances
