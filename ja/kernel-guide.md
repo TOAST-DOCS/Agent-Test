@@ -563,16 +563,6 @@ dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
 
-#### カーネルアップデート確認
-
-カーネルバージョンが正常にアップデートされたか確認します。
-
-```
-[root@rocky810 ~]# uname -r
-4.18.0-553.16.1.el8_10.x86_64
-```
-
-
 <a id="change-the-kernel-boot-order"></a>
 ### カーネル起動順序の変更
 
