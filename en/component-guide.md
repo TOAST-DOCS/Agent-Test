@@ -3,6 +3,8 @@
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
 
+This paragraph is a test paragraph added to the existing section. The existing heading should be maintained as is.
+
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
 
