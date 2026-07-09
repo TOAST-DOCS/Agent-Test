@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=c32df7ca880f -->
+
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 가이드
 
@@ -22,6 +24,8 @@ GET /v2/{tenantId}/flavors
 X-Auth-Token: {tokenId}
 ```
 
+<a id="request"></a>
+
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -32,6 +36,8 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 | minDisk | Query | Integer | - | 최소 블록 스토리지 크기(GB)<br>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
 | minRam | Query | Integer | - | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
+
+<a id="response"></a>
 
 #### 응답
 
@@ -94,6 +100,8 @@ GET /v2/{tenantId}/flavors/detail
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-flavors-with-details-request"></a>
+
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -104,6 +112,8 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 | minDisk | Query | Integer | - | 최소 블록 스토리지 크기(GB)<br>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
 | minRam | Query | Integer | - | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
+
+<a id="list-flavors-with-details-response"></a>
 
 #### 응답
 
@@ -199,6 +209,8 @@ GET /v2/{tenantId}/os-availability-zone
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-availability-zones-request"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -206,6 +218,8 @@ X-Auth-Token: {tokenId}
 |---|---|---|---|---|
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="list-availability-zones-response"></a>
 
 #### 응답
 | 이름 | 종류 | 형식 | 설명 |
@@ -252,6 +266,8 @@ GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-key-pairs-request"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -259,6 +275,8 @@ X-Auth-Token: {tokenId}
 |---|---|---|---|---|
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="list-key-pairs-response"></a>
 
 #### 응답
 
@@ -299,6 +317,8 @@ GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="show-key-pair-request"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -307,6 +327,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | 테넌트 ID |
 | keypairName | URL | String | O | 키페어 이름 |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="show-key-pair-response"></a>
 
 #### 응답
 
@@ -355,6 +377,8 @@ POST /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="createregister-key-pair-request"></a>
+
 #### 요청
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -379,6 +403,8 @@ X-Auth-Token: {tokenId}
 
 </p>
 </details>
+
+<a id="createregister-key-pair-response"></a>
 
 #### 응답
 
@@ -417,6 +443,8 @@ DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="delete-key-pair-request"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -425,6 +453,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | 테넌트 ID |
 | keypairName | URL | String | O | 키페어 이름 |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="delete-key-pair-response"></a>
 
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
@@ -467,6 +497,8 @@ GET /v2/{tenantId}/servers
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-instances-request"></a>
+
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -483,6 +515,8 @@ X-Auth-Token: {tokenId}
 | status | Query | Enum | - | 인스턴스 상태<br>지정된 상태를 가진 인스턴스 목록을 반환 |
 | limit | Query | Integer | - | 인스턴스 목록 개수<br>지정된 개수 만큼의 인스턴스 목록을 반환 |
 | marker | Query | UUID | - | 목록의 첫번째 인스턴스 UUID<br>정렬 기준에 따라 `marker`로 지정된 인스턴스부터 `limit` 개수 만큼의 인스턴스 목록을 반환 |
+
+<a id="list-instances-response"></a>
 
 #### 응답
 
@@ -532,9 +566,13 @@ GET /v2/{tenantId}/servers/detail
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-instances-with-details-request"></a>
+
 #### 요청
 
 인스턴스 목록 보기와 동일한 요청 형태입니다.
+
+<a id="list-instances-with-details-response"></a>
 
 #### 응답
 
@@ -684,6 +722,8 @@ GET /v2/{tenantId}/servers/{serverId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="get-instance-request"></a>
+
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -693,6 +733,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | 테넌트 ID |
 | serverId | URL | UUID | O | 인스턴스 ID |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="get-instance-response"></a>
 
 #### 응답
 
@@ -859,6 +901,8 @@ POST /v2/{tenantId}/servers
 X-Auth-Token: {tokenId}
 ```
 
+<a id="create-instance-request"></a>
+
 #### 요청
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -934,6 +978,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="create-instance-response"></a>
+
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명                                                                                                                                                                                                           |
@@ -981,6 +1027,8 @@ PUT /v2/{tenantId}/servers/{serverId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="modify-instance-request"></a>
+
 #### 요청
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1005,6 +1053,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="modify-instance-response"></a>
+
 #### 응답
 인스턴스 보기와 동일합니다.
 
@@ -1019,6 +1069,8 @@ DELETE /v2/{tenantId}/servers/{serverId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="delete-instance-request"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1027,6 +1079,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | 테넌트 ID |
 | serverId | URL | UUID | O | 삭제할 인스턴스 ID |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="delete-instance-response"></a>
 
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
@@ -1043,6 +1097,8 @@ GET /v2/{tenantId}/servers/{serverId}/os-volume_attachments
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-additional-block-storage-attached-to-the-instance-request"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1053,6 +1109,8 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 | limit | Query | Integer | - | 조회할 목록 개수 |
 | offset | Query | Integer | - | 반환할 목록의 시작점<br>전체 목록 중 offset번째 블록 스토리지부터 반환 |
+
+<a id="list-additional-block-storage-attached-to-the-instance-response"></a>
 
 #### 응답
 
@@ -1098,6 +1156,8 @@ GET /v2/{tenantId}/servers/{serverId}/os-volume_attachments/{volumeId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-additional-block-storage-attached-to-the-instance-request-2"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1107,6 +1167,8 @@ X-Auth-Token: {tokenId}
 | serverId | URL | UUID | O | 인스턴스 ID |
 | volumeId | URL | UUID | O | 조회할 블록 스토리지 ID |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="list-additional-block-storage-attached-to-the-instance-response-2"></a>
 
 #### 응답
 
@@ -1144,6 +1206,8 @@ POST /v2/{tenantId}/servers/{serverId}/os-volume_attachments
 X-Auth-Token: {tokenId}
 ```
 
+<a id="attach-additional-block-storage-to-the-instance-request"></a>
+
 #### 요청
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1167,6 +1231,8 @@ X-Auth-Token: {tokenId}
 
 </p>
 </details>
+
+<a id="attach-additional-block-storage-to-the-instance-response"></a>
 
 #### 응답
 
@@ -1204,6 +1270,8 @@ DELETE /v2/{tenantId}/servers/{serverId}/os-volume_attachments/{volumeId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="detach-block-storage-from-the-instance-request"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1213,6 +1281,8 @@ X-Auth-Token: {tokenId}
 | serverId | URL | UUID | O | 인스턴스 ID |
 | volumeId | URL | UUID | O | 연결을 끊을 블록 스토리지 ID |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="detach-block-storage-from-the-instance-response"></a>
 
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
@@ -1238,6 +1308,8 @@ POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
 
+<a id="start-stopped-instance-request"></a>
+
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|--|
@@ -1258,6 +1330,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="start-stopped-instance-response"></a>
+
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
@@ -1272,6 +1346,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="start-terminated-instance-request"></a>
 
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1293,6 +1369,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="start-terminated-instance-response"></a>
+
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
@@ -1307,6 +1385,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="stop-instance-request"></a>
 
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1328,10 +1408,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="stop-instance-response"></a>
+
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
+
+<a id="additional-instance-features-1"></a>
 
 ### 인스턴스 종료
 
@@ -1341,6 +1425,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-1-request"></a>
 
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명          |
@@ -1362,10 +1448,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="additional-instance-features-1-response"></a>
+
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
+
+<a id="additional-instance-features-2"></a>
 
 ### 인스턴스 재시작
 
@@ -1385,6 +1475,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-2-request"></a>
 
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1409,10 +1501,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="additional-instance-features-2-response"></a>
+
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
+
+<a id="additional-instance-features-3"></a>
 
 ### 인스턴스 타입 변경
 
@@ -1425,6 +1521,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-3-request"></a>
 
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명                                                                                                                                                                                                                 |
@@ -1449,10 +1547,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="additional-instance-features-3-response"></a>
+
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
+
+<a id="additional-instance-features-4"></a>
 
 ### 인스턴스 이미지 생성
 
@@ -1469,6 +1571,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-4-request"></a>
 
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1498,6 +1602,8 @@ X-Auth-Token: {tokenId}
 </details>
 
 
+<a id="additional-instance-features-4-response"></a>
+
 #### 응답
 
 이 API는 응답 본문을 반환하지 않습니다. 생성된 이미지는 응답 헤더의 `Location`으로 확인합니다.
@@ -1508,6 +1614,8 @@ X-Auth-Token: {tokenId}
 
 ---
 
+<a id="additional-instance-features-5"></a>
+
 ### 보안 그룹 추가
 
 인스턴스에 보안 그룹을 추가합니다. 추가한 보안 그룹은 인스턴스의 모든 포트에 적용됩니다.
@@ -1516,6 +1624,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-5-request"></a>
 
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1541,10 +1651,14 @@ X-Auth-Token: {tokenId}
 </details>
 
 
+<a id="additional-instance-features-5-response"></a>
+
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
+
+<a id="additional-instance-features-6"></a>
 
 ### 보안 그룹 삭제
 
@@ -1554,6 +1668,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
+
+<a id="additional-instance-features-6-request"></a>
 
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1579,6 +1695,8 @@ X-Auth-Token: {tokenId}
 </details>
 
 
+<a id="additional-instance-features-6-response"></a>
+
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
@@ -1598,12 +1716,16 @@ X-Auth-Token: {tokenId}
 
 > [주의] 인스턴스 메타데이터 변경 및 삭제 시 연관 서비스 및 기능에 영향이 발생할 수 있으며, 이에 따른 결과에 대한 책임은 사용자에게 있습니다.
 
+<a id="view-a-list-of-instance-metadata"></a>
+
 ### 인스턴스 메타데이터 목록 보기
 
 ```
 GET /v2/{tenantId}/servers/{serverId}/metadata
 X-Auth-Token: {tokenId}
 ```
+
+<a id="view-a-list-of-instance-metadata-request"></a>
 
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
@@ -1613,6 +1735,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | 테넌트 ID                                           |
 | serverId | URL | UUID | O | 인스턴스 ID                                          |
 | tokenId  | Header | String | O | 토큰 ID                                            |
+
+<a id="view-a-list-of-instance-metadata-response"></a>
 
 #### 응답
 
@@ -1653,6 +1777,8 @@ GET /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="restart-instance-request"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1662,6 +1788,8 @@ X-Auth-Token: {tokenId}
 | serverId | URL | UUID | O | 인스턴스 ID                  |
 | key      | URL | String | O | 인스턴스에 생성 혹은 수정할 메타데이터의 키 |
 | tokenId  | Header | String | O | 토큰 ID                    |
+
+<a id="restart-instance-response"></a>
 
 #### 응답
 
@@ -1694,6 +1822,8 @@ PUT /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="change-instance-flavor-request"></a>
+
 #### 요청
 | 이름       | 종류 | 형식 | 필수 | 설명                                               |
 |----------|---|---|---|--------------------------------------------------|
@@ -1718,6 +1848,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+
+<a id="change-instance-flavor-response"></a>
 
 #### 응답
 
@@ -1750,6 +1882,8 @@ DELETE /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="create-instance-image-request"></a>
+
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1760,9 +1894,13 @@ X-Auth-Token: {tokenId}
 | key      | URL | String | O | 인스턴스에서 삭제할 메타데이터의 키 |
 | tokenId  | Header | String | O | 토큰 ID               |
 
+<a id="create-instance-image-response"></a>
+
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
+
+<a id="placement-policy"></a>
 
 ## 배치 정책
 
@@ -1776,6 +1914,8 @@ X-Auth-Token: {tokenId}
 POST /v2/{tenantId}/os-server-groups
 X-Auth-Token: {tokenId}
 ```
+
+<a id="add-security-group-request"></a>
 
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1803,6 +1943,8 @@ X-Auth-Token: {tokenId}
 
 </p>
 </details>
+
+<a id="add-security-group-response"></a>
 
 #### 응답
 
@@ -1843,6 +1985,8 @@ GET /v2/{tenantId}/os-server-groups
 X-Auth-Token: {tokenId}
 ```
 
+<a id="delete-security-group-request"></a>
+
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -1851,6 +1995,8 @@ X-Auth-Token: {tokenId}
 |-----|-----|-----|-----|-----|
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="delete-security-group-response"></a>
 
 #### 응답
 
@@ -1897,12 +2043,16 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="view-placement-policies"></a>
+
 ### 배치 정책 보기
 
 ```
 GET /v2/{tenantId}/os-server-groups/{servergroupId}
 X-Auth-Token: {tokenId}
 ```
+
+<a id="view-placement-policies-request"></a>
 
 #### 요청
 
@@ -1913,6 +2063,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | 테넌트 ID |
 | servergroupId | URL | String | O | 배치 정책 ID |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="view-placement-policies-response"></a>
 
 #### 응답
 
@@ -1948,12 +2100,16 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="deleting-a-placement-policy"></a>
+
 ### 배치 정책 삭제하기
 
 ```
 DELETE /v2/{tenantId}/os-server-groups/{servergroupId}
 X-Auth-Token: {tokenId}
 ```
+
+<a id="deleting-a-placement-policy-request"></a>
 
 #### 요청
 
@@ -1964,6 +2120,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | 테넌트 ID |
 | servergroupId | URL | String | O | 배치 정책 ID |
 | tokenId | Header | String | O | 토큰 ID |
+
+<a id="deleting-a-placement-policy-response"></a>
 
 #### 응답
 
