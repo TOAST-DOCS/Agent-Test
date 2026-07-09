@@ -3,6 +3,8 @@
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > インストールコンポーネントガイド { #compute-instance-installation-component-guide }
 
+この段落は既存セクションに追加されたテスト段落です。既存headingはそのまま維持されるべきです。
+
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
 NATインスタンスは、プライベートネットワークインスタンスから特定IPアドレス帯域にインターネットアクセスできるようにするインスタンスです。
