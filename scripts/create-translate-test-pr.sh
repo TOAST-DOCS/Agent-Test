@@ -231,8 +231,9 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   git status --short >&2; exit 1
 fi
 
-git fetch origin "$BASE_BRANCH"
-git checkout -B "$BRANCH" "origin/$BASE_BRANCH"
+git switch "$BASE_BRANCH"
+git pull
+git checkout -B "$BRANCH"
 
 for p in "${PLAN[@]}"; do
   mut="${p%%|*}"; rel="${p#*|}"
