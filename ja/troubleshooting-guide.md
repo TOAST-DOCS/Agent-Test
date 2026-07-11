@@ -1,9 +1,6 @@
-<!-- pre-align:aligned sig=45e098944fc5 -->
+## Compute > Instance > 問題解決ガイド
 
-<a id="compute-instance-troubleshooting-guide"></a>
-## Compute > Instance > 問題解決ガイド { #compute-instance-troubleshooting-guide }
-
-NHN Cloud を使用する際に発生する可能性のあるさまざまな問題を解決する方法について説明します。(本文修正テスト: このセンテンスは翻訳再実行時に反映される必要があります。)
+NHN Cloudの使用時に問題が発生した場合、それを解決する方法を説明します。
 
 <h3>現在NHN Cloudで基本提供するOSバージョン以外のバージョンを使用したいです。個人イメージをアップロードして使用できますか？</h3>
 

@@ -1,9 +1,6 @@
-<!-- pre-align:aligned sig=45e098944fc5 -->
+## Compute > Instance > Troubleshooting Guide
 
-<a id="compute-instance-troubleshooting-guide"></a>
-## Compute > Instance > Troubleshooting Guide { #compute-instance-troubleshooting-guide }
-
-This document describes how to resolve various issues you may encounter while using NHN Cloud. (Body text revision test: This sentence should be reflected when the translation is re-run.)
+The document describes how to resolve issues you may encounter while using NHN Cloud.
 
 <h3> I want to use a different version, other than the default OS version of NHN Cloud. Can I upload my personal images? </h3>
 
