@@ -17,6 +17,13 @@
 # 상단 두 변수(DASHBOARD_BASE_URL, DASHBOARD_API_TOKEN)를 채우고 실행.
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
 #
+# Usage:
+#   scripts/e2e-align-and-translate.sh [--engine api|cli]
+#
+#   --engine api   translate 잡을 api 엔진으로 실행
+#   --engine cli   translate 잡을 claude-code(CLI) 엔진으로 실행
+#   (생략 시 engine 필드를 보내지 않음 → 서버 default)
+#
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
 set -euo pipefail
@@ -29,6 +36,22 @@ REPO="TOAST-DOCS/Agent-Test"
 BASE_BRANCH="alpha"
 TARGET_URL="https://github.com/${REPO}"
 # ─────────────────────────────────────────────────────────────────────
+
+# ── 실행 옵션 ─────────────────────────────────────────────────────────
+TRANSLATE_ENGINE=""   # ""(default) | api | claude-code
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --engine)
+      case "${2:-}" in
+        api) TRANSLATE_ENGINE="api" ;;
+        cli) TRANSLATE_ENGINE="claude-code" ;;
+        *) echo "error: --engine 은 api 또는 cli 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    -h|--help) sed -n '3,30p' "$0"; exit 0 ;;
+    *) echo "unknown option: $1" >&2; exit 1 ;;
+  esac
+done
 
 if [[ -z "$DASHBOARD_BASE_URL" || -z "$DASHBOARD_API_TOKEN" ]]; then
   echo "error: DASHBOARD_BASE_URL 과 DASHBOARD_API_TOKEN 을 스크립트 상단(또는 env)으로 지정하세요." >&2
@@ -242,7 +265,13 @@ echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
 # ── 12) ko 변경 PR 대상 dashboard /api/translate 트리거 (권장 preset) ─
 echo
-echo "[12/12] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url)"
+echo "[12/12] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default})"
+
+# --engine 옵션이 지정된 경우에만 engine 필드 포함
+engine_json=""
+if [[ -n "$TRANSLATE_ENGINE" ]]; then
+  engine_json="\"engine\": \"$TRANSLATE_ENGINE\","
+fi
 
 # 권장 preset flags:
 #   --diff-granularity block --glossary-mode service --max-load-ratio 2
@@ -251,6 +280,7 @@ echo "[12/12] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_u
 translate_body=$(cat <<JSON
 {
   "pr_url": "$ko_pr_url",
+  $engine_json
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "2",
