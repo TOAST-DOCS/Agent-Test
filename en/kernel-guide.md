@@ -10,7 +10,6 @@
 ## Rocky Linux 8 { #rocky-linux-8 }
 
 <a id="check-the-kernel-version"></a>
-
 ### Check the Kernel Version { #check-the-kernel-version }
 
 Check the currently installed kernel version.
@@ -19,7 +18,8 @@ Check the currently installed kernel version.
 
 NHN Cloud Organization provides a service to manage multiple accounts with an integrated structure. When you have multiple accounts, you can organize and manage them through a single interface.
 
-### Service Overview
+<a id="default-storage-settings"></a>
+### Service Overview { #default-storage-settings }
 
 NHN Cloud Organization is a service that helps you manage multiple NHN Cloud accounts with an integrated structure. Use NHN Cloud Organization to:
 - Organize multiple accounts in a hierarchical structure
@@ -27,14 +27,16 @@ NHN Cloud Organization is a service that helps you manage multiple NHN Cloud acc
 - Apply policies consistently across multiple accounts
 - Track resource usage and costs across the organization
 
-### Target Users
+<a id="clear-the-cache-before-updating"></a>
+### Target Users { #clear-the-cache-before-updating }
 
 NHN Cloud Organization is suitable for:
 - Enterprise customers managing multiple NHN Cloud accounts
 - Service providers managing customer accounts
 - Development teams managing separate accounts for development and production environments
 
-### Key Features
+<a id="install-the-kernel"></a>
+### Key Features { #install-the-kernel }
 
 **Hierarchical Account Management**
 - Organize accounts in a tree structure with a root and multiple levels of organizational units
@@ -56,7 +58,8 @@ NHN Cloud Organization is suitable for:
 - Remove accounts from the organization
 - Delegate account management responsibilities
 
-### Service Structure
+<a id="reboot-the-os"></a>
+### Service Structure { #reboot-the-os }
 
 NHN Cloud Organization consists of the following components:
 
@@ -74,7 +77,8 @@ NHN Cloud Organization consists of the following components:
 - Cost alerts
 - Budget management
 
-### Getting Started
+<a id="select-create-a-configuration-file-for-the-grub2-bootloader"></a>
+### Getting Started { #select-create-a-configuration-file-for-the-grub2-bootloader }
 
 To get started with NHN Cloud Organization, follow these steps:
 
@@ -85,7 +89,8 @@ To get started with NHN Cloud Organization, follow these steps:
 5. Create and apply policies to manage accounts and resources.
 6. Monitor costs and resource usage through the console.
 
-### Related Services
+<a id="change-the-kernel-boot-order"></a>
+### Related Services { #change-the-kernel-boot-order }
 
 - NHN Cloud Identity and Access Management (IAM): Service to manage user identities and access permissions
 - NHN Cloud Billing: Service to view and manage billing information
