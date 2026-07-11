@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=45e098944fc5 -->
 
 <a id="compute-instance-troubleshooting-guide"></a>
-
 ## Compute > Instance > 問題解決ガイド { #compute-instance-troubleshooting-guide }
 
 NHN Cloud を使用する際に発生する可能性のあるさまざまな問題を解決する方法について説明します。(本文修正テスト: このセンテンスは翻訳再実行時に反映される必要があります。)
