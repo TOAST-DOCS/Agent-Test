@@ -13,6 +13,8 @@
 #  10. scripts/create-translate-test-pr.sh 실행 (ko 변형 → translate-test PR 생성)
 #  11. ko 변경 PR 생성 확인
 #  12. ko 변경 PR 대상으로 dashboard /api/translate 호출 (권장 preset)
+#  13. translate 잡이 생성하는 번역 PR(base=ko PR head 브랜치) 감지 대기
+#  14. claude CLI(fable)로 번역 PR 검증 (heading·id·표 행 수) → 결과를 PR 댓글로 등록
 #
 # 상단 두 변수(DASHBOARD_BASE_URL, DASHBOARD_API_TOKEN)를 채우고 실행.
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
@@ -62,19 +64,19 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 # ── 1) alpha 로 switch ───────────────────────────────────────────────
-echo "[1/12] git checkout $BASE_BRANCH"
+echo "[1/14] git checkout $BASE_BRANCH"
 git fetch origin "$BASE_BRANCH"
 git checkout "$BASE_BRANCH"
 git pull --ff-only origin "$BASE_BRANCH"
 
 # ── 2) restore-alpha-origin (내부에서 commit+push) ────────────────────
 echo
-echo "[2/12] scripts/restore-alpha-origin.sh"
+echo "[2/14] scripts/restore-alpha-origin.sh"
 bash "$REPO_ROOT/scripts/restore-alpha-origin.sh"
 
 # ── 3) dashboard /api/fix-heading-syntax (heading 문법 정정) ──────────
 echo
-echo "[3/12] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
+echo "[3/14] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
 
 # 트리거 직전 open PR 목록을 baseline 으로 저장 (step 4 의 신규 PR 감지용)
 tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
@@ -105,7 +107,7 @@ fi
 
 # ── 4) fix-heading-syntax PR 감지 대기 ────────────────────────────────
 echo
-echo "[4/12] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
+echo "[4/14] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
 deadline=$(( $(date +%s) + 1800 ))
 fix_pr_url=""
@@ -135,7 +137,7 @@ echo "  merged & local $BASE_BRANCH updated"
 
 # ── 5) restore-aligned-public-api + commit+push ──────────────────────
 echo
-echo "[5/12] scripts/restore-aligned-public-api.sh"
+echo "[5/14] scripts/restore-aligned-public-api.sh"
 bash "$REPO_ROOT/scripts/restore-aligned-public-api.sh"
 
 if git diff --quiet && git diff --cached --quiet; then
@@ -148,7 +150,7 @@ fi
 
 # ── 6) dashboard /api/align 트리거 (권장 preset) ─────────────────────
 echo
-echo "[6/12] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
+echo "[6/14] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
 
 # 권장 preset flags: --aligned-marker --demote-extras --translate-headings --reconcile-unmatched
 align_body=$(cat <<JSON
@@ -179,7 +181,7 @@ fi
 
 # ── 7) align PR 감지 (base=alpha 로 새로 open 된 PR) ─────────────────
 echo
-echo "[7/12] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
+echo "[7/14] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
 # 트리거 직전 시점 open PR 목록을 baseline 으로 저장
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
@@ -205,7 +207,7 @@ fi
 
 # ── 8) claude CLI(fable)로 align PR heading·anchor-id 정렬 검사 ───────
 echo
-echo "[8/12] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
+echo "[8/14] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
 
 head_ref="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$head_ref"
@@ -233,21 +235,21 @@ fi
 
 # ── 9) 검증 통과 → align PR 을 alpha 로 merge ─────────────────────────
 echo
-echo "[9/12] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
+echo "[9/14] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
 gh pr merge "$align_pr_url" --repo "$REPO" --merge --delete-branch
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated: $align_pr_url"
 
 # ── 10) create-translate-test-pr (ko 변형 → translate-test PR 생성) ───
 echo
-echo "[10/12] scripts/create-translate-test-pr.sh"
+echo "[10/14] scripts/create-translate-test-pr.sh"
 
 create_out="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh")"
 echo "$create_out"
 
 # ── 11) ko 변경 PR 생성 확인 ──────────────────────────────────────────
 echo
-echo "[11/12] ko 변경 PR 생성 확인"
+echo "[11/14] ko 변경 PR 생성 확인"
 
 # gh pr create 는 마지막 줄에 PR URL 을 출력
 ko_pr_url="$(grep -oE 'https://github.com/[^ ]+/pull/[0-9]+' <<<"$create_out" | tail -n1 || true)"
@@ -265,7 +267,7 @@ echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
 # ── 12) ko 변경 PR 대상 dashboard /api/translate 트리거 (권장 preset) ─
 echo
-echo "[12/12] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default})"
+echo "[12/14] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default})"
 
 # --engine 옵션이 지정된 경우에만 engine 필드 포함
 engine_json=""
@@ -301,6 +303,87 @@ translate_resp="$(curl -sS -X POST \
   "$DASHBOARD_BASE_URL/api/translate")"
 
 echo "$translate_resp" | python3 -m json.tool
+
+# ── 13) 번역 PR 감지 대기 (base = ko PR head 브랜치) ──────────────────
+echo
+echo "[13/14] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60분)"
+
+ko_head_ref="$(gh pr view "$ko_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
+
+deadline=$(( $(date +%s) + 3600 ))
+trans_pr_url=""
+while (( $(date +%s) < deadline )); do
+  trans_pr_url="$(gh pr list --repo "$REPO" --base "$ko_head_ref" --state open \
+    --json url,headRefName \
+    --jq '.[] | select(.headRefName | startswith("translate/")) | .url' \
+    | sort -u | head -n1 || true)"
+  if [[ -n "$trans_pr_url" ]]; then
+    echo "  detected translation PR: $trans_pr_url"
+    break
+  fi
+  sleep 60
+done
+
+if [[ -z "$trans_pr_url" ]]; then
+  echo "  timeout: 60분 내 번역 PR 을 감지하지 못했습니다." >&2
+  exit 2
+fi
+
+# ── 14) claude CLI(fable)로 번역 PR 검증 → 결과를 PR 댓글로 등록 ───────
+echo
+echo "[14/14] claude CLI (fable model) 번역 PR 검증 (PR=$trans_pr_url)"
+
+trans_head_ref="$(gh pr view "$trans_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
+git fetch origin "$trans_head_ref"
+trans_wt="$tmpdir/trans-check"
+git worktree add "$trans_wt" "origin/$trans_head_ref" >/dev/null
+
+trans_check_prompt='ko/, en/, ja/ 세 폴더에 공통으로 존재하는 .md 문서 각각에 대해,
+fenced code block(```)을 제외하고 다음 세 가지가 세 언어에서 완전히 일치하는지 검사해줘.
+(1) heading level 순서
+(2) anchor id 순서 (<a id="..."></a> 형식과 { #id } 형식 모두)
+(3) 표(table)가 있으면 표 개수와 각 표의 데이터 행(row) 개수
+파일별 결과를 OK/FAIL 표로 출력하고 (표 개수·행 수 포함), FAIL 인 파일은 어긋난 위치와 내용을 설명해줘.
+마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
+
+trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
+  --model fable \
+  --allowedTools "Bash,Read,Grep,Glob")"
+
+echo "$trans_check_out"
+
+git worktree remove "$trans_wt" --force
+
+# 검증 결과를 번역 PR 댓글로 등록
+if grep -q '^ALIGNMENT: OK' <<<"$trans_check_out"; then
+  verdict_line="✅ 번역 PR 자동 검증 통과 (heading·anchor-id·표 행 수 일치)"
+else
+  verdict_line="❌ 번역 PR 자동 검증 실패 — 아래 상세 결과를 확인하세요"
+fi
+
+cat > "$tmpdir/trans_comment.md" <<EOF
+## 번역 PR 자동 검증 결과 (claude CLI, fable)
+
+$verdict_line
+
+- 검증 브랜치: \`$trans_head_ref\`
+- 검증 항목: ko/en/ja heading level 순서 · anchor id 순서 · 표 개수/행 수
+
+<details>
+<summary>상세 결과</summary>
+
+$trans_check_out
+
+</details>
+EOF
+
+gh pr comment "$trans_pr_url" --repo "$REPO" --body-file "$tmpdir/trans_comment.md"
+echo "  검증 결과 댓글 등록 완료: $trans_pr_url"
+
+if ! grep -q '^ALIGNMENT: OK' <<<"$trans_check_out"; then
+  echo "  번역 PR 검증 실패 — PR 은 open 으로 남깁니다: $trans_pr_url" >&2
+  exit 3
+fi
 
 echo
 echo "완료."
