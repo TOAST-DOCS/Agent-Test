@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=af6d5efd1d39 -->
+<!-- pre-align:aligned sig=377aa4075908 -->
 
 <a id="compute-instance-feature-matrix"></a>
 ## Compute > Instance > 機能マトリックス { #compute-instance-feature-matrix }
