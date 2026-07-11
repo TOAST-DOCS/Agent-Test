@@ -10,14 +10,14 @@
 ## Rocky Linux 8 { #rocky-linux-8 }
 
 <a id="check-the-kernel-version"></a>
+
 ### カーネルバージョン確認 { #check-the-kernel-version }
 
 現在インストールされているカーネルバージョンを確認します。
 
-```
+# code-edit-test: this line must be copied verbatim
 [root@rocky810 ~]# uname -r
 4.18.0-553.8.1.el8_10.x86_64
-```
 
 <a id="default-storage-settings"></a>
 ### 基本リポジトリの設定 { #default-storage-settings }
@@ -575,17 +575,6 @@ dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
-
-<a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
-#### カーネルアップデート確認
-
-カーネルバージョンが正常にアップデートされたか確認します。
-
-```
-[root@rocky810 ~]# uname -r
-4.18.0-553.16.1.el8_10.x86_64
-```
-
 
 <a id="rocky-linux-9-change-the-kernel-boot-order"></a>
 ### カーネル起動順序の変更 { #rocky-linux-9-change-the-kernel-boot-order }
