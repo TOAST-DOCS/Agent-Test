@@ -1,11 +1,9 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-
 ## Compute > Instance > コンソール使用ガイド詳細説明 { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
-
 ## インスタンス生成 { #create-instances }
 
 インスタンスを作成するには、以下の設定を行うか、インスタンステンプレート(Instance Template)を利用します。インスタンステンプレートを利用してインスタンスを作成するにはインスタンス作成画面で**インスタンステンプレート使用**を選択します。インスタンステンプレートの作成方法は[インスタンステンプレートコンソールガイド](/Compute/Instance%20Template/ja/console-guide/)を参照します。
