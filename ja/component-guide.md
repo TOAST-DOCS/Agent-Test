@@ -1,9 +1,19 @@
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
+
 ## Compute > Instance > インストールコンポーネントガイド { #compute-instance-installation-component-guide }
 
+このセクションは既存のセクションに追加されたテストセクションです。既存の見出しはそのまま維持される必要があります。
+
+<a id="test-added-subsection"></a>
+
+### テスト用下位セクション { #test-added-subsection }
+
+この下位セクションは、翻訳パイプラインテストのために追加されました。新規 h3 が翻訳され、3言語で同じアンカー ID が付与されることを確認します。
+
 <a id="nat-instance"></a>
+
 ## NAT Instance { #nat-instance }
 NATインスタンスは、プライベートネットワークインスタンスから特定IPアドレス帯域にインターネットアクセスできるようにするインスタンスです。
 韓国(パンギョ)、韓国(ピョンチョン)リージョンでのみ提供する機能です。
