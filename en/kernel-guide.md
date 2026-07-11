@@ -614,3 +614,7 @@ Reboot the OS for the boot order change to take effect.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+## Test Added Section { #test-added-section }
+
+This section was newly added to test the translation pipeline. We verify that new sections are translated and assigned the same anchor ID across ko/en/ja.
