@@ -3,10 +3,12 @@
 # End-to-end 재현 스크립트 (Agent-Test alpha):
 #   1. alpha 브랜치로 switch
 #   2. scripts/restore-alpha-origin.sh 실행 (내부에서 commit+push)
-#   3. scripts/restore-aligned-public-api.sh 실행 후 commit+push
-#   4. dashboard /api/align 호출 (권장 preset, base=alpha)
-#   5. Jenkins align 잡이 새로 만든 PR 을 gh 로 감지
-#   6. dashboard /api/translate 호출 (권장 preset)
+#   3. dashboard /api/fix-heading-syntax 호출 (heading 문법 정정, base=alpha)
+#   4. fix-heading-syntax 잡이 생성하는 PR 감지 → merge → alpha 최신화
+#   5. scripts/restore-aligned-public-api.sh 실행 후 commit+push
+#   6. dashboard /api/align 호출 (= fix_headings job, 권장 preset, base=alpha)
+#   7. Jenkins align 잡이 새로 만든 PR 을 gh 로 감지
+#   8. dashboard /api/translate 호출 (권장 preset)
 #
 # 상단 두 변수(DASHBOARD_BASE_URL, DASHBOARD_API_TOKEN)를 채우고 실행.
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
@@ -33,19 +35,80 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 # ── 1) alpha 로 switch ───────────────────────────────────────────────
-echo "[1/6] git checkout $BASE_BRANCH"
+echo "[1/7] git checkout $BASE_BRANCH"
 git fetch origin "$BASE_BRANCH"
 git checkout "$BASE_BRANCH"
 git pull --ff-only origin "$BASE_BRANCH"
 
 # ── 2) restore-alpha-origin (내부에서 commit+push) ────────────────────
 echo
-echo "[2/6] scripts/restore-alpha-origin.sh"
+echo "[2/7] scripts/restore-alpha-origin.sh"
 bash "$REPO_ROOT/scripts/restore-alpha-origin.sh"
 
-# ── 3) restore-aligned-public-api + commit+push ──────────────────────
+# ── 3) dashboard /api/fix-heading-syntax (heading 문법 정정) ──────────
 echo
-echo "[3/6] scripts/restore-aligned-public-api.sh"
+echo "[3/8] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
+
+# 트리거 직전 open PR 목록을 baseline 으로 저장 (step 4 의 신규 PR 감지용)
+tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
+gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
+  --jq '.[].url' | sort -u > "$tmpdir/fix_before"
+
+fix_body=$(cat <<JSON
+{
+  "target": "$TARGET_URL",
+  "base_ref": "$BASE_BRANCH"
+}
+JSON
+)
+
+fix_resp="$(curl -sS -X POST \
+  -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$fix_body" \
+  "$DASHBOARD_BASE_URL/api/fix-heading-syntax")"
+
+echo "$fix_resp" | python3 -m json.tool
+
+fix_build_url=$(printf '%s' "$fix_resp" \
+  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("build_url") or "")')
+if [[ -n "$fix_build_url" ]]; then
+  echo "  fix-heading-syntax build: $fix_build_url"
+fi
+
+# ── 4) fix-heading-syntax PR 감지 대기 ────────────────────────────────
+echo
+echo "[4/8] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
+
+deadline=$(( $(date +%s) + 1800 ))
+fix_pr_url=""
+while (( $(date +%s) < deadline )); do
+  gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open \
+    --json url,headRefName \
+    --jq '.[] | select(.headRefName | startswith("pre-align/fix-heading-syntax-")) | .url' \
+    | sort -u > "$tmpdir/fix_now"
+  fix_pr_url="$(comm -13 "$tmpdir/fix_before" "$tmpdir/fix_now" | head -n1 || true)"
+  if [[ -n "$fix_pr_url" ]]; then
+    echo "  detected fix-heading-syntax PR: $fix_pr_url"
+    break
+  fi
+  sleep 30
+done
+
+if [[ -z "$fix_pr_url" ]]; then
+  echo "  timeout: 30분 내 fix-heading-syntax PR 을 감지하지 못했습니다." >&2
+  exit 2
+fi
+
+# 감지한 PR 을 merge 하고 로컬 alpha 를 최신화
+echo "  merging: $fix_pr_url"
+gh pr merge "$fix_pr_url" --repo "$REPO" --merge --delete-branch
+git pull --ff-only origin "$BASE_BRANCH"
+echo "  merged & local $BASE_BRANCH updated"
+
+# ── 5) restore-aligned-public-api + commit+push ──────────────────────
+echo
+echo "[5/8] scripts/restore-aligned-public-api.sh"
 bash "$REPO_ROOT/scripts/restore-aligned-public-api.sh"
 
 if git diff --quiet && git diff --cached --quiet; then
@@ -56,9 +119,9 @@ else
   git push origin "$BASE_BRANCH"
 fi
 
-# ── 4) dashboard /api/align 트리거 (권장 preset) ─────────────────────
+# ── 6) dashboard /api/align 트리거 (권장 preset) ─────────────────────
 echo
-echo "[4/6] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
+echo "[6/8] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
 
 # 권장 preset flags: --aligned-marker --demote-extras --translate-headings --reconcile-unmatched
 align_body=$(cat <<JSON
@@ -87,12 +150,11 @@ if [[ -n "$align_build_url" ]]; then
   echo "  align build: $align_build_url"
 fi
 
-# ── 5) align PR 감지 (base=alpha 로 새로 open 된 PR) ─────────────────
+# ── 7) align PR 감지 (base=alpha 로 새로 open 된 PR) ─────────────────
 echo
-echo "[5/6] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
+echo "[7/8] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
 # 트리거 직전 시점 open PR 목록을 baseline 으로 저장
-tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
   --jq '.[].url' | sort -u > "$tmpdir/before"
 
@@ -114,9 +176,9 @@ if [[ -z "$align_pr_url" ]]; then
   exit 2
 fi
 
-# ── 6) dashboard /api/translate 트리거 (권장 preset) ─────────────────
+# ── 8) dashboard /api/translate 트리거 (권장 preset) ─────────────────
 echo
-echo "[6/6] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$align_pr_url)"
+echo "[8/8] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$align_pr_url)"
 
 # 권장 preset flags:
 #   --diff-granularity block --glossary-mode service --max-load-ratio 2
