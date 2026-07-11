@@ -8,10 +8,11 @@
 #   5. scripts/restore-aligned-public-api.sh 실행 후 commit+push
 #   6. dashboard /api/align 호출 (= fix_headings job, 권장 preset, base=alpha)
 #   7. Jenkins align 잡이 새로 만든 PR 을 gh 로 감지
-#   8. dashboard /api/translate 호출 (권장 preset)
-#   9. translate 잡 완료 대기 (PR head 에 새 커밋이 붙고 안정화될 때까지)
-#  10. claude CLI(fable model)로 PR 브랜치의 ko/en/ja heading·anchor-id 정렬 검사
-#  11. 검증 통과 시 align PR 을 alpha 로 merge (실패 시 PR 은 open 으로 남김)
+#   8. claude CLI(fable model)로 align PR 브랜치의 ko/en/ja heading·anchor-id 정렬 검사
+#   9. 검증 통과 시 align PR 을 alpha 로 merge (실패 시 PR 은 open 으로 남김)
+#  10. scripts/create-translate-test-pr.sh 실행 (ko 변형 → translate-test PR 생성)
+#  11. ko 변경 PR 생성 확인
+#  12. ko 변경 PR 대상으로 dashboard /api/translate 호출 (권장 preset)
 #
 # 상단 두 변수(DASHBOARD_BASE_URL, DASHBOARD_API_TOKEN)를 채우고 실행.
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
@@ -38,19 +39,19 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 # ── 1) alpha 로 switch ───────────────────────────────────────────────
-echo "[1/11] git checkout $BASE_BRANCH"
+echo "[1/12] git checkout $BASE_BRANCH"
 git fetch origin "$BASE_BRANCH"
 git checkout "$BASE_BRANCH"
 git pull --ff-only origin "$BASE_BRANCH"
 
 # ── 2) restore-alpha-origin (내부에서 commit+push) ────────────────────
 echo
-echo "[2/11] scripts/restore-alpha-origin.sh"
+echo "[2/12] scripts/restore-alpha-origin.sh"
 bash "$REPO_ROOT/scripts/restore-alpha-origin.sh"
 
 # ── 3) dashboard /api/fix-heading-syntax (heading 문법 정정) ──────────
 echo
-echo "[3/11] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
+echo "[3/12] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
 
 # 트리거 직전 open PR 목록을 baseline 으로 저장 (step 4 의 신규 PR 감지용)
 tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
@@ -81,7 +82,7 @@ fi
 
 # ── 4) fix-heading-syntax PR 감지 대기 ────────────────────────────────
 echo
-echo "[4/11] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
+echo "[4/12] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
 deadline=$(( $(date +%s) + 1800 ))
 fix_pr_url=""
@@ -111,7 +112,7 @@ echo "  merged & local $BASE_BRANCH updated"
 
 # ── 5) restore-aligned-public-api + commit+push ──────────────────────
 echo
-echo "[5/11] scripts/restore-aligned-public-api.sh"
+echo "[5/12] scripts/restore-aligned-public-api.sh"
 bash "$REPO_ROOT/scripts/restore-aligned-public-api.sh"
 
 if git diff --quiet && git diff --cached --quiet; then
@@ -124,7 +125,7 @@ fi
 
 # ── 6) dashboard /api/align 트리거 (권장 preset) ─────────────────────
 echo
-echo "[6/11] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
+echo "[6/12] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
 
 # 권장 preset flags: --aligned-marker --demote-extras --translate-headings --reconcile-unmatched
 align_body=$(cat <<JSON
@@ -155,7 +156,7 @@ fi
 
 # ── 7) align PR 감지 (base=alpha 로 새로 open 된 PR) ─────────────────
 echo
-echo "[7/11] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
+echo "[7/12] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
 # 트리거 직전 시점 open PR 목록을 baseline 으로 저장
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
@@ -179,92 +180,9 @@ if [[ -z "$align_pr_url" ]]; then
   exit 2
 fi
 
-# ── 8) dashboard /api/translate 트리거 (권장 preset) ─────────────────
+# ── 8) claude CLI(fable)로 align PR heading·anchor-id 정렬 검사 ───────
 echo
-echo "[8/11] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$align_pr_url)"
-
-# 트리거 직전 PR head SHA 저장 (step 9 에서 새 커밋 감지용)
-pr_head_before="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefOid --jq .headRefOid)"
-
-# 권장 preset flags:
-#   --diff-granularity block --glossary-mode service --max-load-ratio 2
-#   --workers 1 --table-rows --skip-full-table --skip-anchor-only
-#   --assign-anchors --align-headings
-translate_body=$(cat <<JSON
-{
-  "pr_url": "$align_pr_url",
-  "diff_granularity": "block",
-  "glossary_mode": "service",
-  "max_load_ratio": "2",
-  "workers": "1",
-  "table_rows": true,
-  "skip_full_table": true,
-  "skip_anchor_only": true,
-  "assign_anchors": true,
-  "align_headings": true
-}
-JSON
-)
-
-translate_resp="$(curl -sS -X POST \
-  -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "$translate_body" \
-  "$DASHBOARD_BASE_URL/api/translate")"
-
-echo "$translate_resp" | python3 -m json.tool
-
-translate_job_id=$(printf '%s' "$translate_resp" \
-  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("job_id") or "")')
-
-# ── 9) translate 잡 완료 대기 ─────────────────────────────────────────
-echo
-echo "[9/11] translate 잡 완료 대기 (PR head 새 커밋 or 잡 종료, 최대 60분)"
-
-deadline=$(( $(date +%s) + 3600 ))
-prev_sha=""
-translated_sha=""
-while (( $(date +%s) < deadline )); do
-  sha="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefOid --jq .headRefOid 2>/dev/null || true)"
-  # (a) 새 커밋이 붙었고, 직전 폴링과 같은 SHA(=60초간 안정)면 번역 완료로 판단
-  if [[ -n "$sha" && "$sha" != "$pr_head_before" && "$sha" == "$prev_sha" ]]; then
-    translated_sha="$sha"
-    echo "  translate commits landed & stable: $translated_sha"
-    break
-  fi
-  # (b) 잡이 이미 종료됐으면 커밋 유무와 무관하게 진행/중단 판단
-  #     (번역할 diff 가 없으면 success 인데 커밋이 없을 수 있음 — Status: empty)
-  if [[ -n "$translate_job_id" ]]; then
-    job_status="$(curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-      "$DASHBOARD_BASE_URL/api/jobs/$translate_job_id" 2>/dev/null \
-      | python3 -c 'import json,sys; print((json.load(sys.stdin).get("status") or ""))' \
-      2>/dev/null || true)"
-    case "$job_status" in
-      success|partial)
-        translated_sha="$sha"
-        if [[ "$sha" == "$pr_head_before" ]]; then
-          echo "  translate job $job_status — 커밋 없음(번역할 diff 없음). head=$sha"
-        else
-          echo "  translate job $job_status. head=$sha"
-        fi
-        break ;;
-      failure|cancelled)
-        echo "  translate job $job_status — 중단합니다." >&2
-        exit 2 ;;
-    esac
-  fi
-  prev_sha="$sha"
-  sleep 60
-done
-
-if [[ -z "$translated_sha" ]]; then
-  echo "  timeout: 60분 내 translate 완료를 감지하지 못했습니다." >&2
-  exit 2
-fi
-
-# ── 10) claude CLI(fable)로 heading·anchor-id 정렬 검사 ───────────────
-echo
-echo "[10/11] claude CLI (fable model) heading/anchor-id 정렬 검사"
+echo "[8/12] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
 
 head_ref="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$head_ref"
@@ -290,12 +208,69 @@ if ! grep -q '^ALIGNMENT: OK' <<<"$check_out"; then
   exit 3
 fi
 
-# ── 11) 검증 통과 → align PR 을 alpha 로 merge ────────────────────────
+# ── 9) 검증 통과 → align PR 을 alpha 로 merge ─────────────────────────
 echo
-echo "[11/11] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
+echo "[9/12] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
 gh pr merge "$align_pr_url" --repo "$REPO" --merge --delete-branch
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated: $align_pr_url"
+
+# ── 10) create-translate-test-pr (ko 변형 → translate-test PR 생성) ───
+echo
+echo "[10/12] scripts/create-translate-test-pr.sh"
+
+create_out="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh")"
+echo "$create_out"
+
+# ── 11) ko 변경 PR 생성 확인 ──────────────────────────────────────────
+echo
+echo "[11/12] ko 변경 PR 생성 확인"
+
+# gh pr create 는 마지막 줄에 PR URL 을 출력
+ko_pr_url="$(grep -oE 'https://github.com/[^ ]+/pull/[0-9]+' <<<"$create_out" | tail -n1 || true)"
+if [[ -z "$ko_pr_url" ]]; then
+  echo "  error: create-translate-test-pr.sh 출력에서 PR URL 을 찾지 못했습니다." >&2
+  exit 2
+fi
+
+ko_pr_state="$(gh pr view "$ko_pr_url" --repo "$REPO" --json state --jq .state)"
+if [[ "$ko_pr_state" != "OPEN" ]]; then
+  echo "  error: ko 변경 PR 이 open 상태가 아닙니다 (state=$ko_pr_state): $ko_pr_url" >&2
+  exit 2
+fi
+echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
+
+# ── 12) ko 변경 PR 대상 dashboard /api/translate 트리거 (권장 preset) ─
+echo
+echo "[12/12] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url)"
+
+# 권장 preset flags:
+#   --diff-granularity block --glossary-mode service --max-load-ratio 2
+#   --workers 1 --table-rows --skip-full-table --skip-anchor-only
+#   --assign-anchors --align-headings
+translate_body=$(cat <<JSON
+{
+  "pr_url": "$ko_pr_url",
+  "diff_granularity": "block",
+  "glossary_mode": "service",
+  "max_load_ratio": "2",
+  "workers": "1",
+  "table_rows": true,
+  "skip_full_table": true,
+  "skip_anchor_only": true,
+  "assign_anchors": true,
+  "align_headings": true
+}
+JSON
+)
+
+translate_resp="$(curl -sS -X POST \
+  -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$translate_body" \
+  "$DASHBOARD_BASE_URL/api/translate")"
+
+echo "$translate_resp" | python3 -m json.tool
 
 echo
 echo "완료."
