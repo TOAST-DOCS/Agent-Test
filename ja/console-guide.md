@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-
 ## Compute > Instance > コンソール使用ガイド詳細説明 { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
@@ -9,12 +8,12 @@
 
 ---
 
+<a id="create-instances"></a>
 ## インスタンス生成 { #create-instances }
 
 ![インスタンス生成ガイド表紙](../static/images/image-1704.jpg)
 
 <a id="os-settings"></a>
-
 ### OS設定 { #os-settings }
 
 インスタンス作成時に使用されるルートブロックストレージの作成方式を決定します。
