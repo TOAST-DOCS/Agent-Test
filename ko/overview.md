@@ -1,7 +1,10 @@
-<!-- pre-align:aligned sig=74b0e7f9672e -->
+<!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 개요 { #compute-instance-overview }
+
+이 문단은 기존 섹션에 추가된 테스트 문단입니다. 기존 heading 은 그대로 유지되어야 합니다.
+
 
 인스턴스는 가상의 CPU, 메모리, 루트 블록 스토리지로 구성된 가상 서버입니다. 이 서버에 고객의 서비스나 애플리케이션을 설치하고 NHN Cloud가 제공하는 다양한 서비스를 조합하여 사용합니다. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
 
@@ -241,9 +244,3 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
-
-
-<a id="test-added-section"></a>
-## 테스트용 추가 섹션 { #test-added-section }
-
-이 섹션은 번역 파이프라인 테스트를 위해 새로 추가한 섹션입니다. 신규 섹션이 번역되고 ko/en/ja 에 동일한 anchor id 가 부여되는지 확인합니다.

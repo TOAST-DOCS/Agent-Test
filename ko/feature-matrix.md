@@ -1,9 +1,14 @@
-<!-- pre-align:aligned sig=af6d5efd1d39 -->
+<!-- pre-align:aligned sig=377aa4075908 -->
 
 <a id="compute-instance-feature-matrix"></a>
 ## Compute > Instance > 기능 매트릭스 { #compute-instance-feature-matrix }
 
 인스턴스 서비스가 제공하는 기능을 리전과 요금제 관점에서 정리한 문서입니다. 번역 파이프라인 테스트를 위해 표, 목록, 코드 블록, 중첩 heading 을 모두 포함합니다.
+
+<a id="test-added-subsection"></a>
+### 테스트용 하위 섹션 { #test-added-subsection }
+
+이 하위 섹션은 번역 파이프라인 테스트를 위해 추가됐습니다. 신규 h3 가 번역되고 세 언어에 동일한 anchor id 가 부여되는지 확인합니다.
 
 <a id="feature-overview"></a>
 ## 기능 개요 { #feature-overview }
@@ -26,6 +31,7 @@
 | INST-TPL | 인스턴스 템플릿 | 제공 | 제공 | 미제공 |
 | INST-SCHED | 인스턴스 스케줄링 | 제공 | 미제공 | 미제공 |
 | INST-MON | 인스턴스 모니터링 | 제공 | 제공 | 제공 |
+| TEST-ROW | (신규 행 테스트) | (신규 행 테스트) | (신규 행 테스트) | (신규 행 테스트) |
 
 <a id="feature-by-plan"></a>
 ### 요금제별 제공 한도 및 상세 { #feature-by-plan }

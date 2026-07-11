@@ -1,9 +1,14 @@
-<!-- pre-align:aligned sig=af6d5efd1d39 -->
+<!-- pre-align:aligned sig=377aa4075908 -->
 
 <a id="compute-instance-feature-matrix"></a>
 ## Compute > Instance > Feature Matrix { #compute-instance-feature-matrix }
 
 This document summarizes the features provided by the Instance service by region and pricing plan. It includes tables, lists, code blocks, and nested headings for translation pipeline testing.
+
+<a id="test-added-subsection"></a>
+### Test Subsection for Translation { #test-added-subsection }
+
+This subsection was added to test the translation pipeline. Verify that the new h3 is translated and the same anchor id is assigned across three languages.
 
 <a id="feature-overview"></a>
 ## Feature Overview { #feature-overview }
@@ -26,6 +31,7 @@ Available features vary by region. See the table below.
 | INST-TPL | Instance Templates | Available | Available | Not available |
 | INST-SCHED | Instance Scheduling | Available | Not available | Not available |
 | INST-MON | Instance Monitoring | Available | Available | Available |
+| TEST-ROW | (New row test) | (New row test) | (New row test) | (New row test) |
 
 <a id="feature-by-plan"></a>
 ### Limits by Pricing Plan { #feature-by-plan }

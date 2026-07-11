@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=36b960a8096b -->
+<!-- pre-align:aligned sig=821792ea8adc -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > 커널 버전업 가이드 { #compute-instance-kernel-version-upgrade-guide }
@@ -621,3 +621,9 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+
+<a id="test-added-section"></a>
+## 테스트용 추가 섹션 { #test-added-section }
+
+이 섹션은 번역 파이프라인 테스트를 위해 새로 추가한 섹션입니다. 신규 섹션이 번역되고 ko/en/ja 에 동일한 anchor id 가 부여되는지 확인합니다.

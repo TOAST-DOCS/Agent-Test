@@ -1,9 +1,14 @@
-<!-- pre-align:aligned sig=af6d5efd1d39 -->
+<!-- pre-align:aligned sig=377aa4075908 -->
 
 <a id="compute-instance-feature-matrix"></a>
 ## Compute > Instance > 機能マトリックス { #compute-instance-feature-matrix }
 
 Instance サービスが提供する機能をリージョンと料金プランの観点から整理したドキュメントです。翻訳パイプラインテストのため、表、リスト、コードブロック、ネストされた見出しをすべて含みます。
+
+<a id="test-added-subsection"></a>
+### テスト用下位セクション { #test-added-subsection }
+
+この下位セクションは翻訳パイプラインテストのために追加されました。新規 h3 が翻訳され、3 言語で同じ anchor id が付与されることを確認します。
 
 <a id="feature-overview"></a>
 ## 機能概要 { #feature-overview }
@@ -26,6 +31,7 @@ Instance サービスが提供する機能をリージョンと料金プラン�
 | INST-TPL | インスタンステンプレート | 提供 | 提供 | 未提供 |
 | INST-SCHED | インスタンススケジューリング | 提供 | 未提供 | 未提供 |
 | INST-MON | インスタンスモニタリング | 提供 | 提供 | 提供 |
+| TEST-ROW | (新規行テスト) | (新規行テスト) | (新規行テスト) | (新規行テスト) |
 
 <a id="feature-by-plan"></a>
 ### 料金プラン別提供上限 { #feature-by-plan }
