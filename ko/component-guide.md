@@ -3,6 +3,9 @@
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > 설치 구성 요소 가이드 { #compute-instance-installation-component-guide }
 
+이 문단은 기존 섹션에 추가된 테스트 문단입니다. 기존 heading 은 그대로 유지되어야 합니다.
+
+
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
 
