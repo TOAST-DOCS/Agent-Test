@@ -9,10 +9,11 @@
 #
 # 파일별로 서로 다른 변경 유형을 적용해 한 PR 에 다양한 케이스를 담습니다:
 #   overview.md          : 신규 섹션 추가(③) + 기존 섹션 본문 수정(heading 유지)
-#   console-guide.md     : 기존 heading '제목'만 변경(④, id 유지)
-#   component-guide.md   : 기존 섹션에 문단 추가(heading 유지, 본문 증가)
-#   public-api.md        : 표(table) 행 1개 내용 수정
-#   kernel-guide.md      : 섹션 1개 삭제(en 엔 남아있는 extra 유발)
+#   console-guide.md     : 기존 heading '제목'만 변경(④, id 유지) + 문단 삭제
+#   component-guide.md   : 기존 섹션에 문단 추가 + 신규 하위 섹션(###) 삽입
+#   public-api.md        : 표 행 1개 내용 수정 + 표 행 추가
+#   kernel-guide.md      : 섹션 1개 삭제(en 엔 남아있는 extra 유발) + 코드펜스 내용 수정
+#   feature-matrix.md    : 표 헤더 셀 수정 + 두 번째 표 행 삭제 + h3 제목 변경 + 목록 항목 수정
 #   troubleshooting-guide.md : 변경 없음(대조군 — en/ja 무변경이어야 정상)
 #
 # 각 변형은 `<a id>` 와 `{ #id }` 를 보존/부여해, "기존 id 는 그대로, 신규만
@@ -35,12 +36,13 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BASE_BRANCH="alpha"
 
-BRANCH=""; TITLE=""; BODY=""; DRY_RUN=0
+BRANCH=""; TITLE=""; BODY=""; DRY_RUN=0; PLAN_NAME="round1"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --branch) BRANCH="$2"; shift 2 ;;
     --title)  TITLE="$2";  shift 2 ;;
     --body)   BODY="$2";   shift 2 ;;
+    --plan)   PLAN_NAME="$2"; shift 2 ;;   # round1(기본) | round2
     --dry-run|-n) DRY_RUN=1; shift ;;
     -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
@@ -174,6 +176,189 @@ elif mutation == "remove_section":
     del lines[s:e]
     out = join(lines)
 
+elif mutation == "remove_paragraph":
+    # 첫 heading 뒤 첫 산문 문단(연속 비공백 블록)을 통째로 삭제 — 문단 감소
+    hi = first_heading_idx(lines)
+    j = (hi + 1) if hi is not None else 0
+    start = None
+    while j < len(lines):
+        s = lines[j].strip()
+        if s and not HEAD.match(lines[j].rstrip("\r")) and not is_anchor(lines[j]) \
+           and not is_table_row(lines[j]) and not s.startswith(("{", "<!--", "```", "|", "-", "*", ">", "!")):
+            start = j
+            break
+        j += 1
+    if start is None:
+        raise SystemExit(f"remove_paragraph: no prose paragraph found in {path}")
+    end = start
+    while end < len(lines) and lines[end].strip():
+        end += 1
+    # 뒤따르는 빈 줄 하나까지 제거해 이중 공백 방지
+    if end < len(lines) and lines[end].strip() == "":
+        end += 1
+    del lines[start:end]
+    out = join(lines)
+
+elif mutation == "add_subsection":
+    # 두 번째 h2 직전에 신규 h3(anchor + { #id } + 본문) 삽입 — 첫 섹션의 하위로 들어감
+    h2s = [i for i, l in enumerate(lines) if re.match(r'^##[ \t]', l.rstrip("\r"))]
+    if len(h2s) < 2:
+        raise SystemExit(f"add_subsection: needs >=2 h2 in {path}")
+    at = h2s[1]
+    # heading 바로 위 anchor 라인이 있으면 그 앞에 삽입
+    if at - 1 >= 0 and is_anchor(lines[at-1]):
+        at -= 1
+    ins = [
+        '<a id="test-added-subsection"></a>',
+        "### 테스트용 하위 섹션 { #test-added-subsection }",
+        "",
+        "이 하위 섹션은 번역 파이프라인 테스트를 위해 추가됐습니다. "
+        "신규 h3 가 번역되고 세 언어에 동일한 anchor id 가 부여되는지 확인합니다.",
+        "",
+    ]
+    lines[at:at] = ins
+    out = join(lines)
+
+elif mutation == "add_table_row":
+    # 첫 표의 마지막 데이터 행 뒤에 새 행 추가 — 컬럼 수는 헤더에 맞춤
+    changed = False
+    i = 0
+    while i < len(lines) - 2:
+        if is_table_row(lines[i]) and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1]):
+            ncol = lines[i].strip().strip('|').count('|') + 1
+            k = i + 2
+            while k < len(lines) and is_table_row(lines[k]):
+                k += 1
+            cells = ["TEST-ROW"] + ["(신규 행 테스트)"] * (ncol - 1)
+            lines[k:k] = ["| " + " | ".join(cells) + " |"]
+            changed = True
+            break
+        i += 1
+    if not changed:
+        raise SystemExit(f"add_table_row: no table found in {path}")
+    out = join(lines)
+
+elif mutation == "edit_code_block":
+    # 첫 fenced code block 안에 줄 추가 — 코드는 번역 없이 그대로 복사되어야 함
+    changed = False
+    for i, l in enumerate(lines):
+        if l.strip().startswith("```"):
+            lines[i+1:i+1] = ["# code-edit-test: this line must be copied verbatim"]
+            changed = True
+            break
+    if not changed:
+        raise SystemExit(f"edit_code_block: no fenced code block in {path}")
+    out = join(lines)
+
+elif mutation == "edit_table_header":
+    # 첫 표 헤더의 마지막 셀 텍스트 수정 (separator/데이터 행은 유지)
+    changed = False
+    i = 0
+    while i < len(lines) - 1:
+        if is_table_row(lines[i]) and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1]):
+            cells = [c.strip() for c in lines[i].strip().strip('|').split('|')]
+            cells[-1] = cells[-1] + " (수정)"
+            lines[i] = "| " + " | ".join(cells) + " |"
+            changed = True
+            break
+        i += 1
+    if not changed:
+        raise SystemExit(f"edit_table_header: no table found in {path}")
+    out = join(lines)
+
+elif mutation == "remove_table_row":
+    # 두 번째 표의 마지막 데이터 행 삭제 (표가 1개면 첫 표에서)
+    tables = []
+    i = 0
+    while i < len(lines) - 2:
+        if is_table_row(lines[i]) and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1]):
+            k = i + 2
+            while k < len(lines) and is_table_row(lines[k]):
+                k += 1
+            if k > i + 2:
+                tables.append((i, k))     # (header idx, end-exclusive)
+            i = k
+        else:
+            i += 1
+    if not tables:
+        raise SystemExit(f"remove_table_row: no table with data rows in {path}")
+    _, end = tables[1] if len(tables) > 1 else tables[0]
+    del lines[end-1]
+    out = join(lines)
+
+elif mutation == "rename_h3":
+    # 첫 h3 제목 텍스트만 변경, `{ #id }` 와 <a id> 는 그대로
+    changed = False
+    for i, l in enumerate(lines):
+        m = re.match(r'^(###)[ \t]+(.*)$', l.rstrip("\r"))
+        if m and not l.rstrip("\r").startswith("####"):
+            body = m.group(2)
+            attr = ""
+            am = re.search(r'(\s*\{\s*#[^}]+\})\s*$', body)
+            if am:
+                attr = am.group(1); body = body[:am.start()].rstrip()
+            lines[i] = f"### {body} 및 상세{attr}"
+            changed = True
+            break
+    if not changed:
+        raise SystemExit(f"rename_h3: no h3 found in {path}")
+    out = join(lines)
+
+elif mutation == "edit_list_item":
+    # 첫 bullet list 의 첫 항목 텍스트 수정
+    changed = False
+    for i, l in enumerate(lines):
+        if re.match(r'^\s*-\s+\S', l.rstrip("\r")):
+            lines[i] = lines[i].rstrip("\r") + " (목록 수정 테스트)"
+            changed = True
+            break
+    if not changed:
+        raise SystemExit(f"edit_list_item: no bullet list in {path}")
+    out = join(lines)
+
+elif mutation == "remove_added_table_row":
+    # 1라운드 add_table_row 가 추가한 "TEST-ROW" 행을 삭제 — 추가된 행의 회수 케이스
+    changed = False
+    for i, l in enumerate(lines):
+        if is_table_row(l) and "TEST-ROW" in l:
+            del lines[i]
+            changed = True
+            break
+    if not changed:
+        raise SystemExit(f"remove_added_table_row: 'TEST-ROW' row not found in {path} "
+                         f"(1라운드 PR 이 alpha 에 머지되어 있어야 합니다)")
+    out = join(lines)
+
+elif mutation == "remove_added_section":
+    # 1라운드가 추가한 `test-added-section` 섹션(anchor+heading+본문)을 삭제 —
+    # "이전 증분 번역이 만든 섹션을 다음 라운드가 지우는" 2세대 drift 케이스
+    aid = "test-added-section"
+    anchor_i = None
+    for i, l in enumerate(lines):
+        if f'id="{aid}"' in l:                      # <a id="..."> 라인
+            anchor_i = i
+            break
+    if anchor_i is None:                            # attr 만 있는 경우 heading 으로 탐색
+        for i, l in enumerate(lines):
+            if HEAD.match(l.rstrip("\r")) and f'#{aid}' in l:
+                anchor_i = i
+                break
+    if anchor_i is None:
+        raise SystemExit(f"remove_added_section: '{aid}' not found in {path} "
+                         f"(1라운드 PR 이 alpha 에 머지되어 있어야 합니다)")
+    start = anchor_i
+    if start > 0 and lines[start-1].strip() == "":  # 앞 빈 줄도 함께 제거
+        start -= 1
+    end = anchor_i + 1
+    if end < len(lines) and HEAD.match(lines[end].rstrip("\r")):
+        end += 1                                    # 자기 heading 스킵
+    while end < len(lines):                         # 본문: 다음 heading/anchor 직전까지
+        if HEAD.match(lines[end].rstrip("\r")) or is_anchor(lines[end]):
+            break
+        end += 1
+    del lines[start:end]
+    out = join(lines)
+
 elif mutation == "noop":
     out = text
 else:
@@ -190,15 +375,50 @@ PY
 }
 
 # 파일 → 변형 매핑 (다양한 케이스)
-declare -a PLAN=(
+#
+# round1: 정렬 직후의 alpha 에 적용하는 1차 변형 (기본)
+# round2: round1 의 ko 변경·번역 PR 이 alpha 에 머지된 "2세대" 상태에 적용.
+#         1라운드 산출물을 다시 수정/삭제해 증분 번역의 반복 실행을 검증:
+#           overview        : 1R 이 추가한 섹션 삭제 + 새 문단 추가
+#           console-guide   : heading 제목 재변경 (같은 id 로 2번째 rename)
+#           component-guide : 1R 이 추가한 문단(첫 문단) 본문 수정
+#           public-api      : 1R 이 추가한 표 행(마지막 행) 삭제
+#           kernel-guide    : 1R 이 섹션을 삭제한 문서에 신규 섹션 추가
+#           feature-matrix  : 표 행 추가 + 신규 하위 섹션 삽입
+#           troubleshooting : 1R 대조군이던 파일 본문 수정 (신규 활성화)
+declare -a PLAN_ROUND1=(
   "add_section|ko/overview.md"
   "edit_body|ko/overview.md"
   "rename_heading|ko/console-guide.md"
+  "remove_paragraph|ko/console-guide.md"
   "add_paragraph|ko/component-guide.md"
+  "add_subsection|ko/component-guide.md"
   "change_table_row|ko/public-api.md"
+  "add_table_row|ko/public-api.md"
   "remove_section|ko/kernel-guide.md"
+  "edit_code_block|ko/kernel-guide.md"
+  "edit_table_header|ko/feature-matrix.md"
+  "remove_table_row|ko/feature-matrix.md"
+  "rename_h3|ko/feature-matrix.md"
+  "edit_list_item|ko/feature-matrix.md"
   "noop|ko/troubleshooting-guide.md"
 )
+declare -a PLAN_ROUND2=(
+  "remove_added_section|ko/overview.md"
+  "add_paragraph|ko/overview.md"
+  "rename_heading|ko/console-guide.md"
+  "edit_body|ko/component-guide.md"
+  "remove_added_table_row|ko/public-api.md"
+  "add_section|ko/kernel-guide.md"
+  "add_table_row|ko/feature-matrix.md"
+  "add_subsection|ko/feature-matrix.md"
+  "edit_body|ko/troubleshooting-guide.md"
+)
+case "$PLAN_NAME" in
+  round1) PLAN=("${PLAN_ROUND1[@]}") ;;
+  round2) PLAN=("${PLAN_ROUND2[@]}") ;;
+  *) echo "unknown --plan: $PLAN_NAME (round1|round2)" >&2; exit 1 ;;
+esac
 
 if [[ -z "$BRANCH" ]]; then
   BRANCH="translate-test/$(date +%Y%m%d-%H%M%S)"
@@ -246,6 +466,10 @@ if git diff --cached --quiet; then
   echo "변경사항 없음. 종료."; exit 0
 fi
 
+if [[ "$PLAN_NAME" == "round2" ]]; then
+  : "${TITLE:=Translate test round2: mutations on already-translated alpha}"
+  : "${BODY:=1라운드 ko 변경·번역 PR 이 alpha 에 머지된 상태에서 2차 ko 변경을 적용한 테스트 PR. 이전 라운드 산출물(추가 섹션·추가 표 행)의 수정/삭제와 신규 변경이 증분 번역으로 반영되는지 검증합니다.}"
+fi
 : "${TITLE:=Translate test: varied ko/ mutations (heading-preserve/anchor-id)}"
 : "${BODY:=ko/ 문서를 신규 섹션 추가·본문 수정·heading 제목 변경·문단 추가·표 행 수정·섹션 삭제 등 다양한 형태로 변경한 번역 테스트 PR. en/ja 는 alpha 그대로(=drift) 두어 anchor-id 브리지의 기존 heading 보존을 검증합니다.}"
 
