@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-
 ## Compute > Instance > Console User Guide - Detailed Information { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
@@ -9,12 +8,12 @@
 
 ---
 
+<a id="create-instances"></a>
 ## Create Instances { #create-instances }
 
 ![Create Instances Guide Cover](../static/images/image-1704.jpg)
 
 <a id="os-settings"></a>
-
 ### OS Settings { #os-settings }
 
 Determine how the root block storage is created that will be used when an instance is created.
