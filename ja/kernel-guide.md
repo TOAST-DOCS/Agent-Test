@@ -10,7 +10,6 @@
 ## Rocky Linux 8 { #rocky-linux-8 }
 
 <a id="check-the-kernel-version"></a>
-
 ### カーネルバージョン確認 { #check-the-kernel-version }
 
 現在インストールされているカーネルバージョンを確認します。
@@ -199,7 +198,6 @@ API を使用してオブジェクトをアップロードおよびダウンロ�
 ```
 
 <a id="default-storage-settings"></a>
-
 ### 基本リポジトリの設定 { #default-storage-settings }
 
 システムアーキテクチャとRocky Linuxのバージョンに合った基本リポジトリを変更します。
