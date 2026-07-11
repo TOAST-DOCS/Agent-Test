@@ -10,16 +10,196 @@
 ## Rocky Linux 8 { #rocky-linux-8 }
 
 <a id="check-the-kernel-version"></a>
+
 ### カーネルバージョン確認 { #check-the-kernel-version }
 
 現在インストールされているカーネルバージョンを確認します。
 
+## オブジェクトストレージ API ガイド
+
+### API 概要
+
+NHN Cloud オブジェクトストレージは、 **RESTful API** を通じて、インターネット上の任意の場所からデータを保存および取得できるサービスです。
+
+オブジェクトストレージ API を使用して、次の操作を実行できます。
+
+- コンテナの作成および削除
+- オブジェクトのアップロード、ダウンロード、削除
+- オブジェクトのメタデータの設定および取得
+- アクセス制御の設定
+
+### 認証
+
+オブジェクトストレージ API を使用するには、認証トークンが必要です。
+
+#### トークン取得
+
+```bash
+curl -X POST https://api.nhncloudservice.com/v1/auth/tokens \
+  -H "Content-Type: application/json" \
+  -d '{
+    "auth": {
+      "username": "your-username",
+      "password": "your-password"
+    }
+  }'
 ```
+
+レスポンスの `token` フィールドからトークンを取得します。
+
+```json
+{
+  "token": {
+    "id": "gAAAAABk...",
+    "expires": "2024-12-31T23:59:59.000000Z"
+  }
+}
+```
+
+注記
+
+取得したトークンの有効期限は 24 時間です。定期的に更新することをお勧めします。
+
+### コンテナ操作
+
+#### コンテナの作成
+
+コンテナを作成するには、 `PUT` リクエストを使用します。
+
+```bash
+curl -X PUT https://api.nhncloudservice.com/v1/AUTH_test/my-container \
+  -H "X-Auth-Token: gAAAAABk..."
+```
+
+警告
+
+コンテナを作成するには、認証済みトークンが必要です。トークンなしでリクエストを送信しないでください。
+
+#### コンテナの削除
+
+コンテナを削除するには、 `DELETE` リクエストを使用します。
+
+```bash
+curl -X DELETE https://api.nhncloudservice.com/v1/AUTH_test/my-container \
+  -H "X-Auth-Token: gAAAAABk..."
+```
+
+注意
+
+コンテナを削除する前に、内部のすべてのオブジェクトを削除する必要があります。
+
+### オブジェクト操作
+
+#### オブジェクトのアップロード
+
+オブジェクトをアップロードするには、 `PUT` リクエストを使用します。
+
+```bash
+curl -X PUT https://api.nhncloudservice.com/v1/AUTH_test/my-container/my-object \
+  -H "X-Auth-Token: gAAAAABk..." \
+  -d @file.txt
+```
+
+#### オブジェクトのダウンロード
+
+オブジェクトをダウンロードするには、 `GET` リクエストを使用します。
+
+```bash
+curl -X GET https://api.nhncloudservice.com/v1/AUTH_test/my-container/my-object \
+  -H "X-Auth-Token: gAAAAABk..."
+```
+
+#### オブジェクトの削除
+
+オブジェクトを削除するには、 `DELETE` リクエストを使用します。
+
+```bash
+curl -X DELETE https://api.nhncloudservice.com/v1/AUTH_test/my-container/my-object \
+  -H "X-Auth-Token: gAAAAABk..."
+```
+
+ヒント
+
+一括削除が必要な場合は、マルチデリート API を使用することをお勧めします。
+
+### メタデータの管理
+
+#### メタデータの設定
+
+オブジェクトにメタデータを設定するには、カスタムヘッダーを使用します。
+
+```bash
+curl -X POST https://api.nhncloudservice.com/v1/AUTH_test/my-container/my-object \
+  -H "X-Auth-Token: gAAAAABk..." \
+  -H "X-Object-Meta-Author: John Doe" \
+  -H "X-Object-Meta-Created-Date: 2024-01-01"
+```
+
+#### メタデータの取得
+
+オブジェクトのメタデータを取得するには、 `HEAD` リクエストを使用します。
+
+```bash
+curl -X HEAD https://api.nhncloudservice.com/v1/AUTH_test/my-container/my-object \
+  -H "X-Auth-Token: gAAAAABk..."
+```
+
+### アクセス制御
+
+#### パブリックアクセスの設定
+
+コンテナをパブリックアクセス可能にするには、 `X-Container-Read` ヘッダーを使用します。
+
+```bash
+curl -X POST https://api.nhncloudservice.com/v1/AUTH_test/my-container \
+  -H "X-Auth-Token: gAAAAABk..." \
+  -H "X-Container-Read: .r:*"
+```
+
+#### ACL の設定
+
+オブジェクトに対して詳細なアクセス制御を設定します。
+
+```bash
+curl -X POST https://api.nhncloudservice.com/v1/AUTH_test/my-container/my-object \
+  -H "X-Auth-Token: gAAAAABk..." \
+  -H "X-Object-Acl: user-id-1, user-id-2"
+```
+
+### エラーコード
+
+| HTTPステータス | エラーコード | 説明 |
+|---|---|---|
+| 400 | `BadRequest` | リクエストが無効です。 |
+| 401 | `Unauthorized` | 認証に失敗しました。 |
+| 403 | `Forbidden` | アクセス権がありません。 |
+| 404 | `NotFound` | リソースが見つかりません。 |
+| 409 | `Conflict` | 競合が発生しました。 |
+| 500 | `InternalError` | サーバーエラーが発生しました。 |
+
+### よくある質問
+
+#### オブジェクトストレージとは何か？
+
+オブジェクトストレージは、インターネット上の任意の場所からアクセスできるスケーラブルなクラウドストレージです。
+
+#### API の使用料金は発生しますか？
+
+API を使用してオブジェクトをアップロードおよびダウンロードする場合、追加料金が発生します。詳細については、料金ページを参照してください。
+
+#### トークンの有効期限を延長できますか？
+
+トークンは有効期限が切れる前に再取得することで更新できます。新しいトークンを定期的に取得することをお勧めします。
+
+```
+
+# code-edit-test: this line must be copied verbatim
 [root@rocky810 ~]# uname -r
 4.18.0-553.8.1.el8_10.x86_64
 ```
 
 <a id="default-storage-settings"></a>
+
 ### 基本リポジトリの設定 { #default-storage-settings }
 
 システムアーキテクチャとRocky Linuxのバージョンに合った基本リポジトリを変更します。
@@ -575,17 +755,6 @@ dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
-
-<a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
-#### カーネルアップデート確認
-
-カーネルバージョンが正常にアップデートされたか確認します。
-
-```
-[root@rocky810 ~]# uname -r
-4.18.0-553.16.1.el8_10.x86_64
-```
-
 
 <a id="rocky-linux-9-change-the-kernel-boot-order"></a>
 ### カーネル起動順序の変更 { #rocky-linux-9-change-the-kernel-boot-order }
