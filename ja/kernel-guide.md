@@ -10,7 +10,6 @@
 ## Rocky Linux 8 { #rocky-linux-8 }
 
 <a id="check-the-kernel-version"></a>
-
 ### カーネルバージョン確認 { #check-the-kernel-version }
 
 現在インストールされているカーネルバージョンを確認します。
