@@ -10,16 +10,98 @@
 ## Rocky Linux 8 { #rocky-linux-8 }
 
 <a id="check-the-kernel-version"></a>
+
 ### Check the Kernel Version { #check-the-kernel-version }
 
 Check the currently installed kernel version.
 
-```
+## NHN Cloud Organization
+
+NHN Cloud Organization provides a service to manage multiple accounts with an integrated structure. When you have multiple accounts, you can organize and manage them through a single interface.
+
+### Service Overview
+
+NHN Cloud Organization is a service that helps you manage multiple NHN Cloud accounts with an integrated structure. Use NHN Cloud Organization to:
+- Organize multiple accounts in a hierarchical structure
+- Manage accounts and resources in a centralized manner
+- Apply policies consistently across multiple accounts
+- Track resource usage and costs across the organization
+
+### Target Users
+
+NHN Cloud Organization is suitable for:
+- Enterprise customers managing multiple NHN Cloud accounts
+- Service providers managing customer accounts
+- Development teams managing separate accounts for development and production environments
+
+### Key Features
+
+**Hierarchical Account Management**
+- Organize accounts in a tree structure with a root and multiple levels of organizational units
+- Move accounts between organizational units easily
+- View the entire account hierarchy in one place
+
+**Policy Management**
+- Create and apply policies to organizational units
+- Policies are inherited by child organizational units and accounts
+- Manage permissions and resource usage policies centrally
+
+**Cost Management**
+- View costs across all accounts in the organization
+- Analyze spending patterns by account and service
+- Set up cost alerts
+
+**Account Invitation and Management**
+- Invite existing NHN Cloud accounts to join the organization
+- Remove accounts from the organization
+- Delegate account management responsibilities
+
+### Service Structure
+
+NHN Cloud Organization consists of the following components:
+
+**Organization**
+- Root account (organization owner account)
+- Organizational units
+- Member accounts
+
+**Policies**
+- Service control policies (SCPs)
+- Resource management policies
+
+**Cost Management**
+- Cost analysis
+- Cost alerts
+- Budget management
+
+### Getting Started
+
+To get started with NHN Cloud Organization, follow these steps:
+
+1. Sign in to NHN Cloud console with your root account.
+2. Open the NHN Cloud Organization service.
+3. Create an organizational unit structure according to your requirements.
+4. Invite accounts to the organization.
+5. Create and apply policies to manage accounts and resources.
+6. Monitor costs and resource usage through the console.
+
+### Related Services
+
+- NHN Cloud Identity and Access Management (IAM): Service to manage user identities and access permissions
+- NHN Cloud Billing: Service to view and manage billing information
+- NHN Cloud CloudTrail: Service to audit and track API calls and account activities
+
+### Pricing
+
+NHN Cloud Organization is provided free of charge. You pay only for the services you use in each member account.
+
+# code-edit-test: this line must be copied verbatim
 [root@rocky810 ~]# uname -r
 4.18.0-553.8.1.el8_10.x86_64
 ```
 
 <a id="default-storage-settings"></a>
+
 ### Default Storage Settings { #default-storage-settings }
 
 Change the default repository for your system architecture and Rocky Linux version.
@@ -568,16 +650,6 @@ dnf, yum will automatically update the GRUB2 configuration file.
 
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
-```
-
-<a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
-#### Check for kernel updates
-
-Verify that the kernel version has been updated properly.
-
-```
-[root@rocky810 ~]# uname -r
-4.18.0-553.16.1.el8_10.x86_64
 ```
 
 <a id="rocky-linux-9-change-the-kernel-boot-order"></a>
