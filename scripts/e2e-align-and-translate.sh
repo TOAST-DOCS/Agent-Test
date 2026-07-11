@@ -246,7 +246,7 @@ echo "[12/12] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_u
 
 # 권장 preset flags:
 #   --diff-granularity block --glossary-mode service --max-load-ratio 2
-#   --workers 1 --table-rows --skip-full-table --skip-anchor-only
+#   --workers 2 --table-rows --skip-full-table --skip-anchor-only
 #   --assign-anchors --align-headings
 translate_body=$(cat <<JSON
 {
@@ -254,7 +254,7 @@ translate_body=$(cat <<JSON
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "2",
-  "workers": "1",
+  "workers": "2",
   "table_rows": true,
   "skip_full_table": true,
   "skip_anchor_only": true,
