@@ -1,9 +1,10 @@
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
+
 ## Compute > Instance > 概要 { #compute-instance-overview }
 
-インスタンスは仮想のCPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールしてNHN Cloudが提供する様々なサービスを組み合わせて使用します。
+インスタンスは、仮想 CPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールし、NHN Cloud が提供するさまざまなサービスを組み合わせて使用します。(本文修正テスト：この文は翻訳の再実行時に反映されるべきです。)
 
 <a id="components"></a>
 ## インスタンス構成要素 { #components }
@@ -245,3 +246,7 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
+
+## テスト用追加セクション { #test-added-section }
+
+このセクションは、翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同一のアンカー id が付与されるかを確認します。
