@@ -615,6 +615,7 @@ Reboot the OS for the boot order change to take effect.
 [root@rocky810 ~]# sync; reboot
 ```
 
+<a id="test-added-section"></a>
 ## Additional section for testing { #test-added-section }
 
 This section was newly added to test the translation pipeline. We verify that the new section is translated and receives the same anchor ID across ko, en, and ja.
