@@ -6,6 +6,13 @@
 This document summarizes the features provided by the Instance service by region and pricing plan. It includes tables, lists, code blocks, and nested headings for translation pipeline testing.
 
 <a id="feature-overview"></a>
+
+### Test subsection { #test-added-subsection }
+
+This subsection was added to test the translation pipeline. We verify that the new h3 is translated and the same anchor ID is assigned across all three languages.
+
+<a id="feature-overview"></a>
+
 ## Feature Overview { #feature-overview }
 
 The main features of Instance are as follows.
@@ -16,6 +23,7 @@ The main features of Instance are as follows.
 - **Monitoring**: Checks CPU, memory, and disk usage on the dashboard.
 
 <a id="feature-by-region"></a>
+
 ## Feature Availability by Region { #feature-by-region }
 
 Available features vary by region. See the table below.
@@ -26,6 +34,7 @@ Available features vary by region. See the table below.
 | INST-TPL | Instance Templates | Available | Available | Not available |
 | INST-SCHED | Instance Scheduling | Available | Not available | Not available |
 | INST-MON | Instance Monitoring | Available | Available | Available |
+| TEST-ROW | (New row test) | (New row test) | (New row test) | (New row test) |
 
 <a id="feature-by-plan"></a>
 ### Limits by Pricing Plan { #feature-by-plan }
