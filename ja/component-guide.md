@@ -1,9 +1,10 @@
 <!-- pre-align:aligned sig=0b640fde76d8 -->
 
 <a id="compute-instance-installation-component-guide"></a>
+
 ## Compute > Instance > インストールコンポーネントガイド { #compute-instance-installation-component-guide }
 
-このパラグラフは既存のセクションに追加されたテストパラグラフです。既存のheadingはそのまま維持する必要があります。
+この段落は既存のセクションに追加されたテスト段落です。既存の見出しはそのままにしておく必要があります。（本文修正テスト：この文は翻訳を再実行するときに反映される必要があります。）
 
 <a id="test-added-subsection"></a>
 ### テスト用サブセクション { #test-added-subsection }
