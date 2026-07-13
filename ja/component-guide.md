@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=0b640fde76d8 -->
 
 <a id="compute-instance-installation-component-guide"></a>
-
 ## Compute > Instance > インストールコンポーネントガイド { #compute-instance-installation-component-guide }
 
 この段落は既存のセクションに追加されたテスト段落です。既存の見出しはそのまま維持される必要があります。(本文修正テスト：この文は翻訳の再実行時に反映される必要があります。)
