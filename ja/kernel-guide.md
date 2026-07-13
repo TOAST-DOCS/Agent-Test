@@ -620,3 +620,7 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+## テスト用追加セクション { #test-added-section }
+
+このセクションは、翻訳パイプラインのテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じ anchor id が付与されることを確認します。
