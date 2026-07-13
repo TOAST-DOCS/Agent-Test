@@ -176,6 +176,7 @@ Source: `server.py:3020-3065`
 |---|---|---|
 | POST | `/api/translate` | Jenkins 번역 job 트리거 (PR URL 기반) |
 | POST | `/api/retranslate` | Compare-headings ↻ 재번역 (파일 하나 → head branch 로 커밋) |
+| POST | `/api/translate/file` | 특정 파일 전체 재번역 — `/api/retranslate` 를 외부 호출 편의를 위해 감싼 API (repo+PR/branch+path 만 받고 file_url/commit_to_branch 는 서버가 조합) |
 
 `/api/translate` body — `pr_url` 필수 (`https://github.com/owner/repo/pull/N`).
 translate preset 필드 (모두 optional):
@@ -201,7 +202,39 @@ translate preset 필드 (모두 optional):
 job_id, task_id`). 트리거 자체는 성공, 실제 실행은 Jenkins 큐 로 넘어감.
 
 `/api/retranslate` body: `{file_url, commit_to_branch, ko_path?, pr_url?,
-pipeline_branch?}`. `file_url` 은 GitHub blob URL 이어야 함.
+pipeline_branch?, preserve_existing?}`. `file_url` 은 GitHub blob URL 이어야 함.
+
+`/api/translate/file` — `/api/retranslate` 와 동일한 Jenkins 파이프라인
+(`FILE_URL` + `COMMIT_TO_BRANCH` + `DIFF_MODE=full`) 을 태우지만, viewer 가
+하던 GitHub PR head 조회·`file_url` 조합을 서버가 대신 해 준다. 외부
+스크립트/CI 가 Bearer 토큰만으로 호출하기 쉬운 shape.
+
+Body:
+
+```
+{
+  "repo": "TOAST-DOCS/EasyCache",   // owner/repo, required
+  "pr_number": 146,                  // pr_number 또는 branch 중 하나 필수
+  "branch": "master",                //   ↳ pr_number 없이 특정 브랜치에 직접 커밋할 때
+  "path": "console-guide.md",        // {source}/ 기준 상대경로, required
+  "source": "ko",                    // default "ko"
+  "path_prefix": "",                 // optional (docs subrepo prefix)
+  "preserve_existing": false,        // optional — 기존 en/ja 를 컨텍스트로 넣어 minimal-diff rewrite 유도
+  "pipeline_branch": ""              // optional — Jenkins multibranch child branch
+}
+```
+
+서버가 하는 일:
+1. `pr_number` 주면 GitHub `/repos/{repo}/pulls/{n}` 조회 → `head.ref` 로
+   `commit_to_branch` 세팅. `branch` 주면 그대로 사용.
+2. `file_url = https://github.com/{repo}/blob/{commit_to_branch}/{path_prefix}{source}/{path}` 조합.
+3. `trigger_jenkins_retranslate(file_url, commit_to_branch, DIFF_MODE=full, ...)`
+   → Jenkins 큐 등록.
+4. `_record_task(job_type="retranslate", ...)` — Jobs 탭에 노출.
+
+응답: `/api/retranslate` 와 동일 (`queued, queue_url, job_url, build_url,
+job_id`). 오류: 400 (repo/path 형식, pr_number/branch 둘 다 없음, path
+traversal), 401 (미인증), 502 (PR 조회 실패, Jenkins 도달 실패).
 
 ### Align
 
