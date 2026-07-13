@@ -2,14 +2,16 @@
 #
 # End-to-end 재현 스크립트 (Agent-Test alpha) — public-api.md 전체 재번역 변형:
 #   scripts/e2e-align-and-translate.sh 의 step 5(scripts/restore-aligned-public-api.sh
-#   호출)를, dashboard /api/translate/file 을 통한 public-api.md 전체 재번역
+#   호출)를, dashboard /api/retranslate 를 통한 public-api.md 전체 재번역
 #   (DIFF_MODE=full) 으로 교체한 변형. 나머지 흐름은 동일.
+#   (dashboard-api.md 의 /api/translate/file 은 편의 래퍼이지만 현재 서버에
+#    아직 배포되지 않아 404 를 반환하므로, 원본 /api/retranslate 를 직접 호출)
 #
 #   1. alpha 브랜치로 switch
 #   2. scripts/restore-alpha-origin.sh 실행 (내부에서 commit+push)
 #   3. dashboard /api/fix-heading-syntax 호출 (heading 문법 정정, base=alpha)
 #   4. fix-heading-syntax 잡이 생성하는 PR 감지 → merge → alpha 최신화
-#   5. dashboard /api/translate/file 호출 (ko/public-api.md 전체 재번역,
+#   5. dashboard /api/retranslate 호출 (ko/public-api.md 전체 재번역,
 #      commit_to_branch=alpha) → alpha 에 새 커밋이 반영될 때까지 대기 후
 #      로컬 최신화
 #   6. dashboard /api/align 호출 (= fix_headings job, 권장 preset, base=alpha)
@@ -143,21 +145,21 @@ gh pr merge "$fix_pr_url" --repo "$REPO" --merge --delete-branch
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated"
 
-# ── 5) /api/translate/file 로 public-api.md 전체 재번역 → alpha 커밋 ──
+# ── 5) /api/retranslate 로 public-api.md 전체 재번역 → alpha 커밋 ─────
 echo
-echo "[5/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, commit_to_branch=$BASE_BRANCH)"
+echo "[5/14] POST $DASHBOARD_BASE_URL/api/retranslate ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, commit_to_branch=$BASE_BRANCH)"
 
 # 재번역 완료 감지는 alpha HEAD sha 변화로 판단 → 트리거 직전 baseline 저장
 git fetch --quiet origin "$BASE_BRANCH"
 retx_before_sha="$(git rev-parse "origin/$BASE_BRANCH")"
 echo "  $BASE_BRANCH baseline sha: $retx_before_sha"
 
+retx_file_url="https://github.com/${REPO}/blob/${BASE_BRANCH}/${RETRANSLATE_SOURCE}/${RETRANSLATE_PATH}"
+
 retx_body=$(cat <<JSON
 {
-  "repo": "$REPO",
-  "branch": "$BASE_BRANCH",
-  "source": "$RETRANSLATE_SOURCE",
-  "path": "$RETRANSLATE_PATH"
+  "file_url": "$retx_file_url",
+  "commit_to_branch": "$BASE_BRANCH"
 }
 JSON
 )
@@ -166,7 +168,7 @@ retx_resp="$(curl -sS -X POST \
   -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d "$retx_body" \
-  "$DASHBOARD_BASE_URL/api/translate/file")"
+  "$DASHBOARD_BASE_URL/api/retranslate")"
 
 echo "$retx_resp" | python3 -m json.tool
 
