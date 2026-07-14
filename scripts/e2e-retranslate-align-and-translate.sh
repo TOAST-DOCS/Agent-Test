@@ -2,18 +2,16 @@
 #
 # End-to-end 재현 스크립트 (Agent-Test alpha) — public-api.md 전체 재번역 변형:
 #   scripts/e2e-align-and-translate.sh 의 step 5(scripts/restore-aligned-public-api.sh
-#   호출)를, dashboard /api/retranslate 를 통한 public-api.md 전체 재번역
+#   호출)를, dashboard /api/translate/file 을 통한 public-api.md 전체 재번역
 #   (DIFF_MODE=full) 으로 교체한 변형. 나머지 흐름은 동일.
-#   (dashboard-api.md 의 /api/translate/file 은 편의 래퍼이지만 현재 서버에
-#    아직 배포되지 않아 404 를 반환하므로, 원본 /api/retranslate 를 직접 호출)
 #
 #   1. alpha 브랜치로 switch
 #   2. scripts/restore-alpha-origin.sh 실행 (내부에서 commit+push)
 #   3. dashboard /api/fix-heading-syntax 호출 (heading 문법 정정, base=alpha)
 #   4. fix-heading-syntax 잡이 생성하는 PR 감지 → merge → alpha 최신화
-#   5. dashboard /api/retranslate 호출 (ko/public-api.md 전체 재번역,
-#      commit_to_branch=alpha) → alpha 에 새 커밋이 반영될 때까지 대기 후
-#      로컬 최신화
+#   5. dashboard /api/translate/file 호출 (ko/public-api.md 전체 재번역,
+#      commit_to_branch=alpha) → 잡(job_id) 상태가 success 가 될 때까지 대기
+#      (en·ja 커밋이 각각 push 되므로 sha 폴링 대신 job status 폴링)
 #   6. dashboard /api/align 호출 (= fix_headings job, 권장 preset, base=alpha)
 #   7. Jenkins align 잡이 새로 만든 PR 을 gh 로 감지
 #   8. claude CLI(fable model)로 align PR 브랜치의 ko/en/ja heading·anchor-id 정렬 검사
@@ -145,21 +143,16 @@ gh pr merge "$fix_pr_url" --repo "$REPO" --merge --delete-branch
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated"
 
-# ── 5) /api/retranslate 로 public-api.md 전체 재번역 → alpha 커밋 ─────
+# ── 5) /api/translate/file 로 public-api.md 전체 재번역 → alpha 커밋 ──
 echo
-echo "[5/14] POST $DASHBOARD_BASE_URL/api/retranslate ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, commit_to_branch=$BASE_BRANCH)"
-
-# 재번역 완료 감지는 alpha HEAD sha 변화로 판단 → 트리거 직전 baseline 저장
-git fetch --quiet origin "$BASE_BRANCH"
-retx_before_sha="$(git rev-parse "origin/$BASE_BRANCH")"
-echo "  $BASE_BRANCH baseline sha: $retx_before_sha"
-
-retx_file_url="https://github.com/${REPO}/blob/${BASE_BRANCH}/${RETRANSLATE_SOURCE}/${RETRANSLATE_PATH}"
+echo "[5/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, branch=$BASE_BRANCH)"
 
 retx_body=$(cat <<JSON
 {
-  "file_url": "$retx_file_url",
-  "commit_to_branch": "$BASE_BRANCH"
+  "repo": "$REPO",
+  "branch": "$BASE_BRANCH",
+  "source": "$RETRANSLATE_SOURCE",
+  "path": "$RETRANSLATE_PATH"
 }
 JSON
 )
@@ -168,35 +161,50 @@ retx_resp="$(curl -sS -X POST \
   -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d "$retx_body" \
-  "$DASHBOARD_BASE_URL/api/retranslate")"
+  "$DASHBOARD_BASE_URL/api/translate/file")"
 
 echo "$retx_resp" | python3 -m json.tool
 
+retx_job_id=$(printf '%s' "$retx_resp" \
+  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("job_id") or "")')
 retx_build_url=$(printf '%s' "$retx_resp" \
   | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("build_url") or "")')
+
+if [[ -z "$retx_job_id" ]]; then
+  echo "  error: /api/translate/file 응답에서 job_id 를 찾지 못했습니다." >&2
+  exit 2
+fi
 if [[ -n "$retx_build_url" ]]; then
   echo "  retranslate build: $retx_build_url"
 fi
 
-# alpha 에 새 커밋이 반영될 때까지 대기 (최대 45분 — 전체 재번역이라 여유롭게)
-echo "  retranslate 완료 대기: origin/$BASE_BRANCH HEAD 변화 (최대 45분)"
-deadline=$(( $(date +%s) + 2700 ))
-retx_after_sha="$retx_before_sha"
+# 잡 상태가 success 가 될 때까지 대기 (전체 재번역이라 최대 90분)
+# 언어별로 각각 커밋되므로 sha 변화만 봐서는 조기 종료됨 → job status 폴링
+echo "  retranslate 완료 대기: job_id=$retx_job_id (최대 90분)"
+deadline=$(( $(date +%s) + 5400 ))
+retx_status=""
 while (( $(date +%s) < deadline )); do
-  git fetch --quiet origin "$BASE_BRANCH"
-  retx_after_sha="$(git rev-parse "origin/$BASE_BRANCH")"
-  if [[ "$retx_after_sha" != "$retx_before_sha" ]]; then
-    echo "  detected new commit on $BASE_BRANCH: $retx_after_sha"
-    break
-  fi
+  retx_status="$(curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+    "$DASHBOARD_BASE_URL/api/jobs/$retx_job_id" \
+    | python3 -c 'import json,sys
+try:
+  d=json.load(sys.stdin)
+  tasks=(d.get("job") or {}).get("tasks") or []
+  print(tasks[0].get("status") if tasks else "")
+except Exception:
+  print("")')"
+  case "$retx_status" in
+    success|failure|cancelled|partial) break ;;
+  esac
   sleep 30
 done
 
-if [[ "$retx_after_sha" == "$retx_before_sha" ]]; then
-  echo "  timeout: 45분 내 $BASE_BRANCH 에 재번역 커밋이 반영되지 않았습니다." >&2
+if [[ "$retx_status" != "success" ]]; then
+  echo "  retranslate 실패 (status=$retx_status, job_id=$retx_job_id)" >&2
   exit 2
 fi
 
+git fetch --quiet origin "$BASE_BRANCH"
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  retranslate 완료 & local $BASE_BRANCH updated"
 
