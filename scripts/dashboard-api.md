@@ -39,8 +39,12 @@ Write 계열 (`/api/translate`, `/api/align`, `/compare/…` 계열 등) 은 로
 ### 표준 응답 필드
 
 * Jenkins 트리거 응답 (translate/align/…): `{queued: bool, queue_url,
-  job_url, build_url?, job_id?, task_id?, error?}`. 요청이 즉시 400/403/502
-  로 튈 수 있음 (target/PR URL 검증 실패, 인증, Jenkins 도달 실패).
+  job_url, build_url?, job_id?, error?}`. `build_url` 은 큐 폴링을 켠
+  트리거만 (`resolve_build_url()` 참고); `job_id` 는 `_record_task` 가
+  Task 를 기록했을 때만 (DB 미설정이면 없음). 요청이 즉시 400/403/502 로
+  튈 수 있음 (target/PR URL 검증 실패, 인증, Jenkins 도달 실패). ※ 예전
+  버전엔 generic `task_id?` 도 나열됐지만 실제로 응답에 실리는 곳은
+  `/api/suffix-compare-run` 하나뿐이라 표준 필드에서 제외.
 * Log & Crash 히스토리 응답: `{configured, data, totalItems, page, size,
   days, repo, ...}`. `configured=false` 면 LnC 미설정 (dev 로컬).
 
@@ -53,7 +57,7 @@ Write 계열 (`/api/translate`, `/api/align`, `/compare/…` 계열 등) 은 로
   "task_id": "…",           # UUID
   "job_id": "…",            # 묶는 Job UUID (batch 실행시 여러 task 공유)
   "job_type": "translate|align|retranslate|ko-review|fill-empty|
-                fix-heading-syntax|sync-suffix",
+                fix-heading-syntax|sync-suffix|suffix-compare",
   "label": "번역: <PR>", "task_label": "<PR|repo|path>",
   "status": "queued|running|success|failure|cancelled|partial",
   "build_url": "…jenkins…/N/",
@@ -87,7 +91,7 @@ Translate preset 의 built-in `recommended` args:
 
 ### Auth
 
-Source: `server.py:1982-2891, 2903-2935`
+Source: `server.py:1892-1939` (current_user, _require_login), `2062-2078` (do_GET auth), `2990-3023` (do_POST auth)
 
 | Method | Path | 목적 | 인증 |
 |---|---|---|---|
@@ -102,7 +106,7 @@ Source: `server.py:1982-2891, 2903-2935`
 
 ### Favorites · Tags · Admin
 
-Source: `server.py:1991-2013, 2938-2994`
+Source: `server.py:2071-2094` (do_GET), `3025-3081` (do_POST)
 
 | Method | Path | 목적 | 인증 |
 |---|---|---|---|
@@ -115,7 +119,7 @@ Source: `server.py:1991-2013, 2938-2994`
 
 ### Jobs
 
-Source: `server.py:2019-2215, 2997-3018`
+Source: `server.py:2099-2295` (do_GET), `3084-3105` (do_POST /api/jobs/create)
 
 | Method | Path | 목적 | 인증 |
 |---|---|---|---|
@@ -134,7 +138,7 @@ DB 미설정이면 `{db_available:false, jobs:[]}` 로 응답.
 
 ### Repos · PRs
 
-Source: `server.py:2060-2345`
+Source: `server.py:2140-2425`
 
 | Method | Path | 목적 | 파라미터 |
 |---|---|---|---|
@@ -151,7 +155,7 @@ Source: `server.py:2060-2345`
 
 ### Compare / Todo / Suffix 상태 (docs viewer 프록시)
 
-Source: `server.py:2346-2400, 3365-3462`
+Source: `server.py:2426-2484` (do_GET), `3551-3655` (do_POST)
 
 PR viewer 는 자기 상태 대신 docs viewer(`_docs_viewer_get`) 에 프록시.
 
@@ -159,18 +163,20 @@ PR viewer 는 자기 상태 대신 docs viewer(`_docs_viewer_get`) 에 프록시
 |---|---|---|---|
 | GET | `/api/compare-latest` | 리포별 최신 Compare 요약 | `/api/compare/latest` |
 | GET | `/api/align-status?fresh=` | 리포 × [alpha,beta,master] Align/Compare 매트릭스 | 자체 계산 (내부에서 docs viewer 조회) |
+| GET | `/api/schedule/status` | Align cache 자동 실행 스케줄(매일 05:00 KST) 상태 · 다음 실행 · 최근 이력 | 자체 (`ALIGN_SCHEDULER.status()`) |
 | GET | `/api/todo-status?fresh=` | 리포 × 브랜치 TODO-stub 매트릭스 | 자체 계산 |
 | GET | `/api/suffix-compare-latest?mode=title\|id` | 리포별 최신 Suffix Compare 요약 | `/api/compare-suffix/latest` |
 | GET | `/api/suffix-compare-all?mode=&repo=&only_drift=` | 전체 Suffix Compare pair export (LLM/CI 용) | `/api/compare-suffix/export` |
+| POST | `/api/schedule/run-now` | Align cache 스케줄러를 즉시 1회 실행 (진행 중이면 no-op) → `ALIGN_SCHEDULER.status()` 반환 | 자체 |
 | POST | `/api/compare-run` body `{repo, langs?, source?, branch?}` | 리포 전체 Compare 실행+캐시 | `/api/compare/summary` |
 | POST | `/api/todo-run` body `{repo, langs?, branch?}` | 리포 전체 TODO-stub 스캔+캐시 | `/api/todo/summary` |
-| POST | `/api/suffix-compare-run` body `{repo, source?, mode?, branch?, job_id?}` | 리포 Suffix Compare 실행 (job_id 지정시 Jobs 탭 task 로 기록) | `/api/compare-suffix/summary` |
+| POST | `/api/suffix-compare-run` body `{repo, source?, mode?, branch?, job_id?}` | 리포 Suffix Compare 실행 (job_id 지정시 Jobs 탭 task 로 기록, 이 경우만 응답에 `task_id` 포함) | `/api/compare-suffix/summary` |
 
 POST 는 모두 로그인 필수.
 
 ### Translate / Retranslate
 
-Source: `server.py:3020-3065`
+Source: `server.py:3107-3239`
 
 | Method | Path | 목적 |
 |---|---|---|
@@ -238,7 +244,7 @@ traversal), 401 (미인증), 502 (PR 조회 실패, Jenkins 도달 실패).
 
 ### Align
 
-Source: `server.py:3066-3200`
+Source: `server.py:3241-3382`
 
 | Method | Path | 목적 |
 |---|---|---|
@@ -277,7 +283,7 @@ Source: `server.py:3066-3200`
 
 ### 기타 Jenkins 트리거
 
-Source: `server.py:3202-3344`
+Source: `server.py:3383-3549`
 
 | Method | Path | 목적 |
 |---|---|---|
@@ -292,7 +298,7 @@ Source: `server.py:3202-3344`
 
 ### Presets
 
-Source: `server.py:2699-2713`
+Source: `server.py:2786-2799`
 
 | Method | Path | 응답 |
 |---|---|---|
@@ -304,7 +310,7 @@ Built-in + env (`TRANSLATE_PREALIGN_PRESETS` / `TRANSLATE_TRANSLATE_PRESETS`)
 
 ### History · Log & Crash
 
-Source: `server.py:2439-2884`
+Source: `server.py:2524-2971`
 
 파라미터는 대부분 공통: `?days=1|7|30, ?page=<n>, ?size=<n>, ?repo=<sub>,
 ?status=completed|failed, ?excludeTest=0|1, ?hideNoPr=0|1`. LnC 미설정
@@ -323,7 +329,7 @@ Source: `server.py:2439-2884`
 
 ### 기타
 
-Source: `server.py:2015-2018, 2401-2438, 2885-2896, 3463-3476`
+Source: `server.py:2095-2098` (jenkins/defaults), `2486-2523` (translate/ko-files), `2972-2985` (rate_limit · etag_stats), `3657-` (POST /api/queue)
 
 | Method | Path | 목적 |
 |---|---|---|
