@@ -145,14 +145,23 @@ echo "  merged & local $BASE_BRANCH updated"
 
 # ── 5) /api/translate/file 로 public-api.md 전체 재번역 → alpha 커밋 ──
 echo
-echo "[5/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, branch=$BASE_BRANCH)"
+echo "[5/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, branch=$BASE_BRANCH, engine=${TRANSLATE_ENGINE:-default})"
+
+# --engine 옵션이 지정된 경우 step 5 재번역에도 동일 엔진 사용
+# (미지정 시 서버 default = claude-code CLI → session limit 시 실패할 수 있음)
+retx_engine_json=""
+if [[ -n "$TRANSLATE_ENGINE" ]]; then
+  retx_engine_json="\"engine\": \"$TRANSLATE_ENGINE\","
+fi
 
 retx_body=$(cat <<JSON
 {
   "repo": "$REPO",
   "branch": "$BASE_BRANCH",
   "source": "$RETRANSLATE_SOURCE",
-  "path": "$RETRANSLATE_PATH"
+  "path": "$RETRANSLATE_PATH",
+  $retx_engine_json
+  "path_prefix": ""
 }
 JSON
 )
