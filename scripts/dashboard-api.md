@@ -208,7 +208,9 @@ translate preset 필드 (모두 optional):
 job_id, task_id`). 트리거 자체는 성공, 실제 실행은 Jenkins 큐 로 넘어감.
 
 `/api/retranslate` body: `{file_url, commit_to_branch, ko_path?, pr_url?,
-pipeline_branch?, preserve_existing?}`. `file_url` 은 GitHub blob URL 이어야 함.
+pipeline_branch?, preserve_existing?, engine?}`. `file_url` 은 GitHub blob
+URL 이어야 함. `engine` 은 `/api/translate/file` 과 동일 (`api` /
+`claude-code` / `default` / omit).
 
 `/api/translate/file` — `/api/retranslate` 와 동일한 Jenkins 파이프라인
 (`FILE_URL` + `COMMIT_TO_BRANCH` + `DIFF_MODE=full`) 을 태우지만, viewer 가
@@ -226,6 +228,12 @@ Body:
   "source": "ko",                    // default "ko"
   "path_prefix": "",                 // optional (docs subrepo prefix)
   "preserve_existing": false,        // optional — 기존 en/ja 를 컨텍스트로 넣어 minimal-diff rewrite 유도
+  "engine": "api|claude-code|default", // optional — 번역 엔진; 기본은 .env 의
+                                       //   TRANSLATE_TRANSLATE_ENGINE. "api" 는
+                                       //   prompt cache · 병렬로 CLI 대비 빠름
+                                       //   (유료), "claude-code" 는 CLI 구독
+                                       //   quota, "default" 또는 omit 은 ENGINE
+                                       //   파라미터를 Jenkins 로 안 넘김 (env 기본값)
   "pipeline_branch": ""              // optional — Jenkins multibranch child branch
 }
 ```
@@ -234,13 +242,14 @@ Body:
 1. `pr_number` 주면 GitHub `/repos/{repo}/pulls/{n}` 조회 → `head.ref` 로
    `commit_to_branch` 세팅. `branch` 주면 그대로 사용.
 2. `file_url = https://github.com/{repo}/blob/{commit_to_branch}/{path_prefix}{source}/{path}` 조합.
-3. `trigger_jenkins_retranslate(file_url, commit_to_branch, DIFF_MODE=full, ...)`
-   → Jenkins 큐 등록.
+3. `trigger_jenkins_retranslate(file_url, commit_to_branch, DIFF_MODE=full,
+   engine=…, ...)` → Jenkins 큐 등록.
 4. `_record_task(job_type="retranslate", ...)` — Jobs 탭에 노출.
 
 응답: `/api/retranslate` 와 동일 (`queued, queue_url, job_url, build_url,
 job_id`). 오류: 400 (repo/path 형식, pr_number/branch 둘 다 없음, path
-traversal), 401 (미인증), 502 (PR 조회 실패, Jenkins 도달 실패).
+traversal, engine 이 api/claude-code/default 아님), 401 (미인증), 502
+(PR 조회 실패, Jenkins 도달 실패).
 
 ### Align
 
