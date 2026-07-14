@@ -1,6 +1,7 @@
-<a id="compute-instance-api-v2-guide"></a>
+<!-- pre-align:aligned sig=2e2588e1a607 -->
 
-## Compute > Instance > API v2 ガイド
+<a id="compute-instance-api-v2-guide"></a>
+## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
 Instance は API 呼び出し時の認証/認可に IaaS トークンを使用します。IaaS トークンは、NHN Cloud の OpenStack ベースのインフラサービス (IaaS) で使用する認証トークンです。IaaS トークンの発行および使用の詳細については、[IaaS トークン](/nhncloud/ja/public-api/iaas-token)を参照してください。
 
@@ -13,17 +14,17 @@ Instance は API 呼び出し時の認証/認可に IaaS トークンを使用�
 API レスポンスには、ガイドに記載されていないフィールドが含まれる場合があります。これらのフィールドは NHN Cloud の内部用途で使用されており、事前の通知なく変更される場合があるため、使用しないでください。
 
 <a id="instance-flavors"></a>
-
-## インスタンスタイプ
+## インスタンスタイプ { #instance-flavors }
 
 <a id="list-flavors"></a>
-### タイプ一覧の表示
+### タイプ一覧の表示 { #list-flavors }
 
 ```
 GET /v2/{tenantId}/flavors
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-flavors-request"></a>
 #### リクエスト
 
 このAPIはリクエスト本文を必要としません。
@@ -35,6 +36,7 @@ X-Auth-Token: {tokenId}
 | minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズよりブロックストレージサイズが大きいタイプのみ返します |
 | minRam | Query | Integer | - | 最小RAMサイズ(MB)<br>指定したサイズよりRAMサイズが大きいタイプのみ返します |
 
+<a id="list-flavors-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
@@ -89,13 +91,14 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-flavors-with-details"></a>
-### タイプ一覧の詳細表示
+### タイプ一覧の詳細表示 { #list-flavors-with-details }
 
 ```
 GET /v2/{tenantId}/flavors/detail
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-flavors-with-details-request"></a>
 #### リクエスト
 
 このAPIはリクエスト本文を必要としません。
@@ -107,6 +110,7 @@ X-Auth-Token: {tokenId}
 | minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズよりブロックストレージサイズが大きいタイプのみ返します |
 | minRam | Query | Integer | - | 最小RAMサイズ(MB)<br>指定したサイズよりRAMサイズが大きいタイプのみ返します |
 
+<a id="list-flavors-with-details-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明             |
@@ -191,17 +195,17 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="availability-zones"></a>
-
-## 可用性ゾーン
+## 可用性ゾーン { #availability-zones }
 
 <a id="list-availability-zones"></a>
-### 可用性ゾーン一覧の表示
+### 可用性ゾーン一覧の表示 { #list-availability-zones }
 
 ```
 GET /v2/{tenantId}/os-availability-zone
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-availability-zones-request"></a>
 #### リクエスト
 このAPIはリクエスト本文を必要としません。
 
@@ -210,6 +214,7 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | テナント ID |
 | tokenId | Header | String | O | トークン ID |
 
+<a id="list-availability-zones-response"></a>
 #### レスポンス
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
@@ -246,16 +251,16 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="key-pairs"></a>
-
-## キーペア
+## キーペア { #key-pairs }
 
 <a id="list-key-pairs"></a>
-### キーペア一覧の表示
+### キーペア一覧の表示 { #list-key-pairs }
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-key-pairs-request"></a>
 #### リクエスト
 このAPIはリクエスト本文を必要としません。
 
@@ -264,6 +269,7 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | テナントID |
 | tokenId | Header | String | O | トークンID |
 
+<a id="list-key-pairs-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
@@ -297,12 +303,13 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="show-key-pair"></a>
-### キーペアの表示
+### キーペアの表示 { #show-key-pair }
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="show-key-pair-request"></a>
 #### リクエスト
 このAPIはリクエスト本文を必要としません。
 
@@ -312,6 +319,7 @@ X-Auth-Token: {tokenId}
 | keypairName | URL | String | O | キーペア名 |
 | tokenId | Header | String | O | トークンID |
 
+<a id="show-key-pair-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
@@ -352,13 +360,14 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="createregister-key-pair"></a>
-### キーペアの作成/登録
+### キーペアの作成/登録 { #createregister-key-pair }
 
 ```
 POST /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="createregister-key-pair-request"></a>
 #### リクエスト
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -384,6 +393,7 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="createregister-key-pair-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
@@ -415,12 +425,13 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="delete-key-pair"></a>
-### キーペアの削除
+### キーペアの削除 { #delete-key-pair }
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="delete-key-pair-request"></a>
 #### リクエスト
 このAPIはリクエスト本文を必要としません。
 
@@ -430,17 +441,16 @@ X-Auth-Token: {tokenId}
 | keypairName | URL | String | O | キーペア名 |
 | tokenId | Header | String | O | トークンID |
 
+<a id="delete-key-pair-response"></a>
 #### レスポンス
 このAPIはレスポンス本文を返しません。
 
 
 <a id="instance"></a>
-
-## インスタンス
+## インスタンス { #instance }
 
 <a id="instance-status"></a>
-
-### インスタンスの状態
+### インスタンスの状態 { #instance-status }
 
 インスタンスはさまざまな状態を持ち、状態に応じて実行できる操作が定まっています。インスタンスのステータス一覧は次のとおりです。
 
@@ -466,14 +476,14 @@ X-Auth-Token: {tokenId}
 | `UNKNOWN` | インスタンスの状態が不明な場合<br>`インスタンスがこの状態になった場合は、管理者にお問い合わせください。` | 
 
 <a id="list-instances"></a>
-
-### インスタンス一覧の表示
+### インスタンス一覧の表示 { #list-instances }
 
 ```
 GET /v2/{tenantId}/servers
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-instances-request"></a>
 #### リクエスト
 
 この API はリクエスト本文を必要としません。
@@ -491,6 +501,7 @@ X-Auth-Token: {tokenId}
 | limit | Query | Integer | - | インスタンス一覧の件数<br>指定した件数分のインスタンスの一覧を返します。 |
 | marker | Query | UUID | - | 一覧の最初のインスタンス UUID<br>ソート基準に従い、`marker` で指定されたインスタンスから `limit` 件数分のインスタンスの一覧を返します。 |
 
+<a id="list-instances-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
@@ -530,8 +541,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-instances-with-details"></a>
-
-### インスタンス一覧の詳細表示
+### インスタンス一覧の詳細表示 { #list-instances-with-details }
 
 インスタンス一覧の表示と同様に、現在のテナントに作成されたインスタンスの一覧を返します。ただし、インスタンスごとの詳細情報も合わせて照会されます。
 
@@ -540,10 +550,12 @@ GET /v2/{tenantId}/servers/detail
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-instances-with-details-request"></a>
 #### リクエスト
 
 インスタンス一覧の表示と同じリクエスト形式です。
 
+<a id="list-instances-with-details-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                        |
@@ -685,14 +697,14 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="get-instance"></a>
-
-### インスタンスの表示
+### インスタンスの表示 { #get-instance }
 
 ```
 GET /v2/{tenantId}/servers/{serverId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="get-instance-request"></a>
 #### リクエスト
 
 この API はリクエスト本文を必要としません。
@@ -703,6 +715,7 @@ X-Auth-Token: {tokenId}
 | serverId | URL | UUID | O | インスタンス ID |
 | tokenId | Header | String | O | トークン ID |
 
+<a id="get-instance-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                       |
