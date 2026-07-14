@@ -5,8 +5,15 @@
 #   호출)를, dashboard /api/translate/file 을 통한 public-api.md 전체 재번역
 #   (DIFF_MODE=full) 으로 교체한 변형. 나머지 흐름은 동일.
 #
+#   재번역 소요 시간을 줄이기 위해 step 2 뒤에 public-api.md 를 40% 축소본
+#   (archive/alpha-origin-40pct/{ko,en,ja}/public-api.md) 으로 덮어쓰는 단계
+#   포함. 축소본은 원본에서 `<a id="create-instance"></a>` 앵커부터 파일 끝
+#   까지 잘라낸 버전(각 언어별 ~42% 분량, 세 언어 공통 앵커 위치에서 잘라
+#   구조 정합성 유지).
+#
 #   1. alpha 브랜치로 switch
 #   2. scripts/restore-alpha-origin.sh 실행 (내부에서 commit+push)
+#      + public-api.md 40% 축소본 덮어쓰기 → commit+push
 #   3. dashboard /api/fix-heading-syntax 호출 (heading 문법 정정, base=alpha)
 #   4. fix-heading-syntax 잡이 생성하는 PR 감지 → merge → alpha 최신화
 #   5. dashboard /api/translate/file 호출 (ko/public-api.md 전체 재번역,
@@ -79,8 +86,30 @@ git pull --ff-only origin "$BASE_BRANCH"
 
 # ── 2) restore-alpha-origin (내부에서 commit+push) ────────────────────
 echo
-echo "[2/14] scripts/restore-alpha-origin.sh"
+echo "[2/14] scripts/restore-alpha-origin.sh + public-api.md 40% 축소본 적용"
 bash "$REPO_ROOT/scripts/restore-alpha-origin.sh"
+
+# public-api.md 를 40% 축소본으로 덮어쓰기 (retranslate 소요 시간 단축용)
+reduced_root="$REPO_ROOT/archive/alpha-origin-40pct"
+for lang in ko en ja; do
+  src="$reduced_root/$lang/public-api.md"
+  dst="$REPO_ROOT/$lang/public-api.md"
+  if [[ ! -f "$src" ]]; then
+    echo "  error: 40% 축소본 없음: $src" >&2
+    exit 1
+  fi
+  cp -f "$src" "$dst"
+  echo "  reduced: $lang/public-api.md ($(wc -l < "$src") lines)"
+done
+
+if git diff --quiet -- ko/public-api.md en/public-api.md ja/public-api.md \
+   && git diff --cached --quiet -- ko/public-api.md en/public-api.md ja/public-api.md; then
+  echo "  (public-api.md 변경 없음, commit/push 건너뜀)"
+else
+  git add ko/public-api.md en/public-api.md ja/public-api.md
+  git commit -m "test: apply 40% reduced public-api.md for retranslate e2e"
+  git push origin "$BASE_BRANCH"
+fi
 
 # ── 3) dashboard /api/fix-heading-syntax (heading 문법 정정) ──────────
 echo
