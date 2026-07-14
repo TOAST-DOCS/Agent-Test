@@ -1,6 +1,7 @@
 <!-- pre-align:aligned sig=2e2588e1a607 -->
 
 <a id="compute-instance-api-v2-guide"></a>
+
 ## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
 
 Instance uses the IaaS token for authentication/authorization when making API calls. The IaaS token is an authentication token used for NHN Cloud's OpenStack-based infrastructure services (IaaS). For more information on issuing and using IaaS tokens, see [IaaS token](/nhncloud/en/public-api/iaas-token).
@@ -9,8 +10,8 @@ The Instance API uses the `compute` type endpoint. For the exact endpoint, see `
 
 | Type | Region | Endpoint |
 |---|---|---|
-| compute | Korea (Pangyo) Region<br>Korea (Pyeongchon) Region<br>Korea (Gwangju) Region<br>Japan Region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
-
+| compute | Korea (Pangyo) Region<br>Korea (Pyeongchon) Region<br>Korea (Gwangju) Region<br>Japan Region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com | (row edit test)
+| TEST-ROW | (New Row Test) | (New Row Test) |
 API response may show the fields not specified by the guide. These fields are internally used by NHN Cloud, and not used because they are subject to change without prior notice.
 
 <a id="instance-flavors"></a>
