@@ -199,11 +199,32 @@ translate preset 필드 (모두 optional):
   "table_rows": bool, "table_key_align": bool, "skip_full_table": bool,
   "align_headings": bool, "skip_unaligned": bool, "skip_anchor_only": bool,
   "only_unaligned": bool, "assign_anchors": bool, "verify": bool,
-  "max_load_ratio": "2", "workers": "1",
+  "max_load_ratio": "2",
+
+  // Concurrency (engine-split at Settings; Jenkinsfile fans into both slots).
+  // Empty / missing → 엔진별 default (api=4, cli=2).
+  "workers": "",           // 파일 병렬도 (한 job 안의 소스 파일 동시 번역 수)
+  "chunk_workers": "",     // chunk 병렬도 (한 파일 안 chunk 동시 API 호출 수)
+
+  // Input-token dials — empty / "default" 이면 잡 .env 가 결정.
+  "guidelines_variant_en": "default|aws|unified|unified-v2",  // en 가이드라인 크기
+  "guidelines_variant_ja": "default|aws|unified",              // ja 가이드라인 크기
+  "tm_top_k": "",          // TM few-shot 개수 (default 10). 낮추면 uncached user prompt 축소
+
   "only": "ko/foo.md,ko/bar.md", "base_branch": "alpha",
   "pipeline_branch": "…"     // Jenkins multibranch child
 }
 ```
+
+* `guidelines_variant_en` — 캐시된 system prompt 에 주입되는 en 번역
+  가이드라인 문서 선택. `unified-v2` (~22K tok, 운영 default) → `unified`
+  (~13K tok, -9K) → `aws` (~7K tok, -15K). 모든 chunk 마다 cache_read
+  로 재-소비되므로 누적 절감 큼. 실운영 문서엔 A/B 후에만 낮추기 권장
+  (`compare_guidelines.py`).
+* `guidelines_variant_ja` — ja 는 `unified` (default) / `aws` 두 종.
+* `tm_top_k` — Translation Memory 검색 상위 k pair (default 10). User
+  prompt 라 uncached, 매 chunk 마다 전액 지불되니 낮추면 즉시 절감
+  (10→5 시 ~185 tok/chunk). 랭킹 1..5 가 signal 대부분.
 
 `model` (선택) — Claude model id 를 지정하면 Jenkins `MODEL` 파라미터로
 전달되어 API 엔진과 CLI 엔진 모두 같은 모델로 강제 (`TRANSLATE_ANTHROPIC_MODEL`
@@ -217,10 +238,13 @@ override 되었지만 이제 dashboard 다이얼로그 / API 로만 결정된다
 job_id, task_id`). 트리거 자체는 성공, 실제 실행은 Jenkins 큐 로 넘어감.
 
 `/api/retranslate` body: `{file_url, commit_to_branch, ko_path?, pr_url?,
-pipeline_branch?, preserve_existing?, engine?, model?}`. `file_url` 은
-GitHub blob URL 이어야 함. `engine` 은 `/api/translate/file` 과 동일 (`api`
-/ `claude-code` / `default` / omit). `model` 은 `/api/translate` 와 동일
-(model id / `default` / omit — 후 두 값은 override 안 함).
+pipeline_branch?, preserve_existing?, engine?, model?, workers?,
+chunk_workers?, guidelines_variant_en?, guidelines_variant_ja?,
+tm_top_k?}`. `file_url` 은 GitHub blob URL 이어야 함. `engine` 은
+`/api/translate/file` 과 동일 (`api` / `claude-code` / `default` / omit).
+`model` 은 `/api/translate` 와 동일 (model id / `default` / omit — 후 두
+값은 override 안 함). concurrency + input-token 옵션은 `/api/translate`
+와 동일한 shape · 의미.
 
 `/api/translate/file` — `/api/retranslate` 와 동일한 Jenkins 파이프라인
 (`FILE_URL` + `COMMIT_TO_BRANCH` + `DIFF_MODE=full`) 을 태우지만, viewer 가
@@ -252,6 +276,16 @@ Body:
                                        //   (API 엔진과 CLI 엔진 모두 같은 모델).
                                        //   "default" 또는 omit 이면 .env 기본값
                                        //   (config.yaml: claude-sonnet-4-6) 유지.
+
+  // Concurrency + input-token dials — /api/translate 와 동일한 shape,
+  // 각각 omit / 빈 문자열이면 잡 .env 기본값이 유효 (그 파일에서만
+  // override). 자세한 의미는 /api/translate 섹션 참고.
+  "workers": "",
+  "chunk_workers": "",
+  "guidelines_variant_en": "default|aws|unified|unified-v2",
+  "guidelines_variant_ja": "default|aws|unified",
+  "tm_top_k": "",
+
   "pipeline_branch": ""              // optional — Jenkins multibranch child branch
 }
 ```
