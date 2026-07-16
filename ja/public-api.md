@@ -832,3 +832,1138 @@ X-Auth-Token: {tokenId}
 
 ---
 
+<a id="create-instance"></a>
+### インスタンスを作成する
+
+インスタンスを作成します。
+
+インスタンス作成APIを呼び出し、インスタンス照会でインスタンスの状態を確認します。
+
+* インスタンスの状態が**ACTIVE**になるとインスタンスが正常に作成完了します。
+* インスタンスの状態が**BUILDING**から長時間変わらなかったり、**ERROR**の場合は、インスタンス作成引数を確認し、再度作成してください。
+
+* RAMが2GB以上のインスタンスタイプを使用します。
+
+* Windowsインスタンスは2GB以上のRAMが必要です。RAM 2GB以上のインスタンスタイプを使用します。
+* 50GB以上のルートブロックストレージが必要です。
+* U2タイプはWindowsイメージを使用できません。
+
+ルートブロックストレージサイズは、Linuxは10GB、Windowsは50GBから指定できます。
+
+インスタンス作成リクエスト時にスケジューラヒントで配置ポリシーを割り当てることができます。
+
+
+
+```
+POST /v2/{tenantId}/servers
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|---|
+| tenantId | URL | String | O | テナントID |
+| tokenId | Header | String | O | トークンID |
+| server | body | Object | O | サーバーオブジェクト |
+| server.security_groups | body | Object | - | セキュリティグループリストオブジェクト<br>省略する場合`default`グループが追加される |
+| server.security_groups.name | body | String | - | **(条件付き必須)** インスタンスに追加するセキュリティグループ名 |
+| server.user_data | body | String | - | インスタンス起動後に実行するスクリプトおよび設定<br>base64エンコーディングされた文字列で65535バイトまで許可 |
+| server.availability_zone | body | String | - | インスタンスを作成するアベイラビリティゾーン<br>指定しない場合、任意のゾーンが選択される<br>ルートブロックストレージのソースタイプが`volume`, `snapshot`の場合、元のブロックストレージのアベイラビリティゾーンと同じに設定する必要があります。 |
+| server.imageRef | Body | String | - | インスタンスを作成する際に使用するイメージID<br>ルートブロックストレージのソースタイプが`volume`, `snapshot`の場合は設定不要 |
+| server.flavorRef | Body | String | O | インスタンスを作成する時に使用するインスタンスタイプID |
+| server.networks | Body | Object | O | インスタンスを作成する時に使用するネットワーク情報オブジェクト<br>指定した数のNICが追加される。ネットワークID、サブネットID、ポートID、固定IPの中から1つ指定 |
+| server.networks.uuid | Body | UUID | - |  **(条件付き必須)**インスタンスを作成する時に使用するネットワークID |
+| server.networks.subnet | Body | UUID | - |  **(条件付き必須)**インスタンスを作成する時に使用するネットワークのサブネットID |
+| server.networks.port | Body | UUID | - |  **(条件付き必須)**インスタンスを作成する際に使用するポートID<br>ポートIDを指定する際に要求したセキュリティグループは、指定した既存のポートには適用されない。 |
+| server.networks.fixed_ip | Body | String | - |  **(条件付き必須)**インスタンスを作成する時に使用する固定IP |
+| server.name | Body | String | O | インスタンスの名前<br>英字基準255文字まで許可、ただし、Windowsイメージの場合は15文字以下にする必要がある。 |
+| server.metadata | Body | Object | - | インスタンスに追加するメタデータオブジェクト<br>255文字以下のキーと値のペア |
+| server.block_device_mapping_v2 | Body | Object | O | インスタンスのブロックストレージ情報オブジェクト<br>**ローカルブロックストレージを使用するU2以外のインスタンスタイプを使用する場合は必ず指定する必要がある。** |
+| server.block_device_mapping_v2.source_type | Body | Enum | O | 作成するブロックストレージ原本のタイプ<br>- `image`:イメージを利用してブロックストレージを作成<br>- `blank`:空のブロックストレージ作成(ルートブロックストレージとして使用できない)<br>- `volume`:既存のブロックストレージを使用<br>- `snapshot`:スナップショットを利用してブロックストレージ作成 |
+| server.block_device_mapping_v2.uuid | Body | String | - |  **(条件付き必須)**ブロックストレージのソースタイプによって異なる設定が必要<br>- ソースタイプが`image`の場合、イメージIDを設定<br>- ソースタイプが`volume`の場合、既存のブロックストレージIDを設定<br>- ソースタイプが`snapshot`の場合、スナップショットIDを設定<br>- ソースタイプが`blank`の場合、設定不要<br>ルートブロックストレージの場合、必ず起動可能な原本である必要があります。 |
+| server.block_device_mapping_v2.boot_index | Body | Integer | O | 指定したブロックストレージの起動順序<br>-`0`はルートブロックストレージ<br>- それ以外は追加ブロックストレージ<br>サイズが大きいほど起動順序が下がる。 |
+| server.block_device_mapping_v2.destination_type | Body | Enum | O | インスタンスブロックストレージの位置。インスタンスタイプに応じて別々に設定必要。<br>- `local`：GPUインスタンス、U2インスタンスタイプを利用する場合。<br>- `volume`：その他のインスタンスタイプを利用する場合。 |
+| server.block_device_mapping_v2.volume_type | Body | Enum    | - |  **(条件付き必須)**作成するブロックストレージのタイプ<br>ブロックストレージのソースタイプが`volume`, `snapshot`の場合設定不要<br>`ユーザーガイド > Storage > Block Storage > API v2ガイド`で**ブロックストレージタイプリスト表示**レスポンスの`name`参考 |
+| server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | インスタンスを削除する時のブロックストレージ処理。デフォルト値は`false`。<br>`true`なら削除、`false`なら維持 |
+| server.block_device_mapping_v2.volume_size | Body | Integer | - | **(条件付き必須)**作成するブロックストレージサイズ<br>ブロックストレージのソースタイプによって異なる設定が必要<br>- ソースタイプが`volume`の場合は設定不要<br>- ソースタイプが`snapshot`の場合は原本ブロックストレージサイズ以上に設定<br>`GB`単位<br>U2インスタンスタイプを使用してルートブロックストレージを作成する場合にはU2インスタンスタイプに明示されたサイズで作成され、この値は無視される。<br>インスタンスタイプによって作成できるルートブロックストレージのサイズが異なるため、詳細は`ユーザーガイド > Compute > Instance > コンソール使用ガイド > インスタンス作成 > ブロックストレージサイズ`を参考 |
+| server.block_device_mapping_v2.nhn_encryption                   | Body | Object | - | **(条件付き必須)**ブロックストレージの暗号化情報                                                                                                                                                                                      |
+| server.block_device_mapping_v2.nhn_encryption.skm_appkey        | Body | String | - | **(条件付き必須)**Secure Key Managerサービスのアプリケーションキー                                                                                                                                                                            |
+| server.block_device_mapping_v2.nhn_encryption.skm_key_id        | Body | String | - | **(条件付き必須)**暗号化ブロックストレージの作成に使用するSecure Key Managerの対称鍵ID                                                                                                                                  |
+| server.key_name | Body | String | O | インスタンスの接続に使用するキーペア |
+| server.min_count | Body | Integer | - | 現在のリクエストで作成するインスタンス数の最小値。<br>デフォルト値は1。<br>ブロックストレージのソースタイプが`volume`の場合、`1`のみ設定可能 |
+| server.max_count | Body | Integer | - | 現在のリクエストで作成するインスタンス数の最大値。<br>デフォルト値はmin_count、最大値は10。<br>ブロックストレージのソースタイプが`volume`の場合、`1`のみ設定可能 |
+| server.return_reservation_id | Body | Boolean | - | インスタンス作成リクエスト予約ID。<br>Trueに指定すると、インスタンス作成情報の代わりに予約IDを返す。<br>デフォルト値はFalse |
+| os:scheduler_hints | Body | Object | - | スケジューラヒントオブジェクト |
+| os:scheduler_hints.group | Body | String | - | 配置ポリシーID |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "server": {
+    "name": "DB-Master",
+    "imageRef": "9956f822-29c9-4f81-9410-0c392d9c8c24",
+    "flavorRef": "a4b6a0f7-aeff-4d78-a8d5-7de9f007012d",
+    "networks": [{
+      "subnet": "b83863ff-0355-4c73-8c10-0bdf66a69aab"
+    }],
+    "availability_zone": "kr-pub-a",
+    "key_name": "access-key",
+    "max_count": 1,
+    "min_count": 1,
+    "block_device_mapping_v2": [{
+      "source_type": "image",
+      "uuid": "9956f822-29c9-4f81-9410-0c392d9c8c24",
+      "boot_index": 0,
+      "volume_size": 1000,
+      "destination_type": "volume",
+      "delete_on_termination": 1
+    }],
+    "security_groups": [{
+      "name": "default"
+    }]
+  },
+  "os:scheduler_hints": {
+    "group": "f878bd5b-49a7-499f-966e-1eceb21cb06b"    
+  }
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+
+| 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                          |
+|---|---|---|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| server.security_groups.name | Body | String | 作成したインスタンスのセキュリティグループ名                                                                                                                                                                                          |
+| server.id | Body | UUID | 作成したインスタンスのID                                                                                                                                                                                                 |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "server": {
+    "security_groups": [
+      {
+        "name": "default"
+      }
+    ],
+    "id": "3a005d5b-63cf-4493-bfc6-49db990b5b50",
+    "links": [
+      {
+        "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
+        "rel": "self"
+      },
+      {
+        "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
+        "rel": "bookmark"
+      }
+    ]
+  }
+}
+```
+
+</p>
+</details>
+
+---
+
+<a id="modify-instance"></a>
+### インスタンスを修正する
+作成されたインスタンスを修正します。変更できるプロパティは一部の項目に制限されます。
+
+```
+PUT /v2/{tenantId}/servers/{serverId}
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|---|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| server | Body | Object | O | インスタンス変更リクエストオブジェクト |
+| server.name | Body | String | - | インスタンスの新しい名前 |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "server": {
+        "name": "new-server-test"
+    }
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+インスタンスの表示と同じです。
+
+---
+
+<a id="delete-instance"></a>
+### インスタンスを削除する
+作成されたインスタンスを削除します。
+
+```
+DELETE /v2/{tenantId}/servers/{serverId}
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+このAPIはリクエスト本文を要求しません。
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 削除するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+---
+
+<a id="manage-block-storage-attachment"></a>
+## ブロックストレージ接続管理
+
+<a id="list-additional-block-storage-attached-to-the-instance"></a>
+### インスタンスに接続されたブロックストレージリスト表示
+```
+GET /v2/{tenantId}/servers/{serverId}/os-volume_attachments
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+このAPIはリクエスト本文を要求しません。
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| limit | Query | Integer | - | 照会するリストの数 |
+| offset | Query | Integer | - | 返されるリストの開始点<br>全てのリストの中からoffset番目のブロックストレージから返す |
+
+#### レスポンス
+
+| 名前 | 種類 | 形式 | 説明 |
+|---|---|---|---|
+| volumeAttachments | Body | Array | 接続情報オブジェクトリスト |
+| volumeAttachments.device | Body | String | インスタンスのブロックストレージ名<br>例) `/dev/vdb` |
+| volumeAttachments.id | Body | UUID | 接続情報ID |
+| volumeAttachments.serverId | Body | UUID | インスタンスID |
+| volumeAttachments.volumeId | Body | UUID | ブロックストレージID |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "volumeAttachments": [
+        {
+            "device": "/dev/vda",
+            "id": "227cc671-f30b-4488-96fd-7d0bf13648d8",
+            "serverId": "4b293d31-ebd5-4a7f-be03-874b90021e54",
+            "volumeId": "227cc671-f30b-4488-96fd-7d0bf13648d8"
+        },
+        {
+            "device": "/dev/vdb",
+            "id": "a07f71dc-8151-4e7d-a0cc-cd24a3f11113",
+            "serverId": "4b293d31-ebd5-4a7f-be03-874b90021e54",
+            "volumeId": "a07f71dc-8151-4e7d-a0cc-cd24a3f11113"
+        }
+    ]
+}
+```
+
+</p>
+</details>
+
+---
+
+<a id="list-additional-block-storage-attached-to-the-instance"></a>
+### インスタンスに接続されたブロックストレージ表示
+```
+GET /v2/{tenantId}/servers/{serverId}/os-volume_attachments/{volumeId}
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+このAPIはリクエスト本文を要求しません。
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | インスタンスID |
+| volumeId | URL | UUID | O | 照会するブロックストレージID |
+| tokenId | Header | String | O | トークンID |
+
+#### レスポンス
+
+| 名前 | 種類 | 形式 | 説明 |
+|---|---|---|---|
+| volumeAttachment | Body | Object | 接続情報オブジェクト |
+| volumeAttachment.device | Body | String | インスタンスのブロックストレージ名<br>例) `/dev/vdb` |
+| volumeAttachment.id | Body | UUID | 接続情報ID |
+| volumeAttachment.serverId | Body | UUID | インスタンスID |
+| volumeAttachment.volumeId | Body | UUID | ブロックストレージID |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "volumeAttachment": {
+        "device": "/dev/sdb",
+        "id": "a07f71dc-8151-4e7d-a0cc-cd24a3f11113",
+        "serverId": "1ad6852e-6605-4510-b639-d0bff864b49a",
+        "volumeId": "a07f71dc-8151-4e7d-a0cc-cd24a3f11113"
+    }
+}
+```
+
+</p>
+</details>
+
+---
+
+<a id="attach-additional-block-storage-to-the-instance"></a>
+### インスタンスに追加ブロックストレージを接続する
+```
+POST /v2/{tenantId}/servers/{serverId}/os-volume_attachments
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| volumeAttachment | Body | Object | O | ブロックストレージ接続リクエストオブジェクト |
+| volumeAttachment.volumeId | Body | UUID | O | 接続するブロックストレージID |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "volumeAttachment": {
+      "volumeId": "a07f71dc-8151-4e7d-a0cc-cd24a3f11113"
+  }
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+
+| 名前 | 種類 | 形式 | 説明 |
+|---|---|---|---|
+| volumeAttachment | Body | Object | 接続情報オブジェクト |
+| volumeAttachment.device | Body | String | インスタンスのブロックストレージ名<br>例) `/dev/vdb` |
+| volumeAttachment.id | Body | UUID | 接続情報ID |
+| volumeAttachment.serverId | Body | UUID | インスタンスID |
+| volumeAttachment.volumeId | Body | UUID | ブロックストレージID |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "volumeAttachment": {
+        "device": "/dev/vdc",
+        "id": "227cc671-f30b-4488-96fd-7d0bf13648d8",
+        "serverId": "4b293d31-ebd5-4a7f-be03-874b90021e54",
+        "volumeId": "227cc671-f30b-4488-96fd-7d0bf13648d8"
+    }
+}
+```
+
+</p>
+</details>
+
+---
+
+<a id="detach-block-storage-from-the-instance"></a>
+### インスタンスブロックストレージの接続を切る
+```
+DELETE /v2/{tenantId}/servers/{serverId}/os-volume_attachments/{volumeId}
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+このAPIはリクエスト本文を要求しません。
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | インスタンスID |
+| volumeId | URL | UUID | O | 接続を切るブロックストレージID |
+| tokenId | Header | String | O | トークンID |
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+---
+
+<a id="additional-instance-features"></a>
+## インスタンス追加機能
+NHN Cloudは、次のようなインスタンス制御および付加機能を提供します。
+
+* インスタンスの起動、停止、終了、再起動
+* インスタンスタイプ変更
+* インスタンスイメージ作成
+* セキュリティグループの追加および削除
+
+<a id="start-stopped-instance"></a>
+### 停止したインスタンスの起動
+
+停止したインスタンスを再び起動し、状態を**ACTIVE**に変更します。このAPIを呼び出すにはインスタンスの状態が**SHUTOFF**になっている必要があります。
+
+```
+POST /v2/{tenantId}/servers/{serverId}/action
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| os-start | Body | none | O | インスタンス起動リクエスト |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "os-start" : null
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+---
+
+<a id="start-terminated-instance"></a>
+### 終了したインスタンスの起動
+
+停止したインスタンスを再起動し、状態を**ACTIVE**に変更します。このAPIを呼び出すには、インスタンスの状態が**SHELVED_OFFLOADED**である必要があります。
+
+```
+POST /v2/{tenantId}/servers/{serverId}/action
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|--|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| unshelve | Body | none | O | インスタンス起動リクエスト |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "unshelve" : null
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+---
+
+<a id="stop-instance"></a>
+### インスタンス停止
+
+インスタンスを停止し、状態を**SHUTOFF**に変更します。このAPIを呼び出すにはインスタンスの状態が**ACTIVE**または**ERROR**になっている必要があります。
+
+```
+POST /v2/{tenantId}/servers/{serverId}/action
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| os-stop | Body | none | O | インスタンス停止リクエスト |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "os-stop" : null
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+---
+
+### インスタンス停止
+
+インスタンスを終了し、状態を**SHELVED_OFFLOADED**に変更します。このAPIを呼び出すためには、インスタンスの状態が**ACTIVE**でなければなりません。
+
+```
+POST /v2/{tenantId}/servers/{serverId}/action
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明         |
+|---|---|---|---|-------------|
+| tenantId | URL | String | O | テナントID      |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID       |
+| shelve | Body | none | O | インスタンス停止リクエスト |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "shelve" : null
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+---
+
+### インスタンス再起動
+
+インスタンスを再起動します。再起動の方法は**SOFT**と**HARD**があります。
+
+* **SOFT**方式：**「優雅な接続停止(Graceful shutdown)」**でインスタンスを停止し、再起動します。インスタンスが**ACTIVE**状態になっている必要があります。
+* **HARD**方式：強制停止してインスタンスを再起動します。物理サーバーの電源を落とし、再び入れるのと同じ動作です。インスタンスが次の状態の時のみ強制停止できます。
+    * **ACTIVE**
+    * **ERROR**
+    * **HARD_REBOOT**
+    * **PAUSED**
+    * **REBOOT**
+    * **SHUTOFF**
+    * **SUSPENDED**
+
+```
+POST /v2/{tenantId}/servers/{serverId}/action
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| reboot | Body | Object | O | インスタンス再起動リクエストオブジェクト |
+| reboot.type | Body | Enum | O | 再起動方法。**SOFT**または**HARD** |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "reboot" : {
+    "type": "SOFT"
+  }
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+---
+
+### インスタンスタイプ変更
+
+インスタンスタイプを変更します。インスタンスが**ACTIVE**または**SHUTOFF**状態の時のみインスタンスタイプを変更できます。インスタンスの状態が**ACTIVE**の場合はインスタンスタイプ変更過程でインスタンスは停止し、再起動します。
+
+使用するイメージやインスタンスタイプによって、変更できるタイプが制限される場合があります。詳細はコンソールユーザーガイドを参照してください。
+
+
+```
+POST /v2/{tenantId}/servers/{serverId}/action
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明                                                                                                                                                                                                                |
+|---|---|---|---|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| tenantId | URL | String | O | テナントID                                                                                                                                                                                                             |
+| serverId | URL | UUID | O | 変更するインスタンスID                                                                                                                                                                                                        |
+| tokenId | Header | String | O | トークンID                                                                                                                                                                                                              |
+| resize | Body | Object | O | インスタンスタイプ変更リクエスト                                                                                                                                                                                                     |
+| resize.flavorRef | Body | UUID | O | 変更するインスタンスタイプID                                                                                                                                                                                                     |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "resize" : {
+    "flavorRef": "b5f1c148-732c-417d-9d1b-1dffca105dbe"
+  }
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+---
+
+### インスタンスイメージ作成
+
+インスタンスからイメージを作成します。`U2`タイプのインスタンスのみ、このAPIでイメージを作成できます。`U2`タイプ以外のインスタンスイメージを作成するには[ブロックストレージAPI](/Storage/Block Storage/ja/public-api/#create-image-with-block-storage)を参照します。
+
+インスタンスの状態が**ACTIVE**、**SHUTOFF**、**SUSPENDED**、**PAUSED**の時のみイメージを作成できます。イメージの作成は、データの整合性を保障するためにインスタンスを停止した状態で進行することを推奨します。
+
+イメージの作成に成功すると、イメージの状態が`active`に変わります。イメージの作成が完了したことを確認するにはイメージ照会APIで持続的に状態を確認します。
+
+> [注意]
+> 作成されたイメージのサイズはルートブロックストレージの実際の使用量より大きくなる可能性があります。
+
+```
+POST /v2/{tenantId}/servers/{serverId}/action
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| createImage | Body | Object | O | イメージ作成リクエスト |
+| createImage.name | Body | String | O | 作成するイメージの名前 |
+| createImage.metadata | Body | Object | - | 作成するイメージのメタデータ<br>Key-Value形式で記述 |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+  "createImage" : {
+      "name" : "foo-image",
+      "metadata": {
+          "meta_var": "meta_val"
+      }
+  }
+}
+```
+
+</p>
+</details>
+
+
+#### レスポンス
+
+このAPIはレスポンス本文を返しません。作成されたイメージはレスポンスヘッダの`Location`で確認します。
+
+| 名前 | 種類 | 形式 | 説明 |
+|--|--|--|--|
+| Location | Header | String | 作成したイメージURL |
+
+---
+
+### セキュリティグループ追加
+
+インスタンスにセキュリティグループを追加します。追加したセキュリティグループはインスタンスのすべてのポートに適用されます。
+
+```
+POST /v2/{tenantId}/servers/{serverId}/action
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| addSecurityGroup | Body | Object | O | セキュリティグループ追加リクエストオブジェクト |
+| addSecurityGroup.name | Body | String | O | 追加するセキュリティグループ名 |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "addSecurityGroup": {
+        "name": "test"
+    }
+}
+```
+
+</p>
+</details>
+
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+---
+
+### セキュリティグループ削除
+
+インスタンスからセキュリティグループを削除します。インスタンスのすべてのポートから指定したセキュリティグループが削除されます。
+
+```
+POST /v2/{tenantId}/servers/{serverId}/action
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|--|
+| tenantId | URL | String | O | テナントID |
+| serverId | URL | UUID | O | 変更するインスタンスID |
+| tokenId | Header | String | O | トークンID |
+| removeSecurityGroup | Body | Object | O | セキュリティグループ削除リクエストオブジェクト |
+| removeSecurityGroup.name | Body | String | O | 削除するセキュリティグループ名 |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "removeSecurityGroup": {
+        "name": "test"
+    }
+}
+```
+
+</p>
+</details>
+
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+
+<a id="terminate-instance"></a>
+## インスタンスメタデータ
+
+インスタンスメタデータ値に基づいてコンソールの**Compute > Instance**サービスページでインスタンス詳細情報画面の内容を決定します。インスタンスメタデータの内容は次のとおりです。
+
+| インスタンスメタデータ   | 内容                                         |
+|----------------|----------------------------------------------|
+| os_distro      | **基本情報**の**OS**の名前<br>os_versionと組み合わせて使用 |
+| os_version     | **基本情報**の**OS**のバージョン<br>os_distroと組み合わせて使用 |
+| image_name     | **基本情報**の**イメージ名**                        |
+| os_type      | **接続情報**形式                               |
+| login_username | **接続情報**のユーザー名                          |
+
+> [注意]インスタンスメタデータの変更及び削除の際、関連サービス及び機能に影響が発生する可能性があり、これによる結果に対する責任はユーザーにあります。
+### インスタンスメタデータリスト表示
+
+```
+GET /v2/{tenantId}/servers/{serverId}/metadata
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+このAPIはリクエスト本文を要求しません。
+
+| 名前     | 種類 | 形式 | 必須 | 説明                                             |
+|----------|---|---|---|--------------------------------------------------|
+| tenantId | URL | String | O | テナントID                                           |
+| serverId | URL | UUID | O | インスタンスID                                          |
+| tokenId  | Header | String | O | トークンID                                            |
+
+#### レスポンス
+
+| 名前     | 種類 | 形式 | 説明                                             |
+|----------|---|---|--------------------------------------------------|
+| metadata | Body | Object | インスタンスに作成または修正するメタデータオブジェクト<br>最大長さ255文字以下のキーと値のペア |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "metadata": {
+        "os_distro": "ubuntu",
+        "description": "Ubuntu Server 20.04.6 LTS (2023.11.21)",
+        "volume_size": "20",
+        "project_domain": "NORMAL",
+        "monitoring_agent": "sysmon",
+        "image_name": "Ubuntu Server 20.04.6 LTS (2023.11.21)",
+        "os_version": "Server 20.04 LTS",
+        "os_architecture": "amd64",
+        "login_username": "ubuntu",
+        "os_type": "linux",
+        "tc_env": "sysmon,dfeac7db42a192a73959d5646117af58"
+    }
+}
+```
+
+</p>
+</details>
+
+
+<a id="restart-instance"></a>
+### インスタンスメタデータ表示
+
+```
+GET /v2/{tenantId}/servers/{serverId}/metadata/{key}
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+このAPIはリクエスト本文を要求しません。
+
+| 名前     | 種類 | 形式 | 必須 | 説明                     |
+|----------|---|---|---|--------------------------|
+| tenantId | URL | String | O | テナントID                   |
+| serverId | URL | UUID | O | インスタンスID                  |
+| key      | URL | String | O | インスタンスに作成または修正するメタデータのキー |
+| tokenId  | Header | String | O | トークンID                    |
+
+#### レスポンス
+
+| 名前 | 種類 | 形式 | 説明                                             |
+|------|---|---|--------------------------------------------------|
+| meta | Body | Object | インスタンスに作成または修正するメタデータオブジェクト<br>最大長さ255文字以下のキーと値のペア |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "meta": {
+        "os_version": "Server 20.04 LTS"
+    }
+}
+```
+
+</p>
+</details>
+
+<a id="change-instance-flavor"></a>
+### インスタンスメタデータを作成/修正する
+
+インスタンスのメタデータを作成または修正します。
+リクエストするキーが既存のキーと一致する場合、キーと値をリクエスト値に変更します。
+
+```
+PUT /v2/{tenantId}/servers/{serverId}/metadata/{key}
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前     | 種類 | 形式 | 必須 | 説明                                             |
+|----------|---|---|---|--------------------------------------------------|
+| tenantId | URL | String | O | テナントID                                           |
+| serverId | URL | UUID | O | インスタンスID                                          |
+| key      | URL | String | O | インスタンスに作成または修正するメタデータのキー                        |
+| tokenId  | Header | String | O | トークンID                                            |
+| meta     | Body | Object | O | インスタンスに作成または修正するメタデータオブジェクト<br>最大長さ255文字以下のキーと値のペア |
+
+<details>
+<summary>例</summary>
+<p>
+
+```json
+{
+    "meta": {
+        "os_version": "Server 20.04 LTS"
+    }
+}
+```
+
+</p>
+</details>
+
+
+#### レスポンス
+
+| 名前 | 種類 | 形式 | 説明                                             |
+|------|---|---|--------------------------------------------------|
+| meta | Body | Object | インスタンスに作成または修正するメタデータオブジェクト<br>最大長さ255文字以下のキーと値のペア |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "meta": {
+        "os_version": "Server 20.04 LTS"
+    }
+}
+```
+
+</p>
+</details>
+
+
+<a id="create-instance-image"></a>
+### インスタンスメタデータを削除する
+
+リクエストするキーと一致するインスタンスのメタデータを削除します。
+
+```
+DELETE /v2/{tenantId}/servers/{serverId}/metadata/{key}
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+このAPIはリクエスト本文を要求しません。
+
+| 名前     | 種類 | 形式 | 必須 | 説明                |
+|----------|---|---|---|---------------------|
+| tenantId | URL | String | O | テナントID              |
+| serverId | URL | UUID | O | インスタンスID             |
+| key      | URL | String | O | インスタンスから削除するメタデータのキー |
+| tokenId  | Header | String | O | トークンID               |
+
+#### レスポンス
+このAPIはレスポンス本文を返しません。
+
+
+## 配置ポリシー
+
+<a id="add-security-group"></a>
+### 配置ポリシーを作成する
+
+配置ポリシーを作成します。
+分散バッチのための`anti-affinity`配置ポリシータイプのみ提供します。
+
+```
+POST /v2/{tenantId}/os-server-groups
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|-----|-----|-----|-----|-----|
+| tenantId | URL | String | O | テナントID |
+| tokenId | Header | String | O | トークンID |
+| server_group | Body | Object | O | 配置ポリシーオブジェクト |
+| server_group.name | Body | String | O | 配置ポリシー名 |
+| server_group.policies | Body | Array | O | 配置ポリシータイプ<br>`anti-affinity`のみ設定可能 |
+
+<details>
+<summary>例</summary>
+<p>
+
+```json
+{
+    "server_group": {
+        "name": "policy-test1",
+        "policies": [
+            "anti-affinity"            
+        ]
+    }
+}
+```
+
+</p>
+</details>
+
+#### レスポンス
+
+| 名前 | 種類 | 形式 | 説明 |
+|-----|-----|-----|-----|
+| server_group | Body | Object | 配置ポリシーオブジェクト |
+| server_group.id | Body | String | 配置ポリシーID |
+| server_group.name | Body | String | 配置ポリシー名 |
+| server_group.policies | Body | Array | 配置ポリシータイプ |
+| server_group.members | Body | Array | 配置ポリシーに割り当てられたインスタンスIDリスト |
+| server_group.metadata | Body | Object | 配置ポリシーメタデータオブジェクト<br>常に空の値で表示されます |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "server_group": {
+        "id": "11f5a850-9ecc-4895-af77-de6ea471b65a",
+        "name": "policy-test1",
+        "policies": [
+            "anti-affinity"
+        ],
+        "members": [],
+        "metadata": {}
+    }
+}
+```
+
+</p>
+</details>
+
+<a id="delete-security-group"></a>
+### 配置ポリシーリスト表示
+
+```
+GET /v2/{tenantId}/os-server-groups
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+
+このAPIはリクエスト本文を要求しません。
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|-----|-----|-----|-----|-----|
+| tenantId | URL | String | O | テナントID |
+| tokenId | Header | String | O | トークンID |
+
+#### レスポンス
+
+| 名前 | 種類 | 形式 | 説明 |
+|-----|-----|-----|-----|
+| server_groups | Body | Array | 配置ポリシーオブジェクトリスト |
+| server_groups.id | Body | String | 配置ポリシーID |
+| server_groups.name | Body | String | 配置ポリシー名 |
+| server_groups.policies | Body | Array | 配置ポリシータイプ |
+| server_groups.members | Body | Array | 配置ポリシーに割り当てられたインスタンスIDリスト |
+| server_groups.metadata | Body | Object | 配置ポリシーメタデータオブジェクト<br>常に空の値で表示されます |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "server_groups": [
+        {
+            "id": "11f5a850-9ecc-4895-af77-de6ea471b65a",
+            "name": "policy-test1",
+            "policies": [
+                "anti-affinity"
+            ],
+            "members": [
+                "c040455d-6495-4628-ad81-ade79cf7b8d6",
+                "524e7d81-f373-43a0-b2ff-0a15f8255bb5"            
+            ],
+            "metadata": {}
+        },
+        {
+            "id": "f947c657-cbe0-4bf2-a2aa-59d198f8e096",
+            "name": "policy-test2",
+            "policies": [
+                "anti-affinity"
+            ],
+            "members": [],
+            "metadata": {}
+        }
+    ]
+}
+```
+
+</p>
+</details>
+
+### 配置ポリシー表示
+
+```
+GET /v2/{tenantId}/os-server-groups/{servergroupId}
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+
+このAPIはリクエスト本文を要求しません。
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|-----|-----|-----|-----|-----|
+| tenantId | URL | String | O | テナントID |
+| servergroupId | URL | String | O | 配置ポリシーID |
+| tokenId | Header | String | O | トークンID |
+
+#### レスポンス
+
+| 名前 | 種類 | 形式 | 説明 |
+|-----|-----|-----|-----|
+| server_group | Body | Object | 配置ポリシーオブジェクト |
+| server_group.id | Body | String | 配置ポリシーID |
+| server_group.name | Body | String | 配置ポリシー名 |
+| server_group.policies | Body | Array | 配置ポリシータイプ |
+| server_group.members | Body | Array | 配置ポリシーに割り当てられたインスタンスIDリスト |
+| server_group.metadata | Body | Object | 配置ポリシーメタデータオブジェクト<br>常に空の値で表示されます |
+
+<details><summary>例</summary>
+<p>
+
+```json
+{
+    "server_group": {
+        "id": "11f5a850-9ecc-4895-af77-de6ea471b65a",
+        "name": "policy-test1",
+        "policies": [
+            "anti-affinity"
+        ],
+        "members": [
+            "c040455d-6495-4628-ad81-ade79cf7b8d6",
+            "524e7d81-f373-43a0-b2ff-0a15f8255bb5"            
+        ],
+        "metadata": {}
+    }
+}
+```
+
+</p>
+</details>
+
+### 配置ポリシーを削除する
+
+```
+DELETE /v2/{tenantId}/os-server-groups/{servergroupId}
+X-Auth-Token: {tokenId}
+```
+
+#### リクエスト
+
+このAPIはリクエスト本文を要求しません。
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|-----|-----|-----|-----|-----|
+| tenantId | URL | String | O | テナントID |
+| servergroupId | URL | String | O | 配置ポリシーID |
+| tokenId | Header | String | O | トークンID |
+
+#### レスポンス
+
+このAPIはレスポンス本文を返しません。
