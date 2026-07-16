@@ -1,6 +1,7 @@
 <!-- pre-align:aligned sig=2e2588e1a607 -->
 
 <a id="compute-instance-api-v2-guide"></a>
+
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
 インスタンスは API 呼び出し時に認証/認可のために IaaS トークンを使用します。IaaS トークンは NHN Cloud の OpenStack ベースのインフラ サービス (IaaS) で使用される認証トークンです。IaaS トークンの発行および使用の詳細については、[IaaS トークン](/nhncloud/ja/public-api/iaas-token) を参照してください。
@@ -9,8 +10,8 @@
 
 | 種類 | リージョン | エンドポイント |
 |---|---|---|
-| compute | 韓国(Pangyo) リージョン<br>韓国(Pyeongchon) リージョン<br>韓国(Gwangju) リージョン<br>日本 リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
-
+| compute | 韓国(Bundang)リージョン<br>韓国(Pyeongchon)リージョン<br>韓国(Gwangju)リージョン<br>日本リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com | (行修正テスト)
+| TEST-ROW | (新規行テスト) | (新規行テスト) |
 API 応答にガイドに明示されていないフィールドが表示される場合があります。このようなフィールドは NHN Cloud 内部用途で使用され、事前通知なしに変更される可能性があるため、使用しません。
 
 <a id="instance-flavors"></a>
