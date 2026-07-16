@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=2e2588e1a607 -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
 インスタンスは API 呼び出し時に認証/認可のために IaaS トークンを使用します。IaaS トークンは NHN Cloud の OpenStack ベースのインフラ サービス (IaaS) で使用される認証トークンです。IaaS トークンの発行および使用の詳細については、[IaaS トークン](/nhncloud/ja/public-api/iaas-token) を参照してください。
