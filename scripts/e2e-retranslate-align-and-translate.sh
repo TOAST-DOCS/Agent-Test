@@ -33,15 +33,17 @@
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
 #
 # Usage:
-#   scripts/e2e-retranslate-align-and-translate.sh [--engine api|cli] [--model haiku|sonnet|opus]
+#   scripts/e2e-retranslate-align-and-translate.sh [--engine api|cli] [--model haiku|sonnet|opus] [--tm-top-k N]
 #
 #   --engine api   translate 잡을 api 엔진으로 실행
-#   --engine cli   translate 잡을 claude-code(CLI) 엔진으로 실행
-#   (생략 시 engine 필드를 보내지 않음 → 서버 default)
+#   --engine cli   translate 잡을 claude-code(CLI) 엔진으로 실행 (기본값)
+#   (default 지정 시 engine 필드를 보내지 않음 → 서버 default)
 #
-#   --model haiku  claude-haiku-4-5 사용
-#   --model sonnet claude-sonnet-4-6 사용 (기본값)
+#   --model haiku  claude-haiku-4-5 사용 (기본값)
+#   --model sonnet claude-sonnet-4-6 사용
 #   --model opus   claude-opus-4-8 사용
+#
+#   --tm-top-k N   TM few-shot 개수 (기본값 1). "default" 지정 시 필드 미전송 (잡 .env default = 10)
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
@@ -59,15 +61,17 @@ RETRANSLATE_SOURCE="ko"
 # ─────────────────────────────────────────────────────────────────────
 
 # ── 실행 옵션 ─────────────────────────────────────────────────────────
-TRANSLATE_ENGINE=""                       # ""(default) | api | claude-code
-TRANSLATE_MODEL="claude-sonnet-4-6"       # 기본값 sonnet — haiku/opus/default 로 override 가능
+TRANSLATE_ENGINE="claude-code"            # 기본값 cli — api/default 로 override 가능
+TRANSLATE_MODEL="claude-haiku-4-5"        # 기본값 haiku — sonnet/opus/default 로 override 가능
+TRANSLATE_TM_TOP_K="1"                    # TM few-shot 개수 기본값 1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
       case "${2:-}" in
-        api) TRANSLATE_ENGINE="api" ;;
-        cli) TRANSLATE_ENGINE="claude-code" ;;
-        *) echo "error: --engine 은 api 또는 cli 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+        api)     TRANSLATE_ENGINE="api" ;;
+        cli)     TRANSLATE_ENGINE="claude-code" ;;
+        default) TRANSLATE_ENGINE="" ;;
+        *) echo "error: --engine 은 api|cli|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --model)
@@ -79,7 +83,14 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --model 은 haiku|sonnet|opus|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
-    -h|--help) sed -n '3,35p' "$0"; exit 0 ;;
+    --tm-top-k)
+      case "${2:-}" in
+        default) TRANSLATE_TM_TOP_K="" ;;
+        ''|*[!0-9]*) echo "error: --tm-top-k 는 양의 정수 또는 default (got: ${2:-})" >&2; exit 1 ;;
+        *) TRANSLATE_TM_TOP_K="$2" ;;
+      esac
+      shift 2 ;;
+    -h|--help) sed -n '3,37p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -188,7 +199,7 @@ echo "  merged & local $BASE_BRANCH updated"
 
 # ── 5) /api/translate/file 로 public-api.md 전체 재번역 → alpha 커밋 ──
 echo
-echo "[5/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, branch=$BASE_BRANCH, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
+echo "[5/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, branch=$BASE_BRANCH, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
 
 # --engine 옵션이 지정된 경우 step 5 재번역에도 동일 엔진 사용
 # (미지정 시 서버 default = claude-code CLI → session limit 시 실패할 수 있음)
@@ -202,6 +213,11 @@ if [[ -n "$TRANSLATE_MODEL" ]]; then
   retx_model_json="\"model\": \"$TRANSLATE_MODEL\","
 fi
 
+retx_tm_top_k_json=""
+if [[ -n "$TRANSLATE_TM_TOP_K" ]]; then
+  retx_tm_top_k_json="\"tm_top_k\": \"$TRANSLATE_TM_TOP_K\","
+fi
+
 retx_body=$(cat <<JSON
 {
   "repo": "$REPO",
@@ -210,6 +226,7 @@ retx_body=$(cat <<JSON
   "path": "$RETRANSLATE_PATH",
   $retx_engine_json
   $retx_model_json
+  $retx_tm_top_k_json
   "path_prefix": ""
 }
 JSON
@@ -385,7 +402,7 @@ echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
 # ── 12) ko 변경 PR 대상 dashboard /api/translate 트리거 (권장 preset) ─
 echo
-echo "[12/14] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
+echo "[12/14] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
 
 # --engine 옵션이 지정된 경우에만 engine 필드 포함
 engine_json=""
@@ -399,6 +416,12 @@ if [[ -n "$TRANSLATE_MODEL" ]]; then
   model_json="\"model\": \"$TRANSLATE_MODEL\","
 fi
 
+# --tm-top-k 값이 설정된 경우에만 tm_top_k 필드 포함
+tm_top_k_json=""
+if [[ -n "$TRANSLATE_TM_TOP_K" ]]; then
+  tm_top_k_json="\"tm_top_k\": \"$TRANSLATE_TM_TOP_K\","
+fi
+
 # 권장 preset flags:
 #   --diff-granularity block --glossary-mode service --max-load-ratio 2
 #   --workers 2 --table-rows --skip-full-table --skip-anchor-only
@@ -408,6 +431,7 @@ translate_body=$(cat <<JSON
   "pr_url": "$ko_pr_url",
   $engine_json
   $model_json
+  $tm_top_k_json
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "2",

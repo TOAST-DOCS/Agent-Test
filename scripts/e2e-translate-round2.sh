@@ -24,10 +24,11 @@
 #   6. claude CLI(fable)로 번역 PR 검증 (heading·id·표 행 수) → PR 댓글 등록
 #
 # Usage:
-#   scripts/e2e-translate-round2.sh [--engine api|cli] [--model haiku|sonnet|opus]
+#   scripts/e2e-translate-round2.sh [--engine api|cli] [--model haiku|sonnet|opus] [--tm-top-k N]
 #
-#   --engine api|cli   translate 잡의 엔진 지정 (생략 시 서버 default)
-#   --model  haiku|sonnet|opus   Claude 모델 지정 (기본값 sonnet)
+#   --engine api|cli   translate 잡의 엔진 지정 (기본값 cli, default 로 서버 default 사용)
+#   --model  haiku|sonnet|opus   Claude 모델 지정 (기본값 haiku)
+#   --tm-top-k N       TM few-shot 개수 (기본값 1, default 로 잡 .env default=10)
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
@@ -41,15 +42,17 @@ REPO="TOAST-DOCS/Agent-Test"
 BASE_BRANCH="alpha"
 # ─────────────────────────────────────────────────────────────────────
 
-TRANSLATE_ENGINE=""
-TRANSLATE_MODEL="claude-sonnet-4-6"       # 기본값 sonnet — haiku/opus/default 로 override 가능
+TRANSLATE_ENGINE="claude-code"            # 기본값 cli
+TRANSLATE_MODEL="claude-haiku-4-5"        # 기본값 haiku
+TRANSLATE_TM_TOP_K="1"                    # TM few-shot 개수 기본값 1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
       case "${2:-}" in
-        api) TRANSLATE_ENGINE="api" ;;
-        cli) TRANSLATE_ENGINE="claude-code" ;;
-        *) echo "error: --engine 은 api 또는 cli 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+        api)     TRANSLATE_ENGINE="api" ;;
+        cli)     TRANSLATE_ENGINE="claude-code" ;;
+        default) TRANSLATE_ENGINE="" ;;
+        *) echo "error: --engine 은 api|cli|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --model)
@@ -61,7 +64,14 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --model 은 haiku|sonnet|opus|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
-    -h|--help) sed -n '3,31p' "$0"; exit 0 ;;
+    --tm-top-k)
+      case "${2:-}" in
+        default) TRANSLATE_TM_TOP_K="" ;;
+        ''|*[!0-9]*) echo "error: --tm-top-k 는 양의 정수 또는 default (got: ${2:-})" >&2; exit 1 ;;
+        *) TRANSLATE_TM_TOP_K="$2" ;;
+      esac
+      shift 2 ;;
+    -h|--help) sed -n '3,32p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -125,7 +135,7 @@ echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
 # ── 4) dashboard /api/translate 트리거 (권장 preset) ──────────────────
 echo
-echo "[4/6] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
+echo "[4/6] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
 
 engine_json=""
 if [[ -n "$TRANSLATE_ENGINE" ]]; then
@@ -137,11 +147,17 @@ if [[ -n "$TRANSLATE_MODEL" ]]; then
   model_json="\"model\": \"$TRANSLATE_MODEL\","
 fi
 
+tm_top_k_json=""
+if [[ -n "$TRANSLATE_TM_TOP_K" ]]; then
+  tm_top_k_json="\"tm_top_k\": \"$TRANSLATE_TM_TOP_K\","
+fi
+
 translate_body=$(cat <<JSON
 {
   "pr_url": "$ko_pr_url",
   $engine_json
   $model_json
+  $tm_top_k_json
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "2",
