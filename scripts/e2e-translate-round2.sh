@@ -24,7 +24,10 @@
 #   6. claude CLI(fable)로 번역 PR 검증 (heading·id·표 행 수) → PR 댓글 등록
 #
 # Usage:
-#   scripts/e2e-translate-round2.sh [--engine api|cli]
+#   scripts/e2e-translate-round2.sh [--engine api|cli] [--model haiku|sonnet|opus]
+#
+#   --engine api|cli   translate 잡의 엔진 지정 (생략 시 서버 default)
+#   --model  haiku|sonnet|opus   Claude 모델 지정 (기본값 sonnet)
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
@@ -39,6 +42,7 @@ BASE_BRANCH="alpha"
 # ─────────────────────────────────────────────────────────────────────
 
 TRANSLATE_ENGINE=""
+TRANSLATE_MODEL="claude-sonnet-4-6"       # 기본값 sonnet — haiku/opus/default 로 override 가능
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
@@ -48,7 +52,16 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --engine 은 api 또는 cli 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
-    -h|--help) sed -n '3,29p' "$0"; exit 0 ;;
+    --model)
+      case "${2:-}" in
+        haiku)   TRANSLATE_MODEL="claude-haiku-4-5" ;;
+        sonnet)  TRANSLATE_MODEL="claude-sonnet-4-6" ;;
+        opus)    TRANSLATE_MODEL="claude-opus-4-8" ;;
+        default) TRANSLATE_MODEL="" ;;
+        *) echo "error: --model 은 haiku|sonnet|opus|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    -h|--help) sed -n '3,31p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -112,17 +125,23 @@ echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
 # ── 4) dashboard /api/translate 트리거 (권장 preset) ──────────────────
 echo
-echo "[4/6] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default})"
+echo "[4/6] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
 
 engine_json=""
 if [[ -n "$TRANSLATE_ENGINE" ]]; then
   engine_json="\"engine\": \"$TRANSLATE_ENGINE\","
 fi
 
+model_json=""
+if [[ -n "$TRANSLATE_MODEL" ]]; then
+  model_json="\"model\": \"$TRANSLATE_MODEL\","
+fi
+
 translate_body=$(cat <<JSON
 {
   "pr_url": "$ko_pr_url",
   $engine_json
+  $model_json
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "2",

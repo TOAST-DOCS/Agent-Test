@@ -20,11 +20,15 @@
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
 #
 # Usage:
-#   scripts/e2e-align-and-translate.sh [--engine api|cli]
+#   scripts/e2e-align-and-translate.sh [--engine api|cli] [--model haiku|sonnet|opus]
 #
 #   --engine api   translate 잡을 api 엔진으로 실행
 #   --engine cli   translate 잡을 claude-code(CLI) 엔진으로 실행
 #   (생략 시 engine 필드를 보내지 않음 → 서버 default)
+#
+#   --model haiku  claude-haiku-4-5 사용
+#   --model sonnet claude-sonnet-4-6 사용 (기본값)
+#   --model opus   claude-opus-4-8 사용
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
@@ -40,7 +44,8 @@ TARGET_URL="https://github.com/${REPO}"
 # ─────────────────────────────────────────────────────────────────────
 
 # ── 실행 옵션 ─────────────────────────────────────────────────────────
-TRANSLATE_ENGINE=""   # ""(default) | api | claude-code
+TRANSLATE_ENGINE=""                       # ""(default) | api | claude-code
+TRANSLATE_MODEL="claude-sonnet-4-6"       # 기본값 sonnet — haiku/opus/default 로 override 가능
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
@@ -50,7 +55,16 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --engine 은 api 또는 cli 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
-    -h|--help) sed -n '3,30p' "$0"; exit 0 ;;
+    --model)
+      case "${2:-}" in
+        haiku)   TRANSLATE_MODEL="claude-haiku-4-5" ;;
+        sonnet)  TRANSLATE_MODEL="claude-sonnet-4-6" ;;
+        opus)    TRANSLATE_MODEL="claude-opus-4-8" ;;
+        default) TRANSLATE_MODEL="" ;;
+        *) echo "error: --model 은 haiku|sonnet|opus|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    -h|--help) sed -n '3,33p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -267,12 +281,18 @@ echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
 # ── 12) ko 변경 PR 대상 dashboard /api/translate 트리거 (권장 preset) ─
 echo
-echo "[12/14] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default})"
+echo "[12/14] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
 
 # --engine 옵션이 지정된 경우에만 engine 필드 포함
 engine_json=""
 if [[ -n "$TRANSLATE_ENGINE" ]]; then
   engine_json="\"engine\": \"$TRANSLATE_ENGINE\","
+fi
+
+# --model 값이 설정된 경우에만 model 필드 포함 (default 는 서버가 결정)
+model_json=""
+if [[ -n "$TRANSLATE_MODEL" ]]; then
+  model_json="\"model\": \"$TRANSLATE_MODEL\","
 fi
 
 # 권장 preset flags:
@@ -283,6 +303,7 @@ translate_body=$(cat <<JSON
 {
   "pr_url": "$ko_pr_url",
   $engine_json
+  $model_json
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "2",

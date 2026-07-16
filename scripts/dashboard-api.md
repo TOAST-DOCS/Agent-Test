@@ -191,6 +191,7 @@ translate preset 필드 (모두 optional):
 {
   "pr_url": "…",
   "engine": "api|claude-code|default",
+  "model": "claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8|default",
   "diff_mode": "incremental|full",
   "diff_granularity": "section|block",
   "diff_section_level": "2|3|4",
@@ -204,13 +205,22 @@ translate preset 필드 (모두 optional):
 }
 ```
 
+`model` (선택) — Claude model id 를 지정하면 Jenkins `MODEL` 파라미터로
+전달되어 API 엔진과 CLI 엔진 모두 같은 모델로 강제 (`TRANSLATE_ANTHROPIC_MODEL`
++ `TRANSLATE_CLAUDE_CODE_MODEL` 동시 설정). `default` 또는 omit 이면 잡의
+`.env` / `config.yaml` 기본값 (`claude-sonnet-4-6`) 이 유효. Agent-Test /
+translate-test 도 예외 없이 기본값을 씀 — 저렴하게 돌리려면
+`claude-haiku-4-5` 명시 선택 (2026-07-16 이전엔 test 레포에 haiku 가 강제
+override 되었지만 이제 dashboard 다이얼로그 / API 로만 결정된다).
+
 응답: Jenkins trigger 페이로드 (`queued, queue_url, job_url, build_url,
 job_id, task_id`). 트리거 자체는 성공, 실제 실행은 Jenkins 큐 로 넘어감.
 
 `/api/retranslate` body: `{file_url, commit_to_branch, ko_path?, pr_url?,
-pipeline_branch?, preserve_existing?, engine?}`. `file_url` 은 GitHub blob
-URL 이어야 함. `engine` 은 `/api/translate/file` 과 동일 (`api` /
-`claude-code` / `default` / omit).
+pipeline_branch?, preserve_existing?, engine?, model?}`. `file_url` 은
+GitHub blob URL 이어야 함. `engine` 은 `/api/translate/file` 과 동일 (`api`
+/ `claude-code` / `default` / omit). `model` 은 `/api/translate` 와 동일
+(model id / `default` / omit — 후 두 값은 override 안 함).
 
 `/api/translate/file` — `/api/retranslate` 와 동일한 Jenkins 파이프라인
 (`FILE_URL` + `COMMIT_TO_BRANCH` + `DIFF_MODE=full`) 을 태우지만, viewer 가
@@ -234,6 +244,14 @@ Body:
                                        //   (유료), "claude-code" 는 CLI 구독
                                        //   quota, "default" 또는 omit 은 ENGINE
                                        //   파라미터를 Jenkins 로 안 넘김 (env 기본값)
+  "model": "claude-haiku-4-5|claude-sonnet-4-6|claude-opus-4-8|default",
+                                       // optional — Claude model id. 값이 있으면
+                                       //   Jenkins MODEL 파라미터로 전달, 잡이
+                                       //   TRANSLATE_ANTHROPIC_MODEL +
+                                       //   TRANSLATE_CLAUDE_CODE_MODEL 동시 설정
+                                       //   (API 엔진과 CLI 엔진 모두 같은 모델).
+                                       //   "default" 또는 omit 이면 .env 기본값
+                                       //   (config.yaml: claude-sonnet-4-6) 유지.
   "pipeline_branch": ""              // optional — Jenkins multibranch child branch
 }
 ```
@@ -393,7 +411,7 @@ Source: `viewer/main.py:3440-3990`
 | POST | `/compare/revert` body `{repo, pr_number, source?, langs?, path_prefix?, paths}` | 선택 파일들을 PR base 로 리버트 (head branch 에 커밋) |
 | POST | `/compare/align` body `{repo, ref, path, source?, langs?, base_ref?, branch?, engine?, ..., align_v2?}` | 파일 하나 align (dashboard 프록시) |
 | POST | `/compare/align-v2-batch` body `{repo, ref?, source?, langs?, paths, mode?, commit_to_branch?, base_ref?, align_v2?, engine?, align_v2_threshold?, path_prefix?}` | 여러 파일 batch align |
-| POST | `/compare/retranslate-file` body `{repo, pr_number, source?, path, path_prefix?, pipeline_branch?}` | 파일 하나 재번역 (PR head 에 직접 커밋) |
+| POST | `/compare/retranslate-file` body `{repo, pr_number, source?, path, path_prefix?, pipeline_branch?, mode?, preserve_existing?, model?}` | 파일 하나 재번역 (PR head 에 직접 커밋). `model` (`claude-haiku-4-5`/`claude-sonnet-4-6`/`claude-opus-4-8`/`default`) 은 dashboard `/api/retranslate` 로 forward → Jenkins MODEL 로 override; `default`/omit 이면 잡 `.env` 기본값 |
 | POST | `/compare/add-ids` body `{repo, ref, source?, langs?, paths}` | Task 2 (ids-only, LLM 없음) → PR 생성 |
 | POST | `/compare/queue` body `{queue_url}` | Jenkins queue → build URL 해석 |
 | POST | `/compare/build-status` body `{build_url}` | 빌드 상태 폴링 (`compare-headings ↻ 재번역` 인디케이터) |
