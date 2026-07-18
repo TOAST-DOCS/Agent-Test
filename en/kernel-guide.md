@@ -10,7 +10,6 @@
 ## Rocky Linux 8 { #rocky-linux-8 }
 
 <a id="check-the-kernel-version"></a>
-
 ### Check the Kernel Version { #check-the-kernel-version }
 
 Check the currently installed kernel version.
