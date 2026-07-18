@@ -371,10 +371,11 @@ if (( n_suggestions == 0 )); then
 fi
 echo "  detected suggestions: $n_suggestions"
 
-# ko PR head 브랜치를 worktree 로 체크아웃 → 파일별 line 역순 정렬 적용 → commit + push
+# ko PR head 브랜치를 detached worktree 로 체크아웃 → 파일별 line 역순 정렬 적용 → commit + push
+# (메인 워크트리가 같은 브랜치를 이미 checkout 한 상태라 -B 로는 충돌; detach 로 회피)
 git fetch --quiet origin "$ko_head_ref_for_suggest"
 apply_wt="$tmpdir/apply-suggestions"
-git worktree add -B "$ko_head_ref_for_suggest" "$apply_wt" "origin/$ko_head_ref_for_suggest" >/dev/null
+git worktree add --detach "$apply_wt" "origin/$ko_head_ref_for_suggest" >/dev/null
 
 PR_COMMENTS_FILE="$tmpdir/pr_comments.json" APPLY_WT="$apply_wt" python3 - <<'PYEOF'
 import json, os, re
@@ -424,11 +425,16 @@ if git diff --cached --quiet; then
   echo "  변경 없음 (suggestion diff 매칭 실패 또는 이미 적용됨)"
 else
   git commit -m "ko-review: accept $n_suggestions suggestion(s)"
-  git push origin "$ko_head_ref_for_suggest"
+  # detached HEAD → 원격 브랜치로 직접 push
+  git push origin "HEAD:refs/heads/$ko_head_ref_for_suggest"
   echo "  suggestions committed & pushed to $ko_head_ref_for_suggest"
 fi
 popd >/dev/null
 git worktree remove "$apply_wt" --force
+
+# 메인 워크트리도 suggestion 반영본으로 최신화 (step 15 translate 트리거 전)
+git fetch --quiet origin "$ko_head_ref_for_suggest"
+git reset --hard "origin/$ko_head_ref_for_suggest"
 
 # ── 15) ko 변경 PR (suggestion 반영본) 대상 dashboard /api/translate 트리거 ─
 echo
