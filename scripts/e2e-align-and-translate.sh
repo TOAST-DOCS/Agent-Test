@@ -12,9 +12,13 @@
 #   9. 검증 통과 시 align PR 을 alpha 로 merge (실패 시 PR 은 open 으로 남김)
 #  10. scripts/create-translate-test-pr.sh 실행 (ko 변형 → translate-test PR 생성)
 #  11. ko 변경 PR 생성 확인
-#  12. ko 변경 PR 대상으로 dashboard /api/translate 호출 (권장 preset)
-#  13. translate 잡이 생성하는 번역 PR(base=ko PR head 브랜치) 감지 대기
-#  14. claude CLI(fable)로 번역 PR 검증 (heading·id·표 행 수) → 결과를 PR 댓글로 등록
+#  12. dashboard /api/ko-review 호출 (ko 변경 PR 대상 한글 검수 트리거)
+#  13. ko-review 잡 완료 대기 (Jobs 상태 polling)
+#  14. ko 변경 PR 의 suggestion 검증 (1개 이상 존재해야 함) → 전체 accept 후
+#      ko 변경 PR head 브랜치로 commit + push
+#  15. ko 변경 PR (suggestion 반영본) 대상으로 dashboard /api/translate 호출
+#  16. translate 잡이 생성하는 번역 PR(base=ko PR head 브랜치) 감지 대기
+#  17. claude CLI(fable)로 번역 PR 검증 (heading·id·표 행 수) → 결과를 PR 댓글로 등록
 #
 # 상단 두 변수(DASHBOARD_BASE_URL, DASHBOARD_API_TOKEN)를 채우고 실행.
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
@@ -75,7 +79,7 @@ while [[ $# -gt 0 ]]; do
         *) TRANSLATE_TM_TOP_K="$2" ;;
       esac
       shift 2 ;;
-    -h|--help) sed -n '3,35p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,40p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -89,19 +93,19 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 # ── 1) alpha 로 switch ───────────────────────────────────────────────
-echo "[1/14] git checkout $BASE_BRANCH"
+echo "[1/17] git checkout $BASE_BRANCH"
 git fetch origin "$BASE_BRANCH"
 git checkout "$BASE_BRANCH"
 git pull --ff-only origin "$BASE_BRANCH"
 
 # ── 2) restore-alpha-origin (내부에서 commit+push) ────────────────────
 echo
-echo "[2/14] scripts/restore-alpha-origin.sh"
+echo "[2/17] scripts/restore-alpha-origin.sh"
 bash "$REPO_ROOT/scripts/restore-alpha-origin.sh"
 
 # ── 3) dashboard /api/fix-heading-syntax (heading 문법 정정) ──────────
 echo
-echo "[3/14] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
+echo "[3/17] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
 
 # 트리거 직전 open PR 목록을 baseline 으로 저장 (step 4 의 신규 PR 감지용)
 tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
@@ -132,7 +136,7 @@ fi
 
 # ── 4) fix-heading-syntax PR 감지 대기 ────────────────────────────────
 echo
-echo "[4/14] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
+echo "[4/17] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
 deadline=$(( $(date +%s) + 1800 ))
 fix_pr_url=""
@@ -162,7 +166,7 @@ echo "  merged & local $BASE_BRANCH updated"
 
 # ── 5) restore-aligned-public-api + commit+push ──────────────────────
 echo
-echo "[5/14] scripts/restore-aligned-public-api.sh"
+echo "[5/17] scripts/restore-aligned-public-api.sh"
 bash "$REPO_ROOT/scripts/restore-aligned-public-api.sh"
 
 if git diff --quiet && git diff --cached --quiet; then
@@ -175,7 +179,7 @@ fi
 
 # ── 6) dashboard /api/align 트리거 (권장 preset) ─────────────────────
 echo
-echo "[6/14] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
+echo "[6/17] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
 
 # 권장 preset flags: --aligned-marker --demote-extras --translate-headings --reconcile-unmatched
 align_body=$(cat <<JSON
@@ -206,7 +210,7 @@ fi
 
 # ── 7) align PR 감지 (base=alpha 로 새로 open 된 PR) ─────────────────
 echo
-echo "[7/14] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
+echo "[7/17] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
 # 트리거 직전 시점 open PR 목록을 baseline 으로 저장
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
@@ -232,7 +236,7 @@ fi
 
 # ── 8) claude CLI(fable)로 align PR heading·anchor-id 정렬 검사 ───────
 echo
-echo "[8/14] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
+echo "[8/17] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
 
 head_ref="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$head_ref"
@@ -260,21 +264,21 @@ fi
 
 # ── 9) 검증 통과 → align PR 을 alpha 로 merge ─────────────────────────
 echo
-echo "[9/14] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
+echo "[9/17] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
 gh pr merge "$align_pr_url" --repo "$REPO" --merge --delete-branch
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated: $align_pr_url"
 
 # ── 10) create-translate-test-pr (ko 변형 → translate-test PR 생성) ───
 echo
-echo "[10/14] scripts/create-translate-test-pr.sh"
+echo "[10/17] scripts/create-translate-test-pr.sh"
 
 create_out="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh")"
 echo "$create_out"
 
 # ── 11) ko 변경 PR 생성 확인 ──────────────────────────────────────────
 echo
-echo "[11/14] ko 변경 PR 생성 확인"
+echo "[11/17] ko 변경 PR 생성 확인"
 
 # gh pr create 는 마지막 줄에 PR URL 을 출력
 ko_pr_url="$(grep -oE 'https://github.com/[^ ]+/pull/[0-9]+' <<<"$create_out" | tail -n1 || true)"
@@ -290,9 +294,145 @@ if [[ "$ko_pr_state" != "OPEN" ]]; then
 fi
 echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
-# ── 12) ko 변경 PR 대상 dashboard /api/translate 트리거 (권장 preset) ─
+# ── 12) dashboard /api/ko-review 트리거 (ko 변경 PR 대상 한글 검수) ────
 echo
-echo "[12/14] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
+echo "[12/17] POST $DASHBOARD_BASE_URL/api/ko-review (PR=$ko_pr_url)"
+
+koreview_body=$(cat <<JSON
+{
+  "pr_url": "$ko_pr_url"
+}
+JSON
+)
+
+koreview_resp="$(curl -sS -X POST \
+  -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$koreview_body" \
+  "$DASHBOARD_BASE_URL/api/ko-review")"
+
+echo "$koreview_resp" | python3 -m json.tool
+
+koreview_job_id=$(printf '%s' "$koreview_resp" \
+  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("job_id") or "")')
+
+if [[ -z "$koreview_job_id" ]]; then
+  echo "  error: /api/ko-review 응답에서 job_id 를 찾지 못했습니다." >&2
+  exit 2
+fi
+
+# ── 13) ko-review 완료 대기 ──────────────────────────────────────────
+echo
+echo "[13/17] ko-review 완료 대기 (job_id=$koreview_job_id, 최대 30분)"
+
+deadline=$(( $(date +%s) + 1800 ))
+koreview_status=""
+while (( $(date +%s) < deadline )); do
+  koreview_status="$(curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+    "$DASHBOARD_BASE_URL/api/jobs/$koreview_job_id" \
+    | python3 -c 'import json,sys
+try:
+  d=json.load(sys.stdin)
+  tasks=(d.get("job") or {}).get("tasks") or []
+  print(tasks[0].get("status") if tasks else "")
+except Exception:
+  print("")')"
+  case "$koreview_status" in
+    success|failure|cancelled|partial) break ;;
+  esac
+  sleep 30
+done
+
+if [[ "$koreview_status" != "success" ]]; then
+  echo "  ko-review 실패 (status=$koreview_status, job_id=$koreview_job_id)" >&2
+  exit 2
+fi
+echo "  ko-review 완료"
+
+# ── 14) ko 변경 PR suggestion 검증 및 전체 accept ─────────────────────
+echo
+echo "[14/17] ko 변경 PR suggestion 검증 및 accept (PR=$ko_pr_url)"
+
+ko_pr_number="$(gh pr view "$ko_pr_url" --repo "$REPO" --json number --jq .number)"
+ko_head_ref_for_suggest="$(gh pr view "$ko_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
+
+# 리뷰 코멘트 (inline) 를 모두 조회 → ```suggestion 블록 개수 확인
+gh api "repos/$REPO/pulls/$ko_pr_number/comments" --paginate > "$tmpdir/pr_comments.json"
+
+n_suggestions=$(PR_COMMENTS_FILE="$tmpdir/pr_comments.json" python3 -c '
+import json, os, re
+cs=json.load(open(os.environ["PR_COMMENTS_FILE"]))
+print(sum(1 for c in cs if re.search(r"```suggestion", c.get("body") or "")))
+')
+
+if (( n_suggestions == 0 )); then
+  echo "  error: ko-review 가 suggestion 을 남기지 않았습니다 (1개 이상 예상)" >&2
+  exit 3
+fi
+echo "  detected suggestions: $n_suggestions"
+
+# ko PR head 브랜치를 worktree 로 체크아웃 → 파일별 line 역순 정렬 적용 → commit + push
+git fetch --quiet origin "$ko_head_ref_for_suggest"
+apply_wt="$tmpdir/apply-suggestions"
+git worktree add -B "$ko_head_ref_for_suggest" "$apply_wt" "origin/$ko_head_ref_for_suggest" >/dev/null
+
+PR_COMMENTS_FILE="$tmpdir/pr_comments.json" APPLY_WT="$apply_wt" python3 - <<'PYEOF'
+import json, os, re
+from collections import defaultdict
+
+cs = json.load(open(os.environ["PR_COMMENTS_FILE"]))
+by_file = defaultdict(list)
+for c in cs:
+    body = c.get("body") or ""
+    m = re.search(r"```suggestion\n(.*?)```", body, flags=re.DOTALL)
+    if not m:
+        continue
+    path = c.get("path")
+    line = c.get("line") or c.get("original_line")
+    start = c.get("start_line") or c.get("original_start_line") or line
+    if not (path and line and start):
+        continue
+    by_file[path].append({"start": start, "end": line, "content": m.group(1)})
+
+wt = os.environ["APPLY_WT"]
+applied = 0
+for path, items in by_file.items():
+    fpath = os.path.join(wt, path)
+    if not os.path.isfile(fpath):
+        print(f"  skip (no such file): {path}")
+        continue
+    items.sort(key=lambda x: x["start"], reverse=True)
+    with open(fpath, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    for it in items:
+        s = it["start"] - 1
+        e = it["end"]
+        new = it["content"]
+        if not new.endswith("\n"):
+            new += "\n"
+        new_lines = new.splitlines(keepends=True)
+        lines[s:e] = new_lines
+        applied += 1
+    with open(fpath, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+print(f"  applied files: {len(by_file)}, suggestions applied: {applied}")
+PYEOF
+
+pushd "$apply_wt" >/dev/null
+git add -A
+if git diff --cached --quiet; then
+  echo "  변경 없음 (suggestion diff 매칭 실패 또는 이미 적용됨)"
+else
+  git commit -m "ko-review: accept $n_suggestions suggestion(s)"
+  git push origin "$ko_head_ref_for_suggest"
+  echo "  suggestions committed & pushed to $ko_head_ref_for_suggest"
+fi
+popd >/dev/null
+git worktree remove "$apply_wt" --force
+
+# ── 15) ko 변경 PR (suggestion 반영본) 대상 dashboard /api/translate 트리거 ─
+echo
+echo "[15/17] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
 
 # --engine 옵션이 지정된 경우에만 engine 필드 포함
 engine_json=""
@@ -343,9 +483,9 @@ translate_resp="$(curl -sS -X POST \
 
 echo "$translate_resp" | python3 -m json.tool
 
-# ── 13) 번역 PR 감지 대기 (base = ko PR head 브랜치) ──────────────────
+# ── 16) 번역 PR 감지 대기 (base = ko PR head 브랜치) ──────────────────
 echo
-echo "[13/14] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60분)"
+echo "[16/17] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60분)"
 
 ko_head_ref="$(gh pr view "$ko_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 
@@ -368,9 +508,9 @@ if [[ -z "$trans_pr_url" ]]; then
   exit 2
 fi
 
-# ── 14) claude CLI(fable)로 번역 PR 검증 → 결과를 PR 댓글로 등록 ───────
+# ── 17) claude CLI(fable)로 번역 PR 검증 → 결과를 PR 댓글로 등록 ───────
 echo
-echo "[14/14] claude CLI (fable model) 번역 PR 검증 (PR=$trans_pr_url)"
+echo "[17/17] claude CLI (fable model) 번역 PR 검증 (PR=$trans_pr_url)"
 
 trans_head_ref="$(gh pr view "$trans_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$trans_head_ref"
