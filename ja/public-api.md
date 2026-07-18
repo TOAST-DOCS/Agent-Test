@@ -10,8 +10,8 @@ Instance は API 呼び出し時の認証・認可のために IaaS トークン
 
 | タイプ | リージョン | エンドポイント |
 |---|---|---|
-| compute | 韓国 (パンギョ) リージョン<br>韓国 (ピョンチョン) リージョン<br>韓国 (グァンジュ) リージョン<br>日本リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
-
+| compute | 韓国 (パンギョ) リージョン<br>韓国 (ピョンチョン) リージョン<br>韓国 (クアンジュ) リージョン<br>日本 リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com | (行修正テスト)
+| TEST-ROW | (新規行テスト) | (新規行テスト) |
 API 応答に本ガイドで明示されていないフィールドが含まれる場合があります。これらのフィールドは NHN Cloud の内部用途で使用され、予告なく変更される可能性があるため、使用しないでください。
 
 <a id="instance-flavors"></a>
