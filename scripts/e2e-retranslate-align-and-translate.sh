@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
 # End-to-end 재현 스크립트 (Agent-Test alpha) — public-api.md 전체 재번역 변형:
-#   scripts/e2e-align-and-translate.sh 의 step 5(scripts/restore-aligned-public-api.sh
-#   호출)를, dashboard /api/translate/file 을 통한 public-api.md 전체 재번역
-#   (DIFF_MODE=full) 으로 교체한 변형. 나머지 흐름은 동일.
+#   scripts/e2e-align-and-translate.sh 흐름에 dashboard /api/translate/file
+#   을 통한 public-api.md 전체 재번역(DIFF_MODE=full) 을 추가한 변형. 재번역
+#   결과는 alpha 에 직접 커밋하지 않고 **align PR 의 head 브랜치에 append**
+#   되도록 pr_number 를 사용 → align + 재번역이 한 PR 로 리뷰됨.
 #
 #   재번역 소요 시간을 줄이기 위해 step 2 뒤에 public-api.md 를 40% 축소본
 #   (archive/alpha-origin-40pct/{ko,en,ja}/public-api.md) 으로 덮어쓰는 단계
@@ -16,12 +17,13 @@
 #      + public-api.md 40% 축소본 덮어쓰기 → commit+push
 #   3. dashboard /api/fix-heading-syntax 호출 (heading 문법 정정, base=alpha)
 #   4. fix-heading-syntax 잡이 생성하는 PR 감지 → merge → alpha 최신화
-#   5. dashboard /api/translate/file 호출 (ko/public-api.md 전체 재번역,
-#      commit_to_branch=alpha) → 잡(job_id) 상태가 success 가 될 때까지 대기
-#      (en·ja 커밋이 각각 push 되므로 sha 폴링 대신 job status 폴링)
-#   6. dashboard /api/align 호출 (= fix_headings job, 권장 preset, base=alpha)
-#   7. Jenkins align 잡이 새로 만든 PR 을 gh 로 감지
-#   8. claude CLI(fable model)로 align PR 브랜치의 ko/en/ja heading·anchor-id 정렬 검사
+#   5. dashboard /api/align 호출 (= fix_headings job, 권장 preset, base=alpha)
+#   6. Jenkins align 잡이 새로 만든 PR 을 gh 로 감지 (base=alpha)
+#   7. dashboard /api/translate/file 호출 (ko/public-api.md 전체 재번역,
+#      pr_number=<align PR>) → 재번역 커밋이 align PR head 브랜치에 append,
+#      job status 가 success 될 때까지 대기 후 로컬 head_ref 최신화
+#   8. claude CLI(fable model)로 align PR 브랜치(재번역 포함)의
+#      ko/en/ja heading·anchor-id 정렬 검사
 #   9. 검증 통과 시 align PR 을 alpha 로 merge (실패 시 PR 은 open 으로 남김)
 #  10. scripts/create-translate-test-pr.sh 실행 (ko 변형 → translate-test PR 생성)
 #  11. ko 변경 PR 생성 확인
@@ -197,12 +199,72 @@ gh pr merge "$fix_pr_url" --repo "$REPO" --merge --delete-branch
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated"
 
-# ── 5) /api/translate/file 로 public-api.md 전체 재번역 → alpha 커밋 ──
+# ── 5) dashboard /api/align 트리거 (권장 preset) ─────────────────────
 echo
-echo "[5/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, branch=$BASE_BRANCH, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
+echo "[5/14] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
 
-# --engine 옵션이 지정된 경우 step 5 재번역에도 동일 엔진 사용
-# (미지정 시 서버 default = claude-code CLI → session limit 시 실패할 수 있음)
+# 트리거 직전 시점 open PR 목록을 baseline 으로 저장 (step 6 신규 PR 감지용)
+gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
+  --jq '.[].url' | sort -u > "$tmpdir/before"
+
+# 권장 preset flags: --aligned-marker --demote-extras --translate-headings --reconcile-unmatched
+align_body=$(cat <<JSON
+{
+  "target": "$TARGET_URL",
+  "base_ref": "$BASE_BRANCH",
+  "aligned_marker": true,
+  "demote_extras": true,
+  "translate_headings": true,
+  "reconcile_unmatched": true
+}
+JSON
+)
+
+align_resp="$(curl -sS -X POST \
+  -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$align_body" \
+  "$DASHBOARD_BASE_URL/api/align")"
+
+echo "$align_resp" | python3 -m json.tool
+
+align_build_url=$(printf '%s' "$align_resp" \
+  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("build_url") or "")')
+if [[ -n "$align_build_url" ]]; then
+  echo "  align build: $align_build_url"
+fi
+
+# ── 6) align PR 감지 (base=alpha 로 새로 open 된 PR) ─────────────────
+echo
+echo "[6/14] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
+
+deadline=$(( $(date +%s) + 1800 ))
+align_pr_url=""
+while (( $(date +%s) < deadline )); do
+  gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
+    --jq '.[].url' | sort -u > "$tmpdir/now"
+  align_pr_url="$(comm -13 "$tmpdir/before" "$tmpdir/now" | head -n1 || true)"
+  if [[ -n "$align_pr_url" ]]; then
+    echo "  detected new PR: $align_pr_url"
+    break
+  fi
+  sleep 30
+done
+
+if [[ -z "$align_pr_url" ]]; then
+  echo "  timeout: 30분 내 새 PR 을 감지하지 못했습니다." >&2
+  exit 2
+fi
+
+# align PR 의 head 브랜치 (재번역 커밋을 이 브랜치에 append)
+align_pr_number="$(gh pr view "$align_pr_url" --repo "$REPO" --json number --jq .number)"
+head_ref="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
+
+# ── 7) /api/translate/file 로 public-api.md 전체 재번역 → align PR 커밋 ──
+echo
+echo "[7/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, pr_number=$align_pr_number, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
+
+# pr_number 지정 시 서버가 GH 에서 head.ref 조회 → commit_to_branch=head_ref
 retx_engine_json=""
 if [[ -n "$TRANSLATE_ENGINE" ]]; then
   retx_engine_json="\"engine\": \"$TRANSLATE_ENGINE\","
@@ -221,7 +283,7 @@ fi
 retx_body=$(cat <<JSON
 {
   "repo": "$REPO",
-  "branch": "$BASE_BRANCH",
+  "pr_number": $align_pr_number,
   "source": "$RETRANSLATE_SOURCE",
   "path": "$RETRANSLATE_PATH",
   $retx_engine_json
@@ -254,7 +316,6 @@ if [[ -n "$retx_build_url" ]]; then
 fi
 
 # 잡 상태가 success 가 될 때까지 대기 (전체 재번역이라 최대 90분)
-# 언어별로 각각 커밋되므로 sha 변화만 봐서는 조기 종료됨 → job status 폴링
 echo "  retranslate 완료 대기: job_id=$retx_job_id (최대 90분)"
 deadline=$(( $(date +%s) + 5400 ))
 retx_status=""
@@ -279,73 +340,14 @@ if [[ "$retx_status" != "success" ]]; then
   exit 2
 fi
 
-git fetch --quiet origin "$BASE_BRANCH"
-git pull --ff-only origin "$BASE_BRANCH"
-echo "  retranslate 완료 & local $BASE_BRANCH updated"
+# align PR head 브랜치를 fetch 해서 재번역 커밋을 로컬로 가져옴
+git fetch --quiet origin "$head_ref"
+echo "  retranslate 완료 & align PR head branch ($head_ref) 최신화"
 
-# ── 6) dashboard /api/align 트리거 (권장 preset) ─────────────────────
+# ── 8) claude CLI(fable)로 align PR (재번역 포함) heading·anchor-id 정렬 검사 ─
 echo
-echo "[6/14] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
+echo "[8/14] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url, 재번역 포함)"
 
-# 권장 preset flags: --aligned-marker --demote-extras --translate-headings --reconcile-unmatched
-align_body=$(cat <<JSON
-{
-  "target": "$TARGET_URL",
-  "base_ref": "$BASE_BRANCH",
-  "aligned_marker": true,
-  "demote_extras": true,
-  "translate_headings": true,
-  "reconcile_unmatched": true
-}
-JSON
-)
-
-align_resp="$(curl -sS -X POST \
-  -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "$align_body" \
-  "$DASHBOARD_BASE_URL/api/align")"
-
-echo "$align_resp" | python3 -m json.tool
-
-align_build_url=$(printf '%s' "$align_resp" \
-  | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("build_url") or "")')
-if [[ -n "$align_build_url" ]]; then
-  echo "  align build: $align_build_url"
-fi
-
-# ── 7) align PR 감지 (base=alpha 로 새로 open 된 PR) ─────────────────
-echo
-echo "[7/14] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
-
-# 트리거 직전 시점 open PR 목록을 baseline 으로 저장
-gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
-  --jq '.[].url' | sort -u > "$tmpdir/before"
-
-deadline=$(( $(date +%s) + 1800 ))
-align_pr_url=""
-while (( $(date +%s) < deadline )); do
-  gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
-    --jq '.[].url' | sort -u > "$tmpdir/now"
-  align_pr_url="$(comm -13 "$tmpdir/before" "$tmpdir/now" | head -n1 || true)"
-  if [[ -n "$align_pr_url" ]]; then
-    echo "  detected new PR: $align_pr_url"
-    break
-  fi
-  sleep 30
-done
-
-if [[ -z "$align_pr_url" ]]; then
-  echo "  timeout: 30분 내 새 PR 을 감지하지 못했습니다." >&2
-  exit 2
-fi
-
-# ── 8) claude CLI(fable)로 align PR heading·anchor-id 정렬 검사 ───────
-echo
-echo "[8/14] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
-
-head_ref="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
-git fetch origin "$head_ref"
 check_wt="$tmpdir/pr-check"
 git worktree add "$check_wt" "origin/$head_ref" >/dev/null
 
