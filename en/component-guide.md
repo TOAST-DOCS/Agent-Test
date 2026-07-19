@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=0b640fde76d8 -->
 
 <a id="compute-instance-installation-component-guide"></a>
-
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
 
 This is a test paragraph added to an existing section. Existing headings must be preserved. (Content modification test: This sentence must be reflected in subsequent translation runs.)
