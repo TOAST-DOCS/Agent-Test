@@ -24,7 +24,11 @@
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
 #
 # Usage:
-#   scripts/e2e-align-and-translate.sh [--engine api|cli] [--model haiku|sonnet|opus] [--tm-top-k N]
+#   scripts/e2e-align-and-translate.sh [--engine api|cli] [--model haiku|sonnet|opus]
+#                                      [--tm-top-k N] [--chunk-workers N]
+#                                      [--guidelines-variant-en aws|unified|unified-v2|default]
+#                                      [--guidelines-variant-ja aws|unified|default]
+#                                      [--align-v2|--no-align-v2]
 #
 #   --engine api   translate 잡을 api 엔진으로 실행
 #   --engine cli   translate 잡을 claude-code(CLI) 엔진으로 실행 (기본값)
@@ -34,7 +38,19 @@
 #   --model sonnet claude-sonnet-4-6 사용
 #   --model opus   claude-opus-4-8 사용
 #
-#   --tm-top-k N   TM few-shot 개수 (기본값 1). "default" 지정 시 필드 미전송 (잡 .env default = 10)
+#   --tm-top-k N          TM few-shot 개수 (기본값 1). "default" 지정 시 필드 미전송 (잡 .env default = 10)
+#   --chunk-workers N     chunk 병렬도 (기본값 2). PR#192/#199 의 chunk 병렬화 exercise.
+#                         "default" 시 잡 .env default (api=4, cli=2).
+#   --guidelines-variant-en <v>  en 가이드라인 크기 (aws|unified|unified-v2|default).
+#                                기본값 default (잡 .env default = unified-v2).
+#   --guidelines-variant-ja <v>  ja 가이드라인 크기 (aws|unified|default).
+#                                기본값 default (잡 .env default = unified).
+#   --align-v2 / --no-align-v2   PR#218 ko-source-of-truth 모드로 align 실행 여부.
+#                                기본값 --align-v2 (opinionated defaults: demote-extras +
+#                                translate-headings 자동 활성; ancestor subtree 재번역 포함
+#                                zero-residual sweep). fix_headings.py 는 --auto-align-v2-below
+#                                (기본 5) 를 자동으로 사용하므로, --align-v2 가 꺼져 있어도
+#                                잔여 diff 1..5 인 (doc, lang) 은 자동 escalation 됨.
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
@@ -53,6 +69,10 @@ TARGET_URL="https://github.com/${REPO}"
 TRANSLATE_ENGINE="claude-code"            # 기본값 cli — api/default 로 override 가능
 TRANSLATE_MODEL="claude-haiku-4-5"        # 기본값 haiku — sonnet/opus/default 로 override 가능
 TRANSLATE_TM_TOP_K="1"                    # TM few-shot 개수 기본값 1 (잡 .env default 10 → 절감)
+TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199). "default" → 필드 미전송
+TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
+TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
+ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
@@ -79,7 +99,30 @@ while [[ $# -gt 0 ]]; do
         *) TRANSLATE_TM_TOP_K="$2" ;;
       esac
       shift 2 ;;
-    -h|--help) sed -n '3,40p' "$0"; exit 0 ;;
+    --chunk-workers)
+      case "${2:-}" in
+        default) TRANSLATE_CHUNK_WORKERS="" ;;
+        ''|*[!0-9]*) echo "error: --chunk-workers 는 양의 정수 또는 default (got: ${2:-})" >&2; exit 1 ;;
+        *) TRANSLATE_CHUNK_WORKERS="$2" ;;
+      esac
+      shift 2 ;;
+    --guidelines-variant-en)
+      case "${2:-}" in
+        aws|unified|unified-v2) TRANSLATE_GUIDELINES_VARIANT_EN="$2" ;;
+        default) TRANSLATE_GUIDELINES_VARIANT_EN="" ;;
+        *) echo "error: --guidelines-variant-en 은 aws|unified|unified-v2|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    --guidelines-variant-ja)
+      case "${2:-}" in
+        aws|unified) TRANSLATE_GUIDELINES_VARIANT_JA="$2" ;;
+        default) TRANSLATE_GUIDELINES_VARIANT_JA="" ;;
+        *) echo "error: --guidelines-variant-ja 은 aws|unified|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    --align-v2)      ALIGN_V2=1; shift ;;
+    --no-align-v2)   ALIGN_V2=0; shift ;;
+    -h|--help) sed -n '3,55p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -177,11 +220,19 @@ else
   git push origin "$BASE_BRANCH"
 fi
 
-# ── 6) dashboard /api/align 트리거 (권장 preset) ─────────────────────
+# ── 6) dashboard /api/align 트리거 (권장 preset + PR#218 align_v2) ────
 echo
-echo "[6/17] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
+echo "[6/17] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH, align_v2=$( ((ALIGN_V2)) && echo true || echo false ))"
 
 # 권장 preset flags: --aligned-marker --demote-extras --translate-headings --reconcile-unmatched
+# PR#218 개선사항:
+#   - --align-v2 (opinionated defaults 로 demote-extras/translate-headings 자동 활성,
+#     ancestor subtree 재번역 + zero-residual sweep)
+#   - --auto-align-v2-below N (기본 5) — Jenkins 잡이 fix_headings.py 를 그대로 호출
+#     하므로 명시 파라미터 없이도 자동 escalation 이 동작함
+align_v2_json="false"
+if (( ALIGN_V2 )); then align_v2_json="true"; fi
+
 align_body=$(cat <<JSON
 {
   "target": "$TARGET_URL",
@@ -189,7 +240,8 @@ align_body=$(cat <<JSON
   "aligned_marker": true,
   "demote_extras": true,
   "translate_headings": true,
-  "reconcile_unmatched": true
+  "reconcile_unmatched": true,
+  "align_v2": $align_v2_json
 }
 JSON
 )
@@ -438,7 +490,7 @@ git reset --hard "origin/$ko_head_ref_for_suggest"
 
 # ── 15) ko 변경 PR (suggestion 반영본) 대상 dashboard /api/translate 트리거 ─
 echo
-echo "[15/17] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
+echo "[15/17] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default}, chunk_workers=${TRANSLATE_CHUNK_WORKERS:-default}, gv_en=${TRANSLATE_GUIDELINES_VARIANT_EN:-default}, gv_ja=${TRANSLATE_GUIDELINES_VARIANT_JA:-default})"
 
 # --engine 옵션이 지정된 경우에만 engine 필드 포함
 engine_json=""
@@ -458,16 +510,38 @@ if [[ -n "$TRANSLATE_TM_TOP_K" ]]; then
   tm_top_k_json="\"tm_top_k\": \"$TRANSLATE_TM_TOP_K\","
 fi
 
+# PR#192/#199 개선: chunk_workers 로 한 파일 안 chunk 병렬 API 호출 exercise
+chunk_workers_json=""
+if [[ -n "$TRANSLATE_CHUNK_WORKERS" ]]; then
+  chunk_workers_json="\"chunk_workers\": \"$TRANSLATE_CHUNK_WORKERS\","
+fi
+
+# PR#199 개선: guidelines_variant 로 en/ja 가이드라인 크기 조절 (input 토큰 절감)
+gv_en_json=""
+if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]]; then
+  gv_en_json="\"guidelines_variant_en\": \"$TRANSLATE_GUIDELINES_VARIANT_EN\","
+fi
+gv_ja_json=""
+if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]]; then
+  gv_ja_json="\"guidelines_variant_ja\": \"$TRANSLATE_GUIDELINES_VARIANT_JA\","
+fi
+
 # 권장 preset flags:
 #   --diff-granularity block --glossary-mode service --max-load-ratio 2
 #   --workers 2 --table-rows --skip-full-table --skip-anchor-only
 #   --assign-anchors --align-headings
+# PR#207/#211 (within/cross-opcode batching) 은 자동 활성 — 별도 설정 없음.
+# PR#220 (api-guide dedup) 은 파일명 substring 매치 (기본 "api-guide"). Agent-Test
+# 는 "public-api.md" 라 자동 미매치 — 대시보드에 dedup path override API 는 없음.
 translate_body=$(cat <<JSON
 {
   "pr_url": "$ko_pr_url",
   $engine_json
   $model_json
   $tm_top_k_json
+  $chunk_workers_json
+  $gv_en_json
+  $gv_ja_json
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "2",

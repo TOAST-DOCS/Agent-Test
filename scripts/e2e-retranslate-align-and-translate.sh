@@ -35,7 +35,11 @@
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
 #
 # Usage:
-#   scripts/e2e-retranslate-align-and-translate.sh [--engine api|cli] [--model haiku|sonnet|opus] [--tm-top-k N]
+#   scripts/e2e-retranslate-align-and-translate.sh [--engine api|cli] [--model haiku|sonnet|opus]
+#                                                  [--tm-top-k N] [--chunk-workers N]
+#                                                  [--guidelines-variant-en aws|unified|unified-v2|default]
+#                                                  [--guidelines-variant-ja aws|unified|default]
+#                                                  [--align-v2|--no-align-v2]
 #
 #   --engine api   translate 잡을 api 엔진으로 실행
 #   --engine cli   translate 잡을 claude-code(CLI) 엔진으로 실행 (기본값)
@@ -45,7 +49,11 @@
 #   --model sonnet claude-sonnet-4-6 사용
 #   --model opus   claude-opus-4-8 사용
 #
-#   --tm-top-k N   TM few-shot 개수 (기본값 1). "default" 지정 시 필드 미전송 (잡 .env default = 10)
+#   --tm-top-k N          TM few-shot 개수 (기본값 1). "default" 시 필드 미전송 (잡 .env default = 10)
+#   --chunk-workers N     chunk 병렬도 (기본값 2, PR#192/#199).
+#   --guidelines-variant-en <v>  en 가이드라인 크기 (aws|unified|unified-v2|default, PR#199)
+#   --guidelines-variant-ja <v>  ja 가이드라인 크기 (aws|unified|default, PR#199)
+#   --align-v2 / --no-align-v2   PR#218 v2 모드 (기본 --align-v2)
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
@@ -66,6 +74,10 @@ RETRANSLATE_SOURCE="ko"
 TRANSLATE_ENGINE="claude-code"            # 기본값 cli — api/default 로 override 가능
 TRANSLATE_MODEL="claude-haiku-4-5"        # 기본값 haiku — sonnet/opus/default 로 override 가능
 TRANSLATE_TM_TOP_K="1"                    # TM few-shot 개수 기본값 1
+TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199)
+TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
+TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
+ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
@@ -92,7 +104,30 @@ while [[ $# -gt 0 ]]; do
         *) TRANSLATE_TM_TOP_K="$2" ;;
       esac
       shift 2 ;;
-    -h|--help) sed -n '3,37p' "$0"; exit 0 ;;
+    --chunk-workers)
+      case "${2:-}" in
+        default) TRANSLATE_CHUNK_WORKERS="" ;;
+        ''|*[!0-9]*) echo "error: --chunk-workers 는 양의 정수 또는 default (got: ${2:-})" >&2; exit 1 ;;
+        *) TRANSLATE_CHUNK_WORKERS="$2" ;;
+      esac
+      shift 2 ;;
+    --guidelines-variant-en)
+      case "${2:-}" in
+        aws|unified|unified-v2) TRANSLATE_GUIDELINES_VARIANT_EN="$2" ;;
+        default) TRANSLATE_GUIDELINES_VARIANT_EN="" ;;
+        *) echo "error: --guidelines-variant-en 은 aws|unified|unified-v2|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    --guidelines-variant-ja)
+      case "${2:-}" in
+        aws|unified) TRANSLATE_GUIDELINES_VARIANT_JA="$2" ;;
+        default) TRANSLATE_GUIDELINES_VARIANT_JA="" ;;
+        *) echo "error: --guidelines-variant-ja 은 aws|unified|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    --align-v2)      ALIGN_V2=1; shift ;;
+    --no-align-v2)   ALIGN_V2=0; shift ;;
+    -h|--help) sed -n '3,44p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -208,6 +243,12 @@ gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
   --jq '.[].url' | sort -u > "$tmpdir/before"
 
 # 권장 preset flags: --aligned-marker --demote-extras --translate-headings --reconcile-unmatched
+# PR#218 개선: --align-v2 (opinionated defaults + ancestor subtree 재번역).
+# Jenkins 는 fix_headings.py 를 그대로 호출하므로 --auto-align-v2-below (기본 5)
+# 자동 escalation 도 항상 동작.
+align_v2_json="false"
+if (( ALIGN_V2 )); then align_v2_json="true"; fi
+
 align_body=$(cat <<JSON
 {
   "target": "$TARGET_URL",
@@ -215,7 +256,8 @@ align_body=$(cat <<JSON
   "aligned_marker": true,
   "demote_extras": true,
   "translate_headings": true,
-  "reconcile_unmatched": true
+  "reconcile_unmatched": true,
+  "align_v2": $align_v2_json
 }
 JSON
 )
@@ -280,6 +322,20 @@ if [[ -n "$TRANSLATE_TM_TOP_K" ]]; then
   retx_tm_top_k_json="\"tm_top_k\": \"$TRANSLATE_TM_TOP_K\","
 fi
 
+# PR#192/#199 개선: chunk_workers + guidelines_variant 를 /api/translate/file 에도 forward
+retx_chunk_workers_json=""
+if [[ -n "$TRANSLATE_CHUNK_WORKERS" ]]; then
+  retx_chunk_workers_json="\"chunk_workers\": \"$TRANSLATE_CHUNK_WORKERS\","
+fi
+retx_gv_en_json=""
+if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]]; then
+  retx_gv_en_json="\"guidelines_variant_en\": \"$TRANSLATE_GUIDELINES_VARIANT_EN\","
+fi
+retx_gv_ja_json=""
+if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]]; then
+  retx_gv_ja_json="\"guidelines_variant_ja\": \"$TRANSLATE_GUIDELINES_VARIANT_JA\","
+fi
+
 retx_body=$(cat <<JSON
 {
   "repo": "$REPO",
@@ -289,6 +345,9 @@ retx_body=$(cat <<JSON
   $retx_engine_json
   $retx_model_json
   $retx_tm_top_k_json
+  $retx_chunk_workers_json
+  $retx_gv_en_json
+  $retx_gv_ja_json
   "path_prefix": ""
 }
 JSON
@@ -424,16 +483,34 @@ if [[ -n "$TRANSLATE_TM_TOP_K" ]]; then
   tm_top_k_json="\"tm_top_k\": \"$TRANSLATE_TM_TOP_K\","
 fi
 
+# PR#192/#199 개선: chunk_workers + guidelines_variant
+chunk_workers_json=""
+if [[ -n "$TRANSLATE_CHUNK_WORKERS" ]]; then
+  chunk_workers_json="\"chunk_workers\": \"$TRANSLATE_CHUNK_WORKERS\","
+fi
+gv_en_json=""
+if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]]; then
+  gv_en_json="\"guidelines_variant_en\": \"$TRANSLATE_GUIDELINES_VARIANT_EN\","
+fi
+gv_ja_json=""
+if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]]; then
+  gv_ja_json="\"guidelines_variant_ja\": \"$TRANSLATE_GUIDELINES_VARIANT_JA\","
+fi
+
 # 권장 preset flags:
 #   --diff-granularity block --glossary-mode service --max-load-ratio 2
 #   --workers 2 --table-rows --skip-full-table --skip-anchor-only
 #   --assign-anchors --align-headings
+# PR#207/#211 (within/cross-opcode batching) 은 자동 활성.
 translate_body=$(cat <<JSON
 {
   "pr_url": "$ko_pr_url",
   $engine_json
   $model_json
   $tm_top_k_json
+  $chunk_workers_json
+  $gv_en_json
+  $gv_ja_json
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "2",
