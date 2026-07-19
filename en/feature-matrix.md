@@ -5,14 +5,12 @@
 
 This document summarizes the features provided by the Instance service by region and pricing plan. It includes tables, lists, code blocks, and nested headings for translation pipeline testing.
 
-<a id="feature-overview"></a>
-
+<a id="test-added-subsection"></a>
 ### Test subsection { #test-added-subsection }
 
 This subsection has been added for translation pipeline testing. Verify that the new h3 heading is translated and that the same anchor ID is assigned across the three languages.
 
 <a id="feature-overview"></a>
-
 ## Feature Overview { #feature-overview }
 
 The main features of Instance are as follows.
@@ -23,7 +21,6 @@ The main features of Instance are as follows.
 - **Monitoring**: Check CPU, memory, and disk usage on the dashboard.
 
 <a id="feature-by-region"></a>
-
 ## Feature Availability by Region { #feature-by-region }
 
 Available features vary by region. See the table below.
