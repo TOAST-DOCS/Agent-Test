@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=74b0e7f9672e -->
 
 <a id="compute-instance-overview"></a>
-
 ## Compute > Instance > 概要 { #compute-instance-overview }
 
 この段落は既存セクションに追加されたテスト段落です。既存の見出しはそのまま保持される必要があります。
