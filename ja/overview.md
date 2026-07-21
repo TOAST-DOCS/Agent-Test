@@ -1,7 +1,10 @@
 <!-- pre-align:aligned sig=74b0e7f9672e -->
 
 <a id="compute-instance-overview"></a>
+
 ## Compute > Instance > 概要 { #compute-instance-overview }
+
+この段落は既存セクションに追加されたテスト段落です。既存の見出しはそのまま保持される必要があります。
 
 インスタンスは、仮想 CPU、メモリ、ルートブロックストレージで構成される仮想サーバーです。このサーバーに顧客のサービスまたはアプリケーションをインストールし、NHN Cloud が提供するさまざまなサービスを組み合わせて使用します。(本文修正テスト：この文章は翻訳の再実行時に反映されるべきです。)
 
@@ -245,8 +248,3 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
-
-<a id="test-added-section"></a>
-## テスト用追加セクション { #test-added-section }
-
-このセクションは、翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じアンカー ID が付与されるか確認します。
