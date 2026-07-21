@@ -249,3 +249,5 @@ $ sudo update-grub
 이 섹션은 번역 파이프라인 테스트를 위해 새로 추가한 섹션입니다. 신규 섹션이 번역되고 ko/en/ja에 동일한 anchor id가 부여되는지 확인합니다.
 
 관련 서비스 참고: [Cloud Functions 개요 - Trigger](/Compute/Cloud-Functions/ko/overview/#trigger)
+
+Python 코드 템플릿 참고: [Cloud Functions Python 코드 템플릿 - 업로드 시 주의 사항](/Compute/Cloud-Functions/ko/code-template-python-guide/#cautions-for-upload)
