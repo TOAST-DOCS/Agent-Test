@@ -644,5 +644,19 @@ if ! grep -q '^ALIGNMENT: OK' <<<"$trans_check_out"; then
   exit 3
 fi
 
+# 검증 통과 → 번역 PR 을 ko PR head 브랜치로 merge → ko PR 을 alpha 로 merge
+echo
+echo "검증 통과 — 번역 PR merge: $trans_pr_url (base=$ko_head_ref)"
+gh pr merge "$trans_pr_url" --repo "$REPO" --merge --delete-branch
+echo "  merged: $trans_pr_url"
+
+echo
+echo "ko 변경 PR merge: $ko_pr_url (base=$BASE_BRANCH)"
+gh pr merge "$ko_pr_url" --repo "$REPO" --merge --delete-branch
+git fetch origin "$BASE_BRANCH"
+git checkout "$BASE_BRANCH"
+git pull --ff-only origin "$BASE_BRANCH"
+echo "  merged & local $BASE_BRANCH updated: $ko_pr_url"
+
 echo
 echo "완료."

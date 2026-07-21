@@ -18,9 +18,9 @@
 #      - kernel-guide    : 1R 이 섹션을 삭제한 문서에 신규 섹션 추가
 #      - feature-matrix  : 표 행 추가 + 신규 하위 섹션 삽입
 #      - troubleshooting : 1R 대조군 파일 본문 수정 (신규 활성화)
-#   3. ko 변경 PR 생성 확인
-#   4. dashboard /api/translate 호출 (권장 preset)
-#   5. 번역 PR 감지 대기 (base = ko PR head 브랜치)
+#   3. ko 변경 PR 생성 확인 → alpha 로 즉시 머지 (PR head 브랜치는 유지)
+#   4. dashboard /api/translate 호출 (권장 preset, 머지된 ko PR URL 대상)
+#   5. 번역 PR 감지 대기 (base = ko PR head 브랜치, 머지 후에도 남아 있음)
 #   6. claude CLI(fable)로 번역 PR 검증 (heading·id·표 행 수) → PR 댓글 등록
 #
 # Usage:
@@ -163,6 +163,14 @@ if [[ "$ko_pr_state" != "OPEN" ]]; then
 fi
 echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
+# ── 3.5) ko 변경 PR 을 alpha 로 머지 (translate 호출 전, PR 브랜치 유지) ─
+echo
+echo "[3.5/6] ko 변경 PR 을 $BASE_BRANCH 로 merge (translate 호출 전, PR head 브랜치 유지)"
+gh pr merge "$ko_pr_url" --repo "$REPO" --merge
+git fetch origin "$BASE_BRANCH"
+git pull --ff-only origin "$BASE_BRANCH"
+echo "  merged & local $BASE_BRANCH updated: $ko_pr_url (head 브랜치 유지)"
+
 # ── 4) dashboard /api/translate 트리거 (권장 preset) ──────────────────
 echo
 echo "[4/6] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
@@ -227,7 +235,7 @@ translate_resp="$(curl -sS -X POST \
 
 echo "$translate_resp" | python3 -m json.tool
 
-# ── 5) 번역 PR 감지 대기 (base = ko PR head 브랜치) ───────────────────
+# ── 5) 번역 PR 감지 대기 (base = ko PR head 브랜치, 머지 후에도 유지됨) ─
 echo
 echo "[5/6] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60분)"
 
