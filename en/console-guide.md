@@ -1,9 +1,11 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-## Compute > Instance > Console Guide - Detailed Instructions { #compute-instance-console-guide }
+
+## Compute > Instance > Console Guide Detailed Information { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
+
 ## Create Instances { #create-instances }
 
 ![Create Instances Guide Cover](../static/images/image-1704.jpg)
