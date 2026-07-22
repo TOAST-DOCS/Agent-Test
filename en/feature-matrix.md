@@ -5,14 +5,12 @@
 
 This document summarizes the features provided by the Instance service by region and pricing plan. It includes tables, lists, code blocks, and nested headings for translation pipeline testing.
 
-<a id="feature-overview"></a>
-
-### New subsection for validating auto ID assignment
+<a id="new-subsection-for-validating-auto-id-assignment"></a>
+### New subsection for validating auto ID assignment { #new-subsection-for-validating-auto-id-assignment }
 
 This subsection is a new h3 for validating automatic ID assignment in the translation pipeline. The Korean version was modified without adding an anchor ID, and the translation job must assign the same ID across all three languages: Korean, English, and Japanese.
 
 <a id="feature-overview"></a>
-
 ## Feature Overview { #feature-overview }
 
 The main features of Instance are as follows.
@@ -23,7 +21,6 @@ The main features of Instance are as follows.
 - **Monitoring**: Check CPU, memory, and disk usage on the dashboard.
 
 <a id="feature-by-region"></a>
-
 ## Feature Availability by Region { #feature-by-region }
 
 Available features vary by region. See the table below.
