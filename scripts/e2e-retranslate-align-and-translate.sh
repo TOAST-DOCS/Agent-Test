@@ -79,6 +79,7 @@ TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199)
 TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
 TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
+ALIGN_PIPELINE_BRANCH=""                  # cloud-translate 의 Jenkins multibranch child (기본: 미지정 → main)
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
@@ -130,6 +131,8 @@ while [[ $# -gt 0 ]]; do
     --no-align-v2)   ALIGN_V2=0; shift ;;
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 세션 브랜치 재사용
     --base-source)   BASE_SOURCE_BRANCH="$2"; shift 2 ;; # 새 세션 브랜치를 갈라낼 원본 (기본 alpha)
+    --pipeline-branch|--align-pipeline-branch)
+      ALIGN_PIPELINE_BRANCH="$2"; shift 2 ;;            # /api/align 을 이 cloud-translate 브랜치로 실행
     -h|--help) sed -n '3,44p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
@@ -261,10 +264,18 @@ gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
 align_v2_json="false"
 if (( ALIGN_V2 )); then align_v2_json="true"; fi
 
+# cloud-translate 의 Jenkins multibranch 특정 브랜치에서 잡을 실행하고 싶을 때만 pipeline_branch 필드 포함
+align_pipeline_branch_json=""
+if [[ -n "$ALIGN_PIPELINE_BRANCH" ]]; then
+  align_pipeline_branch_json="\"pipeline_branch\": \"$ALIGN_PIPELINE_BRANCH\","
+  echo "  align pipeline_branch: $ALIGN_PIPELINE_BRANCH"
+fi
+
 align_body=$(cat <<JSON
 {
   "target": "$TARGET_URL",
   "base_ref": "$BASE_BRANCH",
+  $align_pipeline_branch_json
   "aligned_marker": true,
   "demote_extras": true,
   "translate_headings": true,
