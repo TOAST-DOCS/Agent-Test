@@ -219,6 +219,39 @@ elif mutation == "add_subsection":
     lines[at:at] = ins
     out = join(lines)
 
+elif mutation == "add_section_no_id":
+    # 문서 끝에 anchor id 없는 신규 h2 추가 — 번역 잡이 세 언어에 anchor id 를 자동 할당해야 함
+    block = [
+        "",
+        "## 자동 ID 할당 검증용 신규 섹션",
+        "",
+        "이 섹션은 번역 파이프라인의 anchor-id 자동 할당을 검증하기 위한 신규 섹션입니다. "
+        "ko 변경 시 anchor id 를 붙이지 않았고, 번역 잡이 ko/en/ja 세 언어에 동일한 id 를 부여해야 합니다.",
+        "",
+    ]
+    if not text.endswith("\n"):
+        lines.append("")
+    lines += block
+    out = join(lines)
+
+elif mutation == "add_subsection_no_id":
+    # 두 번째 h2 직전에 anchor id 없는 신규 h3 삽입 — 번역 잡이 세 언어에 anchor id 를 자동 할당해야 함
+    h2s = [i for i, l in enumerate(lines) if re.match(r'^##[ \t]', l.rstrip("\r"))]
+    if len(h2s) < 2:
+        raise SystemExit(f"add_subsection_no_id: needs >=2 h2 in {path}")
+    at = h2s[1]
+    if at - 1 >= 0 and is_anchor(lines[at-1]):
+        at -= 1
+    ins = [
+        "### 자동 ID 할당 검증용 신규 하위 섹션",
+        "",
+        "이 하위 섹션은 번역 파이프라인의 anchor-id 자동 할당을 검증하기 위한 신규 h3 입니다. "
+        "ko 변경 시 anchor id 를 붙이지 않았고, 번역 잡이 ko/en/ja 세 언어에 동일한 id 를 부여해야 합니다.",
+        "",
+    ]
+    lines[at:at] = ins
+    out = join(lines)
+
 elif mutation == "add_table_row":
     # 첫 표의 마지막 데이터 행 뒤에 새 행 추가 — 컬럼 수는 헤더에 맞춤
     changed = False
@@ -383,8 +416,9 @@ PY
 #           console-guide   : heading 제목 재변경 (같은 id 로 2번째 rename)
 #           component-guide : 1R 이 추가한 문단(첫 문단) 본문 수정
 #           public-api      : 1R 이 추가한 표 행(마지막 행) 삭제
-#           kernel-guide    : 1R 이 섹션을 삭제한 문서에 신규 섹션 추가
-#           feature-matrix  : 표 행 추가 + 신규 하위 섹션 삽입
+#           kernel-guide    : 1R 이 섹션을 삭제한 문서에 anchor id 없는 신규 섹션 추가
+#                             (번역 잡이 ko/en/ja 에 동일 id 자동 부여하는지 검증용)
+#           feature-matrix  : 표 행 추가 + anchor id 없는 신규 하위 섹션 삽입 (동일 검증용)
 #           troubleshooting : 1R 대조군이던 파일 본문 수정 (신규 활성화)
 declare -a PLAN_ROUND1=(
   "add_section|ko/overview.md"
@@ -409,9 +443,9 @@ declare -a PLAN_ROUND2=(
   "rename_heading|ko/console-guide.md"
   "edit_body|ko/component-guide.md"
   "remove_added_table_row|ko/public-api.md"
-  "add_section|ko/kernel-guide.md"
+  "add_section_no_id|ko/kernel-guide.md"
   "add_table_row|ko/feature-matrix.md"
-  "add_subsection|ko/feature-matrix.md"
+  "add_subsection_no_id|ko/feature-matrix.md"
   "edit_body|ko/troubleshooting-guide.md"
 )
 case "$PLAN_NAME" in

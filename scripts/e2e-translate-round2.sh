@@ -15,8 +15,8 @@
 #      - console-guide   : heading 제목 재변경 (같은 id 로 2번째 rename)
 #      - component-guide : 1R 이 추가한 문단 본문 수정
 #      - public-api      : 1R 이 추가한 표 행(TEST-ROW) 삭제
-#      - kernel-guide    : 1R 이 섹션을 삭제한 문서에 신규 섹션 추가
-#      - feature-matrix  : 표 행 추가 + 신규 하위 섹션 삽입
+#      - kernel-guide    : anchor id 없는 신규 섹션 추가 (번역 잡이 id 할당하는지 검증)
+#      - feature-matrix  : 표 행 추가 + anchor id 없는 신규 하위 섹션 삽입 (동일 검증)
 #      - troubleshooting : 1R 대조군 파일 본문 수정 (신규 활성화)
 #   3. ko 변경 PR 생성 확인 → alpha 로 즉시 머지 (PR head 브랜치는 유지)
 #   4. dashboard /api/translate 호출 (권장 preset, 머지된 ko PR URL 대상)
@@ -273,14 +273,26 @@ trans_wt="$tmpdir/trans-check"
 git worktree add "$trans_wt" "origin/$trans_head_ref" >/dev/null
 
 trans_check_prompt='ko/, en/, ja/ 세 폴더에 공통으로 존재하는 .md 문서 각각에 대해,
-fenced code block(```)을 제외하고 다음 네 가지가 세 언어에서 완전히 일치하는지 검사해줘.
+fenced code block(```)을 제외하고 다음 다섯 가지가 세 언어에서 완전히 일치하는지 검사해줘.
 (1) heading level 순서
 (2) anchor id 순서 (<a id="..."></a> 형식과 { #id } 형식 모두)
 (3) 표(table)가 있으면 표 개수와 각 표의 데이터 행(row) 개수
 (4) 1라운드 테스트 산출물의 2차 변경 반영: ko/overview.md 에서 삭제된
     test-added-section 섹션이 en/ja 에도 없는지, ko/public-api.md 에서 삭제된
     TEST-ROW 행이 en/ja 표에도 없는지
+(5) anchor id 자동 할당 검증: round2 는 ko 변경 시 anchor id 를 붙이지 않은
+    신규 섹션 두 개를 추가한다 — ko/kernel-guide.md 의 문서 맨 끝에 삽입된
+    새 h2 섹션 하나(원문 heading 텍스트 "자동 ID 할당 검증용 신규 섹션") 와
+    ko/feature-matrix.md 의 두 번째 h2 바로 앞에 삽입된 새 h3 하나(원문
+    heading 텍스트 "자동 ID 할당 검증용 신규 하위 섹션"). 번역 후 이 두 heading 에
+    대해 아래를 확인:
+      (a) ko 에서 heading 위·오른쪽에 anchor(<a id="..."> 또는 { #id }) 가
+          붙어 있는가 (비어 있으면 FAIL)
+      (b) en/ja 의 대응 heading(위치·의미가 같은 새 heading) 에도 anchor 가
+          붙어 있는가
+      (c) ko/en/ja 세 언어의 anchor id 값이 완전히 동일한가
 파일별 결과를 OK/FAIL 표로 출력하고 (표 개수·행 수 포함), FAIL 인 파일은 어긋난 위치와 내용을 설명해줘.
+검사 (5) 의 결과(할당된 anchor id 값 3언어별)도 별도 섹션으로 표시해.
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 
 trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
