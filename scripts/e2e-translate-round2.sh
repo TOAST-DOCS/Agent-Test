@@ -249,7 +249,7 @@ trans_pr_url=""
 while (( $(date +%s) < deadline )); do
   trans_pr_url="$(gh pr list --repo "$REPO" --state open \
     --json url,headRefName \
-    --jq --arg p "$trans_head_prefix" '.[] | select(.headRefName | startswith($p)) | .url' \
+    --jq ".[] | select(.headRefName | startswith(\"$trans_head_prefix\")) | .url" \
     | sort -u | head -n1 || true)"
   if [[ -n "$trans_pr_url" ]]; then
     echo "  detected translation PR: $trans_pr_url"
