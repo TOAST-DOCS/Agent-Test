@@ -11,7 +11,11 @@
 #   overview.md          : 신규 섹션 추가(③) + 기존 섹션 본문 수정(heading 유지)
 #   console-guide.md     : 기존 heading '제목'만 변경(④, id 유지) + 문단 삭제
 #   component-guide.md   : 기존 섹션에 문단 추가 + 신규 하위 섹션(###) 삽입
-#   public-api.md        : 표 행 1개 내용 수정 + 표 행 추가
+#   public-api.md        : 표 행 1개 내용 수정 + 표 행 추가 + 신규 API endpoint 추가
+#                          (반복 `#### 요청` heading + 새 anchor id 를 가진 표
+#                          — cloud-translate PR #260 회귀: heading text 기반
+#                          skip-full-table 판정이 새 anchor 섹션을 pre-existing
+#                          으로 오판해 파일 스킵되는 케이스)
 #   kernel-guide.md      : 섹션 1개 삭제(en 엔 남아있는 extra 유발) + 코드펜스 내용 수정
 #   feature-matrix.md    : 표 헤더 셀 수정 + 두 번째 표 행 삭제 + h3 제목 변경 + 목록 항목 수정
 #   troubleshooting-guide.md : 변경 없음(대조군 — en/ja 무변경이어야 정상)
@@ -393,6 +397,50 @@ elif mutation == "remove_added_section":
     del lines[start:end]
     out = join(lines)
 
+elif mutation == "add_repeated_heading_with_table":
+    # 문서 끝에 새 API endpoint 를 append: ### 신규 API + #### 요청 + 표 +
+    # #### 응답 + 표. `#### 요청`/`#### 응답` heading text 는 문서 내에서 이미
+    # 수십 번 반복되지만 anchor id 는 새로 부여 (test-added-request/response).
+    # PR #260 회귀: 반복 heading 오탐 방지 — base_table_heads (heading text set)
+    # 은 `#### 요청` 을 이미 담고 있어서 새 anchor id 를 가진 이 새 섹션의 표를
+    # pre-existing 표로 오판 → skip-full-table 가드가 파일을 스킵.
+    # base_table_by_anchor (anchor 기반) 는 새 anchor 를 못 찾으므로 correctly
+    # 새 섹션으로 인식 → 번역 진행. 결과적으로 en/ja 에도 이 새 섹션 + 표가
+    # 나타나야 한다.
+    block = [
+        "",
+        '<a id="test-added-endpoint"></a>',
+        "### 테스트용 신규 엔드포인트 { #test-added-endpoint }",
+        "",
+        "```",
+        "POST /v2/{tenantId}/test-added-endpoint",
+        "X-Auth-Token: {tokenId}",
+        "```",
+        "",
+        '<a id="test-added-request"></a>',
+        "#### 요청 { #test-added-request }",
+        "",
+        "| 이름 | 종류 | 형식 | 필수 | 설명 |",
+        "|---|---|---|---|---|",
+        "| tenantId | URL | String | O | 테넌트 ID |",
+        "| tokenId | Header | String | O | 토큰 ID |",
+        "| name | Body | String | O | 엔드포인트 이름 |",
+        "",
+        '<a id="test-added-response"></a>',
+        "#### 응답 { #test-added-response }",
+        "",
+        "| 이름 | 종류 | 형식 | 설명 |",
+        "|---|---|---|---|",
+        "| endpoint | Body | Object | 생성된 엔드포인트 객체 |",
+        "| endpoint.id | Body | String | 엔드포인트 ID |",
+        "| endpoint.name | Body | String | 엔드포인트 이름 |",
+        "",
+    ]
+    if not text.endswith("\n"):
+        lines.append("")
+    lines += block
+    out = join(lines)
+
 elif mutation == "noop":
     out = text
 else:
@@ -430,6 +478,7 @@ declare -a PLAN_ROUND1=(
   "add_subsection|ko/component-guide.md"
   "change_table_row|ko/public-api.md"
   "add_table_row|ko/public-api.md"
+  "add_repeated_heading_with_table|ko/public-api.md"
   "remove_section|ko/kernel-guide.md"
   "edit_code_block|ko/kernel-guide.md"
   "edit_table_header|ko/feature-matrix.md"
