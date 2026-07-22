@@ -5,14 +5,12 @@
 
 Instance サービスが提供する機能をリージョンと料金プランの観点から整理したドキュメントです。翻訳パイプラインテストのため、表、リスト、コードブロック、ネストされた見出しをすべて含みます。
 
-<a id="feature-overview"></a>
-
-### 自動IDの割り当て検証用の新しいサブセクション
+<a id="new-subsection-for-validating-automatic-id-assignment"></a>
+### 自動IDの割り当て検証用の新しいサブセクション { #new-subsection-for-validating-automatic-id-assignment }
 
 このサブセクションは、翻訳パイプラインにおけるanchor-idの自動割り当てを検証するための新しいh3です。ko変更時にanchor idを付与しておらず、翻訳ジョブがko/en/ja 3つの言語に同一のidを割り当てなければなりません。
 
 <a id="feature-overview"></a>
-
 ## 機能概要 { #feature-overview }
 
 インスタンスの主な機能は次のとおりです。
@@ -23,7 +21,6 @@ Instance サービスが提供する機能をリージョンと料金プラン�
 - **モニタリング**: CPU、メモリ、ディスク使用量をダッシュボードで確認します。
 
 <a id="feature-by-region"></a>
-
 ## リージョン別機能提供有無 { #feature-by-region }
 
 リージョンによって提供される機能が異なります。以下の表でご確認ください。
