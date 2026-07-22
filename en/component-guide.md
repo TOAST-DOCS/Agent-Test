@@ -1,9 +1,19 @@
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
+
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
 
+This paragraph is a test paragraph added to an existing section. Existing headings must be kept unchanged.
+
+<a id="test-added-subsection"></a>
+
+### Test subsection { #test-added-subsection }
+
+This subsection was added to test the translation pipeline. This verifies that new h3 headings are translated and assigned the same anchor ID across three languages.
+
 <a id="nat-instance"></a>
+
 ## NAT Instance { #nat-instance }
 
 NAT instance is an instance that allows you to access internet over a specific IP address band in the private network instance.
