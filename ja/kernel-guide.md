@@ -621,6 +621,7 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 [root@rocky810 ~]# sync; reboot
 ```
 
-## 自動 ID 割り当て検証用の新規セクション
+<a id="auto-id-assignment-validation"></a>
+## 自動 ID 割り当て検証用の新規セクション { #auto-id-assignment-validation }
 
 このセクションは、翻訳パイプラインの anchor-id 自動割り当てを検証するための新規セクションです。ko の変更時に anchor id を付与しなかったため、翻訳ジョブが ko/en/ja の 3 言語に同一の id を付与する必要があります。
