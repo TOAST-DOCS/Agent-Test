@@ -1,9 +1,10 @@
 <!-- pre-align:aligned sig=0b640fde76d8 -->
 
 <a id="compute-instance-installation-component-guide"></a>
+
 ## Compute > Instance > インストールコンポーネントガイド { #compute-instance-installation-component-guide }
 
-この段落は既存セクションに追加されたテスト段落です。既存の見出しはそのまま維持される必要があります。
+この段落は既存のセクションに追加されたテスト段落です。既存のヘッディングはそのまま保持される必要があります。(本文修正テスト: この文は翻訳を再実行する際に反映される必要があります。)
 
 <a id="test-added-subsection"></a>
 ### テストサブセクション { #test-added-subsection }
