@@ -235,18 +235,21 @@ translate_resp="$(curl -sS -X POST \
 
 echo "$translate_resp" | python3 -m json.tool
 
-# ── 5) 번역 PR 감지 대기 (base = ko PR head 브랜치, 머지 후에도 유지됨) ─
+# ── 5) 번역 PR 감지 대기 (head = translate/<ko_head_ref>-*) ────────────
+# ko PR 이 이미 alpha 로 머지된 상태라 translation PR 의 base 는 alpha 가 되므로
+# base 필터 대신 head 브랜치 이름 패턴으로 감지한다.
 echo
 echo "[5/6] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60분)"
 
 ko_head_ref="$(gh pr view "$ko_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
+trans_head_prefix="translate/${ko_head_ref}-"
 
 deadline=$(( $(date +%s) + 3600 ))
 trans_pr_url=""
 while (( $(date +%s) < deadline )); do
-  trans_pr_url="$(gh pr list --repo "$REPO" --base "$ko_head_ref" --state open \
+  trans_pr_url="$(gh pr list --repo "$REPO" --state open \
     --json url,headRefName \
-    --jq '.[] | select(.headRefName | startswith("translate/")) | .url' \
+    --jq --arg p "$trans_head_prefix" '.[] | select(.headRefName | startswith($p)) | .url' \
     | sort -u | head -n1 || true)"
   if [[ -n "$trans_pr_url" ]]; then
     echo "  detected translation PR: $trans_pr_url"
