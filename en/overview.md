@@ -1,9 +1,9 @@
-<!-- pre-align:aligned sig=f2414300858d -->
+<!-- pre-align:aligned sig=74b0e7f9672e -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview { #compute-instance-overview }
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Test for text modification: This sentence should be reflected when re-running the translation.)
 
 <a id="components"></a>
 ## Components { #components }
@@ -238,3 +238,8 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 ```
 $ sudo update-grub
 ```
+
+<a id="test-added-section"></a>
+## Additional test section { #test-added-section }
+
+This section was newly added to test the translation pipeline. It confirms that new sections are translated and assigned the same anchor ID across ko, en, and ja.
