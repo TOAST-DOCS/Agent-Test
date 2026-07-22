@@ -61,7 +61,8 @@ DASHBOARD_BASE_URL="${DASHBOARD_BASE_URL:-}"   # 예: https://docs.internal.nhnc
 DASHBOARD_API_TOKEN="${DASHBOARD_API_TOKEN:-}" # 대시보드 관리자에게서 발급받은 값
 
 REPO="TOAST-DOCS/Agent-Test"
-BASE_BRANCH="alpha"
+BASE_BRANCH=""                                # 미지정 시 e2e/<timestamp> 자동 생성 (alpha 미오염)
+BASE_SOURCE_BRANCH="alpha"                    # 새 e2e 브랜치를 갈라낼 원본
 TARGET_URL="https://github.com/${REPO}"
 # ─────────────────────────────────────────────────────────────────────
 
@@ -122,6 +123,8 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --align-v2)      ALIGN_V2=1; shift ;;
     --no-align-v2)   ALIGN_V2=0; shift ;;
+    --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 e2e 세션 브랜치 재사용
+    --base-source)   BASE_SOURCE_BRANCH="$2"; shift 2 ;; # 새 e2e 브랜치를 갈라낼 원본 (기본 alpha)
     -h|--help) sed -n '3,55p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
@@ -135,11 +138,20 @@ fi
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
-# ── 1) alpha 로 switch ───────────────────────────────────────────────
-echo "[1/17] git checkout $BASE_BRANCH"
-git fetch origin "$BASE_BRANCH"
-git checkout "$BASE_BRANCH"
-git pull --ff-only origin "$BASE_BRANCH"
+# ── 1) e2e 세션 브랜치 준비 (기본: 새로 생성; --base-branch 로 override 가능) ─
+if [[ -z "$BASE_BRANCH" ]]; then
+  BASE_BRANCH="e2e/$(date -u +%Y%m%d-%H%M%S)"
+  echo "[1/17] Creating fresh e2e session branch: $BASE_BRANCH (from origin/$BASE_SOURCE_BRANCH)"
+  git fetch origin "$BASE_SOURCE_BRANCH"
+  git checkout -B "$BASE_BRANCH" "origin/$BASE_SOURCE_BRANCH"
+  git push -u origin "$BASE_BRANCH"
+  echo "  E2E_BASE_BRANCH=$BASE_BRANCH"     # wrapper 가 파싱하는 마커
+else
+  echo "[1/17] Reusing existing base branch: $BASE_BRANCH"
+  git fetch origin "$BASE_BRANCH"
+  git checkout "$BASE_BRANCH"
+  git pull --ff-only origin "$BASE_BRANCH"
+fi
 
 # ── 2) restore-alpha-origin (내부에서 commit+push) ────────────────────
 echo
@@ -325,7 +337,7 @@ echo "  merged & local $BASE_BRANCH updated: $align_pr_url"
 echo
 echo "[10/17] scripts/create-translate-test-pr.sh"
 
-create_out="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh")"
+create_out="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh" --base-branch "$BASE_BRANCH")"
 echo "$create_out"
 
 # ── 11) ko 변경 PR 생성 확인 ──────────────────────────────────────────

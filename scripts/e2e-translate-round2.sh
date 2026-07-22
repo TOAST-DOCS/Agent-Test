@@ -101,6 +101,7 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --guidelines-variant-ja 은 aws|unified|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
+    --base-branch) BASE_BRANCH="$2"; shift 2 ;;   # e2e 세션 브랜치 (기본 alpha)
     -h|--help) sed -n '3,37p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
@@ -145,7 +146,7 @@ echo "  1라운드 산출물 확인 완료 (ko/en/ja)"
 # ── 2) 2차 ko 변형 PR 생성 ────────────────────────────────────────────
 echo
 echo "[2/6] scripts/create-translate-test-pr.sh --plan round2"
-create_out="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh" --plan round2)"
+create_out="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh" --plan round2 --base-branch "$BASE_BRANCH")"
 echo "$create_out"
 
 # ── 3) ko 변경 PR 생성 확인 ──────────────────────────────────────────

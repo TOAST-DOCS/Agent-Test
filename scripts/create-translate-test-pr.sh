@@ -40,6 +40,7 @@ BRANCH=""; TITLE=""; BODY=""; DRY_RUN=0; PLAN_NAME="round1"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --branch) BRANCH="$2"; shift 2 ;;
+    --base-branch) BASE_BRANCH="$2"; shift 2 ;;   # 기본 alpha, e2e 세션 브랜치로 override
     --title)  TITLE="$2";  shift 2 ;;
     --body)   BODY="$2";   shift 2 ;;
     --plan)   PLAN_NAME="$2"; shift 2 ;;   # round1(기본) | round2
