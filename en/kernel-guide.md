@@ -615,6 +615,7 @@ Reboot the OS for the boot order change to take effect.
 [root@rocky810 ~]# sync; reboot
 ```
 
-## Auto ID assignment validation
+<a id="auto-id-assignment-validation"></a>
+## Auto ID assignment validation { #auto-id-assignment-validation }
 
 This section validates automatic anchor ID assignment in the translation pipeline. When Korean changes are made without anchor IDs, the translation job must assign the same ID across all three languages (Korean, English, and Japanese).
