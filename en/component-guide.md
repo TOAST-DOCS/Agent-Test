@@ -1,9 +1,10 @@
 <!-- pre-align:aligned sig=0b640fde76d8 -->
 
 <a id="compute-instance-installation-component-guide"></a>
+
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
 
-This is a test paragraph added to the existing section. Existing headings must be kept as-is.
+This paragraph is a test paragraph added to an existing section. Existing headings must be kept as-is. (Body text modification test: This sentence should be reflected when the translation is re-run.)
 
 <a id="test-added-subsection"></a>
 ### Test subsection { #test-added-subsection }
