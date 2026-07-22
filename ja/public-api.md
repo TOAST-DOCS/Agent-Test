@@ -10,8 +10,8 @@
 
 | 種類 | リージョン | エンドポイント |
 |---|---|---|
-| compute | 韓国（パンギョ）リージョン<br>韓国（ピョンチョン）リージョン<br>韓国（光州）リージョン<br>日本リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
-
+| compute | 韓国(パンギョ)リージョン<br>韓国(ペヨンチョン)リージョン<br>韓国(光州)リージョン<br>日本リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com | (行修正テスト)
+| TEST-ROW | (新規行テスト) | (新規行テスト) |
 API 応答に本ガイドで指定されていないフィールドが表示される場合があります。これらのフィールドは NHN Cloud 内部用途で使用され、事前通知なしに変更される可能性があるため、使用しないでください。
 
 <a id="instance-flavors"></a>
@@ -865,3 +865,30 @@ X-Auth-Token: {tokenId}
 </details>
 
 ---
+
+### テスト用新規エンドポイント { #test-added-endpoint }
+
+```
+POST /v2/{tenantId}/test-added-endpoint
+X-Auth-Token: {tokenId}
+```
+
+<a id="test-added-request"></a>
+
+#### リクエスト { #test-added-request }
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|---|
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
+| name | Body | String | O | エンドポイント名 |
+
+<a id="test-added-response"></a>
+
+#### 応答 { #test-added-response }
+
+| 名前 | 種類 | 形式 | 説明 |
+|---|---|---|---|
+| endpoint | Body | Object | 作成されたエンドポイント オブジェクト |
+| endpoint.id | Body | String | エンドポイント ID |
+| endpoint.name | Body | String | エンドポイント名 |
