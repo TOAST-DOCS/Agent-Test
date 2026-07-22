@@ -56,8 +56,11 @@ Write 계열 (`/api/translate`, `/api/align`, `/compare/…` 계열 등) 은 로
 {
   "task_id": "…",           # UUID
   "job_id": "…",            # 묶는 Job UUID (batch 실행시 여러 task 공유)
-  "job_type": "translate|align|retranslate|ko-review|fill-empty|
-                fix-heading-syntax|sync-suffix|suffix-compare",
+  "job_type": "translate|align|align-v2|align-v3|retranslate|ko-review|
+                fill-empty|fix-heading-syntax|sync-suffix|suffix-compare",
+                # align 계열은 요청 body 의 align_v2/align_v3 플래그로 파생
+                # (Jobs 탭 유형 필터로 상호 구분). job id 도 type prefix 를
+                # 따라감: align-v3-YYYYMMDD-N
   "label": "번역: <PR>", "task_label": "<PR|repo|path>",
   "status": "queued|running|success|failure|cancelled|partial",
   "build_url": "…jenkins…/N/",
@@ -324,12 +327,32 @@ Source: `server.py:3241-3382`
   "aligned_marker": bool, "strict": bool, "reconcile_unmatched": bool,
   "fix_anchor_links": bool, "demote_extras": bool, "translate_body": bool,
   "translate_headings": bool, "renew_anchor_ids": bool,
-  "dry_run": bool, "debug": bool, "align_v2": bool,
+  "dry_run": bool, "debug": bool,
+  "align_v2": bool, "align_v3": bool,   // 상호 배타 — 둘 다 주면 Jenkins 빌드가
+                                        // argparse 에러(exit 2)로 실패
   "pipeline_branch": ""
 }
 ```
 
-`/api/align-batch` — `/api/align` 파라미터에 다음 추가:
+**align 모드 3종** — 플래그 조합으로 결정되고, `job_type` 도 같은 이름으로
+파생된다 (`align-v3` / `align-v2` / `align`):
+
+| 모드 | 켜는 법 | 동작 |
+|---|---|---|
+| **align** (기본) | 둘 다 false | Sonnet 구조 매칭 + apply_plan. 잔차는 ⚠ remaining 경고와 함께 그대로 commit |
+| **align-v2** | `align_v2: true` | Opus outline 분류가 유일한 매칭 패스 + (옵션) reconcile-unmatched 2-pass + zero-residual sweep (누락은 `<!-- TODO -->` stub 삽입, extra 는 bold 강등) — 항상 잔차 0 으로 마감 |
+| **align-v3** | `align_v3: true` | **semantic-first 재정렬** — 모델 `claude-fable-5` · effort `high` 고정 (env override 없음). 의미 기준으로 ko↔target 을 매핑 (anchor 는 출력이지 입력 아님 — 이전 정렬이 anchor 를 잘못 찍은 파일도 탐지·복구), 매치 섹션을 ko 순서로 byte-preserving 재배치 (기존 번역 그대로 재사용), anchor 를 ko-canonical 로 재작성, **진짜 누락 섹션만** per-heading 번역. sweep 없음 — 잔차가 남으면 **그 파일 commit 을 취소**하고 에러로 보고 (honesty gate) |
+
+v3 특이사항:
+* `translator` 는 자동 활성 (별도 `translate_headings` 플래그 불필요 — 서버가
+  `--align-v3` 만 넘겨도 fix_headings 가 자동 init).
+* `dry_run: true` 조합 시 commit/PR 없이 Jenkins 아티팩트(`fixout/`)로만 결과
+  확인 가능 — 첫 검증에 권장.
+* 구조적으로 "✅ aligned" 로 보이는 파일도 fable 의미 검수를 거침 (위치
+  스탬프 오염 false-✅ 탐지용) — 파일당 최소 1 fable 콜 비용.
+
+`/api/align-batch` — `/api/align` 파라미터 (`align_v2`/`align_v3` 포함)에
+다음 추가:
 
 ```
 {
@@ -340,6 +363,19 @@ Source: `server.py:3241-3382`
   "path_prefix": "align/",        // fix_headings 이 넣을 prefix
   "ids_only": bool
 }
+```
+
+batch 도 `job_type` 을 모드로 파생하고 Job 라벨에 ` (align-v2)` /
+` (align-v3)` 접미사를 붙인다.
+
+Bearer 토큰으로 align-v3 dry-run 을 거는 예:
+
+```bash
+curl -X POST "$DASHBOARD_BASE_URL/api/align-batch" \
+  -H "Authorization: Bearer $DASHBOARD_API_TOKEN" -H "Content-Type: application/json" \
+  -d '{"target":"https://github.com/TOAST-DOCS/Alimtalk","base_ref":"alpha",
+       "paths":"friendtalkupgrade-api-guide.md,release-notes.md",
+       "align_v3":true,"demote_extras":true,"aligned_marker":true,"dry_run":true}'
 ```
 
 ### 기타 Jenkins 트리거
@@ -454,6 +490,11 @@ Source: `viewer/main.py:3440-3990`
 
 `/compare/align` body 는 위 dashboard `/api/align` 과 동일 필드 —
 `_viewer_align_body_to_dashboard` 가 자동 매핑.
+
+> **align_v3 미지원 (viewer 경유 한정)**: `/compare/align` ·
+> `/compare/align-v2-batch` 는 아직 `align_v3` 를 dashboard 로 forward
+> 하지 않는다 — v3 실행은 dashboard `/api/align(-batch)` 직접 호출 또는
+> Jenkins `ALIGN_V3=true` 파라미터로만 가능.
 
 ### Compare / Todo / Suffix 요약 (JSON 캐시 API)
 
