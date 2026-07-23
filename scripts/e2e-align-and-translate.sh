@@ -54,13 +54,20 @@
 #                                잔여 diff 1..5 인 (doc, lang) 은 자동 escalation 됨.
 #
 #   --plan <name>                create-translate-test-pr.sh 에 전달할 ko 변형 plan.
-#                                round1(기본) / round2 / row-drop-repro.
+#                                round1(기본) / round2 / row-drop-repro / table-suite.
 #                                row-drop-repro: cloud-translate PR #283 회귀 재현용.
 #                                version-guide.md (alpha 초기부터 en/ja 가 표 행 1개 stale)
 #                                의 첫 문단만 짧게 수정 → load_chars/ko_diff_chars 비율이
 #                                cap 2 를 초과 → LLM-patch fallback 활성. 결함 상태에서는
 #                                번역 PR 의 en/ja 가 stale 행을 그대로 유지하고, PR #283
 #                                fix 가 배포되어 있으면 행이 backfill 되거나 잡이 raise.
+#                                table-suite: row-drop-repro 의 결함 2케이스
+#                                (version-guide 문단 트리거 + release-notes 의 stale 행
+#                                cosmetic 수정 = CK 인시던트 원형) 에 정상 표 변형들
+#                                (중간 행 삽입·헤더 수정·행 삭제·행 수정·행 추가·신규 표)
+#                                을 더한 종합 검증. PR #283 미배포 상태에서는 step 17 이
+#                                version-guide/release-notes 두 파일만 FAIL 로 지목해야
+#                                정상이고, 그 외 파일의 FAIL 은 새로운 회귀를 의미한다.
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
@@ -136,8 +143,8 @@ while [[ $# -gt 0 ]]; do
     --no-align-v2)   ALIGN_V2=0; shift ;;
     --plan)
       case "${2:-}" in
-        round1|round2|row-drop-repro) PLAN_NAME="$2" ;;
-        *) echo "error: --plan 은 round1|round2|row-drop-repro 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+        round1|round2|row-drop-repro|table-suite) PLAN_NAME="$2" ;;
+        *) echo "error: --plan 은 round1|round2|row-drop-repro|table-suite 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 e2e 세션 브랜치 재사용
@@ -627,10 +634,14 @@ trans_wt="$tmpdir/trans-check"
 git worktree add "$trans_wt" "origin/$trans_head_ref" >/dev/null
 
 trans_check_prompt='ko/, en/, ja/ 세 폴더에 공통으로 존재하는 .md 문서 각각에 대해,
-fenced code block(```)을 제외하고 다음 세 가지가 세 언어에서 완전히 일치하는지 검사해줘.
+fenced code block(```)을 제외하고 다음 네 가지가 세 언어에서 완전히 일치하는지 검사해줘.
 (1) heading level 순서
 (2) anchor id 순서 (<a id="..."></a> 형식과 { #id } 형식 모두)
 (3) 표(table)가 있으면 표 개수와 각 표의 데이터 행(row) 개수
+(4) 표의 데이터 행 중 첫 셀이 언어 무관 식별자(공백 없이 숫자를 포함하는 버전/코드,
+    예: 1.202602.1, 2.4.1, v1.35)인 행들의 식별자 집합과 등장 순서
+    — 식별자는 번역되지 않으므로 세 언어에서 동일해야 하고, 한 언어에서만 빠진
+    식별자가 있으면 그 행이 유실된 것이다.
 파일별 결과를 OK/FAIL 표로 출력하고 (표 개수·행 수 포함), FAIL 인 파일은 어긋난 위치와 내용을 설명해줘.
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 

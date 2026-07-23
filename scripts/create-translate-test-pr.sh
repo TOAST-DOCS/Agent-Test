@@ -441,6 +441,70 @@ elif mutation == "add_repeated_heading_with_table":
     lines += block
     out = join(lines)
 
+elif mutation == "bump_row_date":
+    # 첫 표의 '두 번째' 데이터 행에서 날짜(YYYY-MM-DD)를 하루 뒤로 — cosmetic 수정.
+    # release-notes.md 픽스처에서 두 번째 행(2.4.1)은 en/ja 에 없는 stale 행이므로,
+    # "en/ja 가 결여한 행을 ko diff 는 '수정' 으로만 보는" CK 인시던트(cloud-translate
+    # PR #283) 원형을 재현한다.
+    import datetime as _dt
+    changed = False
+    i = 0
+    while i < len(lines) - 3:
+        if is_table_row(lines[i]) and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1]):
+            k = i + 3          # header, separator, 1행 다음 = 두 번째 데이터 행
+            if k < len(lines) and is_table_row(lines[k]):
+                m = re.search(r'\d{4}-\d{2}-\d{2}', lines[k])
+                if m:
+                    d = _dt.date.fromisoformat(m.group(0)) + _dt.timedelta(days=1)
+                    lines[k] = lines[k][:m.start()] + d.isoformat() + lines[k][m.end():]
+                    changed = True
+            break
+        i += 1
+    if not changed:
+        raise SystemExit(f"bump_row_date: no date in 2nd data row of first table in {path}")
+    out = join(lines)
+
+elif mutation == "insert_table_row_middle":
+    # 첫 표의 첫 데이터 행 '뒤'에 신규 행 삽입 — 끝 추가(add_table_row)와 구분되는
+    # 중간 삽입 케이스. 컬럼 수는 헤더에 맞춤.
+    changed = False
+    i = 0
+    while i < len(lines) - 2:
+        if is_table_row(lines[i]) and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1]):
+            ncol = lines[i].strip().strip('|').count('|') + 1
+            k = i + 2
+            if k < len(lines) and is_table_row(lines[k]):
+                cells = ["중간 삽입 테스트"] + ["신규 중간 행입니다. 번역되어야 합니다."] * (ncol - 1)
+                lines[k+1:k+1] = ["| " + " | ".join(cells) + " |"]
+                changed = True
+            break
+        i += 1
+    if not changed:
+        raise SystemExit(f"insert_table_row_middle: no table with a data row in {path}")
+    out = join(lines)
+
+elif mutation == "add_new_table":
+    # 문서 끝에 신규 섹션 + 신규 표 추가 — "표 자체가 새로 생기는" 케이스
+    # (kernel-guide 처럼 표가 없던 문서라면 표 개수 0→1 검증까지 겸함).
+    block = [
+        "",
+        '<a id="test-added-table"></a>',
+        "## 테스트용 신규 표 섹션 { #test-added-table }",
+        "",
+        "이 섹션은 표 번역 검증을 위해 새로 추가됐습니다. 아래 표의 머리글과 셀 텍스트가 모두 번역되어야 합니다.",
+        "",
+        "| 항목 | 설명 | 기본값 |",
+        "|---|---|---|",
+        "| 최대 노드 수 | 하나의 노드 풀에 생성할 수 있는 노드의 최대 개수입니다. | 10 |",
+        "| 자동 확장 | 부하에 따라 노드 수를 자동으로 조정합니다. | 사용 안 함 |",
+        "| 점검 주기 | 노드 상태를 점검하는 주기입니다. | 5분 |",
+        "",
+    ]
+    if not text.endswith("\n"):
+        lines.append("")
+    lines += block
+    out = join(lines)
+
 elif mutation == "noop":
     out = text
 else:
@@ -513,11 +577,34 @@ declare -a PLAN_ROW_DROP_REPRO=(
   "edit_body|ko/version-guide.md"
   "add_paragraph|ko/overview.md"
 )
+# table-suite: 표 번역 검증 종합 plan — row-drop-repro 의 두 결함 재현 케이스에
+# 정상 경로 표 변형들을 더해 한 번의 잡으로 "결함은 재현되고 정상 케이스는 깨지지
+# 않는지" 를 함께 확인한다.
+#   version-guide.md  : (결함 A) stale 표 이웃 문단 수정 → LLM-patch → 행 유실 노출
+#   release-notes.md  : (결함 B, CK 인시던트 원형) en/ja 가 결여한 stale 행(2.4.1)
+#                       자체의 날짜만 하루 bump → ko diff 상 '수정' 으로만 보임
+#                       → 행 개수 불일치로 row-splice 1:1 불가 → fallback → 행 유실
+#   feature-matrix.md : 표 중간 행 삽입 + 헤더 셀 수정 + (둘째 표) 마지막 행 삭제
+#   public-api.md     : 기존 행 셀 수정 + 행 추가 (round1 과 동일한 정상 케이스)
+#   kernel-guide.md   : 표가 없던 문서에 신규 섹션+표 추가 (표 0→1)
+#   troubleshooting   : 대조군 (변경 없음 — en/ja 무변경이어야 정상)
+declare -a PLAN_TABLE_SUITE=(
+  "edit_body|ko/version-guide.md"
+  "bump_row_date|ko/release-notes.md"
+  "insert_table_row_middle|ko/feature-matrix.md"
+  "edit_table_header|ko/feature-matrix.md"
+  "remove_table_row|ko/feature-matrix.md"
+  "change_table_row|ko/public-api.md"
+  "add_table_row|ko/public-api.md"
+  "add_new_table|ko/kernel-guide.md"
+  "noop|ko/troubleshooting-guide.md"
+)
 case "$PLAN_NAME" in
   round1) PLAN=("${PLAN_ROUND1[@]}") ;;
   round2) PLAN=("${PLAN_ROUND2[@]}") ;;
   row-drop-repro) PLAN=("${PLAN_ROW_DROP_REPRO[@]}") ;;
-  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro)" >&2; exit 1 ;;
+  table-suite) PLAN=("${PLAN_TABLE_SUITE[@]}") ;;
+  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro|table-suite)" >&2; exit 1 ;;
 esac
 
 if [[ -z "$BRANCH" ]]; then
