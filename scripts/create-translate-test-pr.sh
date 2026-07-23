@@ -582,10 +582,13 @@ declare -a PLAN_ROW_DROP_REPRO=(
 #   version-guide.md  : (결함 A — CK 인시던트 완전 동형, cloud-translate PR #283 대상)
 #                       stale 표(en/ja 에 1.202602.1 행 없음)의 이웃 문단 수정
 #                       + 그 stale 행 자체의 날짜 bump. 두 changed unit 합계 load
-#                       (≈768자) ≥ floor 500, ratio ≫ cap 2 → LLM-patch fallback.
+#                       (≈798자) ≥ floor 500, ratio ≈19x ≫ cap 2 → LLM-patch fallback.
 #                       diff 에 행이 '수정' 으로 등장하지만 en/ja 엔 행 자체가 없어
-#                       삽입 판단이 모델 몫 → pre-#283 은 행 유실/제외, post-#283 은
-#                       결정적 삽입 or raise 로 해소되어야 한다.
+#                       삽입 판단이 모델 몫 → pre-#283 은 모델 편차로 언어별 결과가
+#                       갈린다 (2026-07-23 run 실측: en 은 apply-failed → 파일 제외로
+#                       행 유실 지속, ja 는 삽입 성공 — 원본 CK 인시던트의 "ja 엔 있고
+#                       en 엔 없음" 비대칭과 동일). 한 언어라도 유실이면 FAIL.
+#                       post-#283 은 결정적 삽입 or raise 로 해소되어야 한다.
 #   release-notes.md  : (결함 B — row-splice positional 손상; #283 범위 밖 별개 결함)
 #                       stale 행(2.4.1)의 날짜만 bump. changed load 107자 < floor 500
 #                       → load guard 미작동 → anchor-path row-splice 가 stale 표(4행)에
