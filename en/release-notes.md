@@ -6,15 +6,17 @@
 This document lists the changes in each release of the instance service in reverse chronological order. Release numbers follow the `major.minor.patch` format, and each entry shows the release date and key changes.
 
 <a id="release-history"></a>
+
 ### Release history { #release-history }
 
 | Release | Release date | Changes |
 |---|---|---|
 | 2.5.0 | 2026-05-12 | Snapshot scheduling added. You can configure the schedule interval in the console. |
-| 2.4.0 | 2026-03-18 | GPU node pool support. Scheduler priority policy revamped. |
+| 2.4.1 | 2026-04-03 | Improved node image cache for faster creation. Fixed internal errors. |
 | 2.3.2 | 2026-02-05 | Security vulnerability patch. Console access logging strengthened. |
 | 2.3.1 | 2026-01-08 | First public release notes. Basic feature guide. |
 
+| 2.3.1 | 2026-01-08 | Initial public release notes. Basic features overview. |
 <a id="release-policy"></a>
 ### Release policy { #release-policy }
 
