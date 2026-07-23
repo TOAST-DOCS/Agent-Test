@@ -577,19 +577,27 @@ declare -a PLAN_ROW_DROP_REPRO=(
   "edit_body|ko/version-guide.md"
   "add_paragraph|ko/overview.md"
 )
-# table-suite: 표 번역 검증 종합 plan — row-drop-repro 의 두 결함 재현 케이스에
-# 정상 경로 표 변형들을 더해 한 번의 잡으로 "결함은 재현되고 정상 케이스는 깨지지
-# 않는지" 를 함께 확인한다.
-#   version-guide.md  : (결함 A) stale 표 이웃 문단 수정 → LLM-patch → 행 유실 노출
-#   release-notes.md  : (결함 B, CK 인시던트 원형) en/ja 가 결여한 stale 행(2.4.1)
-#                       자체의 날짜만 하루 bump → ko diff 상 '수정' 으로만 보임
-#                       → 행 개수 불일치로 row-splice 1:1 불가 → fallback → 행 유실
+# table-suite: 표 번역 검증 종합 plan — 결함 재현 2케이스에 정상 경로 표 변형들을
+# 더해 한 번의 잡으로 "결함은 재현되고 정상 케이스는 깨지지 않는지" 를 함께 확인한다.
+#   version-guide.md  : (결함 A — CK 인시던트 완전 동형, cloud-translate PR #283 대상)
+#                       stale 표(en/ja 에 1.202602.1 행 없음)의 이웃 문단 수정
+#                       + 그 stale 행 자체의 날짜 bump. 두 changed unit 합계 load
+#                       (≈768자) ≥ floor 500, ratio ≫ cap 2 → LLM-patch fallback.
+#                       diff 에 행이 '수정' 으로 등장하지만 en/ja 엔 행 자체가 없어
+#                       삽입 판단이 모델 몫 → pre-#283 은 행 유실/제외, post-#283 은
+#                       결정적 삽입 or raise 로 해소되어야 한다.
+#   release-notes.md  : (결함 B — row-splice positional 손상; #283 범위 밖 별개 결함)
+#                       stale 행(2.4.1)의 날짜만 bump. changed load 107자 < floor 500
+#                       → load guard 미작동 → anchor-path row-splice 가 stale 표(4행)에
+#                       positional 매핑되어 2.4.1 번역이 2.4.0 행을 덮어쓰고 고아
+#                       중복 행이 생기는 조용한 손상을 노출한다 (2026-07-23 run 실측).
 #   feature-matrix.md : 표 중간 행 삽입 + 헤더 셀 수정 + (둘째 표) 마지막 행 삭제
 #   public-api.md     : 기존 행 셀 수정 + 행 추가 (round1 과 동일한 정상 케이스)
 #   kernel-guide.md   : 표가 없던 문서에 신규 섹션+표 추가 (표 0→1)
 #   troubleshooting   : 대조군 (변경 없음 — en/ja 무변경이어야 정상)
 declare -a PLAN_TABLE_SUITE=(
   "edit_body|ko/version-guide.md"
+  "bump_row_date|ko/version-guide.md"
   "bump_row_date|ko/release-notes.md"
   "insert_table_row_middle|ko/feature-matrix.md"
   "edit_table_header|ko/feature-matrix.md"
