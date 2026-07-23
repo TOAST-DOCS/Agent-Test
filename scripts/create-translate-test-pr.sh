@@ -498,10 +498,26 @@ declare -a PLAN_ROUND2=(
   "add_subsection_no_id|ko/feature-matrix.md"
   "edit_body|ko/troubleshooting-guide.md"
 )
+# row-drop-repro: cloud-translate PR #283 회귀 재현.
+#   전제: version-guide.md 는 alpha 초기 상태부터 en/ja 가 stale
+#         (ko 만 `1.202602.1` 행을 가진 5-row 표, en/ja 는 4-row).
+#   변형: 첫 문단(≈500+ 자) 안 한 문장에만 짧은 수정 → ko diff 는 작지만
+#         splice 재번역 대상 unit 이 그 큰 문단이라 load_chars/ko_diff_chars 비율이
+#         `max_load_ratio=2` 를 초과 → row-safe splice 폐기 → LLM-patch fallback.
+#         fallback 프롬프트는 ko diff (문단만) + 기존 en/ja 전체 를 받으므로
+#         "표에서 빠진 1.202602.1 행" 은 diff 에도 en/ja 에도 등장하지 않음
+#         → 모델이 그 행 삽입 patch 를 만들지 않고 조용히 커밋 → 결함 재현.
+#   비교군: overview.md 는 정상 정렬 상태 그대로 `add_paragraph` 만 적용해
+#           같은 잡 안에서 정상 경로도 함께 동작하는지 확인.
+declare -a PLAN_ROW_DROP_REPRO=(
+  "edit_body|ko/version-guide.md"
+  "add_paragraph|ko/overview.md"
+)
 case "$PLAN_NAME" in
   round1) PLAN=("${PLAN_ROUND1[@]}") ;;
   round2) PLAN=("${PLAN_ROUND2[@]}") ;;
-  *) echo "unknown --plan: $PLAN_NAME (round1|round2)" >&2; exit 1 ;;
+  row-drop-repro) PLAN=("${PLAN_ROW_DROP_REPRO[@]}") ;;
+  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro)" >&2; exit 1 ;;
 esac
 
 if [[ -z "$BRANCH" ]]; then

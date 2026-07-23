@@ -29,6 +29,7 @@
 #                                      [--guidelines-variant-en aws|unified|unified-v2|default]
 #                                      [--guidelines-variant-ja aws|unified|default]
 #                                      [--align-v2|--no-align-v2]
+#                                      [--plan round1|round2|row-drop-repro]
 #
 #   --engine api   translate 잡을 api 엔진으로 실행
 #   --engine cli   translate 잡을 claude-code(CLI) 엔진으로 실행 (기본값)
@@ -52,6 +53,15 @@
 #                                (기본 5) 를 자동으로 사용하므로, --align-v2 가 꺼져 있어도
 #                                잔여 diff 1..5 인 (doc, lang) 은 자동 escalation 됨.
 #
+#   --plan <name>                create-translate-test-pr.sh 에 전달할 ko 변형 plan.
+#                                round1(기본) / round2 / row-drop-repro.
+#                                row-drop-repro: cloud-translate PR #283 회귀 재현용.
+#                                version-guide.md (alpha 초기부터 en/ja 가 표 행 1개 stale)
+#                                의 첫 문단만 짧게 수정 → load_chars/ko_diff_chars 비율이
+#                                cap 2 를 초과 → LLM-patch fallback 활성. 결함 상태에서는
+#                                번역 PR 의 en/ja 가 stale 행을 그대로 유지하고, PR #283
+#                                fix 가 배포되어 있으면 행이 backfill 되거나 잡이 raise.
+#
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
 set -euo pipefail
@@ -74,6 +84,7 @@ TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199). "defa
 TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
 TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
+PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
@@ -123,6 +134,12 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --align-v2)      ALIGN_V2=1; shift ;;
     --no-align-v2)   ALIGN_V2=0; shift ;;
+    --plan)
+      case "${2:-}" in
+        round1|round2|row-drop-repro) PLAN_NAME="$2" ;;
+        *) echo "error: --plan 은 round1|round2|row-drop-repro 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 e2e 세션 브랜치 재사용
     --base-source)   BASE_SOURCE_BRANCH="$2"; shift 2 ;; # 새 e2e 브랜치를 갈라낼 원본 (기본 alpha)
     -h|--help) sed -n '3,55p' "$0"; exit 0 ;;
@@ -337,7 +354,7 @@ echo "  merged & local $BASE_BRANCH updated: $align_pr_url"
 echo
 echo "[10/17] scripts/create-translate-test-pr.sh"
 
-create_out="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh" --base-branch "$BASE_BRANCH")"
+create_out="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh" --base-branch "$BASE_BRANCH" --plan "$PLAN_NAME")"
 echo "$create_out"
 
 # ── 11) ko 변경 PR 생성 확인 ──────────────────────────────────────────
