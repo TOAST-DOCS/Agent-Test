@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
-
 ## Compute > Instance > Overview { #compute-instance-overview }
 
 This paragraph is a test paragraph added to the existing section. The existing heading must be maintained as-is.
