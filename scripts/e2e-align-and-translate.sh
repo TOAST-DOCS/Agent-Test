@@ -572,7 +572,12 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
       --workers 2 --chunk-workers 2 --tm-top-k 1 \
       --table-rows --skip-full-table --skip-anchor-only \
       --assign-anchors --align-headings --llm-patch-fallback \
+      --fix-korean-leftover \
   ) 2>&1 | tee "$local_log"
+  # ↑ --fix-korean-leftover: 표 헤더/짧은 조각 재번역 시 간헐적으로 남는 한글
+  #   잔류(결함 C — 예: ja 헤더 `판교`)를 커밋 전에 스캔·수정. step 17 의
+  #   rule (5) 한글 잔류 검사와 짝. dashboard API 는 이 옵션을 아직 노출하지
+  #   않으므로 --translate api 실행은 결함 C 로 rule (5) FAIL 이 날 수 있다.
   local_rc=${PIPESTATUS[0]}
   set -e
   if (( local_rc != 0 )); then
