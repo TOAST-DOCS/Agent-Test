@@ -483,6 +483,51 @@ elif mutation == "insert_table_row_middle":
         raise SystemExit(f"insert_table_row_middle: no table with a data row in {path}")
     out = join(lines)
 
+elif mutation == "insert_keyed_table_row":
+    # 첫 표의 3번째 데이터 행 '뒤'(행이 3개 미만이면 마지막 행 뒤)에 식별자
+    # 첫 셀(숫자 포함 단일 토큰 = cloud-translate `_row_key` 형태)을 가진 신규
+    # 행을 삽입 — keyed 표의 중간 삽입 케이스. stale 표(version-guide)에
+    # 적용하면 "결여 행 backfill + 신규 행 삽입" 복합 시나리오가 된다.
+    changed = False
+    i = 0
+    while i < len(lines) - 2:
+        if is_table_row(lines[i]) and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1]):
+            ncol = lines[i].strip().strip('|').count('|') + 1
+            k = i + 2
+            rows = 0
+            while k < len(lines) and is_table_row(lines[k]) and rows < 3:
+                rows += 1
+                k += 1
+            cells = ["1.202603.9", "2026-03-28",
+                     "중간에 삽입된 신규 버전입니다. 번역되어야 합니다."]
+            cells = (cells + ["(신규)"] * ncol)[:ncol]
+            lines[k:k] = ["| " + " | ".join(cells) + " |"]
+            changed = True
+            break
+        i += 1
+    if not changed:
+        raise SystemExit(f"insert_keyed_table_row: no table found in {path}")
+    out = join(lines)
+
+elif mutation == "swap_table_rows":
+    # 첫 표의 마지막 두 데이터 행의 순서를 서로 교환 — 행 순서 변경이 en/ja 에
+    # 그대로 반영되는지 검증 (내용 변경 없음, 순서만).
+    changed = False
+    i = 0
+    while i < len(lines) - 3:
+        if is_table_row(lines[i]) and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1]):
+            k = i + 2
+            while k < len(lines) and is_table_row(lines[k]):
+                k += 1
+            if k - (i + 2) >= 2:
+                lines[k-2], lines[k-1] = lines[k-1], lines[k-2]
+                changed = True
+            break
+        i += 1
+    if not changed:
+        raise SystemExit(f"swap_table_rows: first table needs >=2 data rows in {path}")
+    out = join(lines)
+
 elif mutation == "add_new_table":
     # 문서 끝에 신규 섹션 + 신규 표 추가 — "표 자체가 새로 생기는" 케이스
     # (kernel-guide 처럼 표가 없던 문서라면 표 개수 0→1 검증까지 겸함).
@@ -594,16 +639,24 @@ declare -a PLAN_ROW_DROP_REPRO=(
 #                       → load guard 미작동 → anchor-path row-splice 가 stale 표(4행)에
 #                       positional 매핑되어 2.4.1 번역이 2.4.0 행을 덮어쓰고 고아
 #                       중복 행이 생기는 조용한 손상을 노출한다 (2026-07-23 run 실측).
-#   feature-matrix.md : 표 중간 행 삽입 + 헤더 셀 수정 + (둘째 표) 마지막 행 삭제
+#   pricing-guide.md  : (결함 B', 산문형 표 변형) en/ja 가 '고급 요금제' 행을
+#                       결여한 stale 산문 표 (첫 셀이 번역되는 텍스트 = row key
+#                       없음). 문단만 수정 → cloud-translate PR #290 의 reconcile
+#                       이 참조 주입 whole-table 재번역으로 행을 복구해야 한다.
+#   feature-matrix.md : 표 중간 행 삽입 + 헤더 셀 수정 + 마지막 두 행 순서 교환
+#                       + (둘째 표) 마지막 행 삭제
 #   public-api.md     : 기존 행 셀 수정 + 행 추가 (round1 과 동일한 정상 케이스)
 #   kernel-guide.md   : 표가 없던 문서에 신규 섹션+표 추가 (표 0→1)
 #   troubleshooting   : 대조군 (변경 없음 — en/ja 무변경이어야 정상)
 declare -a PLAN_TABLE_SUITE=(
   "edit_body|ko/version-guide.md"
   "bump_row_date|ko/version-guide.md"
+  "insert_keyed_table_row|ko/version-guide.md"
   "bump_row_date|ko/release-notes.md"
+  "edit_body|ko/pricing-guide.md"
   "insert_table_row_middle|ko/feature-matrix.md"
   "edit_table_header|ko/feature-matrix.md"
+  "swap_table_rows|ko/feature-matrix.md"
   "remove_table_row|ko/feature-matrix.md"
   "change_table_row|ko/public-api.md"
   "add_table_row|ko/public-api.md"

@@ -29,7 +29,8 @@
 #                                      [--guidelines-variant-en aws|unified|unified-v2|default]
 #                                      [--guidelines-variant-ja aws|unified|default]
 #                                      [--align-v2|--no-align-v2]
-#                                      [--plan round1|round2|row-drop-repro]
+#                                      [--plan round1|round2|row-drop-repro|table-suite]
+#                                      [--translate api|local]
 #
 #   --engine api   translate 잡을 api 엔진으로 실행
 #   --engine cli   translate 잡을 claude-code(CLI) 엔진으로 실행 (기본값)
@@ -72,6 +73,13 @@
 #                                  stacked) 배포 후에는 A·B 둘 다 PASS 가 기대값이다.
 #                                - 그 외 파일의 FAIL 은 새로운 회귀를 의미한다.
 #
+#   --translate api|local        번역 실행 방식. api(기본) = dashboard /api/translate
+#                                (배포된 Jenkins 잡). local = $CLOUD_TRANSLATE_DIR 의
+#                                translate_pr.py 를 직접 실행 — 미배포 브랜치의 번역
+#                                로직(예: PR #290 table-row reconcile)을 배포 없이 검증.
+#                                engine/model 은 api+haiku 로 고정(기존 run 과 동일 조건),
+#                                나머지 preset 플래그도 dashboard 와 동일하게 전달.
+#
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
 set -euo pipefail
@@ -94,7 +102,13 @@ TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199). "defa
 TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
 TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
-PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro
+PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|table-suite
+TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기본) | local = 로컬 translate_pr.py
+# --translate local 이 사용할 cloud-translate 체크아웃/venv. 워크트리를 가리키면
+# 미배포 브랜치(예: PR #290 fix/table-sync-repair)의 번역 로직을 그대로 검증할 수 있다.
+# 전제: $CLOUD_TRANSLATE_DIR/.env 에 TRANSLATE_GITHUB_TOKEN + TRANSLATE_ANTHROPIC_API_KEY.
+CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
+CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --engine)
@@ -148,6 +162,12 @@ while [[ $# -gt 0 ]]; do
       case "${2:-}" in
         round1|round2|row-drop-repro|table-suite) PLAN_NAME="$2" ;;
         *) echo "error: --plan 은 round1|round2|row-drop-repro|table-suite 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    --translate)
+      case "${2:-}" in
+        api|local) TRANSLATE_VIA="$2" ;;
+        *) echo "error: --translate 는 api|local 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 e2e 세션 브랜치 재사용
@@ -527,7 +547,38 @@ git worktree remove "$apply_wt" --force
 git fetch --quiet origin "$ko_head_ref_for_suggest"
 git reset --hard "origin/$ko_head_ref_for_suggest"
 
-# ── 15) ko 변경 PR (suggestion 반영본) 대상 dashboard /api/translate 트리거 ─
+# ── 15) ko 변경 PR (suggestion 반영본) 번역 실행 ─────────────────────
+trans_pr_url=""
+if [[ "$TRANSLATE_VIA" == "local" ]]; then
+  # 로컬 cloud-translate 체크아웃의 translate_pr.py 를 직접 실행 — 배포된
+  # dashboard/Jenkins 잡 대신 로컬 브랜치(예: PR #290)의 번역 로직을 검증.
+  # 플래그는 dashboard 권장 preset 과 동일; engine/model 은 CLI 플래그가
+  # 없으므로 env 로 고정 (api + haiku = 기존 e2e run 과 동일 조건).
+  echo
+  echo "[15/17] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=api, model=claude-haiku-4-5)"
+  if [[ ! -f "$CLOUD_TRANSLATE_DIR/.env" ]]; then
+    echo "error: $CLOUD_TRANSLATE_DIR/.env 가 없습니다 (TRANSLATE_GITHUB_TOKEN / TRANSLATE_ANTHROPIC_API_KEY 필요)" >&2
+    exit 1
+  fi
+  local_log="$tmpdir/local_translate.log"
+  set +e
+  (cd "$CLOUD_TRANSLATE_DIR" && \
+    TRANSLATE_TRANSLATE_ENGINE=api \
+    TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
+    "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" \
+      --diff-granularity block --glossary-mode service --max-load-ratio 2 \
+      --workers 2 --chunk-workers 2 --tm-top-k 1 \
+      --table-rows --skip-full-table --skip-anchor-only \
+      --assign-anchors --align-headings --llm-patch-fallback \
+  ) 2>&1 | tee "$local_log"
+  local_rc=${PIPESTATUS[0]}
+  set -e
+  if (( local_rc != 0 )); then
+    echo "  local translate_pr.py 실패 (exit $local_rc) — 로그: $local_log" >&2
+    exit 2
+  fi
+  # 번역 PR 은 이미 생성된 상태 — step 16 의 gh 폴링이 즉시 감지한다.
+else
 echo
 echo "[15/17] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default}, chunk_workers=${TRANSLATE_CHUNK_WORKERS:-default}, gv_en=${TRANSLATE_GUIDELINES_VARIANT_EN:-default}, gv_ja=${TRANSLATE_GUIDELINES_VARIANT_JA:-default})"
 
@@ -601,26 +652,31 @@ translate_resp="$(curl -sS -X POST \
   "$DASHBOARD_BASE_URL/api/translate")"
 
 echo "$translate_resp" | python3 -m json.tool
+fi
 
 # ── 16) 번역 PR 감지 대기 (base = ko PR head 브랜치) ──────────────────
-echo
-echo "[16/17] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60분)"
-
 ko_head_ref="$(gh pr view "$ko_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 
-deadline=$(( $(date +%s) + 3600 ))
-trans_pr_url=""
-while (( $(date +%s) < deadline )); do
-  trans_pr_url="$(gh pr list --repo "$REPO" --base "$ko_head_ref" --state open \
-    --json url,headRefName \
-    --jq '.[] | select(.headRefName | startswith("translate/")) | .url' \
-    | sort -u | head -n1 || true)"
-  if [[ -n "$trans_pr_url" ]]; then
-    echo "  detected translation PR: $trans_pr_url"
-    break
-  fi
-  sleep 60
-done
+if [[ -z "$trans_pr_url" ]]; then
+  echo
+  echo "[16/17] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60분)"
+
+  deadline=$(( $(date +%s) + 3600 ))
+  while (( $(date +%s) < deadline )); do
+    trans_pr_url="$(gh pr list --repo "$REPO" --base "$ko_head_ref" --state open \
+      --json url,headRefName \
+      --jq '.[] | select(.headRefName | startswith("translate/")) | .url' \
+      | sort -u | head -n1 || true)"
+    if [[ -n "$trans_pr_url" ]]; then
+      echo "  detected translation PR: $trans_pr_url"
+      break
+    fi
+    sleep 60
+  done
+else
+  echo
+  echo "[16/17] 번역 PR 확인 (local 실행 출력에서 획득): $trans_pr_url"
+fi
 
 if [[ -z "$trans_pr_url" ]]; then
   echo "  timeout: 60분 내 번역 PR 을 감지하지 못했습니다." >&2
@@ -643,10 +699,11 @@ fenced code block(```)을 제외하고 다음 다섯 가지를 검사해줘.
 (3) 표(table)가 있으면 표 개수와 각 표의 데이터 행(row) 개수가 세 언어에서 일치
     — 표 직후에 빈 줄로 분리된 고아 표 행(| ... | 형태)이 있으면 그것도 FAIL 로 보고
 (4) 표의 데이터 행 중 첫 셀이 언어 무관 식별자인 행들의 식별자 집합과 등장 순서가
-    세 언어에서 일치. 식별자 = 공백 없이 숫자를 포함하는 버전/코드 (예: 1.202602.1,
-    2.4.1, v1.35, INST-CREATE). 단 CJK 문자(한글·한자·가나)가 섞인 셀은 번역된
-    텍스트이므로 식별자가 아니다 (예: u2タイプ, 기본). 식별자는 번역되지 않으므로
-    세 언어에서 동일해야 하고, 한 언어에서만 빠진 식별자가 있으면 그 행이 유실된 것이다.
+    세 언어에서 일치. 식별자 = 공백 없이 라틴 문자/숫자/._+- 로만 구성된 버전/코드
+    토큰 (예: 1.202602.1, 2.4.1, v1.35, INST-CREATE). CJK 문자(한글·한자·가나)가
+    섞인 셀은 번역된 텍스트이므로 식별자가 아니다 (예: u2タイプ, 기본). 식별자는
+    번역되지 않으므로 세 언어에서 동일해야 하고, 한 언어에서만 빠졌으면 행 유실,
+    한 언어에서만 순서가 다르면 행 순서 불일치다.
 (5) en/, ja/ 문서 본문에 한글 음절이 남아 있으면 안 된다 (fenced code block 과
     inline code(`...`) 안은 제외) — 남아 있으면 미번역 잔류(leak)로 FAIL.
 파일별 결과를 OK/FAIL 표로 출력하고 (표 개수·행 수 포함), FAIL 인 파일은 어긋난 위치와 내용을 설명해줘.
