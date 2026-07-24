@@ -57,11 +57,13 @@
 #   --plan <name>                create-translate-test-pr.sh 에 전달할 ko 변형 plan.
 #                                round1(기본) / round2 / row-drop-repro / table-suite.
 #                                row-drop-repro: cloud-translate PR #283 회귀 재현용.
-#                                version-guide.md (alpha 초기부터 en/ja 가 표 행 1개 stale)
-#                                의 첫 문단만 짧게 수정 → load_chars/ko_diff_chars 비율이
-#                                cap 2 를 초과 → LLM-patch fallback 활성. 결함 상태에서는
-#                                번역 PR 의 en/ja 가 stale 행을 그대로 유지하고, PR #283
-#                                fix 가 배포되어 있으면 행이 backfill 되거나 잡이 raise.
+#                                version-guide.md 의 en/ja stale(행 1개 결여) 상태는
+#                                create-translate-test-pr.sh 가 base 브랜치에 stale-ify
+#                                커밋으로 조성 (archive 는 일관 유지 — round1/round2 의
+#                                step 17 전-파일 검사가 픽스처 때문에 깨지지 않도록).
+#                                첫 문단만 짧게 수정 → load/ko-diff 비율 cap 초과 →
+#                                LLM-patch fallback 활성. 결함 상태에서는 en/ja 가 stale
+#                                행을 유지하고, fix 배포 후에는 backfill 또는 todo-stub.
 #                                table-suite: 결함 재현 2케이스 + 정상 표 변형들
 #                                (중간 행 삽입·헤더 수정·행 삭제·행 수정·행 추가·신규 표)
 #                                의 종합 검증.

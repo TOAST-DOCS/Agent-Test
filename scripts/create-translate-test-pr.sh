@@ -608,8 +608,9 @@ declare -a PLAN_ROUND2=(
   "edit_body|ko/troubleshooting-guide.md"
 )
 # row-drop-repro: cloud-translate PR #283 회귀 재현.
-#   전제: version-guide.md 는 alpha 초기 상태부터 en/ja 가 stale
-#         (ko 만 `1.202602.1` 행을 가진 5-row 표, en/ja 는 4-row).
+#   전제: version-guide.md 의 en/ja 가 `1.202602.1` 행을 결여한 stale 상태 —
+#         archive 는 일관 상태를 유지하고, 이 stale 은 plan 실행 시 base
+#         브랜치에 stale-ify 커밋으로 조성된다 (아래 STALE_ROWS).
 #   변형: 첫 문단(≈500+ 자) 안 한 문장에만 짧은 수정 → ko diff 는 작지만
 #         splice 재번역 대상 unit 이 그 큰 문단이라 load_chars/ko_diff_chars 비율이
 #         `max_load_ratio=2` 를 초과 → row-safe splice 폐기 → LLM-patch fallback.
@@ -624,6 +625,9 @@ declare -a PLAN_ROW_DROP_REPRO=(
 )
 # table-suite: 표 번역 검증 종합 plan — 결함 재현 2케이스에 정상 경로 표 변형들을
 # 더해 한 번의 잡으로 "결함은 재현되고 정상 케이스는 깨지지 않는지" 를 함께 확인한다.
+#   ※ stale 상태(en/ja 의 특정 행 결여)는 archive 가 아니라 plan 실행 시
+#     base 브랜치에 stale-ify 커밋으로 조성된다 (아래 STALE_ROWS) — archive
+#     는 일관 상태를 유지해 round1/round2 의 step 17 전-파일 검사가 안 깨진다.
 #   version-guide.md  : (결함 A — CK 인시던트 완전 동형, cloud-translate PR #283 대상)
 #                       stale 표(en/ja 에 1.202602.1 행 없음)의 이웃 문단 수정
 #                       + 그 stale 행 자체의 날짜 bump. 두 changed unit 합계 load
@@ -704,6 +708,56 @@ fi
 
 git switch "$BASE_BRANCH"
 git pull
+
+# ── table-suite 전용: en/ja stale 상태를 BASE 브랜치에 조성 ────────────────
+# archive/alpha-origin 은 ko/en/ja 가 일관된 상태를 유지한다 — round1/round2
+# 등 다른 plan 의 step 17 전-파일 검사가 픽스처 때문에 깨지지 않도록.
+# 결함 재현에 필요한 "en/ja 가 특정 행을 결여한 stale 표" 는 이 plan 이
+# 실행될 때만, 번역 baseline 이 되는 base 브랜치에 커밋으로 만든다.
+declare -a STALE_ROWS=()
+case "$PLAN_NAME" in
+  table-suite)
+    STALE_ROWS=(
+      "en/version-guide.md|1.202602.1"
+      "ja/version-guide.md|1.202602.1"
+      "en/release-notes.md|2.4.1"
+      "ja/release-notes.md|2.4.1"
+      "en/pricing-guide.md|Premium plan"
+      "ja/pricing-guide.md|プレミアムプラン"
+    ) ;;
+  row-drop-repro)   # 최소 재현: version-guide 만 stale
+    STALE_ROWS=(
+      "en/version-guide.md|1.202602.1"
+      "ja/version-guide.md|1.202602.1"
+    ) ;;
+esac
+if (( ${#STALE_ROWS[@]} )); then
+  echo "$PLAN_NAME: base 브랜치($BASE_BRANCH)에 en/ja stale 행 제거 커밋 생성"
+  for s in "${STALE_ROWS[@]}"; do
+    rel="${s%%|*}"; marker="${s#*|}"
+    [[ -f "$rel" ]] || { echo "  (skip, missing: $rel)"; continue; }
+    python3 - "$rel" "$marker" <<'PY'
+import sys
+path, marker = sys.argv[1], sys.argv[2]
+lines = open(path, encoding="utf-8").read().splitlines(keepends=True)
+out = [l for l in lines
+       if not (l.lstrip().startswith("|") and marker in l)]
+if len(out) == len(lines):
+    print(f"  (noop, row not found: {path} :: {marker})")
+else:
+    open(path, "w", encoding="utf-8").write("".join(out))
+    print(f"  [stale-ified] {path} (removed row: {marker})")
+PY
+    git add "$rel"
+  done
+  if git diff --cached --quiet; then
+    echo "  (변경 없음 — 이미 stale 상태)"
+  else
+    git commit -m "table-suite: en/ja stale 행 제거 (표 결함 재현용 — archive 는 일관 유지)"
+    git push origin "$BASE_BRANCH"
+  fi
+fi
+
 git checkout -B "$BRANCH"
 
 for p in "${PLAN[@]}"; do
