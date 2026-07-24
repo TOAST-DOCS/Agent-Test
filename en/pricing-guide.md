@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=585936601439 -->
 
 <a id="compute-instance-pricing-guide"></a>
-
 ## Compute > Instance > Pricing guide { #compute-instance-pricing-guide }
 
 # Instance Pricing
