@@ -67,8 +67,9 @@
 #                                - version-guide: CK 인시던트 동형 (LLM-patch 경로).
 #                                  PR #283 미배포 = FAIL(행 유실), 배포 후 = 해소 기대.
 #                                - release-notes: row-splice positional 손상 (#283 범위 밖
-#                                  별개 결함). #283 배포 후에도 FAIL 이 정상 — 이 FAIL 이
-#                                  사라지려면 splice 경로에 별도 완전성 가드가 필요하다.
+#                                  별개 결함). #283 만 배포된 상태에서는 FAIL 이 정상.
+#                                  cloud-translate PR #290 (table-row reconcile, #283 위
+#                                  stacked) 배포 후에는 A·B 둘 다 PASS 가 기대값이다.
 #                                - 그 외 파일의 FAIL 은 새로운 회귀를 의미한다.
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
