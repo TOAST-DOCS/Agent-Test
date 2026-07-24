@@ -1,11 +1,9 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-
 ## Compute > Instance > コンソール使用ガイド詳細ガイダンス { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
-
 ## インスタンス生成 { #create-instances }
 
 ![インスタンス作成ガイドカバー](../static/images/image-1704.jpg)
