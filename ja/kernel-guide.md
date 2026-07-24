@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=73ceeadcb5ee -->
+<!-- pre-align:aligned sig=780643946d52 -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > カーネルバージョンアップガイド { #compute-instance-kernel-version-upgrade-guide }
@@ -630,3 +630,14 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+<a id="test-added-table"></a>
+## テスト用新規テーブルセクション { #test-added-table }
+
+このセクションはテーブル翻訳検証のために新しく追加されました。以下のテーブルのヘッダーとセルテキストがすべて翻訳される必要があります。
+
+| 項目 | 説明 | デフォルト値 |
+|---|---|---|
+| 最大ノード数 | 1 つのノードプールに作成できるノードの最大数です。 | 10 |
+| 自動スケーリング | 負荷に応じてノード数を自動的に調整します。 | 無効 |
+| チェック間隔 | ノードの状態をチェックする間隔です。 | 5分 |
