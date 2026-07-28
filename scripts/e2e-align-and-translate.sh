@@ -73,6 +73,11 @@
 #                                  별개 결함). #283 만 배포된 상태에서는 FAIL 이 정상.
 #                                  cloud-translate PR #290 (table-row reconcile, #283 위
 #                                  stacked) 배포 후에는 A·B 둘 다 PASS 가 기대값이다.
+#                                - spec-guide: 컬럼 drift 혼재 (결함 D — notification-hub
+#                                  PR #209 지적 4번 동형). en/ja 표는 stale-ify 로 'Not
+#                                  Null' 컬럼이 제거된 3컬럼, ko 행 하나의 설명 셀만 수정.
+#                                  ncols 불일치 가드 미배포 = FAIL(4셀 행이 3컬럼 표에
+#                                  혼재, step 17 검사 6), 가드 배포 후 = PASS 기대.
 #                                - 그 외 파일의 FAIL 은 새로운 회귀를 의미한다.
 #
 #   --translate api|local        번역 실행 방식. api(기본) = dashboard /api/translate
@@ -700,7 +705,7 @@ trans_wt="$tmpdir/trans-check"
 git worktree add "$trans_wt" "origin/$trans_head_ref" >/dev/null
 
 trans_check_prompt='ko/, en/, ja/ 세 폴더에 공통으로 존재하는 .md 문서 각각에 대해,
-fenced code block(```)을 제외하고 다음 다섯 가지를 검사해줘.
+fenced code block(```)을 제외하고 다음 여섯 가지를 검사해줘.
 (1) heading level 순서가 세 언어에서 일치
 (2) anchor id 순서가 세 언어에서 일치 (<a id="..."></a> 형식과 { #id } 형식 모두)
 (3) 표(table)가 있으면 표 개수와 각 표의 데이터 행(row) 개수가 세 언어에서 일치
@@ -713,6 +718,12 @@ fenced code block(```)을 제외하고 다음 다섯 가지를 검사해줘.
     한 언어에서만 순서가 다르면 행 순서 불일치다.
 (5) en/, ja/ 문서 본문에 한글 음절이 남아 있으면 안 된다 (fenced code block 과
     inline code(`...`) 안은 제외) — 남아 있으면 미번역 잔류(leak)로 FAIL.
+(6) 각 언어 문서 안에서, 표의 모든 행(헤더·구분선·데이터)의 셀 개수가 그 표의
+    헤더 셀 개수와 동일해야 한다 — 헤더보다 셀이 많거나 적은 데이터 행이 하나라도
+    있으면 컬럼 혼재로 FAIL (렌더러가 헤더 초과 셀을 버려 그 셀 내용이 배포
+    화면에서 소실된다). 단, 같은 표의 컬럼 수가 세 언어 사이에서 서로 다른 것
+    자체는 FAIL 이 아니다 — 컬럼 스키마가 다른 target 표를 target 스키마대로
+    유지·번역하는 것은 정상 동작이다.
 파일별 결과를 OK/FAIL 표로 출력하고 (표 개수·행 수 포함), FAIL 인 파일은 어긋난 위치와 내용을 설명해줘.
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 
@@ -726,7 +737,7 @@ git worktree remove "$trans_wt" --force
 
 # 검증 결과를 번역 PR 댓글로 등록
 if grep -q '^ALIGNMENT: OK' <<<"$trans_check_out"; then
-  verdict_line="✅ 번역 PR 자동 검증 통과 (heading·anchor-id·표 행 수 일치)"
+  verdict_line="✅ 번역 PR 자동 검증 통과 (heading·anchor-id·표 행 수·표 셀 수 일치)"
 else
   verdict_line="❌ 번역 PR 자동 검증 실패 — 아래 상세 결과를 확인하세요"
 fi
@@ -737,7 +748,7 @@ cat > "$tmpdir/trans_comment.md" <<EOF
 $verdict_line
 
 - 검증 브랜치: \`$trans_head_ref\`
-- 검증 항목: ko/en/ja heading level 순서 · anchor id 순서 · 표 개수/행 수
+- 검증 항목: ko/en/ja heading level 순서 · anchor id 순서 · 표 개수/행 수 · 표 내부 셀 수 일관성
 
 <details>
 <summary>상세 결과</summary>

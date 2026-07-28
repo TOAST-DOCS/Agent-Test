@@ -550,6 +550,26 @@ elif mutation == "add_new_table":
     lines += block
     out = join(lines)
 
+elif mutation == "edit_row_desc_cell":
+    # 첫 표의 '두 번째' 데이터 행 마지막 셀(설명) 안에 문장 추가 — 셀 개수 불변.
+    # spec-guide.md 픽스처(결함 D): en/ja 는 stale-ify 로 'Not Null' 컬럼이 제거된
+    # 3컬럼 상태이므로, 이 행의 재번역이 ko 스키마(4셀)로 emit 되면 3컬럼 표에
+    # 4셀 행이 섞이는 컬럼 혼재(notification-hub PR #209 지적 4번)가 재현된다.
+    changed = False
+    i = 0
+    while i < len(lines) - 3:
+        if is_table_row(lines[i]) and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1]):
+            k = i + 3          # header, separator, 1행 다음 = 두 번째 데이터 행
+            if k < len(lines) and is_table_row(lines[k]) and lines[k].rstrip().endswith("|"):
+                body = lines[k].rstrip()[:-1].rstrip()
+                lines[k] = body + " 이름은 프로젝트 안에서 고유해야 합니다. |"
+                changed = True
+            break
+        i += 1
+    if not changed:
+        raise SystemExit(f"edit_row_desc_cell: no 2nd data row in first table of {path}")
+    out = join(lines)
+
 elif mutation == "noop":
     out = text
 else:
@@ -647,6 +667,17 @@ declare -a PLAN_ROW_DROP_REPRO=(
 #                       결여한 stale 산문 표 (첫 셀이 번역되는 텍스트 = row key
 #                       없음). 문단만 수정 → cloud-translate PR #290 의 reconcile
 #                       이 참조 주입 whole-table 재번역으로 행을 복구해야 한다.
+#   spec-guide.md     : (결함 D — 컬럼 drift 혼재; notification-hub PR #209 지적
+#                       4번 동형) ko 는 4컬럼 표(경로|타입|Not Null|설명), en/ja 는
+#                       stale-ify 로 'Not Null' 컬럼(3번째)이 제거된 3컬럼 표
+#                       (아래 STALE_DROP_COLS). 데이터 행 하나의 설명 셀만 수정 →
+#                       행 단위 재번역이 ko 스키마(4셀) 행을 3컬럼 표에 그대로
+#                       삽입하면 컬럼 혼재 — mkdocs 는 헤더 초과 셀을 버리므로
+#                       설명 셀이 배포 화면에서 통째로 소실된다. 행 수는 세 언어
+#                       동일하므로 표 개수/행 수 검사는 통과하고, step 17 의
+#                       "표 내부 셀 수 일관성" 검사(6)만이 이 결함을 잡는다.
+#                       ncols 불일치 가드(표 전체 재번역 or target 스키마 emit)
+#                       도입 전엔 FAIL(재현), 도입 후 PASS 가 기대값.
 #   feature-matrix.md : 표 중간 행 삽입 + 헤더 셀 수정 + 마지막 두 행 순서 교환
 #                       + (둘째 표) 마지막 행 삭제
 #   public-api.md     : 기존 행 셀 수정 + 행 추가 (round1 과 동일한 정상 케이스)
@@ -658,6 +689,7 @@ declare -a PLAN_TABLE_SUITE=(
   "insert_keyed_table_row|ko/version-guide.md"
   "bump_row_date|ko/release-notes.md"
   "edit_body|ko/pricing-guide.md"
+  "edit_row_desc_cell|ko/spec-guide.md"
   "insert_table_row_middle|ko/feature-matrix.md"
   "edit_table_header|ko/feature-matrix.md"
   "swap_table_rows|ko/feature-matrix.md"
@@ -715,6 +747,7 @@ git pull
 # 결함 재현에 필요한 "en/ja 가 특정 행을 결여한 stale 표" 는 이 plan 이
 # 실행될 때만, 번역 baseline 이 되는 base 브랜치에 커밋으로 만든다.
 declare -a STALE_ROWS=()
+declare -a STALE_DROP_COLS=()
 case "$PLAN_NAME" in
   table-suite)
     STALE_ROWS=(
@@ -724,6 +757,13 @@ case "$PLAN_NAME" in
       "ja/release-notes.md|2.4.1"
       "en/pricing-guide.md|Premium plan"
       "ja/pricing-guide.md|プレミアムプラン"
+    )
+    # 결함 D (컬럼 drift): en/ja 표에서 N번째 컬럼을 통째로 제거해 "ko 는 4컬럼,
+    # target 은 3컬럼" 상태를 조성 — notification-hub 의 'Not Null' 컬럼 미반영
+    # 상태와 동형. 행은 그대로라 행 수 검사에는 걸리지 않는다.
+    STALE_DROP_COLS=(
+      "en/spec-guide.md|3"
+      "ja/spec-guide.md|3"
     ) ;;
   row-drop-repro)   # 최소 재현: version-guide 만 stale
     STALE_ROWS=(
@@ -731,8 +771,8 @@ case "$PLAN_NAME" in
       "ja/version-guide.md|1.202602.1"
     ) ;;
 esac
-if (( ${#STALE_ROWS[@]} )); then
-  echo "$PLAN_NAME: base 브랜치($BASE_BRANCH)에 en/ja stale 행 제거 커밋 생성"
+if (( ${#STALE_ROWS[@]} + ${#STALE_DROP_COLS[@]} )); then
+  echo "$PLAN_NAME: base 브랜치($BASE_BRANCH)에 en/ja stale-ify 커밋 생성 (행 제거·컬럼 제거)"
   for s in "${STALE_ROWS[@]}"; do
     rel="${s%%|*}"; marker="${s#*|}"
     [[ -f "$rel" ]] || { echo "  (skip, missing: $rel)"; continue; }
@@ -750,10 +790,40 @@ else:
 PY
     git add "$rel"
   done
+  # 컬럼 제거 (결함 D): 파일 안 모든 표 행에서 col번째 셀을 삭제 — 헤더/구분선/
+  # 데이터 행이 함께 줄어들어 표 자체는 (컬럼 수만 다른) 정상 표로 유지된다.
+  for s in "${STALE_DROP_COLS[@]}"; do
+    rel="${s%%|*}"; col="${s#*|}"
+    [[ -f "$rel" ]] || { echo "  (skip, missing: $rel)"; continue; }
+    python3 - "$rel" "$col" <<'PY'
+import sys
+path, col = sys.argv[1], int(sys.argv[2])   # col: 1-based 셀 인덱스
+lines = open(path, encoding="utf-8").read().splitlines(keepends=True)
+out, dropped = [], 0
+for l in lines:
+    s = l.rstrip("\r\n")
+    eol = l[len(s):]
+    st = s.strip()
+    if st.startswith("|") and st.endswith("|"):
+        cells = [c.strip() for c in st[1:-1].split("|")]
+        if len(cells) >= col:
+            del cells[col - 1]
+            out.append("| " + " | ".join(cells) + " |" + eol)
+            dropped += 1
+            continue
+    out.append(l)
+if dropped == 0:
+    print(f"  (noop, no table row with >= {col} cells: {path})")
+else:
+    open(path, "w", encoding="utf-8").write("".join(out))
+    print(f"  [stale-ified] {path} (dropped column {col} from {dropped} table line(s))")
+PY
+    git add "$rel"
+  done
   if git diff --cached --quiet; then
     echo "  (변경 없음 — 이미 stale 상태)"
   else
-    git commit -m "table-suite: en/ja stale 행 제거 (표 결함 재현용 — archive 는 일관 유지)"
+    git commit -m "table-suite: en/ja stale-ify — 행 제거·컬럼 제거 (표 결함 재현용, archive 는 일관 유지)"
     git push origin "$BASE_BRANCH"
   fi
 fi
