@@ -143,7 +143,10 @@ elif mutation == "add_paragraph":
     out = join(lines)
 
 elif mutation == "change_table_row":
-    # 첫 표의 첫 데이터 행 셀 내용 수정 (없으면 실패)
+    # 첫 표의 첫 데이터 행 셀 내용 수정 (없으면 실패).
+    # 주의: 마지막 파이프 '뒤'에 붙이면 ko 자체가 헤더보다 셀이 많은 malformed
+    # 행이 되어 step 17 검사 (6)(컬럼 정합)에 오탐으로 걸린다 — 마지막 셀 '안'에
+    # 삽입해 셀 개수를 보존한다.
     changed = False
     i = 0
     while i < len(lines) - 2:
@@ -151,7 +154,11 @@ elif mutation == "change_table_row":
             # i=header, i+1=separator, i+2.. = data rows
             k = i + 2
             if k < len(lines) and is_table_row(lines[k]):
-                lines[k] = lines[k].rstrip("\r") + " (행 수정 테스트)"
+                row = lines[k].rstrip("\r")
+                if row.rstrip().endswith("|"):
+                    lines[k] = row.rstrip()[:-1].rstrip() + " (행 수정 테스트) |"
+                else:
+                    lines[k] = row + " (행 수정 테스트)"
                 changed = True
                 break
         i += 1
