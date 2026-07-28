@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=74b0e7f9672e -->
 
 <a id="compute-instance-overview"></a>
-
 ## Compute > Instance > 概要 { #compute-instance-overview }
 
 このパラグラフは既存のセクションに追加されたテストパラグラフです。既存の見出しはそのまま維持される必要があります。
