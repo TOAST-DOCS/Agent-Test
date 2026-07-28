@@ -6,7 +6,6 @@
 This document describes the resource field specifications in instance API response bodies. Each field's path, type, Not Null status, and description are provided in tables.
 
 <a id="resource-fields"></a>
-
 ### Resource fields { #resource-fields }
 
 | Path | Type | Description |
