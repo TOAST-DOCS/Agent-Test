@@ -1,7 +1,8 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-## Compute > Instance > Console Guide: Detailed Information { #compute-instance-console-guide }
+
+## Compute > Instance > Console Guide Detailed Guide Detailed Guide { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
 ## Create Instances { #create-instances }
