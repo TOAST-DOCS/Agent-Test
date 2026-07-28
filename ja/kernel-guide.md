@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=36b960a8096b -->
+<!-- pre-align:aligned sig=693fbbf4dc2b -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > カーネルバージョンアップガイド { #compute-instance-kernel-version-upgrade-guide }
