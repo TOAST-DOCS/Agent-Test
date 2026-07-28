@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=73ceeadcb5ee -->
+<!-- pre-align:aligned sig=36b960a8096b -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > Kernel Version Upgrade Guide { #compute-instance-kernel-version-upgrade-guide }
@@ -15,6 +15,7 @@
 Check the currently installed kernel version.
 
 ```
+# code-edit-test: this line must be copied verbatim
 [root@rocky810 ~]# uname -r
 4.18.0-553.8.1.el8_10.x86_64
 ```
@@ -568,16 +569,6 @@ dnf, yum will automatically update the GRUB2 configuration file.
 
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
-```
-
-<a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
-#### Check for kernel updates
-
-Verify that the kernel version has been updated properly.
-
-```
-[root@rocky810 ~]# uname -r
-4.18.0-553.16.1.el8_10.x86_64
 ```
 
 <a id="rocky-linux-9-change-the-kernel-boot-order"></a>
