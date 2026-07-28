@@ -100,9 +100,11 @@ NHN Cloudは物理ハードウェアの問題で発生する障害に備える�
 Linuxインスタンスに接続する時はSSHクライアントを利用します。インスタンスのセキュリティグループにSSHアクセスポート(デフォルト値22)が開いていない場合は接続できません。SSHアクセスを許可する方法は[VPC概要](/Network/VPC/ja/overview/)を参照してください。インスタンスにFloating IPが割り当てられていない場合は、NHN Cloud外部からアクセスできません。Floating IPを割り当てる方法については[VPC概要](/Network/VPC/ja/overview/)を参照してください。
 
 <a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
+
 #### MacまたはLinuxのSSHクライアントでLinuxインスタンスに接続する方法
 
-MacやLinuxには通常、SSHクライアントがデフォルトでインストールされています。SSHクライアントで下記のようにキーペアの秘密鍵を利用して接続します。
+Mac や Linux には通常、SSH クライアントがデフォルトでインストールされています。SSH クライアントから、以下のようにキーペアの秘密鍵を使用して接続します。
+秘密鍵はキーペアの作成時に一度のみダウンロードできます。
 
 Ubuntuインスタンス
 
@@ -245,8 +247,3 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
-
-<a id="test-added-section"></a>
-## テスト用の追加セクション { #test-added-section }
-
-このセクションは翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じアンカー ID が割り当てられているか確認します。
