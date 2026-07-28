@@ -615,7 +615,8 @@ Reboot the OS for the boot order change to take effect.
 [root@rocky810 ~]# sync; reboot
 ```
 
-## New section for auto ID assignment validation
+<a id="new-section-for-auto-id-assignment-validation"></a>
+## New section for auto ID assignment validation { #new-section-for-auto-id-assignment-validation }
 
 This is a new section to validate the automatic anchor-id assignment in the translation pipeline.
 
