@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-
 ## Compute > Instance > コンソール使用ガイド 詳細案内 詳細案内 { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
