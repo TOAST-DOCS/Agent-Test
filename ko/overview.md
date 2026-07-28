@@ -244,3 +244,10 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
+
+<a id="webhook-e2e-20260728-105611"></a>
+## webhook e2e marker (20260728-105611) { #webhook-e2e-20260728-105611 }
+
+이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
+webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
+마커는 정기 restore-alpha-origin 으로 정리됩니다.
