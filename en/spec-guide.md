@@ -6,12 +6,13 @@
 This document describes the resource field specifications in instance API response bodies. Each field's path, type, Not Null status, and description are provided in tables.
 
 <a id="resource-fields"></a>
+
 ### Resource fields { #resource-fields }
 
 | Path | Type | Description |
 | --- | --- | --- |
 | resource.id | String | Resource ID. |
-| resource.name | String | Resource name. You can change it in the console. |
+| resource.name | String | O | Resource name. You can modify it in the console. The name must be unique within the project. |
 | resource.status | Enum | Resource status.<br>[ACTIVE(in use), PAUSED(paused), DELETED(deleted)] |
 | resource.quota | Object | Resource quota information. |
 | resource.quota.limit | Integer | Maximum quota. The default is 100. |
