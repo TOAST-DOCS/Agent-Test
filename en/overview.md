@@ -98,7 +98,6 @@ For more details on pricing, see [Pricing](https://www.toast.com/kr/service/comp
 You can access your Linux instances using an SSH client. An instance cannot be accessed if its security group does not have SSH ports (22 by default) allowed. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to allow SSH access. If a floating IP is not assigned to an instance, the instance cannot be accessed from outside NHN Cloud. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to assign floating IP.
 
 <a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
-
 #### How to Access Linux Instances from Mac or Linux Using an SSH Client
 
 Generally, Mac and Linux have SSH clients installed by default. Use a key pair's private key to access an instance from an SSH client as shown below.
