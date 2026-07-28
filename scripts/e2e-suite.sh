@@ -4,7 +4,15 @@
 #
 #   scripts/e2e-suite.sh [--translate api|local] [--engine api|cli] [--model haiku|sonnet|opus] [plan ...]
 #
-# plan 미지정 시 기본: round1 table-suite
+# plan 미지정 시 기본: webhook round1 table-suite
+#   webhook     — GitHub webhook 라우팅 검증. base=alpha 로 PR 을 열어
+#                 pull_request/opened → Jenkins ko-review, PR merge →
+#                 pull_request/closed → Jenkins translate 트리거를 dashboard
+#                 /api/jobs 로 확인. 다른 plan 과 달리 e2e-align-and-translate.sh
+#                 가 아니라 e2e-webhook.sh 를 실행. 기대: exit 0.
+#                 ~1분. base=alpha 를 직접 쓰므로 매 실행마다 alpha 에 마커
+#                 커밋 1개가 추가되지만 restore-alpha-origin 이 다음 e2e 에서
+#                 정리한다.
 #   round1      — 일반 종합 (heading/anchor/섹션/문단/표 기본 변형 15항목).
 #                 기대: exit 0 (전 파일 PASS).
 #   table-suite — 표 변형 종합 + stale 결함 재현 (stale-ify 커밋 포함).
@@ -31,13 +39,13 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --translate|--engine|--model|--tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    round1|round2|row-drop-repro|table-suite)
+    webhook|round1|round2|row-drop-repro|table-suite)
       PLANS+=("$1"); shift ;;
     -h|--help) sed -n '3,24p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
 done
-(( ${#PLANS[@]} )) || PLANS=(round1 table-suite)
+(( ${#PLANS[@]} )) || PLANS=(webhook round1 table-suite)
 
 ts="$(date +%Y%m%d-%H%M%S)"
 outdir="/tmp/e2e-suite-$ts"
@@ -48,17 +56,28 @@ overall=0
 for plan in "${PLANS[@]}"; do
   log="$outdir/$plan.log"
   echo "=== [$plan] 시작 → $log"
-  bash "$REPO_ROOT/scripts/e2e-align-and-translate.sh" \
-    --plan "$plan" "${PASS_ARGS[@]}" > "$log" 2>&1
-  ec=$?
-  verdict="$(grep -oE '^ALIGNMENT: (OK|FAIL)' "$log" | tail -n1 || true)"
-  trans_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
-  RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  if [[ "$plan" == "webhook" ]]; then
+    # webhook plan 은 별도 스크립트 — --plan 이 아니라 자체 args. PASS_ARGS 는
+    # translate/engine/model 계열이라 webhook 에는 의미 없어 전달하지 않음.
+    bash "$REPO_ROOT/scripts/e2e-webhook.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '(opened → ko-review triggered.*|merged → translate triggered.*)$' "$log" | tr '\n' ';' | sed 's/;$//' || true)"
+    trans_pr="$(grep -oE '^\s*PR\s+:\s+https://[^ ]+' "$log" | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  else
+    bash "$REPO_ROOT/scripts/e2e-align-and-translate.sh" \
+      --plan "$plan" "${PASS_ARGS[@]}" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^ALIGNMENT: (OK|FAIL)' "$log" | tail -n1 || true)"
+    trans_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  fi
   echo "=== [$plan] 종료: exit=$ec ${verdict:-}"
-  # round1 은 전부 통과가 기대값 — 실패면 suite 실패
-  # table-suite 는 번역 로직에 따라 기대값이 다르므로 exit code 를 그대로 전달만 한다
+  # webhook / round1 은 전부 통과(exit 0)가 기대값 — 실패면 suite 실패
+  # table-suite 는 번역 로직에 따라 기대값이 다르므로 exit 3 도 정상 허용
+  if [[ "$plan" == "webhook" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "round1" && $ec -ne 0 ]]; then overall=1; fi
-  if [[ "$plan" != "round1" && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
+  if [[ "$plan" != "round1" && "$plan" != "webhook" && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
 done
 
 echo
