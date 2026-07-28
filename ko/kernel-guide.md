@@ -621,3 +621,8 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+
+## 자동 ID 할당 검증용 신규 섹션
+
+이 섹션은 번역 파이프라인의 anchor-id 자동 할당을 검증하기 위한 신규 섹션입니다. ko 변경 시 anchor id 를 붙이지 않았고, 번역 잡이 ko/en/ja 세 언어에 동일한 id 를 부여해야 합니다.
