@@ -6,12 +6,13 @@
 インスタンスAPIレスポンス本文のリソースフィールド仕様を整理したドキュメントです。各フィールドのパス、タイプ、Not Null有無、説明を表で提供します。
 
 <a id="resource-fields"></a>
+
 ### リソースフィールド { #resource-fields }
 
 | パス | タイプ | 説明 |
 | --- | --- | --- |
 | resource.id | String | リソースIDです。 |
-| resource.name | String | リソース名です。コンソールで変更できます。 |
+| resource.name | String | O | リソース名です。コンソールから変更できます。名前はプロジェクト内で一意である必要があります。 |
 | resource.status | Enum | リソースの状態です。<br>[ACTIVE(使用中), PAUSED(一時停止), DELETED(削除済み)] |
 | resource.quota | Object | リソース割り当て量の情報です。 |
 | resource.quota.limit | Integer | 最大割り当て量です。デフォルト値は100です。 |
