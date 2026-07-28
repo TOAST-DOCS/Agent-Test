@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=585936601439 -->
 
 <a id="compute-instance-pricing-guide"></a>
-
 ## Compute > Instance > Pricing guide { #compute-instance-pricing-guide }
 
 Instance pricing plans and limits provided by plan. Pricing may vary by region and billing method. For detailed pricing information, see the pricing calculator in the console. (Text modification test: This sentence should be reflected when the translation is re-run.)
