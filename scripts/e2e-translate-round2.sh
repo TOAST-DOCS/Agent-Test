@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 #
+# ⚠️ DEPRECATED (2026-07-30) — `e2e-align-and-translate.sh --plan round2` 로
+# 대체됐다. 같은 변형(PLAN_ROUND2)을 세션 브랜치 방식으로 실행하고 suite
+# (`e2e-suite.sh round2`) 에서도 그 경로를 쓴다. 이 스크립트는 ko PR 을
+# alpha 에 직접 머지하는 구방식이라 유지되지 않는다 — 참고용으로만 남김.
+#
 # 2라운드 번역 e2e (Agent-Test alpha):
 #
 # 전제: scripts/e2e-align-and-translate.sh 가 이미 실행되어 1라운드 ko 변경 PR 과

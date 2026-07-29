@@ -18,12 +18,17 @@
 #   table-suite — 표 변형 종합 + stale 결함 재현 (stale-ify 커밋 포함).
 #                 기대: 번역 로직에 table-row reconcile(PR #290)이 있으면 exit 0,
 #                 없으면 exit 3 (version-guide/release-notes FAIL).
+#   retranslate — public-api.md 전체 재번역 변형 (e2e-retranslate-align-and-
+#                 translate.sh). dashboard /api/translate/file (DIFF_MODE=full)
+#                 경로 검증 — 다른 plan 이 커버하지 않는 유일한 API. dashboard
+#                 API 전용이라 --translate local 은 적용되지 않는다 (--engine/
+#                 --model 만 전달). 기대: exit 0.
 #   round2      — 전제 조건(직전 round1 의 ko/번역 PR 이 base 에 머지되어 있음)이
 #                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
 #
 # 별칭:
 #   all         — round2 를 제외한 실행 가능한 plan 전체
-#                 = webhook round1 table-suite row-drop-repro
+#                 = webhook round1 table-suite row-drop-repro retranslate
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
@@ -40,17 +45,20 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 PASS_ARGS=()
+EM_ARGS=()   # --engine/--model 만 — retranslate 스크립트는 --translate 계열 미지원
 PLANS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --translate|--engine|--model|--tm-top-k|--chunk-workers)
+    --engine|--model)
+      PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); shift 2 ;;
+    --translate|--tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|round1|round2|row-drop-repro|table-suite)
+    webhook|round1|round2|row-drop-repro|table-suite|retranslate)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
       # `scripts/e2e-suite.sh all round2` 처럼 뒤에 명시적으로 이어붙인다.
-      PLANS+=(webhook round1 table-suite row-drop-repro); shift ;;
+      PLANS+=(webhook round1 table-suite row-drop-repro retranslate); shift ;;
     -h|--help) sed -n '3,31p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -75,7 +83,16 @@ overall=0
 for plan in "${PLANS[@]}"; do
   log="$outdir/$plan.log"
   echo "=== [$plan] 시작 → $log"
-  if [[ "$plan" == "webhook" ]]; then
+  if [[ "$plan" == "retranslate" ]]; then
+    # 전체 재번역 변형 — 자체 스크립트. dashboard API 전용이라 --translate
+    # 등은 전달하지 않고 --engine/--model 만 넘긴다.
+    bash "$REPO_ROOT/scripts/e2e-retranslate-align-and-translate.sh" \
+      "${EM_ARGS[@]}" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^ALIGNMENT: (OK|FAIL)' "$log" | tail -n1 || true)"
+    trans_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "webhook" ]]; then
     # webhook plan 은 별도 스크립트 — --plan 이 아니라 자체 args. PASS_ARGS 는
     # translate/engine/model 계열이라 webhook 에는 의미 없어 전달하지 않음.
     bash "$REPO_ROOT/scripts/e2e-webhook.sh" > "$log" 2>&1
