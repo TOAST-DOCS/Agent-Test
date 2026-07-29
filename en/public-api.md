@@ -9,8 +9,8 @@ The Instance API uses the `compute` type endpoint. For the exact endpoint, see `
 
 | Type | Region | Endpoint |
 |---|---|---|
-| compute | Korea (Pangyo) region<br>Korea (Pyeongchon) region<br>Korea (Gwangju) region<br>Japan region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
-
+| compute | Korea (Pangyo) region<br>Korea (Pyeongchon) region<br>Korea (Gwangju) region<br>Japan region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com (Row modification test) |
+| TEST-ROW | (New row test) | (New row test) |
 API response may show fields that are not specified in this guide. These fields are used internally by NHN Cloud and are subject to change without prior notice, so they are not used.
 
 <a id="instance-flavors"></a>
