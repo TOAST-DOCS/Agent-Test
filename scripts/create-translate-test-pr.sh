@@ -577,6 +577,37 @@ elif mutation == "edit_row_desc_cell":
         raise SystemExit(f"edit_row_desc_cell: no 2nd data row in first table of {path}")
     out = join(lines)
 
+elif mutation == "add_table_column":
+    # 첫 표의 모든 라인(헤더·구분선·데이터) 끝에 셀 1개 추가 — "ko PR 자체가
+    # 표 컬럼을 추가" 하는 케이스 (cloud-translate --table-column-ops 검증).
+    # 값은 언어 무관(O)과 번역 대상(한글)을 섞어 미러링의 복사/번역 두 경로를
+    # 모두 exercise 한다. 기대: en/ja 는 기존 셀 byte 보존 + 새 컬럼만 추가.
+    changed = False
+    i = 0
+    while i < len(lines) - 2:
+        if is_table_row(lines[i]) and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1]):
+            j = i
+            row_idx = 0
+            while j < len(lines) and is_table_row(lines[j]):
+                s2 = lines[j].rstrip("\r")
+                if not s2.rstrip().endswith("|"):
+                    raise SystemExit(f"add_table_column: row without trailing pipe in {path}")
+                if j == i:
+                    cell = "지원 여부"
+                elif j == i + 1:
+                    cell = "---"
+                else:
+                    cell = "O" if row_idx % 2 == 0 else "부분 지원"
+                    row_idx += 1
+                lines[j] = s2 + f" {cell} |"
+                changed = True
+                j += 1
+            break
+        i += 1
+    if not changed:
+        raise SystemExit(f"add_table_column: no table in {path}")
+    out = join(lines)
+
 elif mutation == "noop":
     out = text
 else:
@@ -685,6 +716,13 @@ declare -a PLAN_ROW_DROP_REPRO=(
 #                       "표 내부 셀 수 일관성" 검사(6)만이 이 결함을 잡는다.
 #                       ncols 불일치 가드(표 전체 재번역 or target 스키마 emit)
 #                       도입 전엔 FAIL(재현), 도입 후 PASS 가 기대값.
+#   component-guide.md: (케이스 1 — ko PR 자체가 표 컬럼을 추가; cloud-translate
+#                       --table-column-ops 대상) 첫 표(MySQL 설정, escaped 문자
+#                       포함 8행)의 모든 라인 끝에 셀 추가. 최적화 배포 전 =
+#                       전 행 재번역(기존 셀 wording 도 diff 에 등장, 정합성은
+#                       유지되어 PASS), 배포 후 = 기존 셀 byte 보존 + 새 컬럼만
+#                       diff (번역 로그에 'Table column-op' 라인). 정합성 자체는
+#                       양쪽 다 PASS 라 diff/로그로 최적화 동작을 판별한다.
 #   feature-matrix.md : 표 중간 행 삽입 + 헤더 셀 수정 + 마지막 두 행 순서 교환
 #                       + (둘째 표) 마지막 행 삭제
 #   public-api.md     : 기존 행 셀 수정 + 행 추가 (round1 과 동일한 정상 케이스)
@@ -697,6 +735,7 @@ declare -a PLAN_TABLE_SUITE=(
   "bump_row_date|ko/release-notes.md"
   "edit_body|ko/pricing-guide.md"
   "edit_row_desc_cell|ko/spec-guide.md"
+  "add_table_column|ko/component-guide.md"
   "insert_table_row_middle|ko/feature-matrix.md"
   "edit_table_header|ko/feature-matrix.md"
   "swap_table_rows|ko/feature-matrix.md"
