@@ -446,15 +446,19 @@ echo "[13/17] ko-review 완료 대기 (job_id=$koreview_job_id, 최대 30분)"
 deadline=$(( $(date +%s) + 1800 ))
 koreview_status=""
 while (( $(date +%s) < deadline )); do
-  koreview_status="$(curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-    "$DASHBOARD_BASE_URL/api/jobs/$koreview_job_id" \
+  # 주의: set -eo pipefail 아래라 폴링 curl 의 일시 오류(empty reply 등)가
+  # 스크립트 전체를 죽인다 (2026-07-29 run 실측: curl 52 로 step 13 중단) —
+  # 재시도 + `|| true` 로 흡수하고, 빈 응답은 status="" 로 계속 폴링한다.
+  koreview_status="$(curl -sS --retry 3 --retry-delay 5 \
+    -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+    "$DASHBOARD_BASE_URL/api/jobs/$koreview_job_id" 2>/dev/null \
     | python3 -c 'import json,sys
 try:
   d=json.load(sys.stdin)
   tasks=(d.get("job") or {}).get("tasks") or []
   print(tasks[0].get("status") if tasks else "")
 except Exception:
-  print("")')"
+  print("")' || true)"
   case "$koreview_status" in
     success|failure|cancelled|partial) break ;;
   esac
