@@ -1,5 +1,7 @@
+<!-- pre-align:aligned sig=178a08dfcc40 -->
+
 <a id="compute-instance-spec-guide"></a>
-## Compute > Instance > リソース仕様ガイド
+## Compute > Instance > リソース仕様ガイド { #compute-instance-spec-guide }
 
 インスタンスAPIレスポンス本文のリソースフィールド仕様を整理したドキュメントです。各フィールドのパス、タイプ、Not Null有無、説明を表で提供します。
 
