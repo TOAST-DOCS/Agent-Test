@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
 #
-# webhook 라우팅 e2e 검증 (Agent-Test alpha):
-#   1) alpha 를 기반으로 세션 브랜치를 만들고 ko 파일 하나를 소폭 수정
-#   2) base=alpha 로 PR 을 open → GitHub 이 webhook pod 으로 pull_request/opened 전송
-#   3) dashboard /api/jobs 에서 이 PR 을 라벨로 담은 webhook Job(opened) 을 감지하고
-#      그 아래 ko-review task 가 큐잉/실행/성공했는지 확인
-#      → "ko 변경 PR 등록 시 한글 검수가 실행되는가" 검증
-#   4) PR 을 merge → GitHub 이 pull_request/closed(merged=true) 전송
-#   5) dashboard /api/jobs 에서 webhook Job(closed) 을 감지하고 그 아래
-#      translate task 가 큐잉/실행/성공했는지 확인
-#      → "머지 시 번역이 실행되는가" 검증
+# webhook 라우팅 e2e 검증 (Agent-Test 세션 브랜치):
+#   0) alpha 로부터 세션 브랜치 e2e-webhook/<ts> 를 만들어 base 로 사용.
+#      기본 webhook 필터의 base_branches (alpha,beta) 는 세션 브랜치를 포함하지
+#      않으므로, translate/ko-review 두 필터의 base_branches 에 세션 브랜치를
+#      임시로 append 한 뒤 스크립트 종료(성공/실패/신호) 시 반드시 원복 (trap).
+#   1) 같은 alpha 기점에서 head 브랜치 translate-test-webhook/<ts> 생성 + ko 소폭 수정
+#   2) base=e2e-webhook/<ts> 로 PR open → GitHub 이 webhook pod 으로 opened 전송
+#   3) dashboard /api/jobs 에서 이 PR 을 담은 webhook Job(opened) 감지 + 그 아래
+#      ko-review task 가 큐잉/실행되었는지 확인 → "PR 등록 → 한글 검수" 검증
+#   4) PR merge → closed(merged=true) 전송
+#   5) /api/jobs 에서 translate task 감지 → "머지 → 번역" 검증
+#   6) 세션 브랜치 삭제 (남아 있는 translate PR 은 base 사라짐과 함께 자동
+#      closed) + 필터 base_branches 원복
 #
-# webhook 필터 (dashboard 어드민 → 🪝 Webhook 대상 repo) 현행 (2026-07-28):
-#   translate  : actions=merged,                    base=alpha,beta
+# 이렇게 하면 alpha/beta 는 손대지 않는다. 세션 브랜치의 unique 이름 덕에
+# trap 이 실패로 원복이 못 되어도 다른 delivery 에 영향을 주지 않는다.
+#
+# webhook 필터 (dashboard 어드민 → 🪝 Webhook 대상 repo) 는 job 별로:
+#   translate  : actions=merged,                             base=alpha,beta
 #   ko-review  : actions=opened,review_requested,synchronize, base=alpha,beta
-# 이 필터에 부합하도록 이 스크립트는 반드시 base=alpha 로 PR 을 연다.
-#
-# 다른 e2e 스크립트가 세션 브랜치(e2e/<ts>) 를 쓰는 것과 달리, webhook 필터의
-# base_branches 는 alpha/beta 로 잠겨 있어 세션 브랜치를 base 로 쓰면 필터에서
-# skip 되므로 여기서는 target=alpha 를 그대로 사용한다. head 브랜치만
-# translate-test-webhook/<ts> 로 격리하고, merge 이후 남는 아티팩트(alpha 의
-# 작은 마커 커밋, translate 잡이 열 번역 PR)는 정기 restore-alpha-origin.sh /
-# 수동 정리에 맡긴다 — 이는 기존 e2e-align-and-translate.sh 와 동일한 관례.
+# 두 필터의 base_branches 는 각각 개별 append/restore.
 #
 # Usage:
 #   source ./load_env.sh
 #   bash scripts/e2e-webhook.sh
 #   bash scripts/e2e-webhook.sh --no-merge         # 3단계까지만 (opened 만 검증)
 #   bash scripts/e2e-webhook.sh --timeout 600      # 각 폴링 단계 타임아웃(초)
+#   bash scripts/e2e-webhook.sh --base alpha       # 세션 브랜치 대신 alpha 를 base 로 (구 동작)
 #
 # 의존성: git, gh (로그인), curl, python3
 set -eo pipefail
@@ -38,7 +38,8 @@ DASHBOARD_API_TOKEN="${DASHBOARD_API_TOKEN:-}"
 
 REPO="TOAST-DOCS/Agent-Test"
 REPO_LOWER="toast-docs/agent-test"
-BASE_BRANCH="alpha"
+BASE_BRANCH=""       # 미지정 → 세션 브랜치 e2e-webhook/<ts> 자동 생성. --base 로 override.
+BASE_SOURCE="alpha"  # 세션 브랜치를 갈라낼 원본
 POLL_TIMEOUT=600     # 초. opened → ko-review task 등장까지 / merged → translate task 등장까지 각각.
 POLL_INTERVAL=5      # 초.
 DO_MERGE=1
@@ -47,6 +48,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-merge) DO_MERGE=0; shift ;;
     --timeout)  POLL_TIMEOUT="$2"; shift 2 ;;
+    --base)     BASE_BRANCH="$2"; shift 2 ;;   # ex) --base alpha  (필터 수정 없이 alpha 직접 사용)
     -h|--help)  sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
@@ -183,16 +185,129 @@ PY
 OPENED_RESULT="-"
 MERGED_RESULT="-"
 
+# ── filter 확장/원복 helper ───────────────────────────────────────
+# webhook 필터의 base_branches 는 dashboard 관리자가 job(translate/ko-review) 별
+# 로 설정 (기본 alpha,beta). 세션 브랜치를 base 로 쓰려면 두 job 각각의
+# base_branches 에 세션 브랜치 이름을 append 하고, 스크립트 종료 시 append 만
+# 걷어내 원본으로 돌린다 (다른 세팅은 그대로).
+declare -A ORIG_BASE_BRANCHES=()
+FILTER_EXTENDED=0
+
+_get_filters() {
+  curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+    "$DASHBOARD_BASE_URL/api/webhooks/repos"
+}
+
+_set_filter() {
+  # $1=job(translate|ko-review) $2=base_branches
+  # 다른 필드는 현재값 그대로 유지 (POST 는 전체 dict 를 요구)
+  local job="$1" base_branches="$2"
+  python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$job" "$base_branches" <<'PY'
+import json, sys, urllib.request
+base_url, token, job, base_branches = sys.argv[1:5]
+req = urllib.request.Request(
+    f"{base_url}/api/webhooks/repos",
+    headers={"Authorization": f"Bearer {token}"},
+)
+with urllib.request.urlopen(req, timeout=15) as resp:
+    data = json.load(resp)
+cur = ((data.get("filters") or {}).get(job) or {})
+payload = {
+    "job": job,
+    "actions": cur.get("actions") or "",
+    "base_branches": base_branches,
+    "author_skip": cur.get("author_skip") or "",
+    "label_require": cur.get("label_require") or "",
+    "label_skip": cur.get("label_skip") or "",
+    "preset": cur.get("preset") or "",
+}
+body = json.dumps(payload).encode("utf-8")
+put = urllib.request.Request(
+    f"{base_url}/api/webhooks/filters",
+    data=body, method="POST",
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    },
+)
+with urllib.request.urlopen(put, timeout=15) as r2:
+    result = json.load(r2)
+print(json.dumps(result))
+PY
+}
+
+restore_filters() {
+  # trap 에서 호출. 이미 원복돼 있으면 no-op.
+  (( FILTER_EXTENDED )) || return 0
+  for job in translate ko-review; do
+    if [[ -n "${ORIG_BASE_BRANCHES[$job]:-}" ]]; then
+      echo "  [cleanup] restoring filter[$job].base_branches = '${ORIG_BASE_BRANCHES[$job]}'"
+      _set_filter "$job" "${ORIG_BASE_BRANCHES[$job]}" >/dev/null || \
+        echo "  [cleanup] WARN: 필터 원복 실패 ($job) — dashboard 어드민에서 수동 확인 필요" >&2
+    fi
+  done
+  FILTER_EXTENDED=0
+}
+
+cleanup_session_branch() {
+  local br="$1"
+  [[ -n "$br" ]] || return 0
+  echo "  [cleanup] deleting session branch origin/$br (남아있는 PR 은 자동 close)"
+  git push origin ":$br" 2>/dev/null || \
+    echo "  [cleanup] WARN: 세션 브랜치 삭제 실패 (이미 없거나 권한 문제)" >&2
+}
+
+# ── 세션 브랜치 결정 (미지정 시 자동 생성) + 필터 확장 ────────────────
+if [[ -z "$BASE_BRANCH" ]]; then
+  BASE_BRANCH="e2e-webhook/${ts}"
+  USE_SESSION_BRANCH=1
+else
+  USE_SESSION_BRANCH=0
+fi
+
+# 스크립트 종료 시 필터 원복 + (세션 모드면) 브랜치 삭제. cleanup 은 idempotent.
+trap 'ec=$?; restore_filters; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
+
 echo "==================================================================="
 echo "  webhook e2e — Agent-Test"
 echo "  head branch : $HEAD_BRANCH"
-echo "  base branch : $BASE_BRANCH"
+echo "  base branch : $BASE_BRANCH$( ((USE_SESSION_BRANCH)) && echo ' (세션, 종료 시 삭제)' )"
 echo "  timeout(s)  : $POLL_TIMEOUT"
 echo "==================================================================="
 
-# ── 1) 세션 브랜치 준비 ──────────────────────────────────────────────
+# ── 1) 세션 브랜치 준비 (base 부터, 그 뒤 head) ───────────────────────
 echo
-echo "[1/6] alpha 최신화 + head 브랜치 생성"
+echo "[1/6] $BASE_SOURCE 최신화 + $( ((USE_SESSION_BRANCH)) && echo '세션 base + ' )head 브랜치 생성"
+git fetch origin "$BASE_SOURCE"
+
+if (( USE_SESSION_BRANCH )); then
+  # 세션 base 브랜치: alpha 시점 그대로 origin 에 push (PR 을 걸 대상이 있어야 하므로).
+  git branch -f "$BASE_BRANCH" "origin/$BASE_SOURCE"
+  git push -u origin "$BASE_BRANCH"
+
+  # 필터의 base_branches 를 세션 브랜치 포함으로 임시 확장.
+  echo "  [filter] appending '$BASE_BRANCH' to filter.base_branches (translate + ko-review)"
+  _filters_json="$(_get_filters)"
+  for job in translate ko-review; do
+    cur="$(printf '%s' "$_filters_json" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+f = (d.get('filters') or {}).get('$job') or {}
+print(f.get('base_branches') or '')
+")"
+    ORIG_BASE_BRANCHES[$job]="$cur"
+    if [[ ",$cur," == *",$BASE_BRANCH,"* ]]; then
+      new="$cur"
+    else
+      new="${cur:+$cur,}$BASE_BRANCH"
+    fi
+    echo "    $job: '$cur' → '$new'"
+    _set_filter "$job" "$new" >/dev/null
+  done
+  FILTER_EXTENDED=1
+fi
+
+# 이제 head 브랜치 생성 (base 로부터 갈라짐).
 git fetch origin "$BASE_BRANCH"
 git checkout -B "$HEAD_BRANCH" "origin/$BASE_BRANCH"
 
