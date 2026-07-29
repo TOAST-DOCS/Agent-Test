@@ -19,7 +19,13 @@
 #                 기대: 번역 로직에 table-row reconcile(PR #290)이 있으면 exit 0,
 #                 없으면 exit 3 (version-guide/release-notes FAIL).
 #   round2      — 전제 조건(직전 round1 의 ko/번역 PR 이 base 에 머지되어 있음)이
-#                 필요해 suite 기본에서 제외. 명시 지정 시에만 실행.
+#                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
+#
+# 별칭:
+#   all         — round2 를 제외한 실행 가능한 plan 전체
+#                 = webhook round1 table-suite row-drop-repro
+#                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
+#                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
 # 각 plan 은 자체 e2e 세션 브랜치(e2e/<ts>)에서 돌므로 서로 간섭하지 않지만,
 # 같은 작업 트리를 쓰므로 반드시 순차 실행 (이 러너가 보장). 개별 실행 로그는
@@ -41,10 +47,23 @@ while [[ $# -gt 0 ]]; do
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
     webhook|round1|round2|row-drop-repro|table-suite)
       PLANS+=("$1"); shift ;;
-    -h|--help) sed -n '3,24p' "$0"; exit 0 ;;
-    *) echo "unknown arg: $1 (plan 이름 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
+    all)
+      # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
+      # `scripts/e2e-suite.sh all round2` 처럼 뒤에 명시적으로 이어붙인다.
+      PLANS+=(webhook round1 table-suite row-drop-repro); shift ;;
+    -h|--help) sed -n '3,31p' "$0"; exit 0 ;;
+    *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
 done
+# 사용자가 all + 특정 plan 을 같이 준 경우 중복 제거 (첫 등장 순서 유지).
+if (( ${#PLANS[@]} )); then
+  _dedup=(); declare -A _seen=()
+  for p in "${PLANS[@]}"; do
+    [[ -n "${_seen[$p]:-}" ]] && continue
+    _seen[$p]=1; _dedup+=("$p")
+  done
+  PLANS=("${_dedup[@]}")
+fi
 (( ${#PLANS[@]} )) || PLANS=(webhook round1 table-suite)
 
 ts="$(date +%Y%m%d-%H%M%S)"
