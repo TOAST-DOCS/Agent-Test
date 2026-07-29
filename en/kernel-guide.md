@@ -623,3 +623,13 @@ Reboot the OS for the boot order change to take effect.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+## Test Added Table Section { #test-added-table }
+
+This section was newly added to validate table translation. The table headers and cell text below must all be translated.
+
+| Item | Description | Default |
+|---|---|---|
+| Maximum nodes | Maximum number of nodes that can be created in a single node pool. | 10 |
+| Auto scaling | Automatically adjusts the number of nodes based on load. | Not Set (Use Default) |
+| Health check interval | Interval for checking node status. | 5 minutes |
