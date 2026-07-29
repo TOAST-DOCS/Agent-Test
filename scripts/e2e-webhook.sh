@@ -181,6 +181,41 @@ print(json.dumps(hit or {}))
 PY
 }
 
+# ── webhook 대상 repo 활성화 토글 ──────────────────────────────────
+# webhook e2e 는 시작 시 Agent-Test 를 webhook 대상으로 활성화하고, 종료 시
+# 비활성화한다 (번역 e2e 들은 자체적으로 시작 시 비활성화 — 평상시 off 가
+# 기본 상태). pipeline_branch 등 기존 설정은 보존.
+set_webhook_repo_enabled() {
+  local enabled="$1"   # true|false
+  python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$REPO" "$enabled" <<'PYEOF' || \
+    echo "  (webhook repo 토글 실패 — 계속 진행)" >&2
+import json, sys, urllib.request
+base_url, token, repo, enabled = sys.argv[1:5]
+hdr = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+req = urllib.request.Request(f"{base_url}/api/webhooks/repos", headers=hdr)
+with urllib.request.urlopen(req, timeout=15) as r:
+    data = json.load(r)
+rows = data.get("repos") or []
+row = next((x for x in rows if (x.get("repo") or "").lower() == repo.lower()), None)
+if row is None and enabled != "true":
+    print(f"  webhook repo 미등록 — 비활성화 불필요: {repo}")
+    raise SystemExit(0)
+on = enabled == "true"
+payload = {
+    "repo": repo,
+    "translate_enabled": on,
+    "ko_review_enabled": on,
+    "pipeline_branch": (row or {}).get("pipeline_branch") or "",
+}
+post = urllib.request.Request(
+    f"{base_url}/api/webhooks/repos", data=json.dumps(payload).encode("utf-8"),
+    method="POST", headers=hdr)
+with urllib.request.urlopen(post, timeout=15) as r2:
+    json.load(r2)
+print(f"  webhook repo {repo}: translate/ko-review enabled={enabled}")
+PYEOF
+}
+
 # 종료 상태 요약용
 OPENED_RESULT="-"
 MERGED_RESULT="-"
@@ -266,7 +301,7 @@ else
 fi
 
 # 스크립트 종료 시 필터 원복 + (세션 모드면) 브랜치 삭제. cleanup 은 idempotent.
-trap 'ec=$?; restore_filters; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
+trap 'ec=$?; restore_filters; set_webhook_repo_enabled false; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
 
 echo "==================================================================="
 echo "  webhook e2e — Agent-Test"
@@ -274,6 +309,11 @@ echo "  head branch : $HEAD_BRANCH"
 echo "  base branch : $BASE_BRANCH$( ((USE_SESSION_BRANCH)) && echo ' (세션, 종료 시 삭제)' )"
 echo "  timeout(s)  : $POLL_TIMEOUT"
 echo "==================================================================="
+
+# ── 0) Agent-Test 를 webhook 대상으로 활성화 (종료 trap 에서 비활성화) ──
+echo
+echo "[0/6] webhook 활성화: $REPO"
+set_webhook_repo_enabled true
 
 # ── 1) 세션 브랜치 준비 (base 부터, 그 뒤 head) ───────────────────────
 echo
