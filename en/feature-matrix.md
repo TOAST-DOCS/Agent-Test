@@ -16,18 +16,20 @@ The main features of Instance are as follows.
 - **Monitoring**: Check CPU, memory, and disk usage on the dashboard.
 
 <a id="feature-by-region"></a>
+
 ## Feature Availability by Region { #feature-by-region }
 
 Available features vary by region. See the table below.
 
-| Feature Code | Feature Name | Pangyo | Pyeongchon | Japan |
+| Feature Code | Feature Name | Pangyo | Pyeongchon | Japan (Modified) |
 |---|---|---|---|---|
 | INST-CREATE | Create Instances | Available | Available | Available |
+| Intermediate insertion test | This is a new middle row that should be translated. | This is a new middle row that should be translated. | This is a new middle row that should be translated. | This is a new middle row that should be translated. |
 | INST-TPL | Instance Templates | Available | Available | Not available |
+| INST-MON | Instance Monitoring | Provided | Provided | Provided |
 | INST-SCHED | Instance Scheduling | Available | Not available | Not available |
-| INST-MON | Instance Monitoring | Available | Available | Available |
-
 <a id="feature-by-plan"></a>
+
 ### Limits by Pricing Plan { #feature-by-plan }
 
 The number of instances you can create differs by pricing plan.
@@ -36,8 +38,6 @@ The number of instances you can create differs by pricing plan.
 |---|---|---|
 | Basic | 10 | 1TB |
 | Standard | 50 | 10TB |
-| Enterprise | Unlimited | Unlimited |
-
 <a id="feature-api"></a>
 ## Checking Features via API { #feature-api }
 
