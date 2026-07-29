@@ -423,6 +423,128 @@ Source: `server.py:2524-2971`
 | GET | `/api/align/lnc-detail?runId=<uuid>` | Align 실행 상세 (per-doc + totals) |
 | GET | `/api/review/lnc-history?days=…&page=…&size=…&repo=…&status=…&excludeTest=…` | 한글 검수 실행 목록 |
 | GET | `/api/review/lnc-detail?repo=<>&pr=<>&time=<opt>` | 한글 검수 상세 (per-file violations + per-dimension counts) |
+| GET | `/api/webhook/lnc-history?days=…&page=…&size=…&repo=…&status=…&event=…&skip=…&excludeTest=…` | GitHub webhook 딜리버리 목록 (🪝 Webhook 로그 탭) — `webhook/logncrash.py` 가 남기는 `webhook-delivery` LnC 로그를 조회 |
+| GET | `/api/webhook/lnc-detail?deliveryId=<X-GitHub-Delivery uuid>` | webhook 딜리버리 상세 (log body + parsed dimensions) |
+
+### Webhook 대상 repo / 필터 관리
+
+Source: `server.py:4114-4179` (GET), `5031-5170` (POST) · `dashboard/webhook_config_store.py`
+
+GitHub webhook 수신부(`webhook/`)가 어떤 repo 를 트리거 대상으로 볼지,
+job (translate / ko-review) 별 필터, per-repo × per-job override 를 관리
+하는 어드민 API. `webhook_config_store` 를 통해 MySQL 의 세 테이블
+(`webhook_target_repo` · `webhook_job_filter` · `webhook_repo_filter_override`)
+을 read/write. dashboard 는 admin UI 의 유일한 writer 이며, webhook 파드는
+매 delivery 마다 이 테이블을 읽으므로 변경이 즉시 반영된다.
+
+| Method | Path | 목적 | 인증 |
+|---|---|---|---|
+| GET  | `/api/webhooks/repos` | 등록 상태 전체 스냅샷 (repos + filters + overrides + webhook_url/secret + 카탈로그) | 로그인 |
+| POST | `/api/webhooks/repos` | repo 등록/갱신 (upsert) | 로그인 |
+| POST | `/api/webhooks/repos/delete` | repo 등록 해제 — **필터 override 는 보존**, 재등록 시 자동 복원 | 로그인 |
+| POST | `/api/webhooks/filters` | 글로벌 job 필터 저장 (translate / ko-review 각각) | 로그인 |
+| POST | `/api/webhooks/repos/override` | per-repo × per-job 필터 override 저장 (partial update) | 로그인 |
+| POST | `/api/webhooks/repos/override/delete` | override 삭제 → 글로벌 필터 상속 | 로그인 |
+
+**GET `/api/webhooks/repos` 응답:**
+```
+{
+  "repos": [ { repo, translate_enabled, ko_review_enabled, pipeline_branch,
+               created_at, updated_at, created_by }, ... ],
+  "available_repos": ["TOAST-DOCS/Compute", ...],   // canonical 카탈로그 (.gitmodules + EXTRA)
+  "repo_tags": { "toast-docs/compute": ["tag1", ...] },   // full-name lower-cased 키
+  "db_available": bool,                              // false 면 로컬 dev — repos:[]
+  "translate_presets": ["recommended", ...], "ko_review_presets": ["recommended"],
+  "webhook_url": "...",                              // 배포 스크립트가 심어둔 LB IP:port (GitHub 웹훅 등록용)
+  "webhook_secret": "...",                           // GITHUB_WEBHOOK_SECRET (X-Hub-Signature-256 서명키)
+  "webhook_allow_unsigned": bool,                    // true 이면 서명 검증 OFF (dev/임시)
+  "filters": { "translate": { actions, base_branches, author_skip,
+                              label_require, label_skip, preset,
+                              updated_at, updated_by },
+               "ko-review": { ... } },
+  "repo_overrides": { "owner/repo": { "translate": { dim: value, ...,
+                                                     updated_at, updated_by }, ... } }
+}
+```
+DB 미설정 시 `db_available:false, repos:[], repo_overrides:{}` 로 fallback.
+
+**POST `/api/webhooks/repos` body — 등록/갱신:**
+```
+{
+  "repo": "owner/name",         // required, "owner/repo" 형식
+  "translate_enabled": true,    // default true — translate job 트리거 대상 포함 여부
+  "ko_review_enabled": true,    // default true — ko-review job 트리거 대상 포함 여부
+  "pipeline_branch": ""         // optional — Jenkins multibranch child (빈 값이면 기본)
+}
+```
+응답: `{ "repo": <upserted row> }`. 이미 등록된 repo 는 값이 업데이트되고
+없으면 신규 삽입. body 에 preset 관련 필드가 있어도 무시 — preset 은 repo
+가 아니라 job 필터(글로벌) 또는 override(per-repo) 에서 결정.
+
+**POST `/api/webhooks/repos/delete` body — 등록 해제:**
+```
+{ "repo": "owner/name" }
+```
+응답: `{ removed: bool, repo }`. **`webhook_repo_filter_override` 행은
+일부러 남긴다** — 같은 repo 를 다시 `/api/webhooks/repos` 로 등록하면 이전
+override 가 자동으로 되살아난다. override 까지 완전히 지우려면
+`/api/webhooks/repos/override/delete` 를 따로 호출.
+
+**POST `/api/webhooks/filters` body — 글로벌 job 필터:**
+```
+{
+  "job": "translate" | "ko-review",           // required
+  "actions": "opened,closed",                  // CSV — PR action allow-list
+  "base_branches": "alpha,beta",               // CSV — 이 base 로 향하는 PR 만
+  "author_skip": "dependabot[bot]",            // CSV, lowercase 정규화 — skip 저자
+  "label_require": "content-agent,한글 검수",  // CSV — 하나라도 있으면 통과 (OR)
+  "label_skip": "wip",                         // CSV — 하나라도 있으면 skip
+  "preset": "recommended"                      // 이 job 이 트리거될 때 쓸 preset name
+}
+```
+각 CSV 는 빈 문자열 = 그 dim 필터 없음. 응답: `{ job, filter: <저장된 row> }`.
+`webhook_config_store._normalize_csv` 가 dedupe/trim/order-preserve 로 정규화
+해서 저장하므로 (author_skip 은 lowercase), 응답 값이 요청과 다를 수 있다.
+
+**POST `/api/webhooks/repos/override` body — per-repo × per-job 필터 override:**
+```
+{
+  "repo": "owner/name", "job": "translate" | "ko-review",
+  "overrides": {
+    // 아래 6 dim 중 넘긴 것만 반영 (partial update). value semantics:
+    //   * key 자체 생략     → 그 dim 은 기존 상태 유지
+    //   * null              → override 해제, 글로벌 필터로 상속
+    //   * string (빈문자 포함) → override 로 저장 (빈문자 = "필터 없음" 을 강제)
+    "actions": "opened",
+    "base_branches": "e2e/2026-07-30-webhook-1",
+    "author_skip": null,
+    "label_require": "",
+    "label_skip": "wip",
+    "preset": "recommended"
+  }
+}
+```
+응답: `{ repo, job, override: <저장된 row 또는 null> }`. 6 dim 이 모두 null
+로 정리되면 override row 자체가 삭제되고 `override: null` 반환.
+
+**POST `/api/webhooks/repos/override/delete` body:**
+```
+{
+  "repo": "owner/name",
+  "job": "translate" | "ko-review"    // 생략 시 그 repo 의 두 job override 모두 삭제
+}
+```
+응답: `{ removed: <count>, repo, job }`. `job` 을 넘기지 않으면 응답
+`job` 은 `""`.
+
+**공통 에러:**
+
+| status | 예 |
+|---|---|
+| 400 | `repo` 형식 오류(`owner/name` 아님), 알 수 없는 `job`, 알 수 없는 override dim, `overrides` 가 dict 아님 |
+| 401 | 미인증 (`_require_login` 실패) |
+| 503 | `webhook_config_store.db_available()==false` — `DB_*` env 미세팅 |
+| 500 | DB 쓰기 실패 |
 
 ### 기타
 
