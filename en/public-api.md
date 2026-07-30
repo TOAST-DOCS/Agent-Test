@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=2e2588e1a607 -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
 
 The Instance service uses the IaaS token for authentication/authorization when making API calls. The IaaS token is the authentication token used by the NHN Cloud's OpenStack-based infrastructure service (IaaS). For more information on IaaS token issuance and usage, see [IaaS token](/nhncloud/en/public-api/iaas-token).
@@ -15,7 +14,6 @@ The Instance API uses the `compute` type endpoint. For the exact endpoint, refer
 Fields that are not specified in this guide may appear in API responses. These fields are used for internal NHN Cloud purposes and may change without prior notice, so do not use them.
 
 <a id="instance-flavors"></a>
-
 ## Instance Flavors { #instance-flavors }
 
 <a id="list-flavors"></a>
@@ -197,7 +195,6 @@ This API does not require a request body.
 ---
 
 <a id="availability-zones"></a>
-
 ## Availability Zones { #availability-zones }
 
 <a id="list-availability-zones"></a>
@@ -254,7 +251,6 @@ This API does not require a request body.
 ---
 
 <a id="key-pairs"></a>
-
 ## Key Pairs { #key-pairs }
 
 <a id="list-key-pairs"></a>
@@ -451,11 +447,9 @@ This API does not return a response body.
 
 
 <a id="instance"></a>
-
 ## Instance { #instance }
 
 <a id="instance-status"></a>
-
 ### Instance Status { #instance-status }
 
 Instances exist in various statuses, and each status defines its own set of permissible operations. See the following list of instance statuses.
@@ -482,7 +476,6 @@ Instances exist in various statuses, and each status defines its own set of perm
 | `UNKNOWN` | The instance status is unknown<br>If the instance enters this status, contact an administrator. |
 
 <a id="list-instances"></a>
-
 ### List Instances { #list-instances }
 
 ```
@@ -548,7 +541,6 @@ This API does not require a request body.
 ---
 
 <a id="list-instances-with-details"></a>
-
 ### List Instances with Details { #list-instances-with-details }
 
 Returns a list of instances created in the current tenant, the same as the List Instances operation. However, detailed information for each instance is also retrieved.
@@ -559,13 +551,11 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-instances-with-details-request"></a>
-
 #### Request
 
 The request format is the same as List Instances.
 
 <a id="list-instances-with-details-response"></a>
-
 #### Response
 
 | Name | Type | Format | Description |
@@ -707,7 +697,6 @@ The request format is the same as List Instances.
 ---
 
 <a id="get-instance"></a>
-
 ### View instance { #get-instance }
 
 ```
@@ -716,7 +705,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="get-instance-request"></a>
-
 #### Request
 
 This API does not require a request body.
@@ -728,7 +716,6 @@ This API does not require a request body.
 | tokenId | Header | String | O | Token ID |
 
 <a id="get-instance-response"></a>
-
 #### Response
 
 | Name | Type | Format | Description                                                                                                                                                                                       |
@@ -865,6 +852,7 @@ This API does not require a request body.
 </p>
 </details>
 
+<a id="test-added-endpoint"></a>
 ### Test-added endpoint { #test-added-endpoint }
 
 ```
@@ -873,7 +861,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="test-added-request"></a>
-
 #### Request { #test-added-request }
 
 | Name | Type | Format | Required | Description |
@@ -883,7 +870,6 @@ X-Auth-Token: {tokenId}
 | name | Body | String | O | Endpoint name |
 
 <a id="test-added-response"></a>
-
 #### Response { #test-added-response }
 
 | Name | Type | Format | Description |
