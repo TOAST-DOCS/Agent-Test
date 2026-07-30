@@ -1,7 +1,6 @@
 <!-- pre-align:aligned sig=2e2588e1a607 -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
 インスタンスは API 呼び出し時の認証/認可に IaaS トークンを使用します。IaaS トークンは NHN Cloud の OpenStack ベースのインフラストラクチャサービス (IaaS) で使用される認証トークンです。IaaS トークンの発行および使用の詳細については、[IaaS トークン](/nhncloud/ja/public-api/iaas-token) を参照してください。
@@ -15,7 +14,6 @@
 API レスポンスにはこのガイドで明示されていないフィールドが表示される場合があります。このようなフィールドは NHN Cloud の内部用途に使用されており、事前通知なしに変更される可能性があるため、使用しないでください。
 
 <a id="instance-flavors"></a>
-
 ## インスタンスタイプ { #instance-flavors }
 
 <a id="list-flavors"></a>
@@ -197,7 +195,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="availability-zones"></a>
-
 ## 可用性ゾーン { #availability-zones }
 
 <a id="list-availability-zones"></a>
@@ -254,7 +251,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="key-pairs"></a>
-
 ## キーペア { #key-pairs }
 
 <a id="list-key-pairs"></a>
@@ -451,11 +447,9 @@ X-Auth-Token: {tokenId}
 
 
 <a id="instance"></a>
-
 ## インスタンス { #instance }
 
 <a id="instance-status"></a>
-
 ### インスタンスのステータス { #instance-status }
 
 インスタンスはさまざまなステータスを持ち、ステータスに応じて実行できる操作が決まります。インスタンスのステータスリストは次のとおりです。
@@ -482,7 +476,6 @@ X-Auth-Token: {tokenId}
 | `UNKNOWN` | インスタンスのステータスが不明な場合<br>インスタンスがこのステータスに入った場合は、管理者に問い合わせてください。 | 
 
 <a id="list-instances"></a>
-
 ### インスタンス一覧を表示 { #list-instances }
 
 ```
@@ -548,7 +541,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-instances-with-details"></a>
-
 ### インスタンス一覧詳細を表示 { #list-instances-with-details }
 
 インスタンス一覧を表示と同じく、現在のテナントで作成されたインスタンスリストを返します。ただし、インスタンスごとの詳細情報も一緒に照会されます。
@@ -559,13 +551,11 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-instances-with-details-request"></a>
-
 #### リクエスト
 
 インスタンス一覧を表示と同じリクエスト形式です。
 
 <a id="list-instances-with-details-response"></a>
-
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                        |
@@ -707,7 +697,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="get-instance"></a>
-
 ### インスタンス表示 { #get-instance }
 
 ```
@@ -716,7 +705,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="get-instance-request"></a>
-
 #### リクエスト
 
 この API はリクエストボディを必要としません。
@@ -728,7 +716,6 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | トークン ID |
 
 <a id="get-instance-response"></a>
-
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                       |
@@ -865,6 +852,7 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="test-added-endpoint"></a>
 ### テスト用新規エンドポイント { #test-added-endpoint }
 
 ```
@@ -873,7 +861,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="test-added-request"></a>
-
 #### リクエスト { #test-added-request }
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -883,7 +870,6 @@ X-Auth-Token: {tokenId}
 | name | Body | String | O | エンドポイント名 |
 
 <a id="test-added-response"></a>
-
 #### レスポンス { #test-added-response }
 
 | 名前 | 種類 | 形式 | 説明 |
