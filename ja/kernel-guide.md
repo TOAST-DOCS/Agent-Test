@@ -631,6 +631,7 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 [root@rocky810 ~]# sync; reboot
 ```
 
+<a id="test-added-table"></a>
 ## テスト用の新しいテーブルセクション { #test-added-table }
 
 このセクションは、テーブル翻訳の検証のために新しく追加されました。以下のテーブルのヘッダーとセルのテキストはすべて翻訳される必要があります。
