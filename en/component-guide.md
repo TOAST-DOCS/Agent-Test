@@ -248,7 +248,6 @@ shell> mysql -uroot -P[changed port number]
 ```
 
 <a id="description-of-mycnf"></a>
-
 ### Description of my.cnf { #description-of-mycnf }
 
 The default path of my.cnf is `/etc/my.cnf`, and NHN Cloud recommended variables are set as below:
