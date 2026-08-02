@@ -1,9 +1,6 @@
-<!-- pre-align:aligned sig=45e098944fc5 -->
+## Compute > Instance > 문제 해결 가이드
 
-<a id="compute-instance-troubleshooting-guide"></a>
-## Compute > Instance > 문제 해결 가이드 { #compute-instance-troubleshooting-guide }
-
-NHN Cloud를 사용하면서 겪을 수 있는 다양한 문제들을 해결하는 방법을 설명합니다. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
+NHN Cloud를 사용하면서 겪을 수 있는 다양한 문제들을 해결하는 방법을 설명합니다.
 
 <h3>현재 NHN Cloud에서 기본 제공하는 OS 버전 이외의 버전을 사용하고 싶습니다. 개인 이미지를 업로드해서 사용할 수는 없나요?</h3>
 
