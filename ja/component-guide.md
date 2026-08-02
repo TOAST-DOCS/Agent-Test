@@ -256,7 +256,6 @@ shell> mysql -uroot -P[変更されたポート番号]
 ```
 
 <a id="description-of-mycnf"></a>
-
 ### my.cnf説明 { #description-of-mycnf }
 
 my.cnfのデフォルトのパスは `/etc/my.cnf` で、NHN Cloud推奨変数(variable)が設定されています。内容は下記の通りです。
