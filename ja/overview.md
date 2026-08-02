@@ -3,6 +3,8 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 概要 { #compute-instance-overview }
 
+このパラグラフは、既存のセクションに追加されたテスト用パラグラフです。既存のヘッディングはそのままにしておく必要があります。
+
 インスタンスは仮想のCPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールしてNHN Cloudが提供する様々なサービスを組み合わせて使用します。
 
 <a id="components"></a>
