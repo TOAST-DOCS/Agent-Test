@@ -1,7 +1,6 @@
 ---
 public:
     api:
-      endpoint: https://api-instance.nhncloudservice.com
       regions:
         - { name: "한국(판교) 리전", url: "https://kr1-api-instance-infrastructure.nhncloudservice.com" }
         - { name: "한국(평촌) 리전", url: "https://kr2-api-instance-infrastructure.nhncloudservice.com" }
@@ -9,7 +8,6 @@ public:
         - { name: "일본 리전",       url: "https://jp1-api-instance-infrastructure.nhncloudservice.com" }
 gov:
     api:
-      endpoint: https://api-instance.gov-nhncloudservice.com
       regions:
         - { name: "한국(판교) 리전", url: "https://kr1-api-instance-infrastructure.gov-nhncloudservice.com" }
         - { name: "한국(평촌) 리전", url: "https://kr2-api-instance-infrastructure.gov-nhncloudservice.com" }
