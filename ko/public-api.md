@@ -1,30 +1,95 @@
-<!-- pre-align:aligned sig=b1a7b6e8f7ec -->
-
+{%- set variant = ("ngoic" if "ngoic" in build_flags
+              else "ngovc" if "ngovc" in build_flags
+              else "ngsc"  if "ngsc"  in build_flags
+              else "ninc"  if "ninc"  in build_flags
+              else "") -%}
+{%- set kr4_host_map = {
+      "ngoic": "kr4-api-instance-infrastructure.ngoic.com",
+      "ngovc": "kr4-api-instance-infrastructure.ngovc.com",
+      "ngsc":  "kr4-api-instance-infrastructure.ngsc.go.kr",
+      "ninc":  "kr4-api-instance-infrastructure.ninc.go.kr",
+} -%}
+{%- set kr4_host = kr4_host_map.get(variant, "") -%}
+{%- set kr1_host = ("kr1-api-instance-infrastructure.gov-nhncloudservice.com" if "gov" in build_flags
+              else "kr1-api-instance-infrastructure.gncloud.go.kr"           if variant
+              else "kr1-api-instance-infrastructure.nhncloudservice.com") -%}
+{%- set kr2_host = ("kr2-api-instance-infrastructure.gov-nhncloudservice.com" if "gov" in build_flags
+              else "kr2-api-instance-infrastructure.nhncloudservice.com") -%}
+{%- set kr3_host = "kr3-api-instance-infrastructure.nhncloudservice.com" -%}
+{%- set jp1_host = "jp1-api-instance-infrastructure.nhncloudservice.com" -%}
+{#- 방식 2: region -> host 매핑 dict. 사용 예 {{ hosts.kr1 }} / {{ hosts["kr4"] }} -#}
+{%- set hosts = {
+      "kr1": kr1_host,
+      "kr2": kr2_host,
+      "kr3": kr3_host,
+      "jp1": jp1_host,
+      "kr4": kr4_host,
+} -%}
+{#- 방식 1: region 을 인자로 받는 macro. 사용 예 {{ api_host("kr1") }} -#}
+{% macro api_host(region) -%}
+{{ hosts.get(region, "") }}
+{%- endmacro %}
 <a id="compute-instance-api-v2-guide"></a>
-## Compute > Instance > API v2 가이드 { #compute-instance-api-v2-guide }
+## Compute > Instance > API v2 가이드
 
-Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용에 대한 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token) 을 참고하세요.
+{% if "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+API를 사용하려면 API 엔드포인트와 토큰 등이 필요합니다. [API 사용 준비](/Compute/Compute/ko/identity-api-{{ variant }}/)를 참고하여 API 사용에 필요한 정보를 준비합니다.
+{% else %}
+Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용에 대한 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token{% if "gov" in build_flags %}-gov{% endif %}) 을 참고하세요.
+{% endif %}
 
 인스턴스 API는 `compute` 타입 엔드포인트를 이용합니다. 정확한 엔드포인트는 토큰 발급 응답의 `serviceCatalog`를 참조합니다.
 
+### 엔드포인트 (방식 1: macro)
+{#
+  방식 1 예시 — region 을 인자로 받는 macro 로 URL 을 조립합니다.
+  이후 API 호출 예시도 같은 방식으로 작성하려면 `{{ api_host("kr1") }}` 형태를 사용하세요.
+#}
+
 | 타입 | 리전 | 엔드포인트 |
 |---|---|---|
-| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com | (행 수정 테스트)
+{% if "gov" in build_flags %}
+| compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://{{ api_host("kr1") }}<br>https://{{ api_host("kr2") }}           |
+{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+| compute | 한국(대구) 리전 | https://{{ api_host("kr4") }} |
+{% else %}
+| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://{{ api_host("kr1") }}<br>https://{{ api_host("kr2") }}<br>https://{{ api_host("kr3") }}<br>https://{{ api_host("jp1") }} |
+{% endif %}
+
+### 엔드포인트 (방식 2: dict)
+{#
+  방식 2 예시 — 파일 상단에서 정의한 `hosts` dict 로 URL 을 조회합니다.
+  이후 API 호출 예시도 같은 방식으로 작성하려면 `{{ hosts.kr1 }}` 형태를 사용하세요.
+#}
+
+| 타입 | 리전 | 엔드포인트 |
+|---|---|---|
+{% if "gov" in build_flags %}
+| compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://{{ hosts.kr1 }}<br>https://{{ hosts.kr2 }}           |
+{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+| compute | 한국(대구) 리전 | https://{{ hosts.kr4 }} |
+{% else %}
+| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://{{ hosts.kr1 }}<br>https://{{ hosts.kr2 }}<br>https://{{ hosts.kr3 }}<br>https://{{ hosts.jp1 }} |
+{% endif %}
 
 API 응답에 가이드에 명시되지 않은 필드가 나타날 수 있습니다. 이런 필드는 NHN Cloud 내부 용도로 사용되며 사전 공지 없이 변경될 수 있으므로 사용하지 않습니다.
 
 <a id="instance-flavors"></a>
-## 인스턴스 타입 { #instance-flavors }
+## 인스턴스 타입
+{#
+  이 섹션의 API URL 은 **방식 1 (macro)** 로 작성합니다: {{ api_host("kr1") }}
+  하위 항목을 추가할 때 다른 방식(hosts.kr1, kr1_host 등)과 섞지 마세요.
+#}
 
 <a id="list-flavors"></a>
-### 타입 목록 보기 { #list-flavors }
+### 타입 목록 보기
 
 ```
 GET /v2/{tenantId}/flavors
 X-Auth-Token: {tokenId}
 ```
 
-<a id="request"></a>
+<a id="list-flavors-request"></a>
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -36,7 +101,7 @@ X-Auth-Token: {tokenId}
 | minDisk | Query | Integer | - | 최소 블록 스토리지 크기(GB)<br>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
 | minRam | Query | Integer | - | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
 
-<a id="response"></a>
+<a id="list-flavors-response"></a>
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -57,11 +122,11 @@ X-Auth-Token: {tokenId}
       "id": "013bea75-8541-4c6f-9abe-a03fee3d74fe",
       "links": [
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/013bea75-8541-4c6f-9abe-a03fee3d74fe",
+          "href": "https://{{ api_host("kr1") }}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/013bea75-8541-4c6f-9abe-a03fee3d74fe",
           "rel": "self"
         },
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/013bea75-8541-4c6f-9abe-a03fee3d74fe",
+          "href": "https://{{ api_host("kr1") }}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/013bea75-8541-4c6f-9abe-a03fee3d74fe",
           "rel": "bookmark"
         }
       ],
@@ -71,11 +136,11 @@ X-Auth-Token: {tokenId}
       "id": "0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
       "links": [
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
+          "href": "https://{{ api_host("kr1") }}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
           "rel": "self"
         },
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
+          "href": "https://{{ api_host("kr1") }}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
           "rel": "bookmark"
         }
       ],
@@ -91,7 +156,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-flavors-with-details"></a>
-### 타입 목록 상세 보기 { #list-flavors-with-details }
+### 타입 목록 상세 보기
 
 ```
 GET /v2/{tenantId}/flavors/detail
@@ -113,6 +178,7 @@ X-Auth-Token: {tokenId}
 <a id="list-flavors-with-details-response"></a>
 #### 응답
 
+{% if not build_flags %}
 | 이름 | 종류 | 형식 | 설명             |
 |---|---|---|----------------|
 | flavors | Body | Object | 인스턴스 타입 목록 객체  |
@@ -127,6 +193,22 @@ X-Auth-Token: {tokenId}
 | flavors.os-flavor-access:is_public | Body | Boolean | 공유 여부          |
 | flavors.rxtx_factor | Body | Float | 네트워크 송신/수신 패킷 비율 |
 | flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | 임시 블록 스토리지 크기(GB)     |
+{% else %}
+| 이름 | 종류 | 형식 | 설명                      |
+|---|---|---|-------------------------|
+| flavors | Body | Object | 인스턴스 타입 목록 객체           |
+| flavors.id | Body | UUID | 인스턴스 타입 ID              |
+| flavors.links | Body | Object | 인스턴스 타입 경로 객체           |
+| flavors.name | Body | String | 인스턴스 타입 이름              |
+| flavors.ram | Body | Integer | 메모리 크기(MB)              |
+| flavors.OS-FLV-DISABLED:disabled | Body | Boolean | 활성화 여부                  |
+| flavors.vcpus | Body | Integer | vCPU 개수                 |
+| flavors.extra_specs | Body | Object | 추가 사양 객체                |
+| flavors.swap | Body | Integer | 스와프 영역 크기(GB)           |
+| flavors.os-flavor-access:is_public | Body | Boolean | 공유 여부                   |
+| flavors.rxtx_factor | Body | Float | 네트워크 송신/수신 패킷 비율        |
+| flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | 임시 블록 스토리지 크기(GB)            |
+{% endif %}
 | flavors.disk | Body | Integer | 루트 블록 스토리지 크기(GB) |
 
 <details><summary>예시</summary>
@@ -139,11 +221,11 @@ X-Auth-Token: {tokenId}
       "name": "x1.c32m256",
       "links": [
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/97604802-a090-43fa-a5ce-c7cfd737fbba",
+          "href": "https://{{ api_host("kr1") }}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/97604802-a090-43fa-a5ce-c7cfd737fbba",
           "rel": "self"
         },
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/97604802-a090-43fa-a5ce-c7cfd737fbba",
+          "href": "https://{{ api_host("kr1") }}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/97604802-a090-43fa-a5ce-c7cfd737fbba",
           "rel": "bookmark"
         }
       ],
@@ -164,11 +246,11 @@ X-Auth-Token: {tokenId}
       "name": "x1.c32m128",
       "links": [
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/31fa632d-aeec-4f12-8a57-ce9d146228e5",
+          "href": "https://{{ api_host("kr1") }}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/31fa632d-aeec-4f12-8a57-ce9d146228e5",
           "rel": "self"
         },
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/31fa632d-aeec-4f12-8a57-ce9d146228e5",
+          "href": "https://{{ api_host("kr1") }}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/31fa632d-aeec-4f12-8a57-ce9d146228e5",
           "rel": "bookmark"
         }
       ],
@@ -195,10 +277,10 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="availability-zones"></a>
-## 가용성 영역 { #availability-zones }
+## 가용성 영역
 
 <a id="list-availability-zones"></a>
-### 가용성 목록 보기 { #list-availability-zones }
+### 가용성 목록 보기
 
 ```
 GET /v2/{tenantId}/os-availability-zone
@@ -251,10 +333,10 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="key-pairs"></a>
-## 키페어 { #key-pairs }
+## 키페어
 
 <a id="list-key-pairs"></a>
-### 키페어 목록 보기 { #list-key-pairs }
+### 키페어 목록 보기
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
@@ -303,7 +385,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="show-key-pair"></a>
-### 키페어 보기 { #show-key-pair }
+### 키페어 보기
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -360,7 +442,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="createregister-key-pair"></a>
-### 키페어 생성/등록하기 { #createregister-key-pair }
+### 키페어 생성/등록하기
 
 ```
 POST /v2/{tenantId}/os-keypairs
@@ -425,7 +507,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="delete-key-pair"></a>
-### 키페어 삭제하기 { #delete-key-pair }
+### 키페어 삭제하기
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -447,10 +529,14 @@ X-Auth-Token: {tokenId}
 
 
 <a id="instance"></a>
-## 인스턴스 { #instance }
+## 인스턴스
+{#
+  이 섹션의 API URL 은 **방식 2 (dict)** 로 작성합니다: {{ hosts.kr1 }}
+  하위 항목을 추가할 때 다른 방식(api_host("kr1"), kr1_host 등)과 섞지 마세요.
+#}
 
 <a id="instance-status"></a>
-### 인스턴스 상태 { #instance-status }
+### 인스턴스 상태
 
 인스턴스는 다양한 상태를 가지며 상태에 따라 취할 수 있는 동작이 정해져 있습니다. 인스턴스 상태 목록은 다음과 같습니다.
 
@@ -476,7 +562,7 @@ X-Auth-Token: {tokenId}
 | `UNKNOWN` | 인스턴스의 상태를 알 수 없는 경우<br>`인스턴스가 이 상태로 진입한 경우 관리자에게 문의합니다.` | 
 
 <a id="list-instances"></a>
-### 인스턴스 목록 보기 { #list-instances }
+### 인스턴스 목록 보기
 
 ```
 GET /v2/{tenantId}/servers
@@ -521,11 +607,11 @@ X-Auth-Token: {tokenId}
       "id": "aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
       "links": [
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+          "href": "https://{{ hosts.kr1 }}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
           "rel": "self"
         },
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+          "href": "https://{{ hosts.kr1 }}/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
           "rel": "bookmark"
         }
       ],
@@ -541,7 +627,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-instances-with-details"></a>
-### 인스턴스 목록 상세 보기 { #list-instances-with-details }
+### 인스턴스 목록 상세 보기
 
 인스턴스 목록 보기와 동일하게 현재 테넌트에 생성된 인스턴스 목록을 반환합니다. 단, 인스턴스별 상세한 정보가 같이 조회됩니다.
 
@@ -618,11 +704,11 @@ X-Auth-Token: {tokenId}
       },
       "links": [
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+          "href": "https://{{ hosts.kr1 }}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
           "rel": "self"
         },
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+          "href": "https://{{ hosts.kr1 }}/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
           "rel": "bookmark"
         }
       ],
@@ -631,7 +717,7 @@ X-Auth-Token: {tokenId}
         "id": "8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
         "links": [
           {
-            "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/images/8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
+            "href": "https://{{ hosts.kr1 }}/6cdebe3eb0094910bc41f1d42ebe4cb7/images/8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
             "rel": "bookmark"
           }
         ]
@@ -643,7 +729,7 @@ X-Auth-Token: {tokenId}
         "id": "35a73b57-58a7-434d-aa08-5249aaa95b3e",
         "links": [
           {
-            "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/35a73b57-58a7-434d-aa08-5249aaa95b3e",
+            "href": "https://{{ hosts.kr1 }}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/35a73b57-58a7-434d-aa08-5249aaa95b3e",
             "rel": "bookmark"
           }
         ]
@@ -697,7 +783,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="get-instance"></a>
-### 인스턴스 보기 { #get-instance }
+### 인스턴스 보기
 
 ```
 GET /v2/{tenantId}/servers/{serverId}
@@ -777,11 +863,11 @@ X-Auth-Token: {tokenId}
     },
     "links": [
       {
-        "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+        "href": "https://{{ hosts.kr1 }}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
         "rel": "self"
       },
       {
-        "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+        "href": "https://{{ hosts.kr1 }}/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
         "rel": "bookmark"
       }
     ],
@@ -790,7 +876,7 @@ X-Auth-Token: {tokenId}
       "id": "8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
       "links": [
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/images/8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
+          "href": "https://{{ hosts.kr1 }}/6cdebe3eb0094910bc41f1d42ebe4cb7/images/8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
           "rel": "bookmark"
         }
       ]
@@ -802,7 +888,7 @@ X-Auth-Token: {tokenId}
       "id": "35a73b57-58a7-434d-aa08-5249aaa95b3e",
       "links": [
         {
-          "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/35a73b57-58a7-434d-aa08-5249aaa95b3e",
+          "href": "https://{{ hosts.kr1 }}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/35a73b57-58a7-434d-aa08-5249aaa95b3e",
           "rel": "bookmark"
         }
       ]
@@ -855,7 +941,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="create-instance"></a>
-### 인스턴스 생성하기 { #create-instance }
+### 인스턴스 생성하기
 
 인스턴스를 생성합니다.
 
@@ -875,7 +961,10 @@ Windows 인스턴스는 안정적인 동작을 위해 다음과 같은 생성 �
 인스턴스 생성 요청 시 스케줄러 힌트를 통해 배치 정책을 할당할 수 있습니다.
 
 
+{% if not build_flags %}
 
+{% else %}
+{% endif %}
 ```
 POST /v2/{tenantId}/servers
 X-Auth-Token: {tokenId}
@@ -884,16 +973,52 @@ X-Auth-Token: {tokenId}
 <a id="create-instance-request"></a>
 #### 요청
 
+{% if not build_flags %}
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
+{% else %}
+| 이름 | 종류 | 형식 | 필수 | 설명                                                                                                                                                                                        |
+|---|---|---|---|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| tenantId | URL | String | O | 테넌트 ID                                                                                                                                                                                    |
+| tokenId | Header | String | O | 토큰 ID                                                                                                                                                                                     |
+{% endif %}
 | server | body | Object | O | 서버 객체 |
+{% if "gov" in build_flags %}
+| server.security_groups | body | Object | - | 보안 그룹 목록 객체<br>생략할 경우 `default` 그룹이 추가됨                                                                                                                                                   |
+| server.security_groups.name | body | String | - | **(조건부 필수)** 인스턴스에 추가할 보안 그룹 이름                                                                                                                                                                        |
+| server.user_data | body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br>base64 인코딩된 문자열로 65535 바이트까지 허용                                                                                                                                |
+{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+| server.security_groups | body | Object | - | 보안 그룹 목록 객체<br>생략할 경우 `default` 그룹이 추가됨                                                                                                                                                   |
+| server.security_groups.name | body | String | - | 인스턴스에 추가할 보안 그룹 이름                                                                                                                                                                        |
+| server.user_data | body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br>base64 인코딩된 문자열로 65535 바이트까지 허용                                                                                                                                |
+{% else %}
 | server.security_groups | body | Object | - | 보안 그룹 목록 객체<br>생략할 경우 `default` 그룹이 추가됨 |
 | server.security_groups.name | body | String | - | **(조건부 필수)** 인스턴스에 추가할 보안 그룹 이름 |
 | server.user_data | body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br>base64 인코딩된 문자열로 65535 바이트까지 허용 |
+{% endif %}
 | server.availability_zone | body | String | - | 인스턴스를 생성할 가용성 영역<br>지정하지 않을 경우 임의로 선택됨<br>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 원본 블록 스토리지의 가용성 영역과 동일하게 설정 필요 |
 | server.imageRef | Body | String | - | 인스턴스를 생성할 때 사용할 이미지 ID<br>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요 |
+{% if "gov" in build_flags %}
+| server.flavorRef | Body | String | O | 인스턴스를 생성할 때 사용할 인스턴스 타입 ID                                                                                                                                                                |
+| server.networks | Body | Object | O | 인스턴스를 생성할 때 사용할 네트워크 정보 객체<br>지정한 개수만큼 NIC가 추가되며, 네트워크 ID, 서브넷 ID, 포트 ID, 고정 IP 중 하나로 지정                                                                                                  |
+| server.networks.uuid | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크 ID                                                                                                                                                                   |
+| server.networks.subnet | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크의 서브넷 ID                                                                                                                                                              |
+| server.networks.port | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 포트 ID<br>포트 ID 지정 시 요청한 보안 그룹은 지정한 기존 포트에 적용되지 않음                                                                                                                                                                     |
+| server.networks.fixed_ip | Body | String | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 고정 IP                                                                                                                                                                     |
+| server.name | Body | String | O | 인스턴스의 이름<br>영문자 기준 255자까지 허용되지만, Windows 이미지의 경우 15자 이하여야 함                                                                                                                               |
+| server.metadata | Body | Object | - | 인스턴스에 추가할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍                                                                                                                                                |
+{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+| server.flavorRef | Body | String | O | 인스턴스를 생성할 때 사용할 인스턴스 타입 ID                                                                                                                                                                |
+| server.networks | Body | Object | O | 인스턴스를 생성할 때 사용할 네트워크 정보 객체<br>지정한 개수만큼 NIC가 추가되며, 네트워크 ID, 서브넷 ID, 포트 ID, 고정 IP 중 하나로 지정                                                                                                  |
+| server.networks.uuid | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크 ID |
+| server.networks.subnet | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크의 서브넷 ID |
+| server.networks.port | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 포트 ID<br>포트 ID 지정 시 요청한 보안 그룹은 지정한 기존 포트에 적용되지 않음 |
+| server.networks.fixed_ip | Body | String | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 고정 IP |
+| server.name | Body | String | O | 인스턴스의 이름<br>영문자 기준 255자까지 허용되지만, Windows 이미지의 경우 15자 이하여야 함                                                                                                                               |
+| server.metadata | Body | Object | - | 인스턴스에 추가할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍                                                                                                                                                |
+{% else %}
 | server.flavorRef | Body | String | O | 인스턴스를 생성할 때 사용할 인스턴스 타입 ID |
 | server.networks | Body | Object | O | 인스턴스를 생성할 때 사용할 네트워크 정보 객체<br>지정한 개수만큼 NIC가 추가되며, 네트워크 ID, 서브넷 ID, 포트 ID, 고정 IP 중 하나로 지정 |
 | server.networks.uuid | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크 ID |
@@ -902,21 +1027,44 @@ X-Auth-Token: {tokenId}
 | server.networks.fixed_ip | Body | String | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 고정 IP |
 | server.name | Body | String | O | 인스턴스의 이름<br>영문자 기준 255자까지 허용되지만, Windows 이미지의 경우 15자 이하여야 함 |
 | server.metadata | Body | Object | - | 인스턴스에 추가할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍 |
+{% endif %}
 | server.block_device_mapping_v2 | Body | Object | O | 인스턴스의 블록 스토리지 정보 객체 |
 | server.block_device_mapping_v2.source_type | Body | Enum | O | 생성할 블록 스토리지 원본의 타입<br>- `image`: 이미지를 이용해 블록 스토리지 생성<br>- `blank`: 빈 블록 스토리지 생성(루트 블록 스토리지로 사용할 수 없음)<br>- `volume`: 기존에 생성된 블록 스토리지를 사용<br>- `snapshot`: 스냅숏을 이용해 블록 스토리지 생성 |
 | server.block_device_mapping_v2.uuid | Body | String | - | **(조건부 필수)** 블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br>- 소스 타입이 `image`인 경우 이미지 ID를 설정<br>- 소스 타입이 `volume`인 경우 기존에 생성된 블록 스토리지 ID를 설정<br>- 소스 타입이 `snapshot`인 경우 스냅숏 ID를 설정<br>- 소스 타입이 `blank`인 경우 설정 불필요<br>루트 블록 스토리지인 경우 반드시 부팅 가능한 원본이어야 함 |
+{% if "gov" in build_flags %}
+| server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br>-`0`이면 루트 블록 스토리지<br>- 그 외는 추가 블록 스토리지<br>크기가 클수록 부팅 순서는 낮아짐                                                                                                                         |
+| server.block_device_mapping_v2.destination_type | Body | Enum | O | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br>- `local`: GPU 인스턴스, U2 인스턴스 타입을 이용하는 경우<br>- `volume`: 그 외의 인스턴스 타입을 이용하는 경우 |
+{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+| server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br>-`0`이면 루트 블록 스토리지<br>- 그 외는 추가 블록 스토리지<br>크기가 클수록 부팅 순서는 낮아짐                                                                                                                         |
+{% else %}
 | server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br>-`0`이면 루트 블록 스토리지<br>- 그 외는 추가 블록 스토리지<br>크기가 클수록 부팅 순서는 낮아짐 |
 | server.block_device_mapping_v2.destination_type | Body | Enum | O | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br>- `local`: GPU 인스턴스, U2 인스턴스 타입을 이용하는 경우<br>- `volume`: 그 외의 인스턴스 타입을 이용하는 경우 |
+{% endif %}
 | server.block_device_mapping_v2.volume_type | Body | Enum    | - | **(조건부 필수)** 생성할 블록 스토리지의 타입<br>블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요<br>`사용자 가이드 > Storage > Block Storage > API v2 가이드`에서 **블록 스토리지 타입 목록 보기** 응답의 `name` 참고 |
+{% if "gov" in build_flags %}
+| server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br>`true`면 삭제, `false`면 유지                                                                                                                         |
+{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+| server.block_device_mapping_v2.destination_type | Body | Enum | O | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br>- `local`: U2 인스턴스 타입을 이용하는 경우<br>- `volume`: U2 외의 인스턴스 타입을 이용하는 경우                                                                          |
+| server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br>`true`면 삭제, `false`면 유지                                                                                                                         |
+{% else %}
 | server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br>`true`면 삭제, `false`면 유지 |
+{% endif %}
 | server.block_device_mapping_v2.volume_size | Body | Integer | - | **(조건부 필수)** 생성할 블록 스토리지 크기<br>블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br>- 소스 타입이 `volume`인 경우 설정 불필요<br>- 소스 타입이 `snapshot`인 경우 원본 블록 스토리지 크기보다 같거나 크게 설정<br>`GB` 단위<br>U2 인스턴스 타입을 사용하고 루트 블록 스토리지를 생성하는 경우에는 U2 인스턴스 타입에 명시된 크기로 생성되며 이 값은 무시됨<br>인스턴스 타입에 따라 생성할 수 있는 루트 블록 스토리지의 크기가 다르므로 자세한 내용은 `사용자 가이드 > Compute > Instance > 콘솔 사용 가이드 > 인스턴스 생성 > 블록 스토리지 크기`를 참고 |
+{% if not build_flags %}
 | server.block_device_mapping_v2.nhn_encryption                   | Body | Object | - | **(조건부 필수)** 블록 스토리지의 암호화 정보                                                                                                                                                                                        |
 | server.block_device_mapping_v2.nhn_encryption.skm_appkey        | Body | String | - | **(조건부 필수)** Secure Key Manager 서비스의 앱키                                                                                                                                                                              |
 | server.block_device_mapping_v2.nhn_encryption.skm_key_id        | Body | String | - | **(조건부 필수)** 암호화 블록 스토리지 생성에 사용할 Secure Key Manager의 대칭 키 ID                                                                                                                                  |
 | server.key_name | Body | String | O | 인스턴스 접속에 사용할 키페어 |
+{% else %}
+| server.key_name | Body | String | O | 인스턴스 접속에 사용할 키페어                                                                                                                                                                          |
+{% endif %}
 | server.min_count | Body | Integer | - | 현재 요청으로 생성할 인스턴스 개수의 최솟값.<br>기본값은 1.<br>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
 | server.max_count | Body | Integer | - | 현재 요청으로 생성할 인스턴스 개수의 최댓값.<br>기본값은 min_count, 최댓값은 10.<br>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
+{% if not build_flags %}
 | server.return_reservation_id | Body | Boolean | - | 인스턴스 생성 요청 예약 ID.<br>True로 지정하면 인스턴스 생성 정보 대신 예약 ID를 반환.<br>기본값은 False |
+{% else %}
+| server.return_reservation_id | Body | Boolean | - | 인스턴스 생성 요청 예약 ID.<br>True로 지정하면 인스턴스 생성 정보 대신 예약 ID를 반환.<br>기본값은 False                                                                                                                    |
+{% endif %}
 | os:scheduler_hints | Body | Object | - | 스케줄러 힌트 객체 |
 | os:scheduler_hints.group | Body | String | - | 배치 정책 ID |
 
@@ -979,11 +1127,11 @@ X-Auth-Token: {tokenId}
     "id": "3a005d5b-63cf-4493-bfc6-49db990b5b50",
     "links": [
       {
-        "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
+        "href": "https://{{ hosts.kr1 }}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
         "rel": "self"
       },
       {
-        "href": "https://kr1-api-instance-infrastructure.nhncloudservice.com/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
+        "href": "https://{{ hosts.kr1 }}/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
         "rel": "bookmark"
       }
     ]
@@ -997,7 +1145,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="modify-instance"></a>
-### 인스턴스 수정하기 { #modify-instance }
+### 인스턴스 수정하기
 생성된 인스턴스를 수정합니다. 변경할 수 있는 속성은 일부 항목으로 제한됩니다.
 
 ```
@@ -1037,7 +1185,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="delete-instance"></a>
-### 인스턴스 삭제하기 { #delete-instance }
+### 인스턴스 삭제하기
 생성된 인스턴스를 삭제합니다.
 
 ```
@@ -1062,10 +1210,10 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="manage-block-storage-attachment"></a>
-## 블록 스토리지 연결 관리 { #manage-block-storage-attachment }
+## 블록 스토리지 연결 관리
 
 <a id="list-additional-block-storage-attached-to-the-instance"></a>
-### 인스턴스에 연결된 블록 스토리지 목록 보기 { #list-additional-block-storage-attached-to-the-instance }
+### 인스턴스에 연결된 블록 스토리지 목록 보기
 ```
 GET /v2/{tenantId}/servers/{serverId}/os-volume_attachments
 X-Auth-Token: {tokenId}
@@ -1121,14 +1269,14 @@ X-Auth-Token: {tokenId}
 
 ---
 
-<a id="manage-block-storage-attachment-list-additional-block-storage-attached-to-the-instance"></a>
-### 인스턴스에 연결된 블록 스토리지 보기 { #manage-block-storage-attachment-list-additional-block-storage-attached-to-the-instance }
+<a id="show-additional-block-storage-attached-to-the-instance"></a>
+### 인스턴스에 연결된 블록 스토리지 보기
 ```
 GET /v2/{tenantId}/servers/{serverId}/os-volume_attachments/{volumeId}
 X-Auth-Token: {tokenId}
 ```
 
-<a id="list-additional-block-storage-attached-to-the-instance-request-2"></a>
+<a id="show-additional-block-storage-attached-to-the-instance-request"></a>
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1139,7 +1287,7 @@ X-Auth-Token: {tokenId}
 | volumeId | URL | UUID | O | 조회할 블록 스토리지 ID |
 | tokenId | Header | String | O | 토큰 ID |
 
-<a id="list-additional-block-storage-attached-to-the-instance-response-2"></a>
+<a id="show-additional-block-storage-attached-to-the-instance-response"></a>
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -1170,7 +1318,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="attach-additional-block-storage-to-the-instance"></a>
-### 인스턴스에 추가 블록 스토리지 연결하기 { #attach-additional-block-storage-to-the-instance }
+### 인스턴스에 추가 블록 스토리지 연결하기
 ```
 POST /v2/{tenantId}/servers/{serverId}/os-volume_attachments
 X-Auth-Token: {tokenId}
@@ -1232,7 +1380,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="detach-block-storage-from-the-instance"></a>
-### 인스턴스 블록 스토리지 연결 끊기 { #detach-block-storage-from-the-instance }
+### 인스턴스 블록 스토리지 연결 끊기
 ```
 DELETE /v2/{tenantId}/servers/{serverId}/os-volume_attachments/{volumeId}
 X-Auth-Token: {tokenId}
@@ -1256,7 +1404,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="additional-instance-features"></a>
-## 인스턴스 추가 기능 { #additional-instance-features }
+## 인스턴스 추가 기능
 NHN Cloud는 다음과 같은 인스턴스 제어 및 부가 기능을 제공합니다.
 
 * 인스턴스 시작, 중지, 종료, 재시작
@@ -1265,7 +1413,7 @@ NHN Cloud는 다음과 같은 인스턴스 제어 및 부가 기능을 제공합
 * 보안 그룹 추가 및 삭제
 
 <a id="start-stopped-instance"></a>
-### 중지된 인스턴스 시작 { #start-stopped-instance }
+### 중지된 인스턴스 시작
 
 중지된 인스턴스를 다시 시작하고 상태를 **ACTIVE**로 변경합니다. 이 API를 호출하려면 인스턴스의 상태가 **SHUTOFF**여야 합니다.
 
@@ -1302,7 +1450,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="start-terminated-instance"></a>
-### 종료된 인스턴스 시작 { #start-terminated-instance }
+### 종료된 인스턴스 시작
 
 종료된 인스턴스를 다시 시작하고 상태를 **ACTIVE**로 변경합니다. 이 API를 호출하려면 인스턴스의 상태가 **SHELVED_OFFLOADED**여야 합니다.
 
@@ -1339,7 +1487,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="stop-instance"></a>
-### 인스턴스 중지 { #stop-instance }
+### 인스턴스 중지
 
 인스턴스를 중지하고 상태를 **SHUTOFF**로 변경합니다. 이 API를 호출하려면 인스턴스의 상태가 **ACTIVE** 또는 **ERROR**여야 합니다.
 
@@ -1375,8 +1523,8 @@ X-Auth-Token: {tokenId}
 
 ---
 
-<a id="additional-instance-features-1"></a>
-### 인스턴스 종료 { #additional-instance-features-1 }
+<a id="terminate-instance"></a>
+### 인스턴스 종료
 
 인스턴스를 종료하고 상태를 **SHELVED_OFFLOADED**로 변경합니다. 이 API를 호출하려면 인스턴스의 상태가 **ACTIVE**여야 합니다.
 
@@ -1385,7 +1533,7 @@ POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
 
-<a id="additional-instance-features-1-request"></a>
+<a id="terminate-instance-request"></a>
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명          |
 |---|---|---|---|-------------|
@@ -1406,14 +1554,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
-<a id="additional-instance-features-1-response"></a>
+<a id="terminate-instance-response"></a>
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
 
-<a id="additional-instance-features-2"></a>
-### 인스턴스 재시작 { #additional-instance-features-2 }
+<a id="restart-instance"></a>
+### 인스턴스 재시작
 
 인스턴스를 재시작합니다. 재시작 방식은 **SOFT**와 **HARD**로 나눌 수 있습니다.
 
@@ -1432,7 +1580,7 @@ POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
 
-<a id="additional-instance-features-2-request"></a>
+<a id="restart-instance-request"></a>
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|--|
@@ -1456,14 +1604,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
-<a id="additional-instance-features-2-response"></a>
+<a id="restart-instance-response"></a>
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
 
-<a id="additional-instance-features-3"></a>
-### 인스턴스 타입 변경 { #additional-instance-features-3 }
+<a id="change-instance-flavor"></a>
+### 인스턴스 타입 변경
 
 인스턴스 타입을 변경합니다. 인스턴스가 **ACTIVE**이거나 **SHUTOFF** 상태일 때만 인스턴스 타입 변경할 수 있습니다. 인스턴스의 상태가 **ACTIVE**인 경우에는 인스턴스 타입 변경 과정에서 인스턴스는 중지되고 다시 시작됩니다.
 
@@ -1475,7 +1623,7 @@ POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
 
-<a id="additional-instance-features-3-request"></a>
+<a id="change-instance-flavor-request"></a>
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명                                                                                                                                                                                                                 |
 |---|---|---|---|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -1499,14 +1647,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
-<a id="additional-instance-features-3-response"></a>
+<a id="change-instance-flavor-response"></a>
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
 
-<a id="additional-instance-features-4"></a>
-### 인스턴스 이미지 생성 { #additional-instance-features-4 }
+<a id="create-instance-image"></a>
+### 인스턴스 이미지 생성
 
 인스턴스로부터 이미지를 생성합니다. `U2` 타입의 인스턴스만 이 API를 통해 이미지를 생성할 수 있습니다. `U2` 타입 이외의 인스턴스 이미지 생성은 [블록 스토리지 API](/Storage/Block Storage/ko/public-api/#create-image-with-block-storage)를 참고합니다.
 
@@ -1522,7 +1670,7 @@ POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
 
-<a id="additional-instance-features-4-request"></a>
+<a id="create-instance-image-request"></a>
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|--|
@@ -1551,7 +1699,7 @@ X-Auth-Token: {tokenId}
 </details>
 
 
-<a id="additional-instance-features-4-response"></a>
+<a id="create-instance-image-response"></a>
 #### 응답
 
 이 API는 응답 본문을 반환하지 않습니다. 생성된 이미지는 응답 헤더의 `Location`으로 확인합니다.
@@ -1562,8 +1710,8 @@ X-Auth-Token: {tokenId}
 
 ---
 
-<a id="additional-instance-features-5"></a>
-### 보안 그룹 추가 { #additional-instance-features-5 }
+<a id="add-security-group"></a>
+### 보안 그룹 추가
 
 인스턴스에 보안 그룹을 추가합니다. 추가한 보안 그룹은 인스턴스의 모든 포트에 적용됩니다.
 
@@ -1572,7 +1720,7 @@ POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
 
-<a id="additional-instance-features-5-request"></a>
+<a id="add-security-group-request"></a>
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|--|
@@ -1597,14 +1745,14 @@ X-Auth-Token: {tokenId}
 </details>
 
 
-<a id="additional-instance-features-5-response"></a>
+<a id="add-security-group-response"></a>
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
 
-<a id="additional-instance-features-6"></a>
-### 보안 그룹 삭제 { #additional-instance-features-6 }
+<a id="delete-security-group"></a>
+### 보안 그룹 삭제
 
 인스턴스에서 보안 그룹을 삭제합니다. 인스턴스의 모든 포트로부터 지정한 보안 그룹이 삭제됩니다.
 
@@ -1613,7 +1761,7 @@ POST /v2/{tenantId}/servers/{serverId}/action
 X-Auth-Token: {tokenId}
 ```
 
-<a id="additional-instance-features-6-request"></a>
+<a id="delete-security-group-request"></a>
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|--|
@@ -1638,13 +1786,13 @@ X-Auth-Token: {tokenId}
 </details>
 
 
-<a id="additional-instance-features-6-response"></a>
+<a id="delete-security-group-response"></a>
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 
-<a id="terminate-instance"></a>
-## 인스턴스 메타데이터 { #terminate-instance }
+<a id="instance-metadata"></a>
+## 인스턴스 메타데이터
 
 인스턴스 메타데이터 값에 따라 콘솔의 **Compute > Instance** 서비스 페이지에서 인스턴스 상세 정보 화면의 내용을 결정합니다. 인스턴스 메타데이터별 내용은 다음과 같습니다.
 
@@ -1659,7 +1807,7 @@ X-Auth-Token: {tokenId}
 > [주의] 인스턴스 메타데이터 변경 및 삭제 시 연관 서비스 및 기능에 영향이 발생할 수 있으며, 이에 따른 결과에 대한 책임은 사용자에게 있습니다.
 
 <a id="view-a-list-of-instance-metadata"></a>
-### 인스턴스 메타데이터 목록 보기 { #view-a-list-of-instance-metadata }
+### 인스턴스 메타데이터 목록 보기
 
 ```
 GET /v2/{tenantId}/servers/{serverId}/metadata
@@ -1708,15 +1856,15 @@ X-Auth-Token: {tokenId}
 </details>
 
 
-<a id="restart-instance"></a>
-### 인스턴스 메타데이터 보기 { #restart-instance }
+<a id="view-instance-metadata"></a>
+### 인스턴스 메타데이터 보기
 
 ```
 GET /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
 ```
 
-<a id="restart-instance-request"></a>
+<a id="view-instance-metadata-request"></a>
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1727,7 +1875,7 @@ X-Auth-Token: {tokenId}
 | key      | URL | String | O | 인스턴스에 생성 혹은 수정할 메타데이터의 키 |
 | tokenId  | Header | String | O | 토큰 ID                    |
 
-<a id="restart-instance-response"></a>
+<a id="view-instance-metadata-response"></a>
 #### 응답
 
 | 이름   | 종류 | 형식 | 설명                                               |
@@ -1748,8 +1896,8 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
-<a id="change-instance-flavor"></a>
-### 인스턴스 메타데이터 생성/수정하기 { #change-instance-flavor }
+<a id="createmodify-instance-metadata"></a>
+### 인스턴스 메타데이터 생성/수정하기
 
 인스턴스의 메타데이터를 생성하거나 수정합니다.
 요청하는 키가 기존 키와 일치하는 경우 키-값을 요청 값으로 변경합니다.
@@ -1759,7 +1907,7 @@ PUT /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
 ```
 
-<a id="change-instance-flavor-request"></a>
+<a id="createmodify-instance-metadata-request"></a>
 #### 요청
 | 이름       | 종류 | 형식 | 필수 | 설명                                               |
 |----------|---|---|---|--------------------------------------------------|
@@ -1785,7 +1933,7 @@ X-Auth-Token: {tokenId}
 </details>
 
 
-<a id="change-instance-flavor-response"></a>
+<a id="createmodify-instance-metadata-response"></a>
 #### 응답
 
 | 이름   | 종류 | 형식 | 설명                                               |
@@ -1807,8 +1955,8 @@ X-Auth-Token: {tokenId}
 </details>
 
 
-<a id="create-instance-image"></a>
-### 인스턴스 메타데이터 삭제하기 { #create-instance-image }
+<a id="delete-instance-metadata"></a>
+### 인스턴스 메타데이터 삭제하기
 
 요청하는 키와 일치하는 인스턴스의 메타데이터를 삭제합니다.
 
@@ -1817,7 +1965,7 @@ DELETE /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
 ```
 
-<a id="create-instance-image-request"></a>
+<a id="delete-instance-metadata-request"></a>
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1828,16 +1976,16 @@ X-Auth-Token: {tokenId}
 | key      | URL | String | O | 인스턴스에서 삭제할 메타데이터의 키 |
 | tokenId  | Header | String | O | 토큰 ID               |
 
-<a id="create-instance-image-response"></a>
+<a id="delete-instance-metadata-response"></a>
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 
 <a id="placement-policy"></a>
-## 배치 정책 { #placement-policy }
+## 배치 정책
 
-<a id="add-security-group"></a>
-### 배치 정책 생성하기 { #add-security-group }
+<a id="create-a-placement-policy"></a>
+### 배치 정책 생성하기
 
 배치 정책을 생성합니다.
 분산 배치를 위한 `anti-affinity` 배치 정책 유형만 제공합니다.
@@ -1847,7 +1995,7 @@ POST /v2/{tenantId}/os-server-groups
 X-Auth-Token: {tokenId}
 ```
 
-<a id="add-security-group-request"></a>
+<a id="create-a-placement-policy-request"></a>
 #### 요청
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |-----|-----|-----|-----|-----|
@@ -1875,7 +2023,7 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
-<a id="add-security-group-response"></a>
+<a id="create-a-placement-policy-response"></a>
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -1907,15 +2055,15 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
-<a id="delete-security-group"></a>
-### 배치 정책 목록 보기 { #delete-security-group }
+<a id="view-the-list-of-placement-policies"></a>
+### 배치 정책 목록 보기
 
 ```
 GET /v2/{tenantId}/os-server-groups
 X-Auth-Token: {tokenId}
 ```
 
-<a id="delete-security-group-request"></a>
+<a id="view-the-list-of-placement-policies-request"></a>
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -1925,7 +2073,7 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
 
-<a id="delete-security-group-response"></a>
+<a id="view-the-list-of-placement-policies-response"></a>
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -1972,7 +2120,7 @@ X-Auth-Token: {tokenId}
 </details>
 
 <a id="view-placement-policies"></a>
-### 배치 정책 보기 { #view-placement-policies }
+### 배치 정책 보기
 
 ```
 GET /v2/{tenantId}/os-server-groups/{servergroupId}
@@ -2026,7 +2174,7 @@ X-Auth-Token: {tokenId}
 </details>
 
 <a id="deleting-a-placement-policy"></a>
-### 배치 정책 삭제하기 { #deleting-a-placement-policy }
+### 배치 정책 삭제하기
 
 ```
 DELETE /v2/{tenantId}/os-server-groups/{servergroupId}
