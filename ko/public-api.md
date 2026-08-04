@@ -48,13 +48,29 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 
 | 타입 | 리전 | 엔드포인트 |
 |---|---|---|
-{% if "gov" in build_flags %}
+{% if "gov" in build_flags -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$           |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | compute | 한국(대구) 리전 | https://$[ api_host("kr4") ]$ |
-{% else %}
+{%- else -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$<br>https://$[ api_host("kr3") ]$<br>https://$[ api_host("jp1") ]$ |
 {% endif %}
+
+방식 1 소스 ([GitHub code view](https://github.com/TOAST-DOCS/Agent-Test/blob/mkdocs-test/ko/public-api.md?plain=1)):
+
+{% raw %}
+```jinja
+| 타입 | 리전 | 엔드포인트 |
+|---|---|---|
+{% if "gov" in build_flags -%}
+| compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$ |
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
+| compute | 한국(대구) 리전 | https://$[ api_host("kr4") ]$ |
+{%- else -%}
+| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$<br>https://$[ api_host("kr3") ]$<br>https://$[ api_host("jp1") ]$ |
+{%- endif %}
+```
+{% endraw %}
 
 ### 엔드포인트 (방식 2: dict)
 {#
@@ -64,13 +80,29 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 
 | 타입 | 리전 | 엔드포인트 |
 |---|---|---|
-{% if "gov" in build_flags %}
+{% if "gov" in build_flags -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$           |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | compute | 한국(대구) 리전 | https://$[ hosts.kr4 ]$ |
-{% else %}
+{%- else -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$<br>https://$[ hosts.kr3 ]$<br>https://$[ hosts.jp1 ]$ |
 {% endif %}
+
+방식 2 소스 ([GitHub code view](https://github.com/TOAST-DOCS/Agent-Test/blob/mkdocs-test/ko/public-api.md?plain=1)):
+
+{% raw %}
+```jinja
+| 타입 | 리전 | 엔드포인트 |
+|---|---|---|
+{% if "gov" in build_flags -%}
+| compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$ |
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
+| compute | 한국(대구) 리전 | https://$[ hosts.kr4 ]$ |
+{%- else -%}
+| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$<br>https://$[ hosts.kr3 ]$<br>https://$[ hosts.jp1 ]$ |
+{%- endif %}
+```
+{% endraw %}
 
 API 응답에 가이드에 명시되지 않은 필드가 나타날 수 있습니다. 이런 필드는 NHN Cloud 내부 용도로 사용되며 사전 공지 없이 변경될 수 있으므로 사용하지 않습니다.
 
