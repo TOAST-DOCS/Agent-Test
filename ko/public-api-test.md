@@ -19,6 +19,6 @@ gov:
 | compute | {% for r in env.api.regions %}$[ r.name ]$<br>{% endfor %} | {% for r in env.api.regions %}$[ r.url ]$<br>{% endfor %} |
 
 ## HTML 상대경로 테스트
-* 자세한 내용은 [권한 목록](../static/etc/infrastructure_roles_guide_202608_v1.html)을 참조하세요.
+* 기본 인프라 서비스(Infrastructure)의 역할별 상세 권한은 [전체 권한 매트릭스 보기](../static/etc/infrastructure_roles_guide_202608_v1.html){:target="_blank" rel="noopener"}을 참조하세요.
 
 {% include-markdown './console-guide.md' %}
