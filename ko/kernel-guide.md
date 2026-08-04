@@ -4,6 +4,13 @@ Deploy에서는 배포 실행, 정보 조회를 위한 API를 제공합니다. �
 
 ### 기본 정보
 #### 엔드포인트
+
+{% raw %}
+```jinja
+{%- set api_host = "api-tcd.gov-nhncloudservice.com" if "gov" in build_flags else "api-tcd.nhncloudservice.com" -%}
+```
+{% endraw %}
+
 ```text
 https://$[ api_host ]$
 ```
