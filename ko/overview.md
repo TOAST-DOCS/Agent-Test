@@ -272,5 +272,7 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 
 {% include-markdown './deploy-api-guide.md' %}
 
+{% include-markdown './compute-public-api.md' %}
+
 
 
