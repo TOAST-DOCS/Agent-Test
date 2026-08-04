@@ -114,6 +114,59 @@ Markdown 표는 header, separator, data row 사이에 **빈 줄이 없어야** �
 {% endif %}
 ```
 
+## 반복 블록 (`{% for %}`)
+
+리스트/dict 를 순회하며 반복 렌더합니다. `{% set %}` 으로 정의한 컬렉션이나 macro 인자와 함께 조합해 씁니다.
+
+```jinja
+{%- set env = {
+      "api": {
+        "regions": [
+          {"name": "kr1", "url": "kr1-api-instance-infrastructure.nhncloudservice.com"},
+          {"name": "kr2", "url": "kr2-api-instance-infrastructure.nhncloudservice.com"},
+          {"name": "kr3", "url": "kr3-api-instance-infrastructure.nhncloudservice.com"},
+        ]
+      }
+} -%}
+
+{% for r in env.api.regions %}$[ r.url ]$<br>{% endfor %}
+```
+
+- 표현식은 `$[ ]$` 를 씁니다 (`{{ }}` 아님). 위 예의 `$[ r.url ]$` 처럼 loop 변수 속성도 이 delimiter 로 감쌉니다.
+- if 블록과 동일하게 **`trim_blocks=False`** 특성이 적용되므로, 여러 줄로 풀어 쓸 때는 dash whitespace 제어를 붙여야 예기치 않은 빈 줄이 안 생깁니다.
+
+### 표 데이터 행을 반복할 때
+
+각 iteration 이 표의 한 행이 되도록 `{% for ... -%}` / `{%- endfor %}` 로 감싸 태그 자체가 만든 개행을 제거하세요. 안 하면 header 와 data 사이에 빈 줄이 들어가 표가 깨집니다.
+
+```jinja
+| 리전 | 엔드포인트 |
+|---|---|
+{% for r in env.api.regions -%}
+| $[ r.name ]$ | https://$[ r.url ]$ |
+{% endfor %}
+```
+
+### 리스트 항목을 반복할 때
+
+마크다운 리스트도 마찬가지로 `-` 를 붙여 항목 사이에 빈 줄이 들어가지 않게 합니다.
+
+```jinja
+{% for r in env.api.regions -%}
+* $[ r.name ]$ — $[ r.url ]$
+{% endfor %}
+```
+
+### `{% for %}` 안에서 조건 분기
+
+`loop.first` / `loop.last` / `loop.index` 같은 loop 특수 변수와 `{% if %}` 를 조합해 첫/마지막 항목만 다르게 처리할 수 있습니다.
+
+```jinja
+{% for r in env.api.regions -%}
+$[ r.url ]${% if not loop.last %}, {% endif -%}
+{% endfor %}
+```
+
 ## 변수 정의 (`{% set %}`)
 
 파생 변수를 만듭니다. 여러 줄로 흩어써도 됩니다.
