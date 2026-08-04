@@ -295,6 +295,14 @@ Jinja 규칙상 raw 블록 안에서 만나는 첫 `{% endraw %}` 가 outer raw 
 
 **해결:** 표기용 지시자의 태그 이름 중간(예: `include-` 와 `markdown` 사이) 에 zero-width space 를 삽입해 플러그인의 정규식이 매칭되지 않게 하세요. 시각적으로는 동일하고, 실제 include 라인은 그대로 동작합니다.
 
+**주의 — ZWSP 만으로는 부족합니다:** ZWSP 는 include-markdown 정규식만 피할 뿐, 이후에 실행되는 mkdocs-macros 는 여전히 `{%` 를 태그 시작으로 보고 `include-mar​kdown` 를 Jinja 로 파싱하려 합니다 (`include` 다음의 `-mar…` 를 subtraction 으로 잘못 해석 → syntax error). **바깥을 `{% raw %}...{% endraw %}` 로도 감싸야 합니다.** 즉 include-markdown 회피용 ZWSP + macros 회피용 raw 블록, 두 가지를 함께 적용해야 안전합니다.
+
+```markdown
+{% raw %}
+{% include-mar​kdown './target.md' %}
+{% endraw %}
+```
+
 ### 5. include 대상 파일의 오류는 상위 페이지의 오류로 표시됩니다
 
 include 된 파일의 Jinja 문법 오류는 **include 를 수행하는 상위 파일** 의 에러로 로그에 나타납니다. `Open Source/agent-test/ko/mkdocs-syntax.md` 에서 에러가 났다고 해서 반드시 그 파일이 원인은 아닙니다. include 대상 (`nfw-console-guide.md`, `deploy-api-guide.md`, `compute-public-api.md` 등) 부터 함께 살펴보세요.
