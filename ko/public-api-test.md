@@ -18,4 +18,4 @@ gov:
 |---|---|---|
 | compute | {% for r in env.api.regions %}$[ r.name ]$<br>{% endfor %} | {% for r in env.api.regions %}$[ r.url ]$<br>{% endfor %} |
 
-{% include './console-guide.md' %}
+{% include-markdown './console-guide.md' %}
