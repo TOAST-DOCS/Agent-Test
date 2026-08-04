@@ -1,821 +1,276 @@
-## Security > Network Firewall > 콘솔 사용 가이드
+<!-- pre-align:aligned sig=74b0e7f9672e -->
 
-Network Firewall을 생성하기 위한 절차와 생성 이후 콘솔을 사용하는 방법을 설명합니다.
-테스트
+<a id="compute-instance-overview"></a>
+## Compute > Instance > 개요 { #compute-instance-overview }
 
-{% if "gov" in build_flags -%}
-<br>
-
-{% endif -%}
-## 시작하기
-
-Network Firewall을 사용하기 위해서는 가장 먼저 Network Firewall 서비스를 활성화합니다.
-
-{% if "gov" in build_flags -%}
-<br>
-
-{% endif -%}
-## Network Firewall 생성
-
-### 사전 준비
-
-Network Firewall 생성에 필요한 최소 네트워크 서비스 자원은 아래와 같습니다.
-
-> [참고]
-> **Network Firewall > 개요**에서 Network Firewall 서비스 구성도를 참조하세요.
+이 문단은 기존 섹션에 추가된 테스트 문단입니다. 기존 heading 은 그대로 유지되어야 합니다.
 
 
-[1개의 프로젝트 구성 시 준비 사항]
+인스턴스는 가상의 CPU, 메모리, 루트 블록 스토리지로 구성된 가상 서버입니다. 이 서버에 고객의 서비스나 애플리케이션을 설치하고 NHN Cloud가 제공하는 다양한 서비스를 조합하여 사용합니다. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
 
-* 1개의 프로젝트
-* 2개의 VPC(Hub VPC, Spoke VPC)
-* Hub VPC 내 3개의 서브넷
-    * 트래픽(내부) 서브넷, NAT(외부) 서브넷, 외부 전송 서브넷
-* Spoke VPC 내 최소 1개의 서브넷
-* Hub VPC의 Routing에 연결된 인터넷 게이트웨이
+<a id="components"></a>
+## 인스턴스 구성 요소 { #components }
 
-[1개의 프로젝트 내 2개의 Spoke VPC 구성 시 준비 사항]
+인스턴스를 구성하는 요소는 다음과 같습니다.
 
-* 1개의 프로젝트
-* 3개의 VPC(Hub VPC, Spoke1 VPC, Spoke2 VPC)
-* Hub VPC 내 3개의 서브넷
-    * 트래픽(내부) 서브넷, NAT(외부) 서브넷, 외부 전송 서브넷
-* Spoke1 VPC, Spoke2 VPC 내 각각 최소 1개의 서브넷
-* Hub VPC의 Routing에 연결된 인터넷 게이트웨이
+- **이미지**: 인스턴스의 운영체제를 담고 있는 가상 디스크
+- **타입**(flavor): 인스턴스의 가상 하드웨어 성능
+- **가용성 영역**(AZ, availability zone): 인스턴스가 만들어질 물리적인 위치
+- **키페어**(key-pair): 인스턴스 접속 수단으로 사용되는 키
+- **보안 그룹**(security groups): 인스턴스 네트워크 보안 설정
+- **네트워크**: 인스턴스가 연결될 가상 네트워크
 
-[1개 이상의 프로젝트 구성 시 준비 사항]
+이 정보에 따라 인스턴스의 속성과 사용 방식이 바뀝니다. 이 정보 중, 이미지와 가용성 영역을 제외한 설정은 인스턴스 생성 이후에도 변경할 수 있으나, 일부 인스턴스 타입(flavor)은 인스턴스 생성 이후에 변경할 수 없습니다. 인스턴스 타입 변경에 대한 자세한 설명은 [콘솔 사용 가이드의 인스턴스 타입 변경](./console-guide/#modify-flavor)을 참고합니다.
 
-* 2개의 프로젝트
-{%- if "gov" in build_flags %}
-* 2개의 VPC(각 프로젝트에 Hub VPC, Spoke VPC)
-{%- else %}
-* 2개의 VPC(각각 프로젝트에 Hub VPC, Spoke VPC)
-{%- endif %}
-* Hub VPC 내 3개의 서브넷
-    * 트래픽(내부) 서브넷, NAT(외부) 서브넷, 외부 전송 서브넷
-* Spoke VPC 내 최소 1개의 서브넷
-* Hub VPC의 Routing에 연결된 인터넷 게이트웨이
+<a id="image"></a>
+### 이미지 { #image }
 
-{% if "gov" not in build_flags %}
-[다른 리전 간 프로젝트 구성 시 준비 사항]
+이미지는 운영체제를 담고 있는 가상 디스크입니다. NHN Cloud는 현재 Debian, Ubuntu, Rocky와 Windows를 지원하고 있습니다.
 
-* 1개의 프로젝트
-* 2개의 VPC(KR1 리전에 Hub VPC, KR2 리전에 Spoke VPC)
-* Hub VPC 내 3개의 서브넷
-    * 트래픽(내부) 서브넷, NAT(외부) 서브넷, 외부 전송 서브넷
-* Spoke VPC 내 최소 1개의 서브넷
-* Hub VPC의 Routing에 연결된 인터넷 게이트웨이
+모든 이미지는 인스턴스의 가상 하드웨어에서 최적으로 실행되도록 설정돼 있으며, NHN Cloud의 보안 검증을 거쳤기 때문에 안전하게 사용할 수 있습니다. 이미지에 대한 자세한 설명은 [이미지 개요](/Compute/Image/ko/overview/)를 참고합니다.
 
-{% endif %}
-[단일 VPC 내 여러 개의 서브넷 구성 시 준비 사항]
+<a id="flavor"></a>
+### 인스턴스 타입(Instance flavor) { #flavor }
 
-* 1개의 프로젝트
-* 1개의 VPC
-* 3개의 Hub 서브넷
-    * 트래픽(내부) 서브넷, NAT(외부) 서브넷, 외부 전송 서브넷
-* Hub 서브넷과 겹치지 않는 최소 1개의 Spoke 서브넷
-* Spoke 서브넷에 연결할 라우팅 테이블
-* VPC의 Routing에 연결된 인터넷 게이트웨이
+NHN Cloud는 고객의 사용 용도에 맞는 다양한 인스턴스 타입을 제공합니다. 운용할 서비스 또는 애플리케이션의 특성에 따라 적절한 타입의 인스턴스를 생성할 수 있습니다. 이미 생성된 인스턴스의 타입도 웹 콘솔에서 쉽게 변경할 수 있습니다.
 
+| 타입    | 설명                                                                                                                                               |
+| ------- |--------------------------------------------------------------------------------------------------------------------------------------------------|
+| m2 | CPU와 메모리를 균형 있게 설정한 타입입니다. 서비스나 애플리케이션의 성능 요구 사항이 명확하지 않을 때 사용합니다.                                                                               |
+| c2 | CPU의 성능을 높게 설정한 인스턴스 타입입니다. 고성능 연산 성능이 필요한 웹 애플리케이션 서버나 분석 시스템에 사용합니다.                                                                           |
+| r2 | 다른 자원에 비해 메모리의 사용량이 많은 경우 사용할 수 있습니다. 보통 메모리 데이터베이스나 캐시 서버에 사용합니다.                                                                               |
+| t2 | 비용이 저렴한 인스턴스입니다. 워크로드가 높지 않은 서버에 사용합니다.                                                                                                          |
+| u2 | 가장 저렴한 인스턴스입니다. 워크로드가 높지 않은 서버에서 사용합니다.<br>로컬 블록 스토리지를 사용하기 때문에 상대적으로 다른 인스턴스보다 안정성이 떨어지지만 저렴한 가격에 이용할 수 있습니다.<br>이 타입의 인스턴스는 I/O 성능을 보장하지 않습니다. |
+| x1 | 고사양의 CPU와 메모리를 지원하는 타입입니다. 높은 성능이 필요한 서비스나 애플리케이션에 사용합니다.                                                                                        |
+
+<a id="availability-zone"></a>
+### 가용성 영역(Availability zone) { #availability-zone }
+
+NHN Cloud는 물리 하드웨어 문제로 생기는 장애에 대비하기 위해 전체 시스템을 여러 개의 가용성 영역으로 나누어 두었습니다. 이 가용성 영역별로 저장 시스템, 네트워크 스위치, 상면, 전원 장치가 모두 별도로 구성돼 있습니다. 한 가용성 영역 내에서 생기는 장애는 다른 가용성 영역에 영향을 주지 않으므로 서비스 전체의 가용성이 높아집니다. 인스턴스를 여러 가용성 영역에 나눠 구축한다면 서비스의 가용성을 더욱 높일 수 있습니다.
+
+서로 다른 가용성 영역 사이에는 다음과 같은 특성이 있습니다.
+
+- 여러 가용성 영역에 흩어져서 생성된 인스턴스끼리 네트워크 통신이 가능하며 이때 발생하는 네트워크 사용 비용은 부과되지 않습니다.
+- 같은 가용성 영역에 만들어진 인스턴스 사이에서는 블록 스토리지를 공유할 수 있으나, 서로 다른 가용성 영역 간에는 블록 스토리지를 공유할 수 없습니다.
+- 서로 다른 가용성 영역에서 플로팅 IP를 공유할 수 있습니다. 만약 한 가용성 영역에 장애가 생겼을 때에도 빠르게 다른 가용성 영역으로 플로팅 IP를 이동하여 장애 시간을 최소화할 수 있습니다.
+
+<a id="key-pair"></a>
+### 키페어(Key-pair) { #key-pair }
+
+키페어는 공개 키 기반 구조([PKI](https://ko.wikipedia.org/wiki/%EA%B3%B5%EA%B0%9C_%ED%82%A4_%EA%B8%B0%EB%B0%98_%EA%B5%AC%EC%A1%B0), public key infrastructure)를 바탕으로 한 SSH 공개 키, 개인 키 쌍입니다. NHN Cloud에서 생성한 인스턴스에 접속하려면 보안에 취약한 키보드 입력 방식의 아이디/비밀번호 인증 대신 키페어를 이용해야 합니다. 사용자는 키페어의 개인 키를 이용해 로그인 정보를 인코딩하여 인스턴스로 전송해 접속 인증을 받은 후, 안전하게 인스턴스에 접속할 수 있습니다. 키페어를 이용한 인스턴스 접속 방법은 [인스턴스 접속 방법](#how-to-access-instances)을 참고합니다.
+
+키페어는 인스턴스를 생성할 때 NHN Cloud 콘솔에서 새로 만들 수도 있고, 고객이 직접 만든 키페어를 등록하여 사용할 수도 있습니다. 키페어 등록 방법은 [콘솔 가이드의 키페어 가져오기](./console-guide/#import-key-pairs-windows)를 참고합니다.
+
+> [주의]
+> 키페어를 새로 생성하면 키페어의 개인 키를 다운로드하게 됩니다. 개인 키는 다시 발급할 수 없으므로 다운로드한 개인 키는 안전한 디스크나 USB 드라이브 등에 잘 보관하세요. 개인 키가 외부에 유출되면 누구나 유출된 개인 키로 해당 인스턴스에 접근할 수 있으므로 신중하게 관리해야 합니다.
 
 > [참고]
->
->* 위의 서비스 자원은 [Network] 카테고리에서 생성 가능합니다.
->* Network Firewall 생성은 프로젝트당 1개씩만 생성 가능합니다.
+> 키페어는 사용자 계정에 할당된 리소스이므로 프로젝트를 삭제해도 삭제되지 않고 유지됩니다.
 
-### Network Firewall 생성
+<a id="security-groups"></a>
+### 보안 그룹(Security groups) { #security-groups }
 
-1. **Security > Network Firewall**로 이동합니다.
-2. 각 필수 항목을 모두 선택하고 하단의 **Network Firewall 생성**을 클릭합니다.
-    * RBAC: 인스턴스 객체 조회, Network Firewall 서비스 제공에 필요한 API 권한을 부여
-    * 구성 방식: 단일 구성과 이중화 구성을 선택합니다.
-    * VPC: Network Firewall에서 사용할 VPC
-    * 서브넷: Network Firewall에서 내부 트래픽 제어를 위해 사용할 서브넷
-    * NAT: Network Firewall에서 외부 트래픽 제어를 위해 사용할 서브넷
-    * 외부 전송: Network Firewall에서 생성된 트래픽과 로그를 전송할 서브넷
-    <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.09.12/create.png" height="60%" />
-
-
-> [생성 전 참고 사항]
->
-> * 생성된 Network Firewall은 사용자의 프로젝트에 노출되지 않습니다.
-> * 서브넷, NAT, 외부 전송에 사용하는 서브넷은 모두 다른 서브넷으로 선택해야 합니다.
->    * 가급적 NHN Cloud 콘솔에서 생성할 수 있는 최소 단위(28비트)로 생성할 것을 권장합니다.
-> * Network Firewall이 속할 VPC의 라우팅 테이블에 인터넷 게이트웨이가 연결되어 있어야 생성 가능합니다.
-{%- if "gov" in build_flags %}
-> * Network Firewall 서비스는 가용 영역을 분리하여 이중화를 기본으로 제공합니다.
-{%- endif %}
-> * Security Groups와는 별개의 서비스이므로 Network Firewall을 사용하면 두 서비스를 모두 허용해야 인스턴스에 접근할 수 있습니다.
-> * Network Firewall이 소유하고 있는 CIDR 대역과 연결이 필요한 CIDR 대역은 중복되지 않아야 합니다.
-> * **Network > Network Interface**에서 Virtual_IP 타입으로 생성되어 있는 IP는 Network Firewall에서 이중화 용도로 사용 중이므로 삭제할 경우 통신이 차단될 수 있습니다.
-> * 단일 또는 이중화 구성을 선택하여 Network Firewall을 생성한 뒤 변경이 필요할 경우 **옵션** 탭에서 구성을 변경할 수 있습니다. 하지만 가용성 영역은 변경이 불가능하므로 이중화 구성의 경우 가급적 가용성 영역을 분리하여 구성하세요.
-
-### 연결 설정
-
-> [예시]
-> Network Firewall이 사용하는 VPC(Hub)는 10.0.0.0/24이고, Network Firewall과 연결이 필요한 VPC(Spoke)는 172.16.0.0/24일 때
-
-1. <strong>Network > Peering Gateway</strong>로 이동하여 피어링을 생성합니다.
-    * 피어링 게이트웨이 연결에 대한 자세한 사항은 [사용자 가이드](https://docs.nhncloud.com/ko/Network/Peering%20Gateway/ko/console-guide/)를 참조하세요.
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.12.19/ConnectionSettings3.png" height="65%" />
-<br>
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.12.19/ConnectionSettings4.png" height="65%" />
+보안 그룹은 인스턴스에 전달되는 네트워크 트래픽을 결정하는 가상의 방화벽입니다. 보안 그룹에 대한 자세한 설명은 [VPC 개요](/Network/VPC/ko/overview/)를 참고합니다.
 
 > [참고]
->
-> Spoke VPC의 위치에 따라 알맞은 피어링을 생성합니다.
-> * Spoke VPC가 같은 프로젝트라면 피어링을 생성합니다.
-> * Spoke VPC가 다른 프로젝트라면 프로젝트 피어링을 생성합니다.
-> * Spoke VPC가 다른 리전이라면 리전 피어링을 생성합니다.
+> 기본 보안 그룹은 외부에서 들어오는 인바운드(in-bound) 네트워크 트래픽을 모두 무시하도록 되어 있습니다. SSH로 인스턴스에 접속할 때 인스턴스가 속한 보안 그룹에 SSH 포트를 열도록 설정한 뒤에 인스턴스에 접속합니다.
 
-<br>
+<a id="network"></a>
+### 네트워크 { #network }
 
-2. <strong>Network > Routing</strong>으로 이동하여 Hub VPC를 선택한 후 아래의 라우팅을 설정합니다.
-    * 대상 CIDR: 172.16.0.0/24
-    * 게이트웨이: 피어링 연결 후 추가된 피어링 타입의 게이트웨이
-    <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.12.19/ConnectionSettings5.png" height="65%" />
-<br>
-
-3. <strong>Network > Routing</strong>으로 이동하여 Spoke VPC를 선택한 후 아래의 라우팅을 설정합니다.
-    * 대상 CIDR: 0.0.0.0/0
-    * 게이트웨이: 피어링 연결 후 추가된 피어링 타입의 게이트웨이
-    <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.12.19/ConnectionSettings6.png" height="65%" />
-
-> [참고]
->
-> * 위와 같이 라우팅을 설정하면 Spoke VPC의 모든 통신이 Network Firewall을 통과하게 됩니다.
->   * 통신을 분기 처리해야 할 경우 0.0.0.0/0이 아닌 대상을 명확하게 설정하세요.
+인스턴스가 외부와 통신하려면 VPC에서 정의된 네트워크 중 적어도 하나 이상에 연결되어 있어야 합니다. 네트워크에 연결되어 있지 않은 인스턴스에는 접근할 수 없습니다. 네트워크를 새로 생성하거나 변경하려면 [VPC 개요](/Network/VPC/ko/overview/)를 참고합니다.
 
-<br>
+<a id="pricing"></a>
+## 과금 { #pricing }
 
-4. <strong>Network > Peering Gateway</strong>로 이동하여 라우팅을 설정합니다.
-    * 생성된 피어링을 선택하여 **라우트** 탭으로 이동합니다.
-    * **피어** 또는 **로컬 라우트 변경** 버튼을 눌러 아래와 같이 라우팅을 설정합니다.
-        * 대상 CIDR: 0.0.0.0/0
-        * 게이트웨이: NetworkFirewall\_INF\_TRAFFIC\_VIP
-        <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.12.19/ConnectionSettings7.png" height="65%" />
-<br>
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.12.19/ConnectionSettings8.png" height="50%" />
+인스턴스 과금 방식은 다음과 같습니다.
 
-위의 라우팅 설정이 완료되면 Spoke VPC에 있는 인스턴스가 Network Firewall을 경유하여 공인 통신을 할 수 있습니다. (<strong>Network Firewall > NAT</strong> 탭에서 NAT 추가 필요)
+* 인스턴스는 생성하는 순간부터 과금됩니다.
+* 인스턴스 루트 블록 스토리지는 인스턴스와 별도로 블록 스토리지 과금 기준으로 과금됩니다.
+* 인스턴스가 중지되면 90일 동안 홈페이지 요금 기준으로 90% 할인된 금액을 적용합니다. 중지 상태가 90일을 초과하면 중지 상태를 유지하면서 정상 요금으로 전환됩니다.
+* 종료된 인스턴스는 과금되지 않습니다.
 
-<br>
+과금에 대한 더 자세한 사항은 서비스별 [요금 페이지](https://www.toast.com/kr/service/compute/instance#price)를 참고합니다.
 
-**만약 Spoke VPC의 서브넷이 2개 이상이고, Network Firewall을 통해 서브넷 간 트래픽 제어가 필요한 경우** 아래의 라우팅을 추가합니다.
+<a id="how-to-access-instances"></a>
+## 인스턴스 접속 방법 { #how-to-access-instances }
 
-> [예시]
-> Spoke VPC(172.16.0.0/24)의 서브넷이 172.16.0.0/25와 172.16.0.128/25일 때
+<a id="how-to-access-linux-instances"></a>
+### Linux 인스턴스 접속 방법 { #how-to-access-linux-instances }
 
-* <strong>Network > Routing</strong>으로 이동하여 Spoke VPC를 선택한 후 아래의 라우팅 2개를 추가합니다.
-    * 대상 CIDR: 172.16.0.0/25과 172.16.0.128/25
-    * 게이트웨이: 피어링 연결 후 추가된 피어링 타입의 게이트웨이
-    <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.12.19/ConnectionSettings9.png" height="65%" />
-<br>
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.12.19/ConnectionSettings10.png" height="65%" />
-위의 라우팅 설정이 완료되면 Spoke VPC 안에 있는 서브넷 간 Network Firewall을 경유하여 사설 통신을 할 수 있습니다. (<strong>Network Firewall > 정책</strong> 탭에서 정책 추가 필요)
+Linux 인스턴스에 접속할 때는 SSH 클라이언트를 이용합니다. 인스턴스의 보안 그룹에 SSH 접근 포트(기본값 22)가 열려 있지 않다면 접속할 수 없습니다. SSH 접근을 허용하는 방법에 대해서는 [VPC 개요](/Network/VPC/ko/overview/)를 참고합니다. 인스턴스에 플로팅 IP가 할당되어 있지 않다면 NHN Cloud 외부에서 접속할 수 없습니다. 플로팅 IP를 할당하는 방법에 대해서는 [VPC 개요](/Network/VPC/ko/overview/)를 참고합니다.
 
-<br>
+<a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
+#### Mac 또는 Linux의 SSH 클라이언트로 Linux 인스턴스에 접속하는 방법
 
-**만약 Spoke VPC가 2개 이상**이라면 아래의 라우팅을 추가합니다.
+Mac이나 Linux에는 보통 SSH 클라이언트가 기본적으로 설치되어 있습니다. SSH 클라이언트에서 아래와 같이 키페어의 개인 키를 이용하여 접속합니다.
 
-> [예시]
-> Spoke VPC1(172.16.0.0/24)과 Spoke VPC2(192.168.0.0/24)일 때
+Ubuntu 인스턴스
 
-* <strong>Network > Routing</strong>으로 이동하여 Hub VPC를 선택한 후 아래의 라우팅 2개를 추가합니다.
-    * Spoke VPC 1
-        * 대상 CIDR: 172.16.0.0/24
-        * 게이트웨이: Hub VPC와 Spoke VPC1 사이에 추가된 피어링 타입의 게이트웨이
-    * Spoke VPC 2
-        * 대상 CIDR: 192.168.0.0/24
-        * 게이트웨이: Hub VPC와 Spoke VPC2 사이에 추가된 피어링 타입의 게이트웨이
-        <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.12.19/ConnectionSettings11.png" height="65%" />
+	$ ssh -i my_private_key.pem ubuntu@<인스턴스의 IP>
 
+Debian 인스턴스
 
-> [참고]
-> **연결 설정**의 **4**와 같이 Spoke VPC2-Hub 간 VPC 피어링에도 라우트 추가 설정이 필요합니다.
+	$ ssh -i my_private_key.pem debian@<인스턴스의 IP>
 
-<br>
+Rocky 인스턴스
 
-**만약 같은 VPC에서 Spoke 서브넷을 구성할 경우** 새로운 라우팅 테이블을 생성하여 서브넷을 연결하고 라우트를 추가합니다.
-* **Network > Routing**에서 라우팅 테이블을 생성하고 라우트를 추가합니다.
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.11.07/routetable_create.png" height="65%" />
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.11.07/route_create.png" height="65%" />
+	$ ssh -i my_private_key.pem rocky@<인스턴스의 IP>
 
-<br>
+<a id="how-to-access-linux-instances-from-windows-using-putty-ssh-client"></a>
+#### Windows에서 PuTTY SSH 클라이언트로 Linux 인스턴스에 접속하는 방법
 
-{% if "gov" in build_flags -%}
-* **Network > Subnet**에서 Network Firewall과 겹치지 않는 서브넷을 새로 생성하고 라우팅 테이블을 연결합니다.
-{%- else -%}
-* **Network > Subnet**에서 Network Firewall과 겹치지 않는 Spoke 서브넷을 새로 생성하고 라우팅 테이블을 연결합니다.
-{%- endif %}
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.11.07/subnet_create.png" height="65%" />
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.11.07/routetable_connect.png" height="65%" />
+PuTTY SSH 클라이언트는 Windows에서 많이 사용되는 SSH 클라이언트 프로그램입니다. [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) 또는 한글 패치가 적용된 [iPuTTY](https://github.com/iPuTTY/iPuTTY/releases/tag/l0.70i)를 설치합니다.
 
-<br>
+Windows에서 PuTTY SSH 클라이언트로 Linux 인스턴스에 접속하려면 세 단계를 거쳐야 합니다.
 
-{% if "gov" in build_flags -%}
-위의 라우팅 설정이 완료되면 서로 다른 Spoke VPC 간 통신과 같은 VPC 내 서브넷 간 통신을 Network Firewall을 경유하여 사설 통신을 할 수 있습니다. (<strong>Network Firewall > 정책</strong> 탭에서 ACL 추가 필요)
-{%- else -%}
-위의 라우팅 설정이 완료되면 서로 다른 Spoke VPC 간 Network Firewall을 경유하여 사설 통신을 할 수 있습니다. (<strong>Network Firewall > 정책</strong> 탭에서 정책 추가 필요)
-{%- endif %}
-Network Firewall 서비스 구성도를 참고하여 고객의 환경에 맞게 연결을 설정하세요.
+* 키페어의 개인 키를 PuTTY용 개인 키로 변경
+* PuTTY용 개인 키를 PuTTY에 등록
+* PuTTY로 인스턴스에 접속
 
-***
+##### 1. 키페어의 개인 키를 PuTTY용 개인 키로 변경
 
-## 인스턴스 접속
-Network Firewall을 생성하고 연결 설정을 모두 완료한 후 Network Firewall을 경유하여 인스턴스에 접속할 수 있습니다.
+PuTTY에서는 키페어 개인 키를 PuTTY의 개인 키 형식으로 바꿔서 사용해야 합니다. 키 변환은 PuTTY와 함께 설치되는 puttygen을 이용합니다.
 
-예를 들어, 1개의 프로젝트 내 2개의 Spoke VPC로 3개의 서브넷을 구성하고, 외부에서 웹방화벽 접속이 필요할 경우 아래와 같이 NAT, ACL을 설정합니다.
+![이미지1](http://static.toastoven.net/prod_instance/putty001.png)
 
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.09.12/instance-access
-.png" height="65%" />
+**PuTTY Key 생성기** 대화 상자 제일 아래 **매개변수**에서 **생성할 키 형식**을 **RSA**로 선택하고, **생성할 키 비트**는 기본값인 '2048' 비트로 입력합니다. **작업** 아래 **개인키 파일 불러오기** 옆의 **불러오기** 버튼을 클릭하고 키페어의 개인 키 파일을 불러옵니다.
 
-> [설정 방법]
->
-> * **Network Firewall > NAT** 탭으로 이동
-> * **추가** 버튼 클릭 후 NAT 설정
->   * 설정 전 **객체** 탭에서 목적지 IP 객체 생성과 여분의 플로팅 IP 필요
-> <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.09.12/nat-add.png" height="65%" />
-> * **Network Firewall > 정책 > ACL** 탭에서 필요한 ACL을 허용
-> <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.09.12/access_acl.png" height="65%" />
+![이미지2](http://static.toastoven.net/prod_instance/putty002.png)
 
-위와 같이 설정 후 출발지 IP를 보안 그룹에서 허용하면 인스턴스에 접속 가능합니다.
+**작업** 아래 **생성된 키 저장** 옆의 **개인키 저장** 버튼을 클릭하여 PuTTY용으로 변환된 키페어 개인 키를 저장합니다. **키 암호어구**를 빈 칸으로 두고 개인 키를 저장하면, **암호어구로 보호하지 않은 채 이 키를 저장하겠습니까?**라는 메시지가 나타납니다. 변환된 개인 키를 좀 더 안전하게 저장하려면 암호어구를 설정하여 저장합니다.
 
-<br>>
+> [주의]
+인스턴스에 자동으로 로그인하도록 설정하려면 암호어구를 사용하지 않아야 합니다. 암호어구를 사용하면 로그인할 때 개인 키에 대한 비밀번호를 직접 입력해야 합니다.
 
-## 정책
-Network Firewall을 생성하면 **정책** 탭으로 이동합니다.
+##### 2. PuTTY용 개인 키를 PuTTY에 등록
 
-![policy-default.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.09.12/policy-default.png)
+이렇게 만들어진 PuTTY용 개인 키는 2가지 방법으로 등록하여 사용할 수 있습니다.
 
-> [참고]
->
-> * default-deny는 필수 정책이며, 수정하거나 삭제할 수 없습니다.
-> * default-deny 정책을 통해 차단된 로그는 **옵션** 탭의 **기본 차단 정책 로그 설정**을 **사용**으로 변경한 후 **로그** 탭에서 확인 가능합니다.
+* PuTTY에서 인증 개인 키 파일을 등록하여 사용하는 방법
+* pageant(PuTTY 인증 에이전트)에 인증 개인 키 파일을 등록하여 사용하는 방법
 
-<br>
+**A. PuTTY에서 인증 개인 키 파일을 등록하여 사용하는 방법**
 
-## ACL
-**ACL** 탭에서는 Network Firewall과 연결된 VPC 간 트래픽과 인바운드/아웃바운드 트래픽을 제어할 수 있습니다.
-<br/>
 
-### 추가
+PuTTY를 실행하고, 왼쪽 **카테고리**에서 **연결 > SSH > Auth**를 선택합니다. 오른쪽 **인증 매개 변수** 아래 **인증 개인키 파일**에 PuTTY용 개인 키를 등록합니다.
 
-* 출발지, 목적지, 목적지 포트를 기반으로 정책을 추가할 수 있습니다.
-    * 이미 만들어진 객체를 통해 출발지, 목적지, 목적지 포트를 선택합니다.
-* 정책의 상태(활성화/비활성화)와 동작(허용/차단), 스케줄을 설정 및 정책별 로깅 여부 등의 옵션을 설정하여 정책을 추가할 수 있습니다.
-* 스케줄 기능은 정책의 상태를 활성화 한 이후에 동작합니다(정책이 비활성화되어 있을 경우 스케줄 기능이 적용되지 않습니다.).
+![이미지3](http://static.toastoven.net/prod_instance/putty005.png)
 
-![acl_add.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.05.27/acl_add.png)
+개인 키를 등록한 뒤, 접속 정보를 저장해두면 매번 개인 키 파일을 다시 등록할 필요가 없습니다. 접속 정보를 저장하는 방법은 아래 접속 방법을 참고합니다.
 
-### 복사
 
-* **복사**를 클릭해 정책을 복사할 수 있습니다.
-    * 복사: 복사하고자 하는 정책과 동일한 정책을 복사
-    * 역방향 복사: 복사하고자 하는 정책의 출발지와 목적지를 변경하여 복사
+**B. pageant(PuTTY 인증 에이전트)에 인증 개인 키 파일을 등록하여 사용하는 방법**
 
-![acl_copy.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.09.07/acl_copy_1.png)
 
-> [참고]
->
-> 복사된 정책은 비활성화됩니다. 사용이 필요할 경우 **수정**을 클릭해 정책을 활성화한 뒤 사용하세요.
+PuTTY와 함께 설치되는 pageant를 실행하면, 아래 그림과 같이 Windows 트레이에 아이콘이 나타납니다. pageant 아이콘을 마우스 오른쪽 버튼으로 클릭한 후 **키 추가** 메뉴를 클릭해 PuTTY용 개인 키를 추가합니다.
 
+![이미지4](http://static.toastoven.net/prod_instance/putty006.png)
 
-### 수정
+개인 키가 추가된 것을 확인하려면 **키 보기**를 선택합니다. 키가 잘 추가되었다면, 아래 그림과 같이 추가된 키가 보입니다.
 
-* **수정**을 클릭해 정책을 수정할 수 있습니다.
+![이미지5](http://static.toastoven.net/prod_instance/putty008.png)
 
+pageant는 한 번 실행되면, Windows 트레이에 계속 남아서 실행되므로 인스턴스에 접속할 때마다 다시 실행할 필요가 없습니다. 다만 Windows를 새로 시작한 경우에는 다시 실행해야 합니다.
 
-### 이동
+##### 3. PuTTY로 인스턴스에 접속
 
-* **이동**을 클릭해 정책을 이동할 수 있습니다.
-    * default-deny 정책 아래로는 이동이 불가능합니다.
+PuTTY용으로 변환된 개인 키가 잘 등록되었다면 PuTTY를 실행합니다.
 
-![acl_move.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.09.07/acl_move_1.png)
+![이미지6](http://static.toastoven.net/prod_instance/putty009.png)
 
-### 삭제
+기본 접속 정보의 **호스트 이름**은 다음과 같이 사용합니다.
 
-* **삭제**를 클릭해 정책을 삭제할 수 있습니다.
+Ubuntu
 
->[주의]
->한번 삭제한 정책은 복구할 수 없으며, default-deny 정책은 삭제할 수 없습니다.
+	ubuntu@<인스턴스의 IP>
 
-### 정책 일괄 다운로드
+Debian
 
-* 정책 탭에 생성되어 있는 정책 전체를 한번에 다운로드할 수 있습니다.
+	debian@<인스턴스의 IP>
 
-### 정책 일괄 등록
+Rocky
 
-* 내려받은 템플릿을 사용하여 정책을 한 번에 등록할 수 있습니다.
+	rocky@<인스턴스의 IP>
 
-![acl_batch.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/23.09.07/acl_batch_1.png)
+**포트**는 SSH 기본 포트인 22, **연결 형식**은 **SSH**로 지정합니다.
 
-<br>
+모든 정보가 정확하다면 세션을 저장합니다. **불러오기, 저장, 저장된 세션 삭제**에서 저장된 섹션 아래 필드에 저장할 세션 이름을 쓰고, **저장** 버튼을 클릭하여 세션을 저장합니다. 세션을 저장하지 않으면 2-A에서 등록한 개인 키 설정 역시 유지되지 않습니다.
 
-## 라우트
+이제 **열기**를 클릭하면 인스턴스에 접속합니다.
 
-**라우트** 탭에서는 Network Firewall을 경유하는 통신의 경로를 지정할 수 있습니다.
+<a id="how-to-access-windows-instances"></a>
+### Windows 인스턴스 접속 방법 { #how-to-access-windows-instances }
 
-![policy-route.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.09.12/policy-route.png)
+Windows 서버에 접속하려면, NHN Cloud 콘솔에서 접속하려는 Windows 인스턴스를 선택합니다. 인스턴스 상세 화면의 **접속 정보** 탭에서 **비밀번호 확인** 버튼을 클릭하여 Windows 서버에 설정된 비밀번호를 확인합니다.
 
-> [참고]
->
-> * Network Firewall의 기본 게이트웨이는 NAT 이더넷이며, 수정하거나 삭제할 수 없습니다.
-> * 라우트 설정이 변경될 경우 통신에 문제가 있을 수 있으므로 유의하여 설정하세요.
+**비밀번호 확인**에서 입력하는 키페어의 개인 키는 서버로 전송되지 않고, 브라우저에서 비밀번호를 복호화하는 작업에만 사용됩니다.
 
-### 추가
+**비밀번호 확인** 옆의 **연결** 버튼을 클릭해 원격 데스크톱 접속 설정이 저장된 .rdp 파일을 받아서 실행하면 Windows 서버에 접속합니다. Windows 서버의 ID는 `Administrator`이며, 비밀번호는 NHN Cloud 콘솔에서 확인한 비밀번호를 이용합니다.
 
-* **추가**를 클릭해 이더넷을 선택하고, 목적지와 게이트웨이를 입력합니다.
-    * 목적지: 서브넷 형식으로 입력
-    * 이더넷: NAT, TRAFFIC, VPN(IPSec VPN 기능 사용 시) 중 선택
-    * 게이트웨이: 호스트 형식으로 입력
+<a id="how-to-connect-serial-console"></a>
+### 시리얼 콘솔 접속 방법 { #how-to-connect-serial-console }
 
-> [참고]
->
-> * 이더넷을 VPN으로 선택할 경우 게이트웨이는 지정하지 않아도 됩니다.
-> * IPSec VPN과 연동된 사설 IP 대역에 대한 라우트 설정은 반드시 이더넷을 VPN으로 설정하세요.
-> * 목적지 서브넷 입력 시 아래와 같은 유효성 메시지가 노출될 경우 서브넷 범위를 사전에 확인하여 서브넷의 시작 IP로 입력하세요.
->   * [예시]
->       * 192.168.199.0/21 (X) → 192.168.192.0/21 (O)
->       * 172.16.100.0/20 (X) → 172.16.96.0/20 (O)
->       * 10.10.10.130/25 (X) → 10.10.10.128/25 (O)
->
-> ![route_add.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.09.12/route_add.png)
+부팅 실패, 네트워크 구성 문제와 같이 SSH 클라이언트를 사용할 수 없는 상황에서 시리얼 콘솔에 연결하여 인스턴스에 접속할 수 있습니다. 
 
-### 수정
+시리얼 콘솔 기능은 다음과 같은 제약 조건이 있습니다.
 
-* **수정**을 클릭해 라우트를 수정할 수 있습니다.
+* 인스턴스당 하나의 시리얼 콘솔 연결만 가능하며, 다중 접속 시도 시 정상적으로 연결이 되지 않을 수 있습니다.
+* 개인이 업로드한 이미지로 만든 인스턴스와 개인 이미지로 만든 인스턴스는 시리얼 콘솔 접속을 보장하지 않습니다.
+* 시리얼 콘솔 연결은 최대 10분간 접속 가능합니다.
+* Windows 인스턴스는 시리얼 콘솔 기능을 지원하지 않습니다.
+* 2026년 1월 27일 배포 이전에 생성한 인스턴스는 **인스턴스 중지** 후에 **인스턴스 시작**이 필요합니다. **인스턴스 재부팅** 기능으로는 적용되지 않습니다.
 
-### 삭제
+> [주의]
+> 시리얼 콘솔로 인스턴스에 접속하여 부팅 방법 변경 시 부팅에 실패할 수 있으며, 이에 따른 결과에 대한 책임은 사용자에게 있습니다.
+> 일반적인 상황에서는 SSH 클라이언트 접속 사용을 권장합니다.
 
-* **삭제**를 클릭해 라우트를 삭제할 수 있습니다.
+<a id="how-to-connect-serial-console-change-grub-bootloader-settings"></a>
+#### GRUB 부트로더 설정 변경
 
-<br>
+2024년 11월 26일 배포 이전에 생성한 인스턴스에서 부트로더를 조작하기 위해서는 GRUB 설정이 필요합니다.
 
-## 객체
+GRUB 설정 파일을 수정합니다.
 
-**객체** 탭에서는 정책을 생성할 때 사용할 IP, 포트를 생성하고 관리합니다.
+```
+$ sudo vi /etc/default/grub.d/50-cloudimg-settings.cfg
+GRUB_TIMEOUT=3
+GRUB_TERMINAL="console serial"
+GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
+````
 
-### 추가
+변경된 설정을 적용합니다. OS에 따라 GRUB 설정 적용 명령어가 다를 수 있습니다.
 
-* 필수 항목을 입력하여 객체를 생성합니다.
-    * 객체는 IP, 포트의 2가지 형태로 추가할 수 있습니다.
+```
+$ sudo update-grub
+```
 
-> [참고]
-> 그룹 객체 생성 시 그룹 객체는 추가할 수 없습니다(단일이나 범위 객체만 선택하여 추가 가능).
+<a id="webhook-e2e-20260728-110207"></a>
+## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
-### 수정
+이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
+webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
+마커는 정기 restore-alpha-origin 으로 정리됩니다.
 
-* **수정**을 클릭해 객체를 수정할 수 있습니다.
-    * 타입은 수정이 불가능합니다.
+<a id="webhook-e2e-20260728-111509"></a>
+## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
 
-### 삭제
+이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
+webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
+마커는 정기 restore-alpha-origin 으로 정리됩니다.
 
-* **삭제**를 클릭해 객체를 삭제할 수 있습니다.
-    * 자동으로 Network Firewall에서 생성한 객체는 수정이나 삭제할 수 없습니다.
+<a id="webhook-e2e-20260728-113416"></a>
+## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
 
->[주의]
-> 정책에서 사용 중인 객체는 삭제 후 ALL 객체로 변경됩니다.
+이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
+webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
+마커는 정기 restore-alpha-origin 으로 정리됩니다.
 
-### 인스턴스 객체 추가
-* Network Firewall이 생성된 프로젝트 내에 있는 인스턴스를 활용하여 객체를 추가할 수 있습니다.
+## mkdocs 문법
 
-> [참고]
-> 인스턴스와 관계없이 단순히 인스턴스의 이름과 사설 IP 주소만 참고하여 객체를 생성합니다. 생성한 객체는 **객체** 탭에서 관리합니다.
+{% include-markdown './nfw-console-guide.md' %}
 
+{% include-markdown './deploy-api-guide.md' %}
 
-### 객체 일괄 다운로드
 
-* **객체** 탭에 생성되어 있는 IP와 포트 객체 전체를 각각 한 번에 다운로드할 수 있습니다.
 
-<br>
-
-## NAT
-
-**NAT**(네트워크 주소 변환) 탭에서는 외부에서 접속할 인스턴스와 전용으로 사용할 공인 IP를 선택하여 연결합니다.
-
->[참고]
->
-> * NAT는 목적지 기반 및 1:1 방식만 제공합니다.
-> * 포트 기반의 NAT는 제공하지 않습니다.
-> * NAT를 생성한 뒤 **정책** 탭에 허용 정책을 추가해야만 공인 통신이 가능합니다.
-{%- if "gov" in build_flags %}
-> * NHN Cloud(공공기관용)에서 제공하는 SSL VPN 서비스와 Network Firewall을 연동하여 사용할 수 있습니다. (**옵션 > SSL VPN 설정**에서 **사용**으로 설정 시)
-{%- endif %}
-> * NAT에 설정된 NAT 후 사설 IP를 소유한 인스턴스에 직접 Floating IP를 할당할 경우 통신에 문제가 있을 수 있습니다.
-> * NAT 삭제 후 사용하지 않는 NAT 전 공인 IP는 **Network > Floating**에서 직접 삭제하세요.
-
-### 추가
-
-* **추가**를 클릭해 NAT를 생성합니다.
-{%- if "gov" in build_flags %}
-    * 타입을 선택합니다.
-{%- endif %}
-    * NAT 전 공인 IP는 **Network > Floating IP**에서 미리 생성한 IP 중 하나를 선택합니다.
-    * NAT 후 사설 IP에서 선택할 객체는 **객체** 탭에서 미리 생성해야만 **추가**를 클릭해 추가할 수 있습니다.
-
-{% if "gov" in build_flags -%}
-![nat_add.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.05.27/nat_add.png)
-{%- else -%}
-![nat_add.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.04.05/nat_add_2.png)
-{%- endif %}
-
->[참고]
-{%- if "gov" in build_flags %}
->
-> * 옵션 - SSL VPN 설정에서 사용으로 설정했을 경우에만 타입이 노출됩니다.
-> * 타입의 선택에 따라 아래의 NAT 전 공인 IP가 노출됩니다.
->   * Network Firewall: **Network > Floating IP**에서 Public Network로 생성된 Floating IP
->   * SSL VPN: **Network > Floating IP**에서 VPN Network로 생성된 Floating IP
-> * 인스턴스 접속은 NAT를 추가하면서 설정한 NAT 전 공인 IP로 접속 가능합니다. (인스턴스에 직접 Floating IP 연결 불필요)
-{%- else %}
-> 인스턴스 접속은 NAT를 추가하면서 설정한 NAT 전 공인 IP로 접속 가능합니다. (인스턴스에 직접 Floating IP 연결 불필요)
-{%- endif %}
-
-### 수정
-
-* **수정**을 클릭해 생성된 NAT를 수정합니다.
-    * 수정은 공인 IP와 사설 IP 모두 수정할 수 있습니다.
-
-### 삭제
-
-* **삭제**를 클릭해 생성된 NAT를 삭제합니다.
-
-<br>
-
-{% if "public" in build_flags or "gov" in build_flags -%}
-## 미러링
-
-**미러링** 탭에서는 Network Firewall을 통과하는 네트워크 패킷을 IDS/IPS, SIEM, NDR 등의 위협 탐지 및 분석 솔루션으로 복사하여, 네트워크 위협을 실시간으로 탐지하고 대응할 수 있도록 합니다.
-
-> [참고]
-> **옵션 - 미러링 설정**에서 **사용**으로 설정하여 활성화 후 사용할 수 있습니다. (활성화까지 약 30초 소요)
-<br>
->     ![Mirorring_Config_Activation_800.png](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/Mirroring/25.03.06/Mirorring_Config_Activation_800.png)
-
-<br>
-
-### 미러링 룰
-
-* 미러링 룰을 추가하여 복사한 패킷을 원하는 대상 단말로 전송합니다.
-![Mirroring_Rule_Contents_Explain_1_900.png](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/Mirroring/25.03.06/Mirroring_Rule_Contents_Explain_1_900.png)
-    * 이름: 설정한 이름을 표시합니다.
-    * 방향: 설정한 방향을 표시합니다.
-    * 미러 지정 인터페이스: 선택한 Network Firewall의 인터페이스를 표시합니다.
-    * 미러링 송신 IP: 미러링 인터페이스의 IP를 표시합니다.
-    * 미러링 대상 IP: 미러링 패킷을 보낼 목적지 IP를 표시합니다.
-    * 필터 그룹: 선택한 필터 그룹을 표시합니다.
-    * 상태: 해당 미러링 룰의 상태를 배지를 통해 표시합니다.
-        * Active: 활성화
-        * Inactive: 비활성화
-    * 자세히 보기: 설정한 미러링 룰의 상세 정보를 확인합니다.
-
-<br>
-
-### 추가
-
-* **추가**를 클릭해 미러링 룰을 추가할 수 있습니다.
-    ![Mirroring_Rule_Add_900.png](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/Mirroring/25.03.06/Mirroring_Rule_Add_900.png)
-    * 상태: 미러링 룰의 활성화 여부를 설정합니다.
-    * 방향: 미러 지정 인터페이스에서 미러링할 수신/송신 패킷을 설정합니다. 해당 설정을 통해 특정 방향의 패킷만 미러링할 수 있습니다.
-        * 수신(Rx): 미러 지정 인터페이스에서 수신하는 패킷
-        * 송신(Tx): 미러 지정 인터페이스에서 송신하는 패킷
-    * 미러 지정 인터페이스: Network Firewall의 아래 인터페이스 중에서 선택합니다.
-        * NetworkFirewall\_INF\_NAT: Network Firewall의 외부 제어용 상단 인터페이스
-        * NetworkFirewall\_INF\_TRAFFIC: Network Firewall의 내부 제어용 하단 인터페이스
-    * 미러링 송신 IP: 외부 전송 서브넷의 미러링 인터페이스가 기본으로 설정됩니다.
-    * 미러링 대상 IP: 미러링 패킷을 수신할 대상의 사설 IP를 입력합니다.
-    * VNI(virtual network identifier): VNI를 입력합니다.
-
-> [참고]
->
-> * 미러링 대상 단말이 VXLAN 패킷을 수신할 수 있도록 정책(보안 그룹 및 방화벽 등)에서 미러링 송신 IP와 UDP 포트 4789번에 대한 접속 허용 설정이 필요합니다.
-> * 미러링 룰은 최대 3개까지 생성할 수 있습니다.
-> * 미러링 룰을 적용할 때 고객의 환경에 따라 많은 통신 데이터를 발생시킬 수 있으므로, 미러링 대상 IP 정보를 정확하게 입력해야 합니다.
-> * Network Firewall은 VXLAN 터널을 통해 미러링 패킷을 송신하므로 VNI 설정이 필요합니다. VNI 값은 1\~16,777,215 사이의 숫자로 입력하고, 미러링 대상 장비와 동일하게 설정해야 합니다.
-
-* **필터 그룹**을 선택합니다.
-    * 이전에 추가한 필터 그룹이 없으면 **필터 그룹 추가**를 클릭하여 필터 그룹을 추가할 수 있습니다.
-    * 자세한 사항은 [필터 그룹 설명](#%ED%95%84%ED%84%B0%20%EA%B7%B8%EB%A3%B9)을 참고하세요.
-        ![Mirroring_Rule_Filter_Group_900.png](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/Mirroring/25.03.06/Mirroring_Rule_Filter_Group_900.png)
-
-> [참고]
-> 필터 그룹은 룰당 하나만 적용 가능합니다.
-
-<br>
-
-### 수정
-
-* **수정**을 클릭해 미러링 룰을 수정할 수 있습니다.
-
-> [참고]
-> 이름, 설명, 상태, 필터 그룹만 수정 가능합니다.
-
-<br>
-
-### 삭제
-
-* **삭제**를 클릭해 미러링 룰을 삭제할 수 있습니다.
-
-<br>
-
-### 필터 그룹
-
-* **필터 그룹**을 통해 미러링 룰에 적용할 필터를 설정하면 사용자가 원하는 패킷만 선별하여 전송할 수 있습니다.
-![Filter_Group_Contents_Explain_1_900.png](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/Mirroring/25.03.06/Filter_Group_Contents_Explain_1_900.png)
-    * 이름: 설정한 이름을 표시합니다.
-    * 연결된 미러링 룰: 해당 필터 그룹을 사용하는 미러링 룰을 표시합니다.
-    * 설명: 설명을 표시합니다.
-    * 필터 규칙 보기: 해당 필터 그룹에 설정된 규칙을 확인합니다.
-
-<br>
-
-### 추가
-* **추가**를 클릭해 필터 그룹을 추가할 수 있습니다.
-    ![Filter_Group_Add_900.png](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/Mirroring/25.03.06/Filter_Group_Add_900.png)
-    * 필터 규칙 정의
-        * 우선순위: 작은 숫자일수록 우선순위가 높습니다. 높은 우선순위부터 규칙을 적용하여 미러링 패킷을 전송합니다.
-        * 프로토콜: 프로토콜을 지정합니다.
-            * ALL: 모든 프로토콜을 지정합니다. 선택 시 출발지/목적지 설정이 비활성화됩니다.
-            * TCP: TCP를 지정합니다.
-            * UDP: UDP를 지정합니다.
-            * ICMP: ICMP를 지정합니다. 선택 시 출발지/목적지 포트 설정이 비활성화됩니다.
-        * 출발지/목적지 CIDR: 출발지와 목적지 CIDR을 설정합니다.
-        * 출발지/목적지 포트: ALL, 포트, 포트 범위를 선택하여 설정합니다.
-            * ALL: 모든 포트를 지정합니다.
-            * 포트: 1\~65535 범위의 포트 하나를 지정합니다.
-            * 포트 범위: 1\~65535 범위 내에 포트 범위를 지정합니다.
-        * 전송 여부: 해당 규칙에 부합하는 패킷의 전송 여부를 설정합니다.
-            * 전송: 규칙에 맞는 패킷을 전송합니다.
-            * 미전송: 규칙에 맞는 패킷을 전송하지 않습니다.
-
-> [참고]
->
-> * 각 규칙의 [－], [＋] 버튼을 클릭해 삭제하거나 추가할 수 있습니다.
-> * 각 규칙의 위, 아래 버튼을 클릭해 규칙의 우선순위를 변경할 수 있습니다.
->     ![Filter_Rule_900.png](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/Mirroring/25.03.06/Filter_Rule_900.png)
-> * 필터 그룹은 default 필터 그룹을 포함하여 최대 10개까지 설정 가능합니다.
-> * 필터 규칙은 최대 30개까지 설정 가능합니다.
-> * 필터 규칙은 우선순위가 높은 순에서 낮은 순으로 적용합니다. 따라서 미전송 규칙에 이미 적용 받은 패킷은 다음 우선순위 규칙에 적용을 받지 않습니다.
-
-<br>
-
-### 수정
-* **수정**을 클릭해 필터 그룹을 수정할 수 있습니다.
-
-<br>
-
-### 삭제
-* **삭제**를 클릭해 필터 그룹을 삭제할 수 있습니다.
-
-> [참고]
-> default 필터 그룹은 삭제할 수 없습니다.
-
-<br>
-
-{% endif -%}
-## VPN
-
-**VPN** 탭에서는 사이트간 암호화된 터널을 통해 안전한 사설 통신을 지원합니다.
-
-### 게이트웨이 생성
-
-* **게이트웨이 생성**을 클릭해 피어 VPN 장비와 연결하기 위한 게이트웨이를 생성합니다.
-
-![gw_add.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.05.27/gw_add.png)
-
-> [참고]
->
-> * VPC와 서브넷은 수정할 수 없습니다.
-> * 게이트웨이는 최대 10개까지 생성 가능합니다.
-
-### 수정
-
-* **수정** 버튼을 클릭해 게이트웨이를 수정합니다.
-
-### 삭제
-
-* **삭제** 버튼을 클릭해 게이트웨이를 삭제합니다.
-    * 게이트웨이에 연결된 터널이 있을 경우 삭제가 되지 않습니다.
-
-### 플로팅 IP 연결
-
-* 피어 장비와의 연결에 필요한 플로팅 IP를 설정합니다.
-    * 플로팅 IP는 **Network > Floating IP** 에 생성된 목록 중 미사용중인 항목이 노출됩니다.
-
-![fip.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.05.27/fip.png)
-
-### 터널 생성
-
-* 피어 장비와 연결할 터널을 생성합니다.
-
-![tunnel_add.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.05.27/tunnel_add.png)
-
-* 터널 설정
-    * 게이트웨이: 게이트웨이 탭에서 생성된 게이트웨이가 노출되며, 터널과 연결할 게이트웨이를 선택합니다.
-        * 생성된 게이트웨이가 없을 경우 노출되지 않습니다.
-    * 피어 IP 주소: 연결할 피어 VPN 장비 IP 주소를 입력합니다.
-    * IKE 버전: 피어 VPN 장비와 동일한 버전으로 설정합니다.
-        * IKE 버전 1은 Main Mode만 지원됩니다.
-    * Pre-Shared Key: 피어 VPN 장비와 동일한 키값을 입력합니다.
-    * DPD(dead peer detection): 10초 단위로 총 5회의 재전송을 시도하며, 비활성화 선택 시 피어 VPN 장비의 DPD 요청에 대한 응답만 지원합니다.
-    * NAT-Traversal: 터널 생성 시 발생되는 패킷의 삭제를 방지하기 위한 기능으로 일반적으로 피어 VPN 장비가 공인 IP일 경우 사용으로 설정합니다.
-* Phase 1/2 설정
-    * IPSec VPN 터널을 생성하기 위해 필요한 설정 정보를 입력합니다.
-
- > [설정 시 참고 사항]
- >
- > * 모든 설정은 피어 VPN 장비와 동일하게 설정합니다.
- > * 로컬 ID는 피어 VPN 장비의 설정 방식에 따라 선택적으로 설정합니다.
- > * Phase 2 추가는 최대 3개까지 가능합니다.
- > * Phase 2의 프라이빗 IP는 /24비트 이하로 설정하세요. /24비트 이상의 값을 설정해야 할 경우 서브넷 범위를 사전에 확인하여 서브넷의 시작 IP로 입력하세요.
- >   * [예시]
- >       * 192.168.100.0/20 (X) → 192.168.96.0/20 (O)
- >       * 172.16.30.0/21 (X) → 172.16.24.0/21 (O)
- >       * 10.0.50.0/22 (X) → 10.0.48.0/22 (O)
- > * 로컬 프라이빗 IP와 피어 프라이빗 IP는 서로 중복되지 않아야 합니다. 이 범위는 VPC 피어링을 포함한 Network Firewall과 연결되는 모든 사설 대역이 포함됩니다.
-  > * 아래의 CIDR은 로컬 프라이빗 IP와 피어 프라이빗 IP에 추가할 수 없으며, 추가할 경우 Network Firewall을 경유하는 통신에 문제가 있을 수 있습니다.
- >   * 10.0.0.0/8
- >   * 172.16.0.0/12
- >   * 192.168.0.0/16
-
-### 터널 연결
-
-* 터널은 연결 대기 상태로 생성되며, **연결**을 클릭하여 생성된 터널과 피어 VPN 장비를 연결합니다.
-
-> [참고]
->
-> * **상태** 열에서 색상별로 터널의 상태를 확인할 수 있습니다.
- >   * 녹색: 피어 VPN 장비와 정상적으로 연결 중인 상태
- >   * 빨간색: 설정값 또는 통신 상태 등의 문제로 피어 VPN 장비 간 연결이 실패된 상태
- >   * 회색: 연결 대기 상태(새로 생성된 터널)
- >   * 주황색: **중지** 버튼을 클릭해 피어 VPN 장비간 연결이 중지된 상태
-> * 터널 생성이 완료된 이후 피어 장비의 종류와 설정에 따라 **연결**을 클릭하지 않아도 연결될 수 있습니다.
-
-### 터널 수정
-
-* **수정** 버튼을 클릭해 터널을 수정합니다.
-    * 설정값 중 게이트웨이를 제외한 모든 값은 수정이 가능하며, 수정할 경우 피어 VPN 장비도 동일한 값으로 수정해야 합니다.
-
-### 터널 중지
-
-* **중지** 버튼을 클릭해 터널을 중지합니다.
-    * 중지할 경우 피어 VPN 장비를 통한 사설 통신이 중단됩니다.
-
-### 터널 삭제
-
-* **삭제** 버튼을 클릭해 터널을 삭제합니다.
-
-### 이벤트
-
-* 피어 VPN 장비와의 터널 연결 시 발생하는 이벤트 로그를 검색할 수 있습니다.
-
-> [참고]
->
-> * 이벤트에서는 터널에 대한 이벤트 로그만 검색할 수 있습니다.
-> * VPN 터널을 통한 통신 로그 또는 터널 생성과 삭제 등의 감사 로그는 **로그** 탭에서 확인하세요.
-
-
-## 로그
-
-**로그** 탭에서는 Network Firewall에서 생성된 로그를 검색할 수 있습니다.
-
-### 검색
-
-* 트래픽: Network Firewall을 경유할 때 허용 또는 차단 정책에 의해 생성된 트래픽 로그를 검색
-    * 조회는 1개월 단위로 최대 3개월까지의 과거 데이터만 검색 가능합니다.
-        * 최대 저장 로그 개수는 800만 개이며, 트래픽의 양에 따라 저장되는 로그의 양이 달라지므로 과거의 데이터가 조회되지 않을 수 있습니다.
-    * 별도의 데이터 저장이 필요한 경우 **옵션** 탭의 **로그 원격 전송 설정**을 참고하세요.
-
-* Audit: 정책 생성 및 삭제 등 Network Firewall의 변경 사항에 대한 로그를 검색
-    * 조회는 최대 1개월 단위로 검색 가능하며, 조직 서비스인 CloudTrail에서도 검색할 수 있습니다.
-
-### 엑셀 내려받기
-
-* **엑셀 내려받기**를 클릭해 트래픽과 Audit 로그의 검색 결과를 다운로드할 수 있습니다..
-    * 트래픽 로그의 최대 다운로드 개수는 30만 건입니다.
-
-## 모니터
-
-**모니터** 탭에서는 Network Firewall의 상태를 실시간으로 확인할 수 있습니다.
-검색은 최대 24시간(1일) 내에서만 가능합니다.
-
-### 검색
-
-* 세션: 현재 Network Firewall을 통해 사용하는 세션의 수량
-* 네트워크 사용량: 현재 Network Firewall을 경유하는 인바운드/아웃바운드 트래픽
-
-## 옵션
-
-**옵션** 탭에서는 Network Firewall 운영에 필요한 옵션을 설정할 수 있습니다.
-
-### 로그 설정
-
-* 기본 차단 정책 로그 설정: Network Firewall 생성 후 필수로 생성되는 기본 차단 정책 로그의 저장 여부를 선택합니다.
-    * 사용 선택 시 기본 차단 정책으로 생성된 로그는 트래픽 로그에서 검색 가능합니다.
-* 로그 원격 전송 설정: 원격지로 트래픽 로그를 저장할 수 있는 옵션을 선택합니다.
-    * Syslog: 최대 2개의 원격지 주소로 로그를 전송
-        * 2개의 원격지는 개별적으로 설정 가능(IP 주소, 프로토콜, 포트 번호)
-    * Object Storage: NHN Cloud에서 제공하는 Object Storage 서비스로 로그를 전송
-    <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.11.07/OBS_5.png" height="65%" />
-        * 액세스 키 / 비밀 키: Object Storage 서비스에서 S3 API 자격 증명 등록 시 확인 가능한 액세스 키 정보를 입력
-        * 버킷 이름: Object Storage 서비스에서 생성한 컨테이너의 이름을 입력
-        * 엔드포인트: 리전별 엔드포인트를 확인한 뒤 위치에 맞게 엔드포인트를 입력
-        * 리전: 리전별 이름을 확인한 뒤 리전 위치에 맞게 이름을 입력
-    * Log & Crash Search: NHN Cloud에서 제공하는 Log & Crash Search 서비스로 로그를 전송
-    <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.11.07/LNCS_2.png" height="65%" />
-        * AppKey: Log & Crash Search 서비스를 활성화 후 생성된 AppKey를 입력
-
-> [참고]
-> * Object Storage 설정 시 [사용자 가이드](https://docs.nhncloud.com/ko/Storage/Object%20Storage/ko/s3-api-guide/#aws-sdk)를 참고하여 입력하세요.
-> * Log & Crash Search 서비스를 사용 시 로그 알람 설정 기능을 활용하여 이상 행위를 탐지할 수 있습니다.
-예를 들어, Network Firewall에 특정 목적지로 향하는 SSH 통신에 대한 ACL 차단 정책을 추가한 뒤 해당 정책에서 발생되는 로그에 대한 알람 조건을 설정합니다. (예: 1분 동안 SSH 접속 시도 로그가 20회 이상 발생)
-사용자가 설정한 조건을 만족 시 알람을 수신할 수 있습니다.
-
-<br>
-
-### 일반 설정
-
-* MTU(maximum transmission unit) 크기 설정: Network Firewall에 연결된 이더넷의 MTU 크기를 설정합니다.
-    * 트래픽: NHN Cloud 내부 통신에 사용하는 이더넷(피어링 통신 포함)
-    * NAT: 외부 통신에 사용하는 이더넷
-
-> [참고]
-> 트래픽, NAT 이더넷의 기본 MTU 크기는 1450Byte입니다.
-
-<br>
-
-{% if "gov" in build_flags -%}
-* SSL VPN 설정: 외부에서 NHN Cloud(공공기관용) 인스턴스 접속이 필요할 경우 사용하는 SSL VPN 서비스와 Network Firewall을 연동하는 옵션을 제공합니다.
-<img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.11.07/SSLVPN.png" height="65%" />
-
-> [참고]
->
-> * 해당 옵션을 사용할 경우 NHN Cloud(공공기관용)에서 인스턴스 접속 시 사용하는 Private Network의 사설 VPN Network IP를 **Network Firewall > NAT**에서 설정할 수 있습니다.
-> * 옵션 사용 시 SSL VPN 연결 후 인스턴스에 접근할 때 Network Firewall을 통해 접근하게 되며 **정책**에서 통신을 허용해야만 인스턴스 접근이 가능합니다.
-> * Network Firewall 연동 시 인스턴스는 SSL VPN 전용 이더넷을 추가로 할당하지 않아도 됩니다. (단, Network Firewall과 연동하지 않을 경우 이더넷을 할당해야 합니다.)
-
-<br>
-
-{% endif -%}
-{% if "public" in build_flags or "gov" in build_flags -%}
-* 미러링 설정: Network Firewall에서 제공하는 기능 중 미러링의 사용 여부를 선택할 수 있습니다.
-    * 사용 선택 시 필요한 서브넷은 Network Firewall 생성에 사용했던 서브넷을 사용합니다.
-
-> [참고]
-> * ACL 설정에 필요한 미러링 인터페이스의 IP 정보는 **Network - Network Interface**에서 확인 가능합니다.
->   * 인터페이스 이름: NetworkFirewall_INF_MIRRORING_S_NAT_VIP
-
-<br>
-
-{% endif -%}
-* Network Firewall 구성: 단일 또는 이중화로 Network Firewall의 구성 방식을 설정할 수 있습니다.
-
-> [참고]
->
-> * 구성 방식 변경 시 몇 분 정도의 시간이 소요되며, 구성 변경이 완료되기 전까지 서비스에 영향이 있을 수 있습니다.
-> * 정책, NAT 등 Network Firewall 변경 작업은 구성 방식 변경이 완료된 뒤 진행할 것을 권장합니다.
-
-<br>
-
-* Network Firewall 삭제: 운영 중인 Network Firewall을 삭제할 수 있습니다.
-    * Network Firewall은 한국(판교) 리전과 한국(평촌) 리전에서 각각 삭제할 수 있습니다.
-
-> [삭제 시 주의 사항]
-> 운영 중인 Network Firewall을 삭제할 경우 Network Firewall과 연결된 다른 서비스를 고려하여 진행하세요.
-
-<br>
-
-## common 서비스 비활성화
-
-**프로젝트 관리 > 이용 중인 서비스**에서 Network Firewall 서비스를 비활성화할 수 있습니다.
-
-> [참고]
->
-> * Network Firewall 서비스 비활성화는 한국(판교) 리전과 한국(평촌) 리전에 모두 적용됩니다.
-> 예를 들어 Network Firewall 서비스를 동일한 프로젝트의 한국(판교) 리전과 한국(평촌) 리전에 모두 활성화한 경우 두 리전 중 하나의 Network Firewall 서비스만 비활성화할 수 없습니다.
-> * 비활성화하려면 한국(판교) 리전과 한국(평촌) 리전에서 각각 Network Firewall을 삭제한 뒤 진행하세요.
-
-{% if "gov" in build_flags -%}
-## gov 서비스 비활성화
-
-**프로젝트 관리 > 이용 중인 서비스**에서 Network Firewall 서비스를 비활성화할 수 있습니다.
-
-> [참고]
->
-> * Network Firewall 서비스 비활성화는 한국(판교) 리전과 한국(평촌) 리전에 모두 적용됩니다.
-> 예를 들어 Network Firewall 서비스를 동일한 프로젝트의 한국(판교) 리전과 한국(평촌) 리전에 모두 활성화한 경우 두 리전 중 하나의 Network Firewall 서비스만 비활성화할 수 없습니다.
-
-{% endif -%}
-
-{% if "public" in build_flags -%}
-## public 서비스 비활성화
-
-**프로젝트 관리 > 이용 중인 서비스**에서 Network Firewall 서비스를 비활성화할 수 있습니다.
-
-> [참고]
->
-> * Network Firewall 서비스 비활성화는 한국(판교) 리전과 한국(평촌) 리전에 모두 적용됩니다.
-> 예를 들어 Network Firewall 서비스를 동일한 프로젝트의 한국(판교) 리전과 한국(평촌) 리전에 모두 활성화한 경우 두 리전 중 하나의 Network Firewall 서비스만 비활성화할 수 없습니다.
-
-{% endif -%}
