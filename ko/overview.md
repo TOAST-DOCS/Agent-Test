@@ -3,7 +3,7 @@
 Network Firewall을 생성하기 위한 절차와 생성 이후 콘솔을 사용하는 방법을 설명합니다.
 테스트
 
-{% if variant == "gov" -%}
+{% if build_flags == "gov" -%}
 <br>
 
 {% endif -%}
@@ -11,7 +11,7 @@ Network Firewall을 생성하기 위한 절차와 생성 이후 콘솔을 사용
 
 Network Firewall을 사용하기 위해서는 가장 먼저 Network Firewall 서비스를 활성화합니다.
 
-{% if variant == "gov" -%}
+{% if build_flags == "gov" -%}
 <br>
 
 {% endif -%}
@@ -46,7 +46,7 @@ Network Firewall 생성에 필요한 최소 네트워크 서비스 자원은 아
 [1개 이상의 프로젝트 구성 시 준비 사항]
 
 * 2개의 프로젝트
-{%- if variant == "gov" %}
+{%- if build_flags == "gov" %}
 * 2개의 VPC(각 프로젝트에 Hub VPC, Spoke VPC)
 {%- else %}
 * 2개의 VPC(각각 프로젝트에 Hub VPC, Spoke VPC)
@@ -56,7 +56,7 @@ Network Firewall 생성에 필요한 최소 네트워크 서비스 자원은 아
 * Spoke VPC 내 최소 1개의 서브넷
 * Hub VPC의 Routing에 연결된 인터넷 게이트웨이
 
-{% if variant != "gov" %}
+{% if build_flags != "gov" %}
 [다른 리전 간 프로젝트 구성 시 준비 사항]
 
 * 1개의 프로젝트
@@ -102,7 +102,7 @@ Network Firewall 생성에 필요한 최소 네트워크 서비스 자원은 아
 > * 서브넷, NAT, 외부 전송에 사용하는 서브넷은 모두 다른 서브넷으로 선택해야 합니다.
 >    * 가급적 NHN Cloud 콘솔에서 생성할 수 있는 최소 단위(28비트)로 생성할 것을 권장합니다.
 > * Network Firewall이 속할 VPC의 라우팅 테이블에 인터넷 게이트웨이가 연결되어 있어야 생성 가능합니다.
-{%- if variant == "gov" %}
+{%- if build_flags == "gov" %}
 > * Network Firewall 서비스는 가용 영역을 분리하여 이중화를 기본으로 제공합니다.
 {%- endif %}
 > * Security Groups와는 별개의 서비스이므로 Network Firewall을 사용하면 두 서비스를 모두 허용해야 인스턴스에 접근할 수 있습니다.
@@ -203,7 +203,7 @@ Network Firewall 생성에 필요한 최소 네트워크 서비스 자원은 아
 
 <br>
 
-{% if variant == "gov" -%}
+{% if build_flags == "gov" -%}
 * **Network > Subnet**에서 Network Firewall과 겹치지 않는 서브넷을 새로 생성하고 라우팅 테이블을 연결합니다.
 {%- else -%}
 * **Network > Subnet**에서 Network Firewall과 겹치지 않는 Spoke 서브넷을 새로 생성하고 라우팅 테이블을 연결합니다.
@@ -213,7 +213,7 @@ Network Firewall 생성에 필요한 최소 네트워크 서비스 자원은 아
 
 <br>
 
-{% if variant == "gov" -%}
+{% if build_flags == "gov" -%}
 위의 라우팅 설정이 완료되면 서로 다른 Spoke VPC 간 통신과 같은 VPC 내 서브넷 간 통신을 Network Firewall을 경유하여 사설 통신을 할 수 있습니다. (<strong>Network Firewall > 정책</strong> 탭에서 ACL 추가 필요)
 {%- else -%}
 위의 라우팅 설정이 완료되면 서로 다른 Spoke VPC 간 Network Firewall을 경유하여 사설 통신을 할 수 있습니다. (<strong>Network Firewall > 정책</strong> 탭에서 정책 추가 필요)
@@ -399,7 +399,7 @@ Network Firewall을 생성하면 **정책** 탭으로 이동합니다.
 > * NAT는 목적지 기반 및 1:1 방식만 제공합니다.
 > * 포트 기반의 NAT는 제공하지 않습니다.
 > * NAT를 생성한 뒤 **정책** 탭에 허용 정책을 추가해야만 공인 통신이 가능합니다.
-{%- if variant == "gov" %}
+{%- if build_flags == "gov" %}
 > * NHN Cloud(공공기관용)에서 제공하는 SSL VPN 서비스와 Network Firewall을 연동하여 사용할 수 있습니다. (**옵션 > SSL VPN 설정**에서 **사용**으로 설정 시)
 {%- endif %}
 > * NAT에 설정된 NAT 후 사설 IP를 소유한 인스턴스에 직접 Floating IP를 할당할 경우 통신에 문제가 있을 수 있습니다.
@@ -408,20 +408,20 @@ Network Firewall을 생성하면 **정책** 탭으로 이동합니다.
 ### 추가
 
 * **추가**를 클릭해 NAT를 생성합니다.
-{%- if variant == "gov" %}
+{%- if build_flags == "gov" %}
     * 타입을 선택합니다.
 {%- endif %}
     * NAT 전 공인 IP는 **Network > Floating IP**에서 미리 생성한 IP 중 하나를 선택합니다.
     * NAT 후 사설 IP에서 선택할 객체는 **객체** 탭에서 미리 생성해야만 **추가**를 클릭해 추가할 수 있습니다.
 
-{% if variant == "gov" -%}
+{% if build_flags == "gov" -%}
 ![nat_add.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.05.27/nat_add.png)
 {%- else -%}
 ![nat_add.PNG](https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.04.05/nat_add_2.png)
 {%- endif %}
 
 >[참고]
-{%- if variant == "gov" %}
+{%- if build_flags == "gov" %}
 >
 > * 옵션 - SSL VPN 설정에서 사용으로 설정했을 경우에만 타입이 노출됩니다.
 > * 타입의 선택에 따라 아래의 NAT 전 공인 IP가 노출됩니다.
@@ -443,7 +443,7 @@ Network Firewall을 생성하면 **정책** 탭으로 이동합니다.
 
 <br>
 
-{% if variant in ["public", "gov"] -%}
+{% if build_flags in ["public", "gov"] -%}
 ## 미러링
 
 **미러링** 탭에서는 Network Firewall을 통과하는 네트워크 패킷을 IDS/IPS, SIEM, NDR 등의 위협 탐지 및 분석 솔루션으로 복사하여, 네트워크 위협을 실시간으로 탐지하고 대응할 수 있도록 합니다.
@@ -745,7 +745,7 @@ Network Firewall을 생성하면 **정책** 탭으로 이동합니다.
 
 <br>
 
-{% if variant == "gov" -%}
+{% if build_flags == "gov" -%}
 * SSL VPN 설정: 외부에서 NHN Cloud(공공기관용) 인스턴스 접속이 필요할 경우 사용하는 SSL VPN 서비스와 Network Firewall을 연동하는 옵션을 제공합니다.
 <img src="https://kr1-api-object-storage.nhncloudservice.com/v1/AUTH_2acdfabf4efe4efc8a04c00b348110c9/cdn_origin/prod_nfw/24.11.07/SSLVPN.png" height="65%" />
 
@@ -758,7 +758,7 @@ Network Firewall을 생성하면 **정책** 탭으로 이동합니다.
 <br>
 
 {% endif -%}
-{% if variant in ["public", "gov"] -%}
+{% if build_flags in ["public", "gov"] -%}
 * 미러링 설정: Network Firewall에서 제공하는 기능 중 미러링의 사용 여부를 선택할 수 있습니다.
     * 사용 선택 시 필요한 서브넷은 Network Firewall 생성에 사용했던 서브넷을 사용합니다.
 
