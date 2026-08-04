@@ -17,7 +17,7 @@
               else "kr2-api-instance-infrastructure.nhncloudservice.com") -%}
 {%- set kr3_host = "kr3-api-instance-infrastructure.nhncloudservice.com" -%}
 {%- set jp1_host = "jp1-api-instance-infrastructure.nhncloudservice.com" -%}
-{#- 방식 2: region -> host 매핑 dict. 사용 예 {[ hosts.kr1 ]} / {[ hosts["kr4"] ]} -#}
+{#- 방식 2: region -> host 매핑 dict. 사용 예 $[ hosts.kr1 ]$ / $[ hosts["kr4"] ]$ -#}
 {%- set hosts = {
       "kr1": kr1_host,
       "kr2": kr2_host,
@@ -25,15 +25,15 @@
       "jp1": jp1_host,
       "kr4": kr4_host,
 } -%}
-{#- 방식 1: region 을 인자로 받는 macro. 사용 예 {[ api_host("kr1") ]} -#}
+{#- 방식 1: region 을 인자로 받는 macro. 사용 예 $[ api_host("kr1") ]$ -#}
 {% macro api_host(region) -%}
-{[ hosts.get(region, "") ]}
+$[ hosts.get(region, "") ]$
 {%- endmacro %}
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 가이드
 
 {% if "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
-API를 사용하려면 API 엔드포인트와 토큰 등이 필요합니다. [API 사용 준비](/Compute/Compute/ko/identity-api-{[ variant ]}/)를 참고하여 API 사용에 필요한 정보를 준비합니다.
+API를 사용하려면 API 엔드포인트와 토큰 등이 필요합니다. [API 사용 준비](/Compute/Compute/ko/identity-api-$[ variant ]$/)를 참고하여 API 사용에 필요한 정보를 준비합니다.
 {% else %}
 Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용에 대한 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token{% if "gov" in build_flags %}-gov{% endif %}) 을 참고하세요.
 {% endif %}
@@ -43,33 +43,33 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 ### 엔드포인트 (방식 1: macro)
 {#
   방식 1 예시 — region 을 인자로 받는 macro 로 URL 을 조립합니다.
-  이후 API 호출 예시도 같은 방식으로 작성하려면 `{[ api_host("kr1") ]}` 형태를 사용하세요.
+  이후 API 호출 예시도 같은 방식으로 작성하려면 `$[ api_host("kr1") ]$` 형태를 사용하세요.
 #}
 
 | 타입 | 리전 | 엔드포인트 |
 |---|---|---|
 {% if "gov" in build_flags %}
-| compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://{[ api_host("kr1") ]}<br>https://{[ api_host("kr2") ]}           |
+| compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$           |
 {% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
-| compute | 한국(대구) 리전 | https://{[ api_host("kr4") ]} |
+| compute | 한국(대구) 리전 | https://$[ api_host("kr4") ]$ |
 {% else %}
-| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://{[ api_host("kr1") ]}<br>https://{[ api_host("kr2") ]}<br>https://{[ api_host("kr3") ]}<br>https://{[ api_host("jp1") ]} |
+| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$<br>https://$[ api_host("kr3") ]$<br>https://$[ api_host("jp1") ]$ |
 {% endif %}
 
 ### 엔드포인트 (방식 2: dict)
 {#
   방식 2 예시 — 파일 상단에서 정의한 `hosts` dict 로 URL 을 조회합니다.
-  이후 API 호출 예시도 같은 방식으로 작성하려면 `{[ hosts.kr1 ]}` 형태를 사용하세요.
+  이후 API 호출 예시도 같은 방식으로 작성하려면 `$[ hosts.kr1 ]$` 형태를 사용하세요.
 #}
 
 | 타입 | 리전 | 엔드포인트 |
 |---|---|---|
 {% if "gov" in build_flags %}
-| compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://{[ hosts.kr1 ]}<br>https://{[ hosts.kr2 ]}           |
+| compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$           |
 {% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
-| compute | 한국(대구) 리전 | https://{[ hosts.kr4 ]} |
+| compute | 한국(대구) 리전 | https://$[ hosts.kr4 ]$ |
 {% else %}
-| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://{[ hosts.kr1 ]}<br>https://{[ hosts.kr2 ]}<br>https://{[ hosts.kr3 ]}<br>https://{[ hosts.jp1 ]} |
+| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$<br>https://$[ hosts.kr3 ]$<br>https://$[ hosts.jp1 ]$ |
 {% endif %}
 
 API 응답에 가이드에 명시되지 않은 필드가 나타날 수 있습니다. 이런 필드는 NHN Cloud 내부 용도로 사용되며 사전 공지 없이 변경될 수 있으므로 사용하지 않습니다.
@@ -77,7 +77,7 @@ API 응답에 가이드에 명시되지 않은 필드가 나타날 수 있습니
 <a id="instance-flavors"></a>
 ## 인스턴스 타입
 {#
-  이 섹션의 API URL 은 **방식 1 (macro)** 로 작성합니다: {[ api_host("kr1") ]}
+  이 섹션의 API URL 은 **방식 1 (macro)** 로 작성합니다: $[ api_host("kr1") ]$
   하위 항목을 추가할 때 다른 방식(hosts.kr1, kr1_host 등)과 섞지 마세요.
 #}
 
@@ -122,11 +122,11 @@ X-Auth-Token: {tokenId}
       "id": "013bea75-8541-4c6f-9abe-a03fee3d74fe",
       "links": [
         {
-          "href": "https://{[ api_host("kr1") ]}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/013bea75-8541-4c6f-9abe-a03fee3d74fe",
+          "href": "https://$[ api_host("kr1") ]$/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/013bea75-8541-4c6f-9abe-a03fee3d74fe",
           "rel": "self"
         },
         {
-          "href": "https://{[ api_host("kr1") ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/013bea75-8541-4c6f-9abe-a03fee3d74fe",
+          "href": "https://$[ api_host("kr1") ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/013bea75-8541-4c6f-9abe-a03fee3d74fe",
           "rel": "bookmark"
         }
       ],
@@ -136,11 +136,11 @@ X-Auth-Token: {tokenId}
       "id": "0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
       "links": [
         {
-          "href": "https://{[ api_host("kr1") ]}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
+          "href": "https://$[ api_host("kr1") ]$/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
           "rel": "self"
         },
         {
-          "href": "https://{[ api_host("kr1") ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
+          "href": "https://$[ api_host("kr1") ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/0f19a344-bc66-4228-8cb1-fb9ca82c54f5",
           "rel": "bookmark"
         }
       ],
@@ -221,11 +221,11 @@ X-Auth-Token: {tokenId}
       "name": "x1.c32m256",
       "links": [
         {
-          "href": "https://{[ api_host("kr1") ]}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/97604802-a090-43fa-a5ce-c7cfd737fbba",
+          "href": "https://$[ api_host("kr1") ]$/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/97604802-a090-43fa-a5ce-c7cfd737fbba",
           "rel": "self"
         },
         {
-          "href": "https://{[ api_host("kr1") ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/97604802-a090-43fa-a5ce-c7cfd737fbba",
+          "href": "https://$[ api_host("kr1") ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/97604802-a090-43fa-a5ce-c7cfd737fbba",
           "rel": "bookmark"
         }
       ],
@@ -246,11 +246,11 @@ X-Auth-Token: {tokenId}
       "name": "x1.c32m128",
       "links": [
         {
-          "href": "https://{[ api_host("kr1") ]}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/31fa632d-aeec-4f12-8a57-ce9d146228e5",
+          "href": "https://$[ api_host("kr1") ]$/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/31fa632d-aeec-4f12-8a57-ce9d146228e5",
           "rel": "self"
         },
         {
-          "href": "https://{[ api_host("kr1") ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/31fa632d-aeec-4f12-8a57-ce9d146228e5",
+          "href": "https://$[ api_host("kr1") ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/31fa632d-aeec-4f12-8a57-ce9d146228e5",
           "rel": "bookmark"
         }
       ],
@@ -531,7 +531,7 @@ X-Auth-Token: {tokenId}
 <a id="instance"></a>
 ## 인스턴스
 {#
-  이 섹션의 API URL 은 **방식 2 (dict)** 로 작성합니다: {[ hosts.kr1 ]}
+  이 섹션의 API URL 은 **방식 2 (dict)** 로 작성합니다: $[ hosts.kr1 ]$
   하위 항목을 추가할 때 다른 방식(api_host("kr1"), kr1_host 등)과 섞지 마세요.
 #}
 
@@ -607,11 +607,11 @@ X-Auth-Token: {tokenId}
       "id": "aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
       "links": [
         {
-          "href": "https://{[ hosts.kr1 ]}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+          "href": "https://$[ hosts.kr1 ]$/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
           "rel": "self"
         },
         {
-          "href": "https://{[ hosts.kr1 ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+          "href": "https://$[ hosts.kr1 ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
           "rel": "bookmark"
         }
       ],
@@ -704,11 +704,11 @@ X-Auth-Token: {tokenId}
       },
       "links": [
         {
-          "href": "https://{[ hosts.kr1 ]}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+          "href": "https://$[ hosts.kr1 ]$/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
           "rel": "self"
         },
         {
-          "href": "https://{[ hosts.kr1 ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+          "href": "https://$[ hosts.kr1 ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
           "rel": "bookmark"
         }
       ],
@@ -717,7 +717,7 @@ X-Auth-Token: {tokenId}
         "id": "8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
         "links": [
           {
-            "href": "https://{[ hosts.kr1 ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/images/8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
+            "href": "https://$[ hosts.kr1 ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/images/8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
             "rel": "bookmark"
           }
         ]
@@ -729,7 +729,7 @@ X-Auth-Token: {tokenId}
         "id": "35a73b57-58a7-434d-aa08-5249aaa95b3e",
         "links": [
           {
-            "href": "https://{[ hosts.kr1 ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/35a73b57-58a7-434d-aa08-5249aaa95b3e",
+            "href": "https://$[ hosts.kr1 ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/35a73b57-58a7-434d-aa08-5249aaa95b3e",
             "rel": "bookmark"
           }
         ]
@@ -863,11 +863,11 @@ X-Auth-Token: {tokenId}
     },
     "links": [
       {
-        "href": "https://{[ hosts.kr1 ]}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+        "href": "https://$[ hosts.kr1 ]$/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
         "rel": "self"
       },
       {
-        "href": "https://{[ hosts.kr1 ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
+        "href": "https://$[ hosts.kr1 ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/aaf2778b-ea03-4ccc-8b1b-92f4b686c3ec",
         "rel": "bookmark"
       }
     ],
@@ -876,7 +876,7 @@ X-Auth-Token: {tokenId}
       "id": "8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
       "links": [
         {
-          "href": "https://{[ hosts.kr1 ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/images/8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
+          "href": "https://$[ hosts.kr1 ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/images/8b9f8d47-b89b-45af-b1d6-3f7ce7e06a11",
           "rel": "bookmark"
         }
       ]
@@ -888,7 +888,7 @@ X-Auth-Token: {tokenId}
       "id": "35a73b57-58a7-434d-aa08-5249aaa95b3e",
       "links": [
         {
-          "href": "https://{[ hosts.kr1 ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/35a73b57-58a7-434d-aa08-5249aaa95b3e",
+          "href": "https://$[ hosts.kr1 ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/flavors/35a73b57-58a7-434d-aa08-5249aaa95b3e",
           "rel": "bookmark"
         }
       ]
@@ -1127,11 +1127,11 @@ X-Auth-Token: {tokenId}
     "id": "3a005d5b-63cf-4493-bfc6-49db990b5b50",
     "links": [
       {
-        "href": "https://{[ hosts.kr1 ]}/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
+        "href": "https://$[ hosts.kr1 ]$/v2/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
         "rel": "self"
       },
       {
-        "href": "https://{[ hosts.kr1 ]}/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
+        "href": "https://$[ hosts.kr1 ]$/6cdebe3eb0094910bc41f1d42ebe4cb7/servers/3a005d5b-63cf-4493-bfc6-49db990b5b50",
         "rel": "bookmark"
       }
     ]
