@@ -4,7 +4,7 @@
               else "ninc"  if "ninc"  in build_flags
               else "") -%}
 <a id="compute-instance-api-v2-guide"></a>
-## Compute > Instance > API v2 가이드
+## Compute > Instance > API v2 가이드 { #compute-instance-api-v2-guide }
 
 {% if "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
 API를 사용하려면 API 엔드포인트와 토큰 등이 필요합니다. [API 사용 준비](/Compute/Compute/ko/identity-api-$[ variant ]$/)를 참고하여 API 사용에 필요한 정보를 준비합니다.
@@ -14,7 +14,8 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 
 인스턴스 API는 `compute` 타입 엔드포인트를 이용합니다. 정확한 엔드포인트는 토큰 발급 응답의 `serviceCatalog`를 참조합니다.
 
-### 엔드포인트 (방식 1: macro)
+<a id="1-macro"></a>
+### 엔드포인트 (방식 1: macro) { #1-macro }
 {#
   방식 1 예시 — region 을 인자로 받는 macro 로 URL 을 조립합니다.
   이 섹션에서 필요한 변수/매크로를 자체적으로 정의합니다.
@@ -92,7 +93,8 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 ```
 {% endraw %}
 
-### 엔드포인트 (방식 2: dict)
+<a id="2-dict"></a>
+### 엔드포인트 (방식 2: dict) { #2-dict }
 {#
   방식 2 예시 — 이 섹션에서 hosts dict 를 자체적으로 정의합니다.
   macro 는 필요 없습니다.
