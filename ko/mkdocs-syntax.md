@@ -22,11 +22,11 @@ https://mkdocs-macros-plugin.readthedocs.io/en/latest/pages/
 
 **렌더링 결과**: 아래 세 절
 
-# nfw
+# 기본 문법
 {% include-markdown './nfw-console-guide.md' %}
 
-# deploy
+# Sample: api url 을 변수화
 {% include-markdown './deploy-api-guide.md' %}
 
-# compute-instance
+# Sample: 분기 처리 방식 2가지
 {% include-markdown './compute-public-api.md' %}
