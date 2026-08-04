@@ -10,7 +10,17 @@
 | 블록 태그 | `{%` | `%}` | `{% if "gov" in build_flags %}` |
 | 주석 | `{#` | `#}` | `{# 렌더에 표시되지 않는 메모 #}` |
 
-> **주의**: 표현식은 표준 Jinja 의 `{{ }}` 가 아닌 **`$[ ]$`** 를 씁니다. `{{ ... }}` 는 배포 결과에 raw 텍스트로 그대로 노출됩니다.
+> **주의**: 표현식은 표준 Jinja 의 `{{ }}` 도, 유사 delimiter `{[ ]}` 도 아닌 **`$[ ]$`** 를 씁니다. 다른 형태로 쓰면 배포 결과에 raw 텍스트로 그대로 노출됩니다.
+
+## 파이프라인 특성 (중요)
+
+배포 파이프라인은 **`trim_blocks=False`** 로 동작합니다. 즉 `{% ... %}` 블록 태그 뒤의 개행이 자동으로 제거되지 **않습니다**. 로컬에서 Jinja2 를 기본 설정 (`trim_blocks=True`) 으로 테스트하면 문제 없이 렌더되지만, 배포 시 예기치 않은 빈 줄이 삽입되어 아래와 같은 문제가 생길 수 있습니다:
+
+- **마크다운 표가 깨져서** header 만 있고 데이터 행이 `<p>` 로 분리됨
+- 헤딩 다음에 원치 않는 blank line 이 여러 줄 삽입됨
+- 리스트/코드블록의 경계가 어긋남
+
+이 때문에 **모든 블록 태그에 dash whitespace 제어를 명시적으로 붙이는 습관** 이 필요합니다.
 
 ## 화이트스페이스 제어
 
@@ -22,11 +32,13 @@
 {%- if "gov" in build_flags %}    ← 앞쪽만 제거
 ```
 
-주석에도 동일하게 적용: `{#- ... -#}` vs `{# ... #}`. 주석 자체는 어떻게 쓰든 렌더 결과에서 사라지지만, 앞뒤 공백 처리 방식이 다릅니다. **연속된 blank line 이 중요한 위치 (heading 직후 등) 에서는 dash 를 붙이지 마세요** — 앞뒤 공백이 지워져 heading 이 다음 요소와 붙어버립니다.
+주석에도 동일하게 적용: `{#- ... -#}` vs `{# ... #}`. 주석 자체는 어떻게 쓰든 렌더 결과에서 사라지지만, 앞뒤 공백 처리 방식이 다릅니다.
+
+> **주의**: 연속된 blank line 이 중요한 위치 (heading 직후, 표 뒤 등) 에서는 dash 를 붙이지 마세요 — 앞뒤 공백이 지워져 heading 이 다음 요소와 붙어버립니다.
 
 ## 조건 블록
 
-가장 자주 쓰이는 패턴이며, 배포 파이프라인이 확실히 지원합니다.
+가장 자주 쓰이는 패턴입니다.
 
 ### 단일 조건
 
@@ -48,15 +60,21 @@ gov 문구
 
 ### 다중 조건 (elif)
 
+**표 안에서 사용할 때는 반드시 branch 사이에 `{%- ... -%}` 를 붙여야** 표가 깨지지 않습니다. `trim_blocks=False` 파이프라인에서 elif/else 태그 뒤의 개행이 살아남기 때문입니다.
+
 ```jinja
-{% if "gov" in build_flags %}
-...
-{% elif "ngoic" in build_flags or "ngovc" in build_flags %}
-...
-{% else %}
-...
+{% if "gov" in build_flags -%}
+gov 문구
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags -%}
+ngoic/ngovc 문구
+{%- else -%}
+그 외 문구
 {% endif %}
 ```
+
+- `{% if ... -%}` : 태그 뒤 개행 제거 (다음 branch 내용이 자기 줄에서 시작하게)
+- `{%- elif ... -%}` / `{%- else -%}` : 이전 branch 끝의 개행과 자기 뒤 개행을 모두 제거
+- `{% endif %}` : 앞 dash 없이 → 마지막 branch 뒤 개행을 보존 (표 뒤에 blank line 확보용)
 
 ### 부정 및 OR
 
@@ -65,9 +83,40 @@ gov 문구
 {% if "public" in build_flags or "gov" in build_flags -%} ... {%- endif %}
 ```
 
+## 마크다운 표 안의 조건 블록
+
+Markdown 표는 header, separator, data row 사이에 **빈 줄이 없어야** 완결됩니다. 조건 블록이 표 데이터 행을 감쌀 때는 위의 dash 규칙을 반드시 따르세요.
+
+**나쁜 예 (표가 깨짐):**
+```jinja
+| 타입 | 리전 | 엔드포인트 |
+|---|---|---|
+{% if "gov" in build_flags %}
+| compute | ... |
+{% elif "ngoic" in build_flags %}
+| compute | ... |
+{% else %}
+| compute | ... |
+{% endif %}
+```
+→ `trim_blocks=False` 파이프라인에서 태그 뒤 개행이 남아 separator 와 data row 사이에 빈 줄 삽입 → 표가 header 만 남고 data 는 `<p>` 로 분리됨.
+
+**좋은 예:**
+```jinja
+| 타입 | 리전 | 엔드포인트 |
+|---|---|---|
+{% if "gov" in build_flags -%}
+| compute | ... |
+{%- elif "ngoic" in build_flags -%}
+| compute | ... |
+{%- else -%}
+| compute | ... |
+{% endif %}
+```
+
 ## 변수 정의 (`{% set %}`)
 
-파일 상단에서 자주 파생 변수를 만듭니다. 여러 줄로 흩어써도 됩니다.
+파생 변수를 만듭니다. 여러 줄로 흩어써도 됩니다.
 
 ```jinja
 {%- set variant = ("ngoic" if "ngoic" in build_flags
@@ -87,6 +136,28 @@ gov 문구
 | compute | 한국(광주) 리전 | https://$[ hosts.kr3 ]$ |
 ```
 
+### 정의 위치
+
+`{% set %}` 과 `{% macro %}` 는 **파일 최상단일 필요가 없습니다**. Jinja 는 파일을 위에서 아래로 처리하므로, **사용 지점보다 앞서 정의되기만 하면** 어디든 가능합니다.
+
+| 배치 방식 | 장점 | 단점 |
+|---|---|---|
+| 파일 최상단 | 한눈에 파악, 여러 섹션에서 재사용 쉬움 | 파일 첫 화면이 setup 코드로 가려짐 |
+| 사용 섹션 바로 앞 | 관련 있는 코드가 근처에 모여 있어 문맥이 명확 | 여러 섹션에서 쓰면 중복 정의 위험 |
+| 외부 파일 + `{% include %}` | 여러 `.md` 에서 공유 가능 | 파일 하나 늘어남 |
+
+`ko/public-api.md` 는 파일 상단의 `variant` 정의와 각 subsection 안의 host 변수/dict/macro 정의를 조합해서 씁니다.
+
+### 마지막 `-%}` 주의
+
+`{%- set foo = ... -%}` 처럼 뒤에 `-%}` 를 쓰면 뒤이은 **모든 공백** (여러 개의 `\n` 포함) 이 제거됩니다. 표나 heading 앞에서 이걸 쓰면 blank line 이 사라져 markdown 이 깨질 수 있습니다. 표 바로 앞의 마지막 `set` 은 `-%}` 대신 `%}` 로 닫으세요:
+
+```jinja
+{%- set hosts = { ... } %}
+
+| 타입 | 리전 | 엔드포인트 |
+```
+
 ## Macro 정의
 
 인자를 받는 재사용 가능 함수 정의.
@@ -103,11 +174,52 @@ $[ hosts.get(region, "") ]$
 | compute | 한국(판교) 리전 | https://$[ api_host("kr1") ]$ |
 ```
 
+### 자체 완결형 macro
+
+macro 가 외부 변수 (`hosts` 같은) 에 의존하면, 다른 곳에서 그 이름을 재정의하거나 삭제하면 macro 도 영향을 받습니다. 완전히 독립시키려면 **인자만으로 결과가 나오도록** 하세요:
+
+```jinja
+{% macro api_host(region) -%}
+{%- if region == "kr1" -%}$[ kr1_host ]$
+{%- elif region == "kr2" -%}$[ kr2_host ]$
+{%- elif region == "kr3" -%}$[ kr3_host ]$
+{%- endif -%}
+{%- endmacro %}
+```
+
+`ko/public-api.md` 의 "엔드포인트 (방식 1: macro)" subsection 에서 이 패턴을 사용합니다.
+
+## `{% raw %}` — 템플릿 문법 자체를 문서에 노출
+
+Jinja 문법을 **원문 그대로** 보여주려면 (예: 코드 펜스 안에 template 소스 예시를 넣을 때) `{% raw %}` ~ `{% endraw %}` 로 감쌉니다. 이 안의 `$[ ]$`, `{% %}`, `{# #}` 는 evaluation 되지 않고 텍스트로 출력됩니다.
+
+````jinja
+{% raw %}
+```jinja
+{%- set kr1_host = "..." -%}
+| compute | ... | https://$[ api_host("kr1") ]$ |
+```
+{% endraw %}
+````
+
+렌더 결과: 위 코드 펜스 내용이 문자 그대로 문서에 노출됩니다.
+
+## `{# #}` 주석
+
+렌더 결과에는 나타나지 않는 작성자 메모용. `{{ }}` 나 `$[ ]$` 를 안에 써도 evaluation 되지 않으므로 문법 예시를 담기 좋습니다:
+
+```jinja
+{#
+  이 섹션은 API URL 을 방식 1 (macro) 로 작성합니다: $[ api_host("kr1") ]$
+  다른 방식(hosts.kr1, kr1_host)과 섞지 마세요.
+#}
+```
+
 ## `build_flags` 변수
 
 배포 파이프라인이 각 build 별로 주입하는 리스트입니다. 파일 안에서 정의하지 않고, 곧바로 참조합니다.
 
-|  build_flag  |  대상 build  |
+| build_flag | 대상 build |
 |---|---|
 | `gov` | 공공기관용 |
 | `ngoic` | 대구 리전 - ngoic |
@@ -124,25 +236,42 @@ $[ hosts.get(region, "") ]$
 | 파일 | 사용하는 문법 |
 |---|---|
 | [`ko/overview.md`](ko/overview.md) | `{% if %}` 조건 블록 + `{%- ... -%}` 화이트스페이스 제어 |
-| [`ko/public-api.md`](ko/public-api.md) | 위 항목 전부 + `{% set %}` + `{% macro %}` + `$[ ]$` 표현식 + `{# #}` 주석 |
+| [`ko/public-api.md`](ko/public-api.md) | 위 항목 전부 + `{% set %}` + `{% macro %}` + `$[ ]$` 표현식 + `{# #}` 주석 + `{% raw %}` |
 
 ## 로컬 검증 방법
 
-Python + Jinja2 로 렌더링해 결과를 확인할 수 있습니다. 커스텀 delimiter 를 지정하는 것이 핵심.
+로컬에서는 Python + Jinja2 로 렌더링해 결과를 확인합니다. 커스텀 delimiter 를 지정하는 것이 핵심.
+
+**두 모드 모두 검증** 하세요. 배포 파이프라인은 `trim_blocks=False` 로 동작하므로, `trim_blocks=True` 로만 테스트하면 배포 시 표가 깨지는 등의 문제가 잡히지 않습니다.
 
 ```python
 import jinja2
-env = jinja2.Environment(
-    variable_start_string='$[',
-    variable_end_string=']$',
-    keep_trailing_newline=True,
-    trim_blocks=True,
-)
-tpl = env.from_string(open('ko/public-api.md').read())
-print(tpl.render(build_flags=['gov']))     # gov build 렌더 결과
-print(tpl.render(build_flags=[]))          # 기본 build
+
+for trim in (True, False):
+    env = jinja2.Environment(
+        variable_start_string='$[',
+        variable_end_string=']$',
+        keep_trailing_newline=True,
+        trim_blocks=trim,   # 배포 파이프라인은 False
+    )
+    tpl = env.from_string(open('ko/public-api.md').read())
+    for flags in [[], ['gov'], ['ngoic']]:
+        out = tpl.render(build_flags=flags)
+        # 표 렌더 결과 등을 눈으로 확인
 ```
 
 ## 배포 확인
 
-이 저장소는 https://docs.alpha-nhncloud.com/ko/Open%20Source/agent-test/ 로 배포됩니다. 새로 문법을 도입한 뒤에는 배포 페이지에서 raw 템플릿 텍스트 (`$[`, `{%`, `{#`) 가 노출되지 않았는지 반드시 눈으로 확인하세요.
+이 저장소는 https://docs.alpha-nhncloud.com/ko/Open%20Source/agent-test/ 로 배포됩니다. 배포는 커밋 후 최대 **20분 정도** 걸릴 수 있습니다. 새로 문법을 도입한 뒤에는 배포 페이지에서 다음을 확인하세요:
+
+- Raw 템플릿 텍스트 (`$[`, `{%`, `{#`) 가 code fence 바깥에 노출되지 않았는지
+- 마크다운 표가 header + data 모두 완결되어 렌더되는지
+- 조건에 따라 다른 build 에서 원치 않는 빈 줄이 삽입되지 않았는지
+
+배포된 원본 HTML 을 `curl` 로 받아 검사하면 문제를 정확히 짚을 수 있습니다:
+
+```bash
+curl -s -H 'Cache-Control: no-cache' \
+  "https://docs.alpha-nhncloud.com/ko/Open%20Source/agent-test/ko/public-api/?nocache=$(date +%s)" \
+  | grep -c '<td></td>'   # 표에 빈 셀이 몇 개인지 (0 이면 정상)
+```
