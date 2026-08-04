@@ -175,6 +175,16 @@ trim 적용으로 위·아래 빈 줄이 제거됩니다.
 
 {% raw %}
 ```jinja
+{%- set env = {
+      "api": {
+        "regions": [
+          {"name": "kr1", "url": "kr1-api-instance-infrastructure.nhncloudservice.com"},
+          {"name": "kr2", "url": "kr2-api-instance-infrastructure.nhncloudservice.com"},
+          {"name": "kr3", "url": "kr3-api-instance-infrastructure.nhncloudservice.com"},
+        ]
+      }
+} -%}
+
 {% for r in env.api.regions %}$[ r.url ]$<br>{% endfor %}
 ```
 {% endraw %}
