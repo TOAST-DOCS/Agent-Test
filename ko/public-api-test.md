@@ -17,3 +17,5 @@ gov:
 | 타입 | 리전 | 엔드포인트 |
 |---|---|---|
 | compute | {% for r in env.api.regions %}$[ r.name ]$<br>{% endfor %} | {% for r in env.api.regions %}$[ r.url ]$<br>{% endfor %} |
+
+{% include 'kernel-guide.md' %}
