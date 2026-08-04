@@ -237,7 +237,7 @@ $ sudo vi /etc/default/grub.d/50-cloudimg-settings.cfg
 GRUB_TIMEOUT=3
 GRUB_TERMINAL="console serial"
 GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
-```
+````
 
 변경된 설정을 적용합니다. OS에 따라 GRUB 설정 적용 명령어가 다를 수 있습니다.
 
@@ -265,14 +265,3 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
 webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
 마커는 정기 restore-alpha-origin 으로 정리됩니다.
-
-## mkdocs 문법
-
-{% include-markdown './nfw-console-guide.md' %}
-
-{% include-markdown './deploy-api-guide.md' %}
-
-{% include-markdown './compute-public-api.md' %}
-
-
-
