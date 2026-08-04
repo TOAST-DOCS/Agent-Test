@@ -1,7 +1,5 @@
----
-machine_translated: true
----
 <!-- pre-align:aligned sig=74b0e7f9672e -->
+<!-- machine_translated: true -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 概要 { #compute-instance-overview }
