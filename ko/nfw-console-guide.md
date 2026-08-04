@@ -148,3 +148,18 @@ trim 없이 렌더링되어 위·아래에 빈 줄이 남습니다.
 {%- if "gov" in build_flags -%}
 trim 적용으로 위·아래 빈 줄이 제거됩니다.
 {%- endif -%}
+
+
+
+## 제목 분기
+
+
+{% if "public" in build_flags %}
+### public 제목
+{% endif %}
+
+{% if "gov" in build_flags %}
+### gov 제목
+{% endif %}
+
+본문은 동일합니다.
