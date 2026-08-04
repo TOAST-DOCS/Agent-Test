@@ -244,15 +244,19 @@ Jinja 문법을 **원문 그대로** 보여주려면 (예: 코드 펜스 안에 
 
 ### 1. 코드 fence 백틱 개수
 
-코드 블록 닫기 fence 를 실수로 백틱 4개(`` ```` ``) 로 쓰면 블록이 닫히지 않고, 이후 문서 **전체가 열린 코드 블록** 안으로 빨려 들어갑니다. 페이지에서 heading, 표, include 결과가 모두 raw text 로만 표시된다면 우선 fence 개수부터 확인하세요.
+코드 블록 닫기 fence 를 실수로 백틱 4개(`` ```` ``) 로 쓰면 블록이 닫히지 않고, 이후 문서 **전체가 열린 코드 블록** 안으로 빨려 들어갑니다. 페이지에서 heading, 표, include 결과가 모두 raw text 로만 표시된다면 우선 fence 개수부터 확인하세요. (아래 예시는 fence 문자를 문자 그대로 보이기 위해 4-space indented 코드 블록으로 표기했습니다.)
 
-```
-$ sudo update-grub
-```     ← 3개 (정상)
+정상 — 여는 fence 와 닫는 fence 가 모두 백틱 3개:
 
-$ sudo update-grub
-````    ← 4개 (fence 안 닫힘 → 뒷내용 전부 code block 안으로 흡수)
-```
+    ```
+    $ sudo update-grub
+    ```
+
+잘못됨 — 닫는 fence 가 백틱 4개라 실제로 안 닫힘:
+
+    ```
+    $ sudo update-grub
+    ````
 
 ### 2. 인라인/헤딩의 bare Jinja 태그는 파싱됩니다
 
