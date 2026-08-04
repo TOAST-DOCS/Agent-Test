@@ -34,15 +34,13 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
               else "kr2-api-instance-infrastructure.nhncloudservice.com") -%}
 {%- set kr3_host = "kr3-api-instance-infrastructure.nhncloudservice.com" -%}
 {%- set jp1_host = "jp1-api-instance-infrastructure.nhncloudservice.com" -%}
-{%- set hosts = {
-      "kr1": kr1_host,
-      "kr2": kr2_host,
-      "kr3": kr3_host,
-      "jp1": jp1_host,
-      "kr4": kr4_host,
-} -%}
 {% macro api_host(region) -%}
-$[ hosts.get(region, "") ]$
+{%- if region == "kr1" -%}$[ kr1_host ]$
+{%- elif region == "kr2" -%}$[ kr2_host ]$
+{%- elif region == "kr3" -%}$[ kr3_host ]$
+{%- elif region == "kr4" -%}$[ kr4_host ]$
+{%- elif region == "jp1" -%}$[ jp1_host ]$
+{%- endif -%}
 {%- endmacro %}
 
 | 타입 | 리전 | 엔드포인트 |
@@ -73,12 +71,13 @@ $[ hosts.get(region, "") ]$
               else "kr2-api-instance-infrastructure.nhncloudservice.com") -%}
 {%- set kr3_host = "kr3-api-instance-infrastructure.nhncloudservice.com" -%}
 {%- set jp1_host = "jp1-api-instance-infrastructure.nhncloudservice.com" -%}
-{%- set hosts = {
-      "kr1": kr1_host, "kr2": kr2_host, "kr3": kr3_host,
-      "jp1": jp1_host, "kr4": kr4_host,
-} -%}
 {% macro api_host(region) -%}
-$[ hosts.get(region, "") ]$
+{%- if region == "kr1" -%}$[ kr1_host ]$
+{%- elif region == "kr2" -%}$[ kr2_host ]$
+{%- elif region == "kr3" -%}$[ kr3_host ]$
+{%- elif region == "kr4" -%}$[ kr4_host ]$
+{%- elif region == "jp1" -%}$[ jp1_host ]$
+{%- endif -%}
 {%- endmacro %}
 
 | 타입 | 리전 | 엔드포인트 |
@@ -119,7 +118,7 @@ $[ hosts.get(region, "") ]$
       "kr3": kr3_host,
       "jp1": jp1_host,
       "kr4": kr4_host,
-} -%}
+} %}
 
 | 타입 | 리전 | 엔드포인트 |
 |---|---|---|
