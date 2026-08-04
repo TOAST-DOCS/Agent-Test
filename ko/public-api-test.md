@@ -18,4 +18,7 @@ gov:
 |---|---|---|
 | compute | {% for r in env.api.regions %}$[ r.name ]$<br>{% endfor %} | {% for r in env.api.regions %}$[ r.url ]$<br>{% endfor %} |
 
+## HTML 상대경로 테스트
+* 자세한 내용은 [권한 목록](../static/etc/infrastructure_roles_guide_202608_v1.html)을 참조하세요.
+
 {% include-markdown './console-guide.md' %}
