@@ -1,469 +1,628 @@
-{%- set api_host = "api-tcd.gov-nhncloudservice.com" if "gov" in build_flags else "api-tcd.nhncloudservice.com" -%}
-## Dev Tools > Deploy > API v2.0 가이드
-Deploy에서는 배포 실행, 정보 조회를 위한 API를 제공합니다. 사용자가 HTTP 요청을 직접 구성하여 사용할 수 있습니다.
+<!-- pre-align:aligned sig=36b960a8096b -->
 
-### 기본 정보
-#### 엔드포인트
+<a id="compute-instance-kernel-version-upgrade-guide"></a>
+## Compute > Instance > 커널 버전업 가이드 { #compute-instance-kernel-version-upgrade-guide }
 
-{% raw %}
-```jinja
-{%- set api_host = "api-tcd.gov-nhncloudservice.com" if "gov" in build_flags else "api-tcd.nhncloudservice.com" -%}
+> [주의] 
+> 커널 업데이트 시 OS가 훼손되거나 부팅을 실패할 수 있으며, 이에 따른 결과에 대한 책임은 사용자에게 있습니다.
+
+<a id="rocky-linux-8"></a>
+## Rocky Linux 8 { #rocky-linux-8 }
+
+<a id="check-the-kernel-version"></a>
+### 커널 버전 확인 { #check-the-kernel-version }
+
+현재 설치된 커널 버전을 확인합니다.
+
 ```
-{% endraw %}
-
-```text
-https://$[ api_host ]$
-```
-
-#### 제공하는 API 종류
-| Method | URI | 설명 |
-| ------ | --- | --- |
-| POST | /api/v2.0/projects/{appKey}/artifacts/{artifactId}/server-group/{serverGroupId}/deploy | 배포 실행 API |
-| GET | /api/v2.0/projects/{appKey}/artifacts | 아티팩트 목록 조회 API |
-| GET | /api/v2.0/projects/{appKey}/artifacts/{artifactId}/server-groups | 서버 그룹 목록 조회 API |
-| GET | /api/v2.0/projects/{appKey}/artifacts/{artifactId}/binary-groups | 바이너리 그룹 목록 조회 API |
-| GET | /api/v2.0/projects/{appKey}/artifacts/{artifactId}/deploy-histories | 배포 이력 조회 API |
-| GET | /api/v2.0/projects/{appKey}/artifacts/{artifactId}/binary-groups/{binaryGroupKey}/binaries | 바이너리 목록 조회 API |
-
-#### API 요청 경로 변수
-| 값 | 타입 | 설명 |
-| --- | --- | --- |
-| appKey | String | 사용할 Deploy 서비스의 앱키 |
-| artifactId | Number | 사용할 아티팩트의 아이디 |
-| binaryGroupKey | Number | 바이너리를 업로드할 바이너리 그룹 키 |
-| serverGroupId | Number | 배포 대상이 되는 서버 그룹 아이디 |
-
-### 배포 실행
-* 배포 실행을 위한 API입니다.
-* 아티팩트 `Command Type`이 Cloud Agent의 경우만 배포 실행 API를 제공합니다.(SSH의 경우 제공되지 않습니다.)
-* v2.0에서는 Autoscale 서버 그룹도 배포 실행 가능합니다.
-* 배포 실행 API는 역할 기반 접근 제어(RBAC)를 사용합니다. **Deploy ADMIN** 역할을 보유한 사용자만 배포 실행 API를 사용할 수 있습니다.
-
-#### Version 2.0
-| Http Method | POST |
-| ----------- | ---- |
-| Request URL | https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/server-group/{serverGroupId}/deploy |
-
-##### Header
-| Name | Description | Value |
-| --- | --- | --- |
-| Content-Type | ContentType | application/json |
-| X-TC-AUTHENTICATION-ID | API 보안 설정 메뉴의 User Access Key ID | {id} |
-| X-TC-AUTHENTICATION-SECRET | API 보안 설정 메뉴의 Secret Access Key | {key} |
-
-##### Parameter (Body)
-| Name | Type | Description | Value | Required | Default Value |
-| --- | --- | --- | --- | --- | --- |
-| targetServerHostnames | String | 서버 그룹 내에서 선택적으로 배포 대상이 되는 쉼표(,)로 구분된 서버의 호스트명(서버 그룹 전체인 경우 모두 입력) | hostname1, hostname2, hostname3(없을 시 서버 그룹 내 서버 전체 배포) | false | 서버 그룹에 포함된 전체 서버 |
-| concurrentNum | Number | 병렬로 실행할 배포 수 | 0 이상의 값, 0인 경우 서버 그룹 전체 동시 실행 | false | 0 |
-| nextWhenFail | Boolean | 시나리오 실패 시 다음 서버 실행 여부 | true/false | false | false (실행 중단) |
-| deployNote | String | 배포 시 작성하는 부가 정보 |  | false |  |
-| async | Boolean | 배포 결과를 기다리지 않고 응답을 받음 | true/false | false | false |
-| scenarioIds | String | 실행할 시나리오 scenarioId | 서버 그룹 내에서 쉼표(,)로 구분된 시나리오 ID(없을 시 매핑되어 있는 ScenarioID 전체) | false(단, 일반 Deploy 시 true - 1개만) | 없을 시 매핑되어 있는 ScenarioID 전체 |
-
-##### Sample Request For cURL
-``` java
-curl --location 'https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/server-group/{serverGroupId}/deploy' \
---header 'X-TC-AUTHENTICATION-ID: {ID}' \
---header 'X-TC-AUTHENTICATION-SECRET: {Key}' \
---header 'Content-Type: application/json' \
---data '{
-	"targetServerHostnames" : "{ex. server1,server2}",
-	"concurrentNum" : 1,
-	"nextWhenFail" : false,
-	"deployNote" : "{Note 내용}",
-	"async" : false,
-	"scenarioIds" : "{ex. 1,2}"
-}'
+# code-edit-test: this line must be copied verbatim
+[root@rocky810 ~]# uname -r
+4.18.0-553.8.1.el8_10.x86_64
 ```
 
-##### Response(json)
-* isSuccessful 항목은 배포 실행 호출에 성공 여부를 확인하는 필드값이며 deployStatus 항목을 통해 배포 결과(성공, 실패)를 확인해야 합니다.
-* Autoscale 서버 그룹을 배포했을 경우 body 값이 List 형태로 존재합니다.
+<a id="default-storage-settings"></a>
+### 기본 저장소 설정 { #default-storage-settings }
 
-| Name | Type | Description | Value |
-| ---- | ---- | ----------- | ----- |
-| isSuccessful | Boolean | 배포 실행 성공 여부 | true 또는 false |
-| resultCode | String | 배포 실행 결과 메시지 | [오류 코드](/Dev%20Tools/Deploy/ko/error-code/) 참고 |
-| deployStatus | String | 배포 상태 | success, fail 또는 deploying(async 옵션 true일 경우) |
-| deployResult | List | 서버별 배포 결과 | - hostname: 배포 대상 호스트명(인스턴스 ID)<br>- status: 배포 결과<br>- taskResult: 배포 시나리오 내 각 태스크별 정보 |
-| deployResultLocation | String | 배포 실행된 Deploy 서비스 프로젝트 링크 | 해당 링크로 Deploy 서비스 프로젝트 콘솔 접속 가능 |
+시스템 아키텍처와 Rocky Linux 버전에 맞는 기본 저장소를 변경합니다.
 
-##### Response Sample
-``` json
-{
-    "header": {
-        "isSuccessful": true,
-        "serverTime": 1707278725614,
-        "resultCode": "SUCCESS",
-        "resultMessage": "success"
-    },
-    "body": [
-		{
-			"deployKey": 192349,
-			"deployStatus": "{배포 상태}",
-			"deployResult": [
-				{
-					"deployKey": 192349,
-					"hostname": "{호스트명}",
-					"status": "{배포 결과}",
-					"taskResult": [
-						"..."
-					]
-				}
-			],
-			"deployResultLocation": "{배포 실행된 Deploy 서비스 프로젝트 링크}"
-		}
-	]
-}
+```
+[baseos]
+name=Rocky Linux $releasever - BaseOS
+mirrorlist=https://mirrors.rockylinux.org/mirrorlist?arch=$basearch&repo=BaseOS-$releasever
+#baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
+gpgcheck=1
+enabled=1
+countme=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
 ```
 
-### 아티팩트 목록 조회
-* 프로젝트의 아티팩트 목록을 조회하는 API입니다.
+* **name**
+  * 저장소의 이름이며 변경하여도 무관합니다.
+* **mirrorlist**
+  * 패키지를 다운로드할 수 있는 미러 서버 목록을 제공하는 URL을 지정합니다.
+  * 시스템의 아키텍처(`$basearch`)와 Rocky Linux 버전(`$releasever`)에 맞는 미러 서버 목록을 받아옵니다.
+* **baseurl**
+  * 패키지를 다운로드할 기본 URL을 지정합니다. 이 URL은 단일 서버를 가리키며, 해당 서버에서 직접 패키지를 다운로드합니다.
+* **gpgcheck**
+  * GPG(GNU Privacy Guard) 키가 들어 있는 저장소의 URL 또는 경로를 설정합니다. GPG 키는 rpm 패키지를 인증하는 데 사용하는 암호화 서명입니다.
 
-#### Version 2.0
-| Http Method | GET |
-| ----------- | ---- |
-| Request URL | https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts |
+> [참고]
+> **mirrorlist**와 **baseurl**이 모두 설정되어 있을 때는 **mirrorlist**가 우선 적용되며, **baseurl**은 대체 옵션으로 동작합니다.
 
-##### Header
-| Name | Description | Value |
-| --- | --- | --- |
-| X-TC-AUTHENTICATION-ID | API 보안 설정 메뉴의 User Access Key ID | {id} |
-| X-TC-AUTHENTICATION-SECRET | API 보안 설정 메뉴의 Secret Access Key | {key} |
+<a id="clear-the-cache-before-updating"></a>
+### 업데이트 전 캐시 삭제 { #clear-the-cache-before-updating }
 
-##### Parameter (Query String)
-| Name | Type | Description | Value | Required | Default Value |
-| --- | --- | --- | --- | --- | --- |
-| artifactName | String | 아티팩트 이름 검색 | 검색할 아티팩트 이름 | false | - |
+기존 다운로드된 패키지의 메타데이터가 저장된 캐시를 삭제합니다.
 
-##### Sample Request For cURL
-``` java
-curl -X GET \
-  'https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts?artifactName={artifactName}' \
-  -H 'X-TC-AUTHENTICATION-ID: {ID}' \
-  -H 'X-TC-AUTHENTICATION-SECRET: {Key}'
+```
+[root@rocky810 ~]# rm -rf /var/cache/dnf
 ```
 
-##### Response(json)
-| Name | Type | Description | Value |
-| ---- | ---- | ----------- | ----- |
-| isSuccessful | Boolean | 요청 성공 여부 | true 또는 false |
-| resultCode | String | 요청 결과 메시지 | [오류 코드](/Dev%20Tools/Deploy/ko/error-code/) 참고 |
-| artifacts | List | 아티팩트 목록 | 아래 항목 참고 |
+<a id="install-the-kernel"></a>
+### 커널 설치 { #install-the-kernel }
 
-**artifacts**
+<a id="install-the-kernel-by-specifying-a-version"></a>
+#### 버전 지정하여 커널 설치
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| id | Number | 아티팩트 ID |
-| name | String | 아티팩트 이름 |
-| applicationType | String | 애플리케이션 유형 (server/client) |
-| description | String | 설명 |
-| createDate | Date | 생성일 |
-| lastDeployDate | Date | 마지막 배포일 |
+> [참고]
+> Rocky Linux 패키지 8.8 이하 버전은 지원하지 않습니다.
 
-##### Response Sample
-``` json
-{
-    "header": {
-        "isSuccessful": true,
-        "serverTime": 1707278725614,
-        "resultCode": "SUCCESS",
-        "resultMessage": "success"
-    },
-    "body": {
-        "artifacts": [
-            {
-                "id": 1,
-                "name": "my-artifact",
-                "applicationType": "server",
-                "description": "서버 아티팩트",
-                "createDate": "2025-01-01T00:00:00+09:00",
-                "lastDeployDate": "2025-03-01T12:00:00+09:00"
-            }
-        ]
-    }
-}
+```
+[root@rocky810 ~]# dnf --releasever=8.10 list kernel*
+
+Installed Packages
+kernel.x86_64                                                                                4.18.0-477.27.1.el8_8                                                             @baseos
+kernel-core.x86_64                                                                           4.18.0-477.27.1.el8_8                                                             @baseos
+kernel-modules.x86_64                                                                        4.18.0-477.27.1.el8_8                                                             @baseos
+kernel-tools.x86_64                                                                          4.18.0-477.27.1.el8_8                                                             @baseos
+kernel-tools-libs.x86_64                                                                     4.18.0-477.27.1.el8_8                                                             @baseos
+Available Packages
+kernel.x86_64                                                                                4.18.0-553.16.1.el8_10                                                            baseos
+kernel-abi-stablelists.noarch                                                                4.18.0-553.16.1.el8_10                                                            baseos
+kernel-core.x86_64                                                                           4.18.0-553.16.1.el8_10                                                            baseos
+kernel-cross-headers.x86_64                                                                  4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug.x86_64                                                                          4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug-core.x86_64                                                                     4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug-devel.x86_64                                                                    4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug-modules.x86_64                                                                  4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug-modules-extra.x86_64                                                            4.18.0-553.16.1.el8_10                                                            baseos
+kernel-devel.x86_64                                                                          4.18.0-553.16.1.el8_10                                                            baseos
+kernel-doc.noarch                                                                            4.18.0-553.16.1.el8_10                                                            baseos
+kernel-headers.x86_64                                                                        4.18.0-553.16.1.el8_10                                                            baseos
+kernel-modules.x86_64                                                                        4.18.0-553.16.1.el8_10                                                            baseos
+kernel-modules-extra.x86_64                                                                  4.18.0-553.16.1.el8_10                                                            baseos
+kernel-rpm-macros.noarch                                                                     131-1.el8                                                                         appstream
+kernel-tools.x86_64                                                                          4.18.0-553.16.1.el8_10                                                            baseos
+kernel-tools-libs.x86_64                                                                     4.18.0-553.16.1.el8_10                                                            baseos
+kernelshark.x86_64
 ```
 
-### 서버 그룹 목록 조회
-* 아티팩트에 속한 서버 그룹 목록을 조회하는 API입니다.
+<a id="install-the-kernel-without-specifying-a-version"></a>
+#### 버전 지정하지 않고 커널 설치
+버전을 지정하지 않으면 major 버전의 최신 버전 기준으로 패키지를 검색합니다.
 
-#### Version 2.0
-| Http Method | GET |
-| ----------- | ---- |
-| Request URL | https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/server-groups |
+```
+[root@rocky810 ~]# dnf list kernel*
 
-##### Header
-| Name | Description | Value |
-| --- | --- | --- |
-| X-TC-AUTHENTICATION-ID | API 보안 설정 메뉴의 User Access Key ID | {id} |
-| X-TC-AUTHENTICATION-SECRET | API 보안 설정 메뉴의 Secret Access Key | {key} |
-
-##### Sample Request For cURL
-``` java
-curl -X GET \
-  'https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/server-groups' \
-  -H 'X-TC-AUTHENTICATION-ID: {ID}' \
-  -H 'X-TC-AUTHENTICATION-SECRET: {Key}'
+kernel.x86_64                                                                                4.18.0-477.27.1.el8_8                                                             @baseos
+kernel-core.x86_64                                                                           4.18.0-477.27.1.el8_8                                                             @baseos
+kernel-modules.x86_64                                                                        4.18.0-477.27.1.el8_8                                                             @baseos
+kernel-tools.x86_64                                                                          4.18.0-477.27.1.el8_8                                                             @baseos
+kernel-tools-libs.x86_64                                                                     4.18.0-477.27.1.el8_8                                                             @baseos
+Available Packages
+kernel.x86_64                                                                                4.18.0-553.16.1.el8_10                                                            baseos
+kernel-abi-stablelists.noarch                                                                4.18.0-553.16.1.el8_10                                                            baseos
+kernel-core.x86_64                                                                           4.18.0-553.16.1.el8_10                                                            baseos
+kernel-cross-headers.x86_64                                                                  4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug.x86_64                                                                          4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug-core.x86_64                                                                     4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug-devel.x86_64                                                                    4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug-modules.x86_64                                                                  4.18.0-553.16.1.el8_10                                                            baseos
+kernel-debug-modules-extra.x86_64                                                            4.18.0-553.16.1.el8_10                                                            baseos
+kernel-devel.x86_64                                                                          4.18.0-553.16.1.el8_10                                                            baseos
+kernel-doc.noarch                                                                            4.18.0-553.16.1.el8_10                                                            baseos
+kernel-headers.x86_64                                                                        4.18.0-553.16.1.el8_10                                                            baseos
+kernel-modules.x86_64                                                                        4.18.0-553.16.1.el8_10                                                            baseos
+kernel-modules-extra.x86_64                                                                  4.18.0-553.16.1.el8_10                                                            baseos
+kernel-rpm-macros.noarch                                                                     131-1.el8                                                                         appstream
+kernel-tools.x86_64                                                                          4.18.0-553.16.1.el8_10                                                            baseos
+kernel-tools-libs.x86_64                                                                     4.18.0-553.16.1.el8_10                                                            baseos
+kernelshark.x86_64
 ```
 
-##### Response(json)
-| Name | Type | Description | Value |
-| ---- | ---- | ----------- | ----- |
-| isSuccessful | Boolean | 요청 성공 여부 | true 또는 false |
-| resultCode | String | 요청 결과 메시지 | [오류 코드](/Dev%20Tools/Deploy/ko/error-code/) 참고 |
-| serverGroups | List | 서버 그룹 목록 | 아래 항목 참고 |
 
-**serverGroups**
+<a id="install-the-kernel-install-the-latest-kernel"></a>
+#### 최신 커널 설치
+별도의 버전을 지정하지 않으면 최신 버전으로 설치합니다. 
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| id | Number | 서버 그룹 ID |
-| name | String | 서버 그룹 이름 |
-| description | String | 설명 |
-| osType | String | OS 유형 (LINUX/WINDOWS) |
-| serverCount | Number | 서버 수 |
+커널을 설치하면 의존성 패키지인 **kernel-core**와 **kernel-modules**도 같이 설치합니다.
 
-##### Response Sample
-``` json
-{
-    "header": {
-        "isSuccessful": true,
-        "serverTime": 1707278725614,
-        "resultCode": "SUCCESS",
-        "resultMessage": "success"
-    },
-    "body": {
-        "serverGroups": [
-            {
-                "id": 1,
-                "name": "my-server-group",
-                "description": "운영 서버 그룹",
-                "osType": "LINUX",
-                "serverCount": 3
-            }
-        ]
-    }
-}
+```
+[root@rocky810 ~]# dnf install kernel
+Last metadata expiration check: 0:21:59 ago on Tue 10 Sep 2024 04:44:04 PM KST.
+Dependencies resolved.
+========================================================================================================================================================================================
+ Package                                       Architecture                          Version                                                Repository                             Size
+========================================================================================================================================================================================
+Installing:
+ kernel                                        x86_64                                4.18.0-553.16.1.el8_10                                 baseos                                 10 M
+Installing dependencies:
+ kernel-core                                   x86_64                                4.18.0-553.16.1.el8_10                                 baseos                                 43 M
+ kernel-modules                                x86_64                                4.18.0-553.16.1.el8_10                                 baseos                                 36 M
+
+Transaction Summary
+========================================================================================================================================================================================
+Install  3 Packages
+
+Total download size: 90 M
+Installed size: 96 M
+Is this ok [y/N]: y
+
+...
+...
+...
+
+Installed:
+  kernel-4.18.0-553.16.1.el8_10.x86_64            kernel-core-4.18.0-553.16.1.el8_10.x86_64            kernel-modules-4.18.0-553.16.1.el8_10.x86_64
+
+Complete!
 ```
 
-### 바이너리 그룹 목록 조회
-* 아티팩트에 속한 바이너리 그룹 목록을 조회하는 API입니다.
 
-#### Version 2.0
-| Http Method | GET |
-| ----------- | ---- |
-| Request URL | https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/binary-groups |
+<a id="install-the-kernel-check-package-installation"></a>
+#### 패키지 설치 확인
 
-##### Header
-| Name | Description | Value |
-| --- | --- | --- |
-| X-TC-AUTHENTICATION-ID | API 보안 설정 메뉴의 User Access Key ID | {id} |
-| X-TC-AUTHENTICATION-SECRET | API 보안 설정 메뉴의 Secret Access Key | {key} |
+커널 패키지가 정상적으로 설치되었는지 확인합니다.
 
-##### Sample Request For cURL
-``` java
-curl -X GET \
-  'https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/binary-groups' \
-  -H 'X-TC-AUTHENTICATION-ID: {ID}' \
-  -H 'X-TC-AUTHENTICATION-SECRET: {Key}'
+```
+[root@rocky810 ~]# dnf list installed | grep -iE "kernel.*4.18.0-553.16"
+kernel.x86_64                         4.18.0-553.16.1.el8_10                    @baseos
+kernel-core.x86_64                    4.18.0-553.16.1.el8_10                    @baseos
+kernel-modules.x86_64                 4.18.0-553.16.1.el8_10                    @baseos
 ```
 
-##### Response(json)
-| Name | Type | Description | Value |
-| ---- | ---- | ----------- | ----- |
-| isSuccessful | Boolean | 요청 성공 여부 | true 또는 false |
-| resultCode | String | 요청 결과 메시지 | [오류 코드](/Dev%20Tools/Deploy/ko/error-code/) 참고 |
-| binaryGroups | List | 바이너리 그룹 목록 | 아래 항목 참고 |
+<a id="reboot-the-os"></a>
+### OS 재부팅 { #reboot-the-os }
 
-**binaryGroups**
+커널 업데이트를 적용하기 위해 OS를 재부팅합니다.
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| key | Number | 바이너리 그룹 키 |
-| name | String | 바이너리 그룹 이름 |
-| description | String | 설명 |
-| regionCode | String | 리전 코드 |
-| createDate | Date | 생성일 |
-
-##### Response Sample
-``` json
-{
-    "header": {
-        "isSuccessful": true,
-        "serverTime": 1707278725614,
-        "resultCode": "SUCCESS",
-        "resultMessage": "success"
-    },
-    "body": {
-        "binaryGroups": [
-            {
-                "key": 1,
-                "name": "my-binary-group",
-                "description": "운영 바이너리 그룹",
-                "regionCode": "KR1",
-                "createDate": "2025-01-01T00:00:00+09:00"
-            }
-        ]
-    }
-}
+```
+[root@rocky810 ~]# sync; reboot
 ```
 
-### 배포 이력 조회
-* 아티팩트의 배포 이력을 조회하는 API입니다.
-* 조회 기간은 최대 1년을 초과할 수 없습니다.
+<a id="select-create-a-configuration-file-for-the-grub2-bootloader"></a>
+### <span style="color:#e11d21;">**[선택]**</span> GRUB2 부트로더의 설정 파일 생성 { #select-create-a-configuration-file-for-the-grub2-bootloader }
+시스템의 부트 메뉴를 업데이트하여, 새로 설치된 커널이나 기타 부팅 항목을 반영합니다.
 
-#### Version 2.0
-| Http Method | GET |
-| ----------- | ---- |
-| Request URL | https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/deploy-histories |
+dnf, yum은 자동으로 GRUB2 설정 파일을 업데이트합니다.
 
-##### Header
-| Name | Description | Value |
-| --- | --- | --- |
-| X-TC-AUTHENTICATION-ID | API 보안 설정 메뉴의 User Access Key ID | {id} |
-| X-TC-AUTHENTICATION-SECRET | API 보안 설정 메뉴의 Secret Access Key | {key} |
-
-##### Parameter (Query String)
-| Name | Type | Description | Value | Required | Default Value |
-| --- | --- | --- | --- | --- | --- |
-| serverGroupId | Number | 서버 그룹 ID | 0인 경우 아티팩트 전체 조회 | false | 0 |
-| deploymentYearFrom | String | 조회 시작일 | yyyy-MM-dd 형식 | false | 현재일 - 1개월 |
-| deploymentYearTo | String | 조회 종료일 | yyyy-MM-dd 형식 | false | 현재일 |
-| pageNum | Number | 페이지 번호 | 1 이상의 값 | false | 1 |
-| pageSize | Number | 페이지당 건수 | 1 이상의 값 | false | 20 |
-
-##### Sample Request For cURL
-``` java
-curl -X GET \
-  'https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/deploy-histories?serverGroupId=0&deploymentYearFrom=2025-01-01&deploymentYearTo=2025-03-01&pageNum=1&pageSize=20' \
-  -H 'X-TC-AUTHENTICATION-ID: {ID}' \
-  -H 'X-TC-AUTHENTICATION-SECRET: {Key}'
+```
+[root@rocky810 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
 
-##### Response(json)
-| Name | Type | Description | Value |
-| ---- | ---- | ----------- | ----- |
-| isSuccessful | Boolean | 요청 성공 여부 | true 또는 false |
-| resultCode | String | 요청 결과 메시지 | [오류 코드](/Dev%20Tools/Deploy/ko/error-code/) 참고 |
-| totalCount | Number | 전체 건수 | - |
-| deployHistories | List | 배포 이력 목록 | 아래 항목 참고 |
+<a id="select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
+#### 커널 업데이트 확인
 
-**deployHistories**
+커널 버전이 정상적으로 업데이트되었는지 확인합니다.
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| deployKey | Number | 배포 키 |
-| scenarioName | String | 시나리오 이름 |
-| serverGroupName | String | 서버 그룹 이름 |
-| serverGroupId | Number | 서버 그룹 ID |
-| binaryVersion | String | 바이너리 버전 |
-| executeDate | Date | 실행일 |
-| executeUser | String | 실행자 |
-| totalResult | String | 실행 결과 (SUCCESS/FAIL/RUNNING) |
-
-##### Response Sample
-``` json
-{
-    "header": {
-        "isSuccessful": true,
-        "serverTime": 1707278725614,
-        "resultCode": "SUCCESS",
-        "resultMessage": "success"
-    },
-    "body": {
-        "totalCount": 1,
-        "deployHistories": [
-            {
-                "deployKey": 192349,
-                "scenarioName": "배포 시나리오",
-                "serverGroupName": "운영 서버 그룹",
-                "serverGroupId": 1,
-                "binaryVersion": "1.0.0",
-                "executeDate": "2025-03-01T12:00:00+09:00",
-                "executeUser": "user@example.com",
-                "totalResult": "SUCCESS"
-            }
-        ]
-    }
-}
+```
+[root@rocky810 ~]# uname -r
+4.18.0-553.16.1.el8_10.x86_64
 ```
 
-### 바이너리 목록 조회
-* 바이너리 그룹에 속한 바이너리 목록을 조회하는 API입니다.
+<a id="change-the-kernel-boot-order"></a>
+### 커널 부팅 순서 변경 { #change-the-kernel-boot-order }
 
-#### Version 2.0
-| Http Method | GET |
-| ----------- | ---- |
-| Request URL | https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/binary-groups/{binaryGroupKey}/binaries |
+여러 개의 커널이 설치된 경우 원하는 커널로 부팅할 수 있도록 부팅 순서를 변경합니다.
 
-##### Header
-| Name | Description | Value |
-| --- | --- | --- |
-| X-TC-AUTHENTICATION-ID | API 보안 설정 메뉴의 User Access Key ID | {id} |
-| X-TC-AUTHENTICATION-SECRET | API 보안 설정 메뉴의 Secret Access Key | {key} |
+<a id="change-the-kernel-boot-order-rocky-versions-below-810"></a>
+#### Rocky 8.10 미만 버전
 
-##### Parameter (Query String)
-| Name | Type | Description | Value | Required | Default Value |
-| --- | --- | --- | --- | --- | --- |
-| pageNum | Number | 페이지 번호 | 1 이상의 값 | false | 1 |
-| pageSize | Number | 페이지당 건수 | 1 이상의 값 | false | 20 |
-| sortKey | String | 정렬 기준 | VERSION, BINARY_KEY, UPLOAD_DATE | false | UPLOAD_DATE |
-| sortDirection | String | 정렬 방향 | ASC, DESC | false | DESC |
-| keyword | String | 바이너리 버전 검색 키워드 | 검색할 키워드 | false | - |
+##### 기본 커널 확인
 
-##### Sample Request For cURL
-``` java
-curl -X GET \
-  'https://$[ api_host ]$/api/v2.0/projects/{appKey}/artifacts/{artifactId}/binary-groups/{binaryGroupKey}/binaries?pageNum=1&pageSize=20&sortKey=UPLOAD_DATE&sortDirection=DESC' \
-  -H 'X-TC-AUTHENTICATION-ID: {ID}' \
-  -H 'X-TC-AUTHENTICATION-SECRET: {Key}'
+현재 기본 설정된 커널을 확인합니다.
+
+```
+[root@rocky810 ~]# grubby --default-kernel
+/boot/vmlinuz-4.18.0-553.16.1.el8_10.x86_64
 ```
 
-##### Response(json)
-| Name | Type | Description | Value |
-| ---- | ---- | ----------- | ----- |
-| isSuccessful | Boolean | 요청 성공 여부 | true 또는 false |
-| resultCode | String | 요청 결과 메시지 | [오류 코드](/Dev%20Tools/Deploy/ko/error-code/) 참고 |
-| totalCount | Number | 전체 건수 | - |
-| binaries | List | 바이너리 목록 | 아래 항목 참고 |
+##### 현재 설치된 커널 목록
 
-**binaries**
+현재 설치된 커널 목록을 확인합니다.
 
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| binaryKey | Number | 바이너리 키 |
-| version | String | 바이너리 버전 |
-| binaryName | String | 바이너리 파일명 |
-| binarySize | Number | 바이너리 파일 크기 (bytes) |
-| uploadDate | Date | 업로드일 |
-| uploader | String | 업로더 |
-| description | String | 설명 |
-
-##### Response Sample
-``` json
-{
-    "header": {
-        "isSuccessful": true,
-        "serverTime": 1707278725614,
-        "resultCode": "SUCCESS",
-        "resultMessage": "success"
-    },
-    "body": {
-        "totalCount": 1,
-        "binaries": [
-            {
-                "binaryKey": 100,
-                "version": "1.0.0",
-                "binaryName": "app-1.0.0.jar",
-                "binarySize": 10485760,
-                "uploadDate": "2025-03-01T12:00:00+09:00",
-                "uploader": "user@example.com",
-                "description": "릴리즈 바이너리"
-            }
-        ]
-    }
-}
 ```
+[root@rocky810 ~]# grubby --info=ALL | grep ^kernel | grep -v rescue
+kernel="/boot/vmlinuz-4.18.0-553.el8_10.x86_64"
+kernel="/boot/vmlinuz-4.18.0-553.16.1.el8_10.x86_64"
+kernel="/boot/vmlinuz-4.18.0-553.8.1.el8_10.x86_64"
+```
+
+##### 기본 커널 변경
+
+현재 설치된 커널 목록 중 하나를 선택하여 기본 커널을 변경합니다.
+
+```
+[root@rocky810 ~]# grubby --set-default="/boot/vmlinuz-4.18.0-553.8.1.el8_10.x86_64"
+The default is /boot/loader/entries/ea5b6e1e7bc09da25505ebb3a26a8bf4-4.18.0-553.8.1.el8_10.x86_64.conf with index 4 and kernel /boot/vmlinuz-4.18.0-553.8.1.el8_10.x86_64
+[root@rocky810 ~]# grubby --default-kernel
+/boot/vmlinuz-4.18.0-553.8.1.el8_10.x86_64
+```
+
+##### OS 재부팅
+
+부팅 순서 변경 적용을 위해 OS를 재부팅합니다.
+
+```
+[root@rocky810 ~]# sync; reboot
+```
+
+<a id="change-the-kernel-boot-order-rocky-810-and-later-versions"></a>
+#### Rocky 8.10 이상 버전
+
+현재 Rocky 8.10 공식 이미지에서 grubby 명령어로 커널 변경이 안 되는 문제가 있어 아래 쉘 스크립트를 사용합니다.
+
+```bash
+#!/bin/bash
+
+result=1
+kernel_list=(` rpm -qa | grep ^kernel-[0-9] | sort `)
+
+echo -e "\n# Choose the kernel you want from the list below. #"
+echo "------------------------------------------------"
+for index in ${!kernel_list[@]}; do
+    echo "Num: $index,  ${kernel_list[$index]}"
+done
+echo "------------------------------------------------"
+read -p "index: " kernel_index
+
+for index in ${!kernel_list[@]}; do
+    if [[ "$index" -eq "$kernel_index" ]]; then
+        sed -i "s/GRUB_DEFAULT=[^ ]*/GRUB_DEFAULT=$kernel_index/" /etc/default/grub && result=0
+        grub2-mkconfig -o /etc/grub2.cfg
+    fi
+done
+
+if [[ "$result" -eq "1" ]]; then
+    echo "[Error] Please choose only from the indexes in the list"
+fi
+```
+
+##### 스크립트 사용 방법
+
+쉘 스크립트 실행 후 출력되는 커널 목록 중 부팅할 커널의 번호를 입력합니다.
+
+```
+[root@rocky810 ~]# bash kernel_select.sh
+
+# Choose the kernel you want from the list below. #
+------------------------------------------------
+Num: 0,  kernel-4.18.0-553.16.1.el8_10.x86_64
+Num: 1,  kernel-4.18.0-553.8.1.el8_10.x86_64
+Num: 2,  kernel-4.18.0-553.el8_10.x86_64
+------------------------------------------------
+index: 0
+Generating grub configuration file ...
+done
+```
+
+##### OS 재부팅
+
+부팅 순서 변경 적용을 위해 OS를 재부팅합니다.
+
+```
+[root@rocky810 ~]# sync; reboot
+```
+
+<a id="rocky-linux-9"></a>
+## Rocky Linux 9 { #rocky-linux-9 }
+
+<a id="rocky-linux-9-check-the-kernel-version"></a>
+### 커널 버전 확인 { #rocky-linux-9-check-the-kernel-version }
+
+현재 설치된 커널 버전을 확인합니다.
+
+```
+[rocky@rocky95 ~]$ uname -r
+5.14.0-503.14.1.el9_5.x86_64
+```
+
+<a id="rocky-linux-9-default-storage-settings"></a>
+### 기본 저장소 설정 { #rocky-linux-9-default-storage-settings }
+
+시스템 아키텍처와 Rocky Linux 버전에 맞는 기본 저장소를 변경합니다.
+
+```
+[baseos]
+name=Rocky Linux $releasever - BaseOS
+mirrorlist=https://mirrors.rockylinux.org/mirrorlist?arch=$basearch&repo=BaseOS-$releasever$rltype
+#baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
+gpgcheck=1
+enabled=1
+countme=1
+metadata_expire=6h
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
+```
+
+* **name**
+  * 저장소의 이름이며 변경하여도 무관합니다.
+* **mirrorlist**
+  * 패키지를 다운로드할 수 있는 미러 서버 목록을 제공하는 URL을 지정합니다.
+  * 시스템의 아키텍처(`$basearch`)와 Rocky Linux 버전(`$releasever`)에 맞는 미러 서버 목록을 받아옵니다.
+* **baseurl**
+  * 패키지를 다운로드할 기본 URL을 지정합니다. 이 URL은 단일 서버를 가리키며, 해당 서버에서 직접 패키지를 다운로드합니다.
+* **gpgcheck**
+  * GPG(GNU Privacy Guard) 키가 들어 있는 저장소의 URL 또는 경로를 설정합니다. GPG 키는 rpm 패키지를 인증하는 데 사용하는 암호화 서명입니다.
+* **enabled**
+  * 이 저장소를 활성화 여부를 설정합니다.
+  * 값이 1인 경우 활성화, 0인 경우 비활성화입니다.
+* **countme**
+  * Rocky Linux 사용 통계를 수집하는 기능입니다.
+  * 값이 1인 경우 Rocky Linux 프로젝트에 얼마나 많은 사용자가 있는지 파악할 수 있습니다.
+* **metadata_expire**
+  * dnf가 저장소의 메타데이터(패키지 목록 등)를 특정 시간(예시에서는 6시간) 주기로 갱신하도록 설정합니다.
+* **gpgkey**
+  * 패키지 서명을 검증할 GPG 키 파일의 경로입니다.
+
+> [참고]
+> **mirrorlist**와 **baseurl**이 모두 설정되어 있을 때는 **mirrorlist**가 우선 적용되며, **baseurl**은 대체 옵션으로 동작합니다.
+
+<a id="rocky-linux-9-clear-the-cache-before-updating"></a>
+### 업데이트 전 캐시 삭제 { #rocky-linux-9-clear-the-cache-before-updating }
+
+기존 다운로드된 패키지의 메타데이터가 저장된 캐시를 삭제합니다.
+
+
+```
+[root@rocky95 ~]# rm -rf /var/cache/dnf
+```
+
+<a id="rocky-linux-9-install-the-kernel"></a>
+### 커널 설치 { #rocky-linux-9-install-the-kernel }
+
+<a id="rocky-linux-9-install-the-kernel-install-the-kernel-by-specifying-a-version"></a>
+#### 버전 지정하여 커널 설치
+
+> [참고]
+> 현재 Rocky Linux 9 패키지는 9.5 버전만 사용이 가능합니다.
+
+
+```
+[root@rocky95 ~]# dnf --releasever=9.5 list kernel*
+
+Rocky Linux 9.5 - BaseOS                                                                                           1.7 MB/s | 2.3 MB     00:01
+Rocky Linux 9.5 - AppStream                                                                                        7.2 MB/s | 8.6 MB     00:01
+Rocky Linux 9.5 - Extras                                                                                            12 kB/s |  16 kB     00:01
+Installed Packages
+kernel.x86_64                                                              5.14.0-503.14.1.el9_5                                          @baseos
+kernel.x86_64                                                              5.14.0-503.22.1.el9_5                                          @baseos
+kernel-core.x86_64                                                         5.14.0-503.14.1.el9_5                                          @baseos
+kernel-core.x86_64                                                         5.14.0-503.22.1.el9_5                                          @baseos
+kernel-modules.x86_64                                                      5.14.0-503.14.1.el9_5                                          @baseos
+kernel-modules.x86_64                                                      5.14.0-503.22.1.el9_5                                          @baseos
+kernel-modules-core.x86_64                                                 5.14.0-503.14.1.el9_5                                          @baseos
+kernel-modules-core.x86_64                                                 5.14.0-503.22.1.el9_5                                          @baseos
+kernel-tools.x86_64                                                        5.14.0-503.22.1.el9_5                                          @baseos
+kernel-tools-libs.x86_64                                                   5.14.0-503.22.1.el9_5                                          @baseos
+Available Packages
+kernel.x86_64                                                              5.14.0-503.23.2.el9_5                                          baseos
+kernel-abi-stablelists.noarch                                              5.14.0-503.23.2.el9_5                                          baseos
+kernel-core.x86_64                                                         5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug.x86_64                                                        5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-core.x86_64                                                   5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-devel.x86_64                                                  5.14.0-503.23.2.el9_5                                          appstream
+kernel-debug-devel-matched.x86_64                                          5.14.0-503.23.2.el9_5                                          appstream
+kernel-debug-modules.x86_64                                                5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-modules-core.x86_64                                           5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-modules-extra.x86_64                                          5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-uki-virt.x86_64                                               5.14.0-503.23.2.el9_5                                          baseos
+kernel-devel.x86_64                                                        5.14.0-503.23.2.el9_5                                          appstream
+kernel-devel-matched.x86_64                                                5.14.0-503.23.2.el9_5                                          appstream
+kernel-doc.noarch                                                          5.14.0-503.23.2.el9_5                                          appstream
+kernel-headers.x86_64                                                      5.14.0-503.23.2.el9_5                                          appstream
+kernel-modules.x86_64                                                      5.14.0-503.23.2.el9_5                                          baseos
+kernel-modules-core.x86_64                                                 5.14.0-503.23.2.el9_5                                          baseos
+kernel-modules-extra.x86_64                                                5.14.0-503.23.2.el9_5                                          baseos
+kernel-rpm-macros.noarch                                                   185-13.el9                                                     appstream
+kernel-srpm-macros.noarch                                                  1.0-13.el9                                                     appstream
+kernel-tools.x86_64                                                        5.14.0-503.23.2.el9_5                                          baseos
+kernel-tools-libs.x86_64                                                   5.14.0-503.23.2.el9_5                                          baseos
+kernel-uki-virt.x86_64                                                     5.14.0-503.23.2.el9_5                                          baseos
+kernel-uki-virt-addons.x86_64                                              5.14.0-503.23.2.el9_5                                          baseos
+kernelshark.x86_64                                                         1:1.2-10.el9                                                   appstream
+```
+
+<a id="rocky-linux-9-install-the-kernel-install-the-kernel-without-specifying-a-version"></a>
+#### 버전 지정하지 않고 커널 설치
+버전을 지정하지 않으면 major 버전의 최신 버전 기준으로 패키지를 검색합니다.
+
+```
+[root@rocky95 ~]# dnf list kernel*
+
+Rocky Linux 9 - BaseOS                                                                                             2.2 MB/s | 2.3 MB     00:01
+Rocky Linux 9 - AppStream                                                                                          7.8 MB/s | 8.6 MB     00:01
+Rocky Linux 9 - Extras                                                                                              12 kB/s |  16 kB     00:01
+Installed Packages
+kernel.x86_64                                                              5.14.0-503.14.1.el9_5                                          @baseos
+kernel.x86_64                                                              5.14.0-503.22.1.el9_5                                          @baseos
+kernel-core.x86_64                                                         5.14.0-503.14.1.el9_5                                          @baseos
+kernel-core.x86_64                                                         5.14.0-503.22.1.el9_5                                          @baseos
+kernel-modules.x86_64                                                      5.14.0-503.14.1.el9_5                                          @baseos
+kernel-modules.x86_64                                                      5.14.0-503.22.1.el9_5                                          @baseos
+kernel-modules-core.x86_64                                                 5.14.0-503.14.1.el9_5                                          @baseos
+kernel-modules-core.x86_64                                                 5.14.0-503.22.1.el9_5                                          @baseos
+kernel-tools.x86_64                                                        5.14.0-503.22.1.el9_5                                          @baseos
+kernel-tools-libs.x86_64                                                   5.14.0-503.22.1.el9_5                                          @baseos
+Available Packages
+kernel.x86_64                                                              5.14.0-503.23.2.el9_5                                          baseos
+kernel-abi-stablelists.noarch                                              5.14.0-503.23.2.el9_5                                          baseos
+kernel-core.x86_64                                                         5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug.x86_64                                                        5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-core.x86_64                                                   5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-devel.x86_64                                                  5.14.0-503.23.2.el9_5                                          appstream
+kernel-debug-devel-matched.x86_64                                          5.14.0-503.23.2.el9_5                                          appstream
+kernel-debug-modules.x86_64                                                5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-modules-core.x86_64                                           5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-modules-extra.x86_64                                          5.14.0-503.23.2.el9_5                                          baseos
+kernel-debug-uki-virt.x86_64                                               5.14.0-503.23.2.el9_5                                          baseos
+kernel-devel.x86_64                                                        5.14.0-503.23.2.el9_5                                          appstream
+kernel-devel-matched.x86_64                                                5.14.0-503.23.2.el9_5                                          appstream
+kernel-doc.noarch                                                          5.14.0-503.23.2.el9_5                                          appstream
+kernel-headers.x86_64                                                      5.14.0-503.23.2.el9_5                                          appstream
+kernel-modules.x86_64                                                      5.14.0-503.23.2.el9_5                                          baseos
+kernel-modules-core.x86_64                                                 5.14.0-503.23.2.el9_5                                          baseos
+kernel-modules-extra.x86_64                                                5.14.0-503.23.2.el9_5                                          baseos
+kernel-rpm-macros.noarch                                                   185-13.el9                                                     appstream
+kernel-srpm-macros.noarch                                                  1.0-13.el9                                                     appstream
+kernel-tools.x86_64                                                        5.14.0-503.23.2.el9_5                                          baseos
+kernel-tools-libs.x86_64                                                   5.14.0-503.23.2.el9_5                                          baseos
+kernel-uki-virt.x86_64                                                     5.14.0-503.23.2.el9_5                                          baseos
+kernel-uki-virt-addons.x86_64                                              5.14.0-503.23.2.el9_5                                          baseos
+kernelshark.x86_64                                                         1:1.2-10.el9                                                   appstream
+```
+
+<a id="rocky-linux-9-install-the-kernel-install-the-latest-kernel"></a>
+#### 최신 커널 설치
+별도의 버전을 지정하지 않으면 최신 버전으로 설치합니다. 
+
+커널을 설치하면 의존성 패키지인 **kernel-core**와 **kernel-modules**도 같이 설치합니다.
+
+```
+[root@rocky95 ~]# dnf install kernel
+Last metadata expiration check: 0:00:47 ago on Wed 19 Feb 2025 02:26:50 PM KST.
+Dependencies resolved.
+===================================================================================================================================================
+ Package                                  Architecture                Version                                    Repository                   Size
+===================================================================================================================================================
+Installing:
+ kernel                                   x86_64                      5.14.0-503.23.2.el9_5                      baseos                      2.0 M
+ kernel-core                              x86_64                      5.14.0-503.23.2.el9_5                      baseos                       18 M
+Installing dependencies:
+ kernel-modules                           x86_64                      5.14.0-503.23.2.el9_5                      baseos                       36 M
+ kernel-modules-core                      x86_64                      5.14.0-503.23.2.el9_5                      baseos                       30 M
+
+Transaction Summary
+===================================================================================================================================================
+Install  4 Packages
+
+Total download size: 86 M
+Installed size: 126 M
+Is this ok [y/N]: y
+Downloading Packages:
+(1/4): kernel-core-5.14.0-503.23.2.el9_5.x86_64.rpm                                                                 14 MB/s |  18 MB     00:01
+(2/4): kernel-5.14.0-503.23.2.el9_5.x86_64.rpm                                                                      32 MB/s | 2.0 MB     00:00
+(3/4): kernel-modules-core-5.14.0-503.23.2.el9_5.x86_64.rpm                                                         14 MB/s |  30 MB     00:02
+(4/4): kernel-modules-5.14.0-503.23.2.el9_5.x86_64.rpm                                                              12 MB/s |  36 MB     00:03
+---------------------------------------------------------------------------------------------------------------------------------------------------
+Total                                                                                                               24 MB/s |  86 MB     00:03
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                                                                                           1/1
+  Installing       : kernel-core-5.14.0-503.23.2.el9_5.x86_64                                                                                  1/4
+  Running scriptlet: kernel-core-5.14.0-503.23.2.el9_5.x86_64                                                                                  1/4
+  Installing       : kernel-modules-core-5.14.0-503.23.2.el9_5.x86_64                                                                          2/4
+  Installing       : kernel-modules-5.14.0-503.23.2.el9_5.x86_64                                                                               3/4
+  Running scriptlet: kernel-modules-5.14.0-503.23.2.el9_5.x86_64                                                                               3/4
+  Installing       : kernel-5.14.0-503.23.2.el9_5.x86_64                                                                                       4/4
+  Running scriptlet: kernel-core-5.14.0-503.23.2.el9_5.x86_64                                                                                  4/4
+  Running scriptlet: kernel-modules-core-5.14.0-503.23.2.el9_5.x86_64                                                                          4/4
+  Running scriptlet: kernel-modules-5.14.0-503.23.2.el9_5.x86_64                                                                               4/4
+  Running scriptlet: kernel-5.14.0-503.23.2.el9_5.x86_64                                                                                       4/4
+  Verifying        : kernel-modules-core-5.14.0-503.23.2.el9_5.x86_64                                                                          1/4
+  Verifying        : kernel-modules-5.14.0-503.23.2.el9_5.x86_64                                                                               2/4
+  Verifying        : kernel-core-5.14.0-503.23.2.el9_5.x86_64                                                                                  3/4
+  Verifying        : kernel-5.14.0-503.23.2.el9_5.x86_64                                                                                       4/4
+
+Installed:
+  kernel-5.14.0-503.23.2.el9_5.x86_64                  kernel-core-5.14.0-503.23.2.el9_5.x86_64     kernel-modules-5.14.0-503.23.2.el9_5.x86_64
+  kernel-modules-core-5.14.0-503.23.2.el9_5.x86_64
+
+Complete!
+```
+
+
+
+<a id="rocky-linux-9-install-the-kernel-check-package-installation"></a>
+#### 패키지 설치 확인
+
+커널 패키지가 정상적으로 설치되었는지 확인합니다.
+
+```
+[root@rocky95 ~]# dnf list installed | grep -i "5.14.0-503.23.2"
+kernel.x86_64                          5.14.0-503.23.2.el9_5          @baseos
+kernel-core.x86_64                     5.14.0-503.23.2.el9_5          @baseos
+kernel-modules.x86_64                  5.14.0-503.23.2.el9_5          @baseos
+kernel-modules-core.x86_64             5.14.0-503.23.2.el9_5          @baseos
+```
+
+<a id="rocky-linux-9-reboot-the-os"></a>
+### OS 재부팅 { #rocky-linux-9-reboot-the-os }
+
+커널 업데이트를 적용하기 위해 OS를 재부팅합니다.
+
+```
+[root@rocky95 ~]# sync; reboot
+```
+
+<a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader"></a>
+### <span style="color:#e11d21;">**[선택]**</span> GRUB2 부트로더의 설정 파일 생성 { #rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader }
+시스템의 부트 메뉴를 업데이트하여, 새로 설치된 커널이나 기타 부팅 항목을 반영합니다.
+
+dnf, yum은 자동으로 GRUB2 설정 파일을 업데이트합니다.
+
+```
+[root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
+```
+
+
+<a id="rocky-linux-9-change-the-kernel-boot-order"></a>
+### 커널 부팅 순서 변경 { #rocky-linux-9-change-the-kernel-boot-order }
+
+여러 개의 커널이 설치된 경우 원하는 커널로 부팅할 수 있도록 부팅 순서를 변경합니다.
+
+##### 기본 커널 확인
+
+현재 기본 설정된 커널을 확인합니다.
+
+```
+[root@rocky95 ~]# grubby --default-kernel
+/boot/vmlinuz-5.14.0-503.22.1.el9_5.x86_64
+```
+
+##### 현재 설치된 커널 목록
+
+현재 설치된 커널 목록을 확인합니다.
+
+```
+[root@rocky95 ~]# grubby --info=ALL | grep ^kernel | grep -v rescue
+kernel="/boot/vmlinuz-5.14.0-503.14.1.el9_5.x86_64"
+kernel="/boot/vmlinuz-5.14.0-503.22.1.el9_5.x86_64"
+```
+
+##### 기본 커널 변경
+
+현재 설치된 커널 목록 중 하나를 선택하여 기본 커널을 변경합니다.
+
+```
+[root@rocky95 ~]# grubby --set-default="/boot/vmlinuz-5.14.0-503.14.1.el9_5.x86_64"
+The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.14.1.el9_5.x86_64.conf with index 0 and kernel /boot/vmlinuz-5.14.0-503.14.1.el9_5.x86_64
+[root@rocky95 ~]# grubby --default-kernel
+/boot/vmlinuz-5.14.0-503.14.1.el9_5.x86_64
+[root@rocky95 ~]# sync; reboot
+```
+
+##### OS 재부팅
+
+부팅 순서 변경 적용을 위해 OS를 재부팅합니다.
+
+```
+[root@rocky810 ~]# sync; reboot
+```
+
+
+## 자동 ID 할당 검증용 신규 섹션
+
+이 섹션은 번역 파이프라인의 anchor-id 자동 할당을 검증하기 위한 신규 섹션입니다. ko 변경 시 anchor id 를 붙이지 않았고, 번역 잡이 ko/en/ja 세 언어에 동일한 id 를 부여해야 합니다.
