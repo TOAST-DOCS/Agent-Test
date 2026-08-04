@@ -9,10 +9,10 @@
 
 {#
   이 라인은 Jinja 주석입니다. 렌더링 결과에는 노출되지 않으며,
-  {% ... %} 이 아니라 {# ... #} 형태로 작성합니다.
+  블록 태그가 아니라 {# ... #} 형태로 작성합니다.
 #}
 
-## 1. 다중 분기 `{%- set -%}`
+## 1. 다중 분기 set
 
 파일 최상단에서 build_flag 조합을 하나의 변수로 응축했습니다.
 
@@ -28,7 +28,7 @@
 
 현재 `variant` 값: `$[ variant ]$`
 
-## 2. dict 리터럴 + `.get()`
+## 2. dict 리터럴과 .get()
 
 {%- set kr4_host_map = {
       "ngoic": "kr4-api-instance-infrastructure.ngoic.com",
@@ -47,7 +47,7 @@
 ```
 {% endraw %}
 
-## 3. `{% macro %}` 정의와 호출
+## 3. macro 정의와 호출
 
 {%- set kr1_host = "kr1-api-instance-infrastructure.nhncloudservice.com" -%}
 {%- set kr2_host = "kr2-api-instance-infrastructure.nhncloudservice.com" -%}
@@ -74,7 +74,7 @@ https://$[ api_host("kr1") ]$
 ```
 {% endraw %}
 
-## 4. dict 속성 접근 (`hosts.kr1`)
+## 4. dict 속성 접근 (hosts.kr1)
 
 {%- set hosts = { "kr1": kr1_host, "kr2": kr2_host } -%}
 
@@ -91,7 +91,7 @@ https://$[ hosts.kr1 ]$
 ```
 {% endraw %}
 
-## 5. 인라인 `{% if %}` (문장/URL 내부)
+## 5. 인라인 조건문 (문장/URL 내부)
 
 인라인 조건으로 URL 접미사를 붙일 수 있습니다.
 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token{% if "gov" in build_flags %}-gov{% endif %}) 을 참고하세요.
@@ -102,7 +102,7 @@ https://$[ hosts.kr1 ]$
 ```
 {% endraw %}
 
-## 6. `{% if not build_flags %}` — 빈 build_flags 검사
+## 6. 빈 build_flags 검사 (not 연산자)
 
 `build_flags` 자체가 비어 있는 경우(=기본 빌드)를 판별합니다.
 

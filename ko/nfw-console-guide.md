@@ -6,7 +6,7 @@ mkdocs / Jinja 조건문 문법 데모용 문서입니다.
 <br>
 
 {% endif -%}
-## 블록 조건문 (`{% if %} ... {% endif %}`)
+## 블록 조건문 ({% raw %}`{% if %}`{% endraw %} ~ {% raw %}`{% endif %}`{% endraw %})
 
 기본 조건문으로 특정 build_flag 에서만 노출되는 섹션을 구성합니다.
 
@@ -16,7 +16,7 @@ mkdocs / Jinja 조건문 문법 데모용 문서입니다.
 * 일반 공용 문서에서만 노출됩니다.
 
 {% endif %}
-## 리스트 내부 `if / else` 분기
+## 리스트 내부 if / else 분기
 
 * 2개의 프로젝트
 {%- if "gov" in build_flags %}
@@ -36,7 +36,7 @@ mkdocs / Jinja 조건문 문법 데모용 문서입니다.
 {%- endif %}
 > * 다시 공통 항목입니다.
 
-## 이미지 `if / else` 분기
+## 이미지 if / else 분기
 
 {% if "gov" in build_flags -%}
 ![gov_image](https://example.com/gov.png)
@@ -44,13 +44,13 @@ mkdocs / Jinja 조건문 문법 데모용 문서입니다.
 ![public_image](https://example.com/public.png)
 {%- endif %}
 
-## `or` 연산자
+## or 연산자
 
 {% if "public" in build_flags or "gov" in build_flags -%}
 public 또는 gov 빌드에서만 노출되는 섹션입니다.
 {% endif -%}
 
-## 공백 제어 (`{%-`, `-%}`) 비교
+## 공백 제어 ({% raw %}`{%-`{% endraw %}, {% raw %}`-%}`{% endraw %}) 비교
 
 아래 두 블록은 whitespace trim 여부만 다릅니다.
 
