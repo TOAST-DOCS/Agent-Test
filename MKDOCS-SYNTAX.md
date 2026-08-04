@@ -238,6 +238,67 @@ Jinja 문법을 **원문 그대로** 보여주려면 (예: 코드 펜스 안에 
 | [`ko/overview.md`](ko/overview.md) | `{% if %}` 조건 블록 + `{%- ... -%}` 화이트스페이스 제어 |
 | [`ko/public-api.md`](ko/public-api.md) | 위 항목 전부 + `{% set %}` + `{% macro %}` + `$[ ]$` 표현식 + `{# #}` 주석 + `{% raw %}` |
 
+## 빌드 오류를 부르는 함정
+
+실제로 밟았던 함정들입니다. 새 파일을 작성하거나 include 를 도입할 때 아래를 확인하세요.
+
+### 1. 코드 fence 백틱 개수
+
+코드 블록 닫기 fence 를 실수로 백틱 4개(`` ```` ``) 로 쓰면 블록이 닫히지 않고, 이후 문서 **전체가 열린 코드 블록** 안으로 빨려 들어갑니다. 페이지에서 heading, 표, include 결과가 모두 raw text 로만 표시된다면 우선 fence 개수부터 확인하세요.
+
+```
+$ sudo update-grub
+```     ← 3개 (정상)
+
+$ sudo update-grub
+````    ← 4개 (fence 안 닫힘 → 뒷내용 전부 code block 안으로 흡수)
+```
+
+### 2. 인라인/헤딩의 bare Jinja 태그는 파싱됩니다
+
+mkdocs-macros 는 **마크다운을 몰라서** 백틱을 존중하지 않습니다. Jinja 를 먼저 파싱하기 때문에 아래는 모두 syntax error 를 냅니다:
+
+```markdown
+## `{% set %}` 사용법           ← 값 없는 set → 파싱 에러
+어떻게 `{% if %}` 를 쓰는가     ← 조건 없는 if → 파싱 에러
+`{% macro %}` 를 정의합니다     ← 이름 없는 macro → 파싱 에러
+`{%-` 와 `-%}` 의 차이         ← 미완성 태그 → 파싱 에러
+```
+
+**해결:** 인라인/헤딩에서 Jinja 태그를 텍스트로 언급할 때는 `{% raw %}...{% endraw %}` 로 감싸거나 아예 다른 표기로 대체하세요.
+
+```markdown
+## {% raw %}`{% set %}`{% endraw %} 사용법
+```
+
+**증상 예:** 배포 로그에 `[macros] - ERROR # _Macro Syntax Error_` 가 뜨고 페이지 전체가 렌더링되지 않습니다.
+
+### 3. `{% raw %}` 는 중첩되지 않습니다
+
+Jinja 규칙상 raw 블록 안에서 만나는 첫 `{% endraw %}` 가 outer raw 를 닫습니다. 그래서 raw 블록 자체를 소스 코드로 보여주는 것은 raw 로 감싸는 것만으로는 불가능합니다.
+
+**해결 (택 1):**
+- 표기용 `{% raw %}` 태그의 `{` 과 `%` 사이에 zero-width space (U+200B) 를 삽입해 파서가 태그로 인식하지 않게 한다.
+- 소스 표시를 포기하고 텍스트로 설명한다.
+
+### 4. `include-markdown` 플러그인은 raw 블록을 무시합니다
+
+`include-markdown` 은 mkdocs-macros 와 **별개** 플러그인이며, mkdocs 의 `page_content` 이벤트에서 **원본 소스를 정규식으로 직접** 매칭합니다. 따라서 아래처럼 raw 로 감싸도 실제 include 로 파싱되어 실행됩니다:
+
+```markdown
+{% raw %}
+{% include-markdown %}    ← raw 안이지만 플러그인이 매칭 → "no path" 에러
+{% endraw %}
+```
+
+**증상 예:** 배포 로그에 `ERROR - Found no path passed including with 'include-markdown' directive at ...` 가 뜹니다.
+
+**해결:** 표기용 지시자의 태그 이름 중간(예: `include-` 와 `markdown` 사이) 에 zero-width space 를 삽입해 플러그인의 정규식이 매칭되지 않게 하세요. 시각적으로는 동일하고, 실제 include 라인은 그대로 동작합니다.
+
+### 5. include 대상 파일의 오류는 상위 페이지의 오류로 표시됩니다
+
+include 된 파일의 Jinja 문법 오류는 **include 를 수행하는 상위 파일** 의 에러로 로그에 나타납니다. `Open Source/agent-test/ko/mkdocs-syntax.md` 에서 에러가 났다고 해서 반드시 그 파일이 원인은 아닙니다. include 대상 (`nfw-console-guide.md`, `deploy-api-guide.md`, `compute-public-api.md` 등) 부터 함께 살펴보세요.
+
 ## 로컬 검증 방법
 
 로컬에서는 Python + Jinja2 로 렌더링해 결과를 확인합니다. 커스텀 delimiter 를 지정하는 것이 핵심.
