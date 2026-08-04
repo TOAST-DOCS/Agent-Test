@@ -275,10 +275,12 @@ Jinja 문법을 **원문 그대로** 보여주려면 (예: 코드 펜스 안에 
 | build_flag | 대상 build |
 |---|---|
 | `gov` | 공공기관용 |
+| `ncgn` | ncgn |
 | `ngoic` | 대구 리전 - ngoic |
 | `ngovc` | 대구 리전 - ngovc |
 | `ngsc`  | 대구 리전 - ngsc |
 | `ninc`  | 대구 리전 - ninc |
+| `ppp`  | 대구 리전 공통, "ngsc" 등과 같이 사용됨 |
 | `public` | 일반 상용 (`overview.md` 에서 사용) |
 | (빈 리스트) | 기본 build |
 
