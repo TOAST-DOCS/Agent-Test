@@ -242,23 +242,7 @@ Jinja 문법을 **원문 그대로** 보여주려면 (예: 코드 펜스 안에 
 
 실제로 밟았던 함정들입니다. 새 파일을 작성하거나 include 를 도입할 때 아래를 확인하세요.
 
-### 1. 코드 fence 백틱 개수
-
-코드 블록 닫기 fence 를 실수로 백틱 4개(`` ```` ``) 로 쓰면 블록이 닫히지 않고, 이후 문서 **전체가 열린 코드 블록** 안으로 빨려 들어갑니다. 페이지에서 heading, 표, include 결과가 모두 raw text 로만 표시된다면 우선 fence 개수부터 확인하세요. (아래 예시는 fence 문자를 문자 그대로 보이기 위해 4-space indented 코드 블록으로 표기했습니다.)
-
-정상 — 여는 fence 와 닫는 fence 가 모두 백틱 3개:
-
-    ```
-    $ sudo update-grub
-    ```
-
-잘못됨 — 닫는 fence 가 백틱 4개라 실제로 안 닫힘:
-
-    ```
-    $ sudo update-grub
-    ````
-
-### 2. 인라인/헤딩의 bare Jinja 태그는 파싱됩니다
+### 1. 인라인/헤딩의 bare Jinja 태그는 파싱됩니다
 
 mkdocs-macros 는 **마크다운을 몰라서** 백틱을 존중하지 않습니다. Jinja 를 먼저 파싱하기 때문에 아래는 모두 syntax error 를 냅니다:
 
@@ -277,7 +261,7 @@ mkdocs-macros 는 **마크다운을 몰라서** 백틱을 존중하지 않습니
 
 **증상 예:** 배포 로그에 `[macros] - ERROR # _Macro Syntax Error_` 가 뜨고 페이지 전체가 렌더링되지 않습니다.
 
-### 3. `{% raw %}` 는 중첩되지 않습니다
+### 2. `{% raw %}` 는 중첩되지 않습니다
 
 Jinja 규칙상 raw 블록 안에서 만나는 첫 `{% endraw %}` 가 outer raw 를 닫습니다. 그래서 raw 블록 자체를 소스 코드로 보여주는 것은 raw 로 감싸는 것만으로는 불가능합니다.
 
@@ -285,7 +269,7 @@ Jinja 규칙상 raw 블록 안에서 만나는 첫 `{% endraw %}` 가 outer raw 
 - 표기용 `{% raw %}` 태그의 `{` 과 `%` 사이에 zero-width space (U+200B) 를 삽입해 파서가 태그로 인식하지 않게 한다.
 - 소스 표시를 포기하고 텍스트로 설명한다.
 
-### 4. `include-markdown` 플러그인은 raw 블록을 무시합니다
+### 3. `include-markdown` 플러그인은 raw 블록을 무시합니다
 
 `include-markdown` 은 mkdocs-macros 와 **별개** 플러그인이며, mkdocs 의 `page_content` 이벤트에서 **원본 소스를 정규식으로 직접** 매칭합니다. 따라서 아래처럼 raw 로 감싸도 실제 include 로 파싱되어 실행됩니다:
 
@@ -307,7 +291,7 @@ Jinja 규칙상 raw 블록 안에서 만나는 첫 `{% endraw %}` 가 outer raw 
 {% endraw %}
 ```
 
-### 5. include 대상 파일의 오류는 상위 페이지의 오류로 표시됩니다
+### 4. include 대상 파일의 오류는 상위 페이지의 오류로 표시됩니다
 
 include 된 파일의 Jinja 문법 오류는 **include 를 수행하는 상위 파일** 의 에러로 로그에 나타납니다. `Open Source/agent-test/ko/mkdocs-syntax.md` 에서 에러가 났다고 해서 반드시 그 파일이 원인은 아닙니다. include 대상 (`nfw-console-guide.md`, `deploy-api-guide.md`, `compute-public-api.md` 등) 부터 함께 살펴보세요.
 
