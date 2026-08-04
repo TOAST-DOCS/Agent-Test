@@ -47,9 +47,9 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 |---|---|---|
 {% if "gov" in build_flags -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$           |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | compute | 한국(대구) 리전 | https://$[ api_host("kr4") ]$ |
-{% else %}
+{%- else -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$<br>https://$[ api_host("kr3") ]$<br>https://$[ api_host("jp1") ]$ |
 {% endif %}
 
@@ -84,9 +84,9 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 |---|---|---|
 {% if "gov" in build_flags -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$ |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | compute | 한국(대구) 리전 | https://$[ api_host("kr4") ]$ |
-{% else %}
+{%- else -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$<br>https://$[ api_host("kr3") ]$<br>https://$[ api_host("jp1") ]$ |
 {% endif %}
 ```
@@ -124,9 +124,9 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 |---|---|---|
 {% if "gov" in build_flags -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$           |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | compute | 한국(대구) 리전 | https://$[ hosts.kr4 ]$ |
-{% else %}
+{%- else -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$<br>https://$[ hosts.kr3 ]$<br>https://$[ hosts.jp1 ]$ |
 {% endif %}
 
@@ -157,9 +157,9 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 |---|---|---|
 {% if "gov" in build_flags -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$ |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | compute | 한국(대구) 리전 | https://$[ hosts.kr4 ]$ |
-{% else %}
+{%- else -%}
 | compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$<br>https://$[ hosts.kr3 ]$<br>https://$[ hosts.jp1 ]$ |
 {% endif %}
 ```
@@ -1082,7 +1082,7 @@ X-Auth-Token: {tokenId}
 | server.security_groups | body | Object | - | 보안 그룹 목록 객체<br>생략할 경우 `default` 그룹이 추가됨                                                                                                                                                   |
 | server.security_groups.name | body | String | - | **(조건부 필수)** 인스턴스에 추가할 보안 그룹 이름                                                                                                                                                                        |
 | server.user_data | body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br>base64 인코딩된 문자열로 65535 바이트까지 허용                                                                                                                                |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | server.security_groups | body | Object | - | 보안 그룹 목록 객체<br>생략할 경우 `default` 그룹이 추가됨                                                                                                                                                   |
 | server.security_groups.name | body | String | - | 인스턴스에 추가할 보안 그룹 이름                                                                                                                                                                        |
 | server.user_data | body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br>base64 인코딩된 문자열로 65535 바이트까지 허용                                                                                                                                |
@@ -1102,7 +1102,7 @@ X-Auth-Token: {tokenId}
 | server.networks.fixed_ip | Body | String | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 고정 IP                                                                                                                                                                     |
 | server.name | Body | String | O | 인스턴스의 이름<br>영문자 기준 255자까지 허용되지만, Windows 이미지의 경우 15자 이하여야 함                                                                                                                               |
 | server.metadata | Body | Object | - | 인스턴스에 추가할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍                                                                                                                                                |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | server.flavorRef | Body | String | O | 인스턴스를 생성할 때 사용할 인스턴스 타입 ID                                                                                                                                                                |
 | server.networks | Body | Object | O | 인스턴스를 생성할 때 사용할 네트워크 정보 객체<br>지정한 개수만큼 NIC가 추가되며, 네트워크 ID, 서브넷 ID, 포트 ID, 고정 IP 중 하나로 지정                                                                                                  |
 | server.networks.uuid | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크 ID |
@@ -1127,7 +1127,7 @@ X-Auth-Token: {tokenId}
 {% if "gov" in build_flags %}
 | server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br>-`0`이면 루트 블록 스토리지<br>- 그 외는 추가 블록 스토리지<br>크기가 클수록 부팅 순서는 낮아짐                                                                                                                         |
 | server.block_device_mapping_v2.destination_type | Body | Enum | O | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br>- `local`: GPU 인스턴스, U2 인스턴스 타입을 이용하는 경우<br>- `volume`: 그 외의 인스턴스 타입을 이용하는 경우 |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br>-`0`이면 루트 블록 스토리지<br>- 그 외는 추가 블록 스토리지<br>크기가 클수록 부팅 순서는 낮아짐                                                                                                                         |
 {% else %}
 | server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br>-`0`이면 루트 블록 스토리지<br>- 그 외는 추가 블록 스토리지<br>크기가 클수록 부팅 순서는 낮아짐 |
@@ -1136,7 +1136,7 @@ X-Auth-Token: {tokenId}
 | server.block_device_mapping_v2.volume_type | Body | Enum    | - | **(조건부 필수)** 생성할 블록 스토리지의 타입<br>블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요<br>`사용자 가이드 > Storage > Block Storage > API v2 가이드`에서 **블록 스토리지 타입 목록 보기** 응답의 `name` 참고 |
 {% if "gov" in build_flags %}
 | server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br>`true`면 삭제, `false`면 유지                                                                                                                         |
-{% elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags %}
+{%- elif "ngoic" in build_flags or "ngovc" in build_flags or "ngsc" in build_flags or "ninc" in build_flags -%}
 | server.block_device_mapping_v2.destination_type | Body | Enum | O | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br>- `local`: U2 인스턴스 타입을 이용하는 경우<br>- `volume`: U2 외의 인스턴스 타입을 이용하는 경우                                                                          |
 | server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br>`true`면 삭제, `false`면 유지                                                                                                                         |
 {% else %}
