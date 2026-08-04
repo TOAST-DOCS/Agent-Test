@@ -28,6 +28,8 @@
 #   bash scripts/e2e-webhook.sh --no-merge         # 3단계까지만 (opened 만 검증)
 #   bash scripts/e2e-webhook.sh --timeout 600      # 각 폴링 단계 타임아웃(초)
 #   bash scripts/e2e-webhook.sh --base alpha       # 세션 브랜치 대신 alpha 를 base 로 (구 동작)
+#   bash scripts/e2e-webhook.sh --no-wait-build    # task 큐잉만 확인하고 즉시 cleanup (빠른 스모크)
+#   bash scripts/e2e-webhook.sh --build-timeout 1500  # 각 Jenkins 빌드 완료 대기 상한 (기본 900s)
 #
 # 의존성: git, gh (로그인), curl, python3
 set -eo pipefail
@@ -43,12 +45,19 @@ BASE_SOURCE="alpha"  # 세션 브랜치를 갈라낼 원본
 POLL_TIMEOUT=600     # 초. opened → ko-review task 등장까지 / merged → translate task 등장까지 각각.
 POLL_INTERVAL=5      # 초.
 DO_MERGE=1
+# task 큐잉 확인 후, 실제 Jenkins 빌드가 끝날 때까지 폴링. 기본 ON — 세션
+# 브랜치 cleanup 이 빌드 실행 전에 base 를 지워 빌드가 404 로 죽는 race 를
+# 방지 (실측: translate-20260803-2, Jenkins #223). --no-wait-build 로 opt-out.
+WAIT_BUILD=1
+BUILD_TIMEOUT=900    # 초. 각 빌드 (ko-review · translate) 완료 대기 상한.
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --no-merge) DO_MERGE=0; shift ;;
-    --timeout)  POLL_TIMEOUT="$2"; shift 2 ;;
-    --base)     BASE_BRANCH="$2"; shift 2 ;;   # ex) --base alpha  (필터 수정 없이 alpha 직접 사용)
+    --no-merge)      DO_MERGE=0; shift ;;
+    --timeout)       POLL_TIMEOUT="$2"; shift 2 ;;
+    --base)          BASE_BRANCH="$2"; shift 2 ;;   # ex) --base alpha  (필터 수정 없이 alpha 직접 사용)
+    --no-wait-build) WAIT_BUILD=0; shift ;;
+    --build-timeout) BUILD_TIMEOUT="$2"; shift 2 ;;
     -h|--help)  sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
@@ -271,6 +280,43 @@ print(json.dumps(result))
 PY
 }
 
+wait_for_build_finish() {
+  # task 큐잉 확인 후 실제 Jenkins 빌드가 성공/실패/취소 등 terminal 상태로
+  # 굳을 때까지 폴링. task 큐잉 성공만 확인하고 곧바로 cleanup 하면 세션
+  # 브랜치가 지워진 뒤 Jenkins 가 빌드를 시작해 base ref 404 로 죽는다
+  # (실측: translate-20260803-2, Jenkins #223). 이 헬퍼가 그 race 를 없앰.
+  #
+  # args:
+  #   $1 = job_id (예: translate-20260804-1)
+  #   $2 = task_id (task JSON 의 'id' 필드)
+  # returns: 0 (build 완료; 결과 상태 로그), 1 (timeout)
+  local job_id="$1" task_id="$2"
+  local deadline=$(( $(date +%s) + BUILD_TIMEOUT ))
+  echo "  waiting for Jenkins build to reach terminal state (jobs/${job_id}, task=${task_id}, max ${BUILD_TIMEOUT}s)"
+  local status="" build_url=""
+  while (( $(date +%s) < deadline )); do
+    local snapshot
+    snapshot="$(curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+      "$DASHBOARD_BASE_URL/api/jobs/$job_id" 2>/dev/null || echo '{}')"
+    read -r status build_url < <(printf '%s' "$snapshot" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+tasks = (d.get('job') or {}).get('tasks', [])
+t = next((x for x in tasks if x.get('id') == '$task_id'), None) or {}
+print(t.get('status', '') or '-', t.get('build_url', '') or '-')
+" 2>/dev/null || echo "- -")
+    case "$status" in
+      success|failure|cancelled|aborted)
+        echo "  build finished: status=$status  build_url=$build_url"
+        return 0
+        ;;
+    esac
+    sleep 15
+  done
+  echo "  WARN: build did not finish within ${BUILD_TIMEOUT}s (last status=$status build_url=$build_url) — cleanup may race" >&2
+  return 1
+}
+
 restore_filters() {
   # trap 에서 호출. 이미 원복돼 있으면 no-op.
   (( FILTER_EXTENDED )) || return 0
@@ -413,6 +459,13 @@ if [[ "$task_json" == "{}" || -z "$task_json" ]] \
 else
   echo "$task_json" | python3 -m json.tool
   OPENED_RESULT="PASS"
+  if (( WAIT_BUILD )); then
+    ko_review_job_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("job_id",""))')"
+    ko_review_task_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("id",""))')"
+    if [[ -n "$ko_review_job_id" && -n "$ko_review_task_id" ]]; then
+      wait_for_build_finish "$ko_review_job_id" "$ko_review_task_id" || true
+    fi
+  fi
 fi
 
 # 실패해도 merge 단계는 시도 (--no-merge 로 요청받은 게 아니라면).
@@ -453,6 +506,13 @@ else
   else
     echo "$task_json" | python3 -m json.tool
     MERGED_RESULT="PASS"
+    if (( WAIT_BUILD )); then
+      translate_job_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("job_id",""))')"
+      translate_task_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("id",""))')"
+      if [[ -n "$translate_job_id" && -n "$translate_task_id" ]]; then
+        wait_for_build_finish "$translate_job_id" "$translate_task_id" || true
+      fi
+    fi
   fi
 fi
 
