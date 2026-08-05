@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=74b0e7f9672e -->
+<!-- pre-align:aligned sig=aba1a0bc9104 -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 개요 { #compute-instance-overview }
@@ -261,6 +261,13 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 
 <a id="webhook-e2e-20260728-113416"></a>
 ## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
+
+이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
+webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
+마커는 정기 restore-alpha-origin 으로 정리됩니다.
+
+<a id="webhook-e2e-20260805-090306"></a>
+## webhook e2e marker (20260805-090306) { #webhook-e2e-20260805-090306 }
 
 이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
 webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
