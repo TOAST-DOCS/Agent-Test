@@ -245,3 +245,10 @@ $ sudo update-grub
 ## Additional section for testing { #test-added-section }
 
 This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+
+<a id="webhook-e2e-20260805-090937"></a>
+## webhook e2e marker (20260805-090937) { #webhook-e2e-20260805-090937 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying that the webhook routes this PR to the ko-review / translate job,
+the marker will be cleaned up by the regular restore-alpha-origin process.
