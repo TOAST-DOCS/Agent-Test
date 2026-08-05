@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infrastructure Service Role-Based Permissions (R / CRUD)</title>
+<style>
+  /* Design tokens sourced from the NCUI icon/component catalogs (--ncui-* values) */
+  :root{
+    --ncui-color-white:#ffffff; --ncui-color-black:#222222;
+    --ncui-color-gray-1:#f9f9f9; --ncui-color-gray-2:#f4f4f4; --ncui-color-gray-3:#eeeeee;
+    --ncui-color-gray-4:#e5e5e5; --ncui-color-gray-8:#999999; --ncui-color-gray-9:#777777; --ncui-color-gray-10:#555555;
+    --ncui-color-primary-1:#e9f1ff; --ncui-color-primary-7:#125de6; --ncui-color-primary-8:#1446c8;
+    --ncui-color-negative-1:#ffeded; --ncui-color-negative-3:#da1e28; --ncui-color-negative-4:#be141e;
+    --ncui-color-support-1:#fffae6; --ncui-color-support-4:#ed9a00;
+    --ncui-color-status-2:#24a148;
+    --ncui-border-radius-2:2px; --ncui-border-radius-4:4px; --ncui-border-radius-max:1000px;
+    --ncui-box-shadow-component:0 2px 4px 0 rgba(0,0,0,0.1);
+    --ncui-font-family-base:Pretendard,system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
+
+    --bg:var(--ncui-color-gray-1); --card:var(--ncui-color-white); --line:var(--ncui-color-gray-4);
+    --text:var(--ncui-color-black); --muted:var(--ncui-color-gray-9);
+    --crud-bg2:rgba(36,161,72,0.1); --crud-tx:var(--ncui-color-status-2);
+    --read-bg:var(--ncui-color-primary-1); --read-tx:var(--ncui-color-primary-7);
+    --update-bg:var(--ncui-color-support-1); --update-tx:var(--ncui-color-support-4);
+    --delete-bg:var(--ncui-color-negative-1); --delete-tx:var(--ncui-color-negative-3);
+    --na-bg:var(--ncui-color-gray-2); --na-tx:var(--ncui-color-gray-8);
+
+    /* NCUI Table component spec (from the component catalog's .grid-tbl example) */
+    --tbl-border:var(--ncui-color-gray-3);        /* neutral-3, default cell divider */
+    --tbl-border-strong:var(--ncui-color-gray-4); /* neutral-4, header bottom rule */
+    --tbl-header-bg:var(--ncui-color-gray-2);     /* neutral-2 */
+    --tbl-header-fg:var(--ncui-color-gray-10);    /* neutral-10, fg-sub */
+    --tbl-row-height:36px;                        /* --ncui-sizing-grid-row-min-height */
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:var(--ncui-font-family-base);
+    font-size:13px;line-height:1.5;padding:24px;}
+
+  /* ---- Matrix (styled as an NCUI Table/DataGrid) ---- */
+  .mwrap{border:1px solid var(--line);border-radius:var(--ncui-border-radius-4);background:var(--card);
+    box-shadow:var(--ncui-box-shadow-component);overflow:hidden}
+  table.matrix{border-collapse:collapse;font-size:12px;width:max-content}
+  table.matrix th,table.matrix td{border-bottom:1px solid var(--tbl-border);border-right:1px solid var(--tbl-border);padding:0 10px;height:var(--tbl-row-height);text-align:center;white-space:nowrap}
+  table.matrix thead th{position:sticky;top:0;z-index:3;background:var(--tbl-header-bg);color:var(--tbl-header-fg);font-weight:700;border-bottom:1px solid var(--tbl-border-strong);vertical-align:middle;text-align:center}
+  table.matrix thead th.role{font-size:11.5px;height:auto;padding:8px 6px;cursor:pointer;white-space:normal;width:120px;min-width:120px;max-width:120px;vertical-align:middle;text-align:center;line-height:1.35}
+  table.matrix .cat{position:sticky;left:0;z-index:2;background:var(--ncui-color-gray-3);text-align:left;font-weight:700;padding:0 10px;color:var(--text);border-top:1px solid var(--tbl-border-strong)}
+  tr.catrow td.cat{background:var(--ncui-color-gray-3);border-top:1px solid var(--tbl-border-strong)}
+  table.matrix .svc{position:sticky;left:0;z-index:2;background:var(--card);text-align:left;font-weight:400;color:var(--text);min-width:190px}
+  table.matrix .corner{position:sticky;left:0;top:0;z-index:5;background:var(--tbl-header-bg);text-align:left;color:var(--tbl-header-fg);border-bottom:1px solid var(--tbl-border-strong)}
+  table.matrix tbody tr:not(.catrow):hover td.svc,
+  table.matrix tbody tr:not(.catrow):hover td.c,
+  table.matrix tbody tr:not(.catrow):hover td.r,
+  table.matrix tbody tr:not(.catrow):hover td.n{background:var(--ncui-color-gray-1)}
+  td.r{font-weight:700}
+  td.c{background:var(--card)}
+  td.r{background:var(--card);color:var(--read-tx)}
+  td.n{background:var(--card);color:var(--na-tx);font-weight:400}
+  .cellpills{display:inline-flex;gap:5px;font-size:11px;font-weight:700}
+  .cellpills .c{color:var(--crud-tx)}
+  .cellpills .r{color:var(--read-tx)}
+  .cellpills .u{color:var(--update-tx)}
+  .cellpills .d{color:var(--delete-tx)}
+  table.matrix td.hicol,table.matrix th.hicol{box-shadow:inset 2px 0 0 var(--ncui-color-primary-7),inset -2px 0 0 var(--ncui-color-primary-7)}
+  table.matrix th.role.hicol{background:var(--ncui-color-primary-1);color:var(--ncui-color-primary-8)}
+
+  /* ---- Legend (NCUI Badge/Chip pill style) ---- */
+  .legend{display:flex;flex-wrap:wrap;gap:16px;align-items:center;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--ncui-border-radius-4);
+    box-shadow:var(--ncui-box-shadow-component);
+    padding:10px 16px;margin-bottom:14px;font-size:12.5px}
+  .legend .item{display:flex;align-items:center;gap:6px}
+  .legend .key{display:inline-flex;align-items:center;justify-content:center;
+    min-width:20px;height:20px;padding:0 8px;border-radius:var(--ncui-border-radius-max);font-weight:700;font-size:11.5px}
+  .legend .key.c{background:var(--crud-bg2);color:var(--crud-tx)}
+  .legend .key.r{background:var(--read-bg);color:var(--read-tx)}
+  .legend .key.u{background:var(--update-bg);color:var(--update-tx)}
+  .legend .key.d{background:var(--delete-bg);color:var(--delete-tx)}
+  .legend .key.n{background:var(--na-bg);color:var(--na-tx);font-weight:500}
+</style>
+</head>
+<body>
+
+  <div class="legend">
+    <div class="item"><span class="key c">C</span> Create</div>
+    <div class="item"><span class="key r">R</span> Read</div>
+    <div class="item"><span class="key u">U</span> Update</div>
+    <div class="item"><span class="key d">D</span> Delete</div>
+    <div class="item"><span class="key n">–</span> No permission</div>
+  </div>
+
+  <div class="mwrap"><table class="matrix" id="mtable"></table></div>
+
+<script>
+const C='c', R='r', N='n';
+const cats = {
+  'Compute':['Instance','Key Pair','GPU Instance','Instance Template','Image','Image Builder','Auto Scale'],
+  'Container':['NKS','NCS'],
+  'Network':['VPC','Subnet','Network ACL','Routing','Flow Log','Security Groups','Load Balancer','NAT Instance','NAT Gateway','Transit Hub','Internet Gateway','Peering Gateway','VPN Gateway','Service Gateway','Traffic Mirroring','Private DNS','Direct Connect','Network Interface','Floating IP','Colocation Gateway'],
+  'Storage':['Block Storage','NAS','NAS (offline)','Storage Gateway'],
+  'Database':['MS-SQL Instance','MySQL Instance','PostgreSQL Instance','CUBRID Instance','MariaDB Instance','Tibero Instance','Redis Instance','Valkey Instance'],
+  'Machine Learning':['Deep Learning Instance'],
+  'Data & Analytics':['Kafka Instance']
+};
+
+// Roles, in fixed display order. `gw` = gateway service granted CRUD for that admin role. `cont` = container service granted CRUD.
+const roles = [
+  {name:'Infrastructure ADMIN', rule:'alladmin'},
+  {name:'Infrastructure MEMBER', rule:'adm', gw:[], cont:[]},
+  {name:'Infrastructure VIEWER', rule:'viewer'},
+  {name:'Infrastructure Routing ADMIN', rule:'adm', gw:['Routing'], cont:[]},
+  {name:'Infrastructure Security Group ADMIN', rule:'adm', gw:['Security Groups'], cont:[]},
+  {name:'Infrastructure Load Balancer ADMIN', rule:'adm', gw:['Load Balancer'], cont:[]},
+  {name:'Infrastructure Transit Hub ADMIN', rule:'adm', gw:['Transit Hub'], cont:[]},
+  {name:'Infrastructure Peering Gateway ADMIN', rule:'adm', gw:['Peering Gateway'], cont:[]},
+  {name:'Infrastructure Colocation Gateway ADMIN', rule:'adm', gw:['Colocation Gateway'], cont:[]},
+  {name:'Infrastructure NAT Gateway ADMIN', rule:'adm', gw:['NAT Gateway'], cont:[]},
+  {name:'Infrastructure Service Gateway ADMIN', rule:'adm', gw:['Service Gateway'], cont:[]},
+  {name:'Infrastructure Private DNS ADMIN', rule:'adm', gw:['Private DNS'], cont:[]},
+  {name:'Infrastructure Flow Log ADMIN', rule:'adm', gw:['Flow Log'], cont:[]},
+  {name:'Infrastructure NCS ADMIN', rule:'adm', gw:[], cont:['NCS']},
+  {name:'Infrastructure NKS ADMIN', rule:'adm', gw:['Load Balancer'], cont:['NKS']},
+  {name:'Infrastructure NAS ADMIN', rule:'nasadmin'},
+];
+
+function perm(role, svc, cat){
+  // Key Pair, NAS (offline), Direct Connect are CRUD for every role
+  if(svc==='Key Pair' || svc==='NAS (offline)' || svc==='Direct Connect') return C;
+  switch(role.rule){
+    case 'alladmin': return C;
+    case 'nasadmin':
+      // Includes Infrastructure MEMBER permissions in full, plus NAS is CRUD
+      if(svc==='NAS') return C;
+      if(cat==='Network') return (svc==='Network Interface'||svc==='Floating IP') ? C : R;
+      if(cat==='Container') return R;          // NKS, NCS Read
+      if(svc==='Storage Gateway') return R;
+      return C;                                 // Compute, Block Storage, DB, ML, Data
+    case 'viewer':
+      return R;
+    case 'adm':
+      if(cat==='Network'){
+        if(svc==='Network Interface'||svc==='Floating IP') return C;
+        if(role.gw.includes(svc)) return C;
+        return R;
+      }
+      if(cat==='Container') return role.cont.includes(svc) ? C : R;
+      if(svc==='Storage Gateway') return R;
+      if(svc==='NAS') return R;
+      return C; // Compute, Block Storage, DB, ML, Data
+  }
+}
+const label = {c:'<span class="cellpills"><span class="c">C</span><span class="r">R</span><span class="u">U</span><span class="d">D</span></span>', r:'R', n:'–'};
+
+/* ---------- Matrix ---------- */
+(function(){
+  const t = document.getElementById('mtable');
+  let h = '';
+  h += '<thead><tr><th class="corner">Service</th>';
+  roles.forEach((r,i)=> h += `<th class="role" data-col="${i}">${r.name}</th>`);
+  h += '</tr></thead><tbody>';
+  for(const [cat,svcs] of Object.entries(cats)){
+    h += `<tr class="catrow"><td class="cat">${cat}</td>` + roles.map((r,i)=>`<td class="cat" data-col="${i}"></td>`).join('') + '</tr>';
+    svcs.forEach(svc=>{
+      h += `<tr><td class="svc">${svc}</td>`;
+      roles.forEach((r,i)=>{ const p=perm(r,svc,cat); h += `<td class="${p}" data-col="${i}">${label[p]}</td>`; });
+      h += '</tr>';
+    });
+  }
+  h += '</tbody>';
+  t.innerHTML = h;
+  t.querySelectorAll('th.role').forEach(th=>{
+    th.onclick=()=>{
+      const col=th.dataset.col;
+      const on=th.classList.contains('hicol');
+      t.querySelectorAll('.hicol').forEach(x=>x.classList.remove('hicol'));
+      if(!on) t.querySelectorAll('[data-col="'+col+'"]').forEach(x=>x.classList.add('hicol'));
+    };
+  });
+})();
+</script>
+
+</body>
+</html>
