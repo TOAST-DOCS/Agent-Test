@@ -6,3 +6,4 @@
 - "문제 해결 가이드": troubleshooting-guide.md
 - "커널 버전업 가이드": kernel-guide.md
 - "mkdocs syntax": mkdocs-syntax.md
+- "mkdocs test": mkdocs-test.md
