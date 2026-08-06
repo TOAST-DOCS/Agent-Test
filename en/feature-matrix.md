@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=af6d5efd1d39 -->
 
 <a id="compute-instance-feature-matrix"></a>
@@ -6,21 +8,23 @@
 This document summarizes the features provided by the Instance service by region and pricing plan. It includes tables, lists, code blocks, and nested headings for translation pipeline testing.
 
 <a id="feature-overview"></a>
+
 ## Feature Overview { #feature-overview }
 
 The main features of Instance are as follows.
 
-- **Create Instances**: Create a virtual server by selecting an image and a type.
-- **Instance Templates**: Save frequently used settings as a template and reuse them.
-- **Scheduling**: Start or stop instances at a specified time.
-- **Monitoring**: Check CPU, memory, and disk usage on the dashboard.
+- **Create an instance**: Create a virtual server by selecting an image and type. (List modification test)
+- **Instance Template**: Save frequently used settings as a template for reuse.
+- **Scheduling**: Start or stop an instance at a specified time.
+- **Monitoring**: View CPU, memory, and disk usage on the dashboard.
 
 <a id="feature-by-region"></a>
+
 ## Feature Availability by Region { #feature-by-region }
 
 Available features vary by region. See the table below.
 
-| Feature Code | Feature Name | Pangyo | Pyeongchon | Japan |
+| Feature Code | Feature Name | Pangyo | Pyeongchon | Japan (Feature Updates) |
 |---|---|---|---|---|
 | INST-CREATE | Create Instances | Available | Available | Available |
 | INST-TPL | Instance Templates | Available | Available | Not available |
@@ -28,7 +32,8 @@ Available features vary by region. See the table below.
 | INST-MON | Instance Monitoring | Available | Available | Available |
 
 <a id="feature-by-plan"></a>
-### Limits by Pricing Plan { #feature-by-plan }
+
+### Provided Limits and Details by Plan { #feature-by-plan }
 
 The number of instances you can create differs by pricing plan.
 
@@ -36,8 +41,6 @@ The number of instances you can create differs by pricing plan.
 |---|---|---|
 | Basic | 10 | 1TB |
 | Standard | 50 | 10TB |
-| Enterprise | Unlimited | Unlimited |
-
 <a id="feature-api"></a>
 ## Checking Features via API { #feature-api }
 
