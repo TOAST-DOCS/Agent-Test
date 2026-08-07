@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=9b1876e3ba07 -->
+
 # 브랜치 복원 테스트
 
 ## 목적
