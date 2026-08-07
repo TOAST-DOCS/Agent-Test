@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=9b1876e3ba07 -->
+
 # Branch restore test
 
 ## Purpose
