@@ -217,8 +217,20 @@ comments = json.load(open(os.environ["COMMENTS_FILE"]))
 
 summary_bodies = [(r.get("body") or "") for r in reviews if (r.get("body") or "").strip()]
 has_summary_header = any(re.search(r"##\s*🔍\s*한글 검수 결과", b) for b in summary_bodies)
-has_detected_items = any("### 검출 항목" in b for b in summary_bodies)
-has_dimension_table = any("### 차원별 점검" in b for b in summary_bodies)
+# '검출 항목' 은 CLAUDE.md 상 `### 검출 항목` 이 규격이지만, 실제 app/output.py
+# format_summary() 는 collapsible `<details><summary>...검출 항목 N건...</summary>`
+# 로 감싼다. 둘 다 허용.
+has_detected_items = any(
+    "### 검출 항목" in b
+    or re.search(r"<details>\s*<summary>[^<]*검출 항목", b)
+    for b in summary_bodies
+)
+# '차원별 점검' 은 `### 차원별 점검` heading 또는 그 표만(heading 없이) 나올 수
+# 있는데 표 자체는 항상 `| 차원 | 결과 |` 로 시작한다.
+has_dimension_table = any(
+    "### 차원별 점검" in b or "| 차원 | 결과 |" in b
+    for b in summary_bodies
+)
 # 위반 0건 케이스는 "위반 없음 ✅ — 점검 차원 전부 통과" 형식으로 요약이 나올 수 있음.
 has_no_violation_notice = any("위반 없음" in b for b in summary_bodies)
 
