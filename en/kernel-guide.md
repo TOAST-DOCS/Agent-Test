@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > Kernel Version Upgrade Guide { #compute-instance-kernel-version-upgrade-guide }
 
@@ -621,3 +623,13 @@ Reboot the OS for the boot order change to take effect.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+## Test new table section { #test-added-table }
+
+This section has been newly added to validate table translation. All heading and cell text in the table below must be translated.
+
+| Item | Description | Default Value |
+|---|---|---|
+| Maximum number of nodes | Maximum number of nodes that can be created in a single node pool | 10 |
+| Auto scaling | Automatic adjustment of the number of nodes based on load | Disabled |
+| Check interval | Interval at which to check node status | 5 minutes |
