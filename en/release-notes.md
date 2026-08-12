@@ -8,7 +8,6 @@
 This document lists the changes in each release of the instance service in reverse chronological order. Release numbers follow the `major.minor.patch` format, and each entry shows the release date and key changes.
 
 <a id="release-history"></a>
-
 ### Release history { #release-history }
 
 | Release | Release date | Changes |
