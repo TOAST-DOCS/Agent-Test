@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=585936601439 -->
 
 <a id="compute-instance-pricing-guide"></a>
-
 ## Compute > Instance > 料金ガイド { #compute-instance-pricing-guide }
 
 インスタンスの価格体系と価格体系ごとの提供上限を整理したドキュメントです。料金はリージョンと決済方法によって異なる場合があり、詳細な金額はコンソールの料金計算機で確認できます。(本文編集テスト: この文は翻訳の再実行時に反映されるべきです。)
