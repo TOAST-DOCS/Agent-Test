@@ -1,5 +1,5 @@
 <a id="compute-instance-release-notes"></a>
-## Compute > Instance > Release notes
+## Compute > Instance > Release notes { #compute-instance-release-notes }
 
 This document lists the changes in each release of the instance service in reverse chronological order. Release numbers follow the `major.minor.patch` format, and each entry shows the release date and key changes.
 
