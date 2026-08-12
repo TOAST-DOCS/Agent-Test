@@ -1,5 +1,10 @@
+<!-- machine_translated: true -->
+
 <a id="compute-instance-overview"></a>
+
 ## Compute > Instance > Overview { #compute-instance-overview }
+
+This is a test paragraph added to an existing section. Existing headings must remain unchanged.
 
 An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
 
