@@ -18,7 +18,6 @@ The main features of Instance are as follows.
 - **Monitoring**: Check CPU, memory, and disk usage on the dashboard.
 
 <a id="feature-by-region"></a>
-
 ## Feature Availability by Region { #feature-by-region }
 
 Available features vary by region. See the table below.
@@ -31,7 +30,6 @@ Available features vary by region. See the table below.
 | INST-MON | Instance Monitoring | Provided | Provided | Provided |
 | INST-SCHED | Instance Scheduling | Available | Not available | Not available |
 <a id="feature-by-plan"></a>
-
 ### Limits by Pricing Plan { #feature-by-plan }
 
 The number of instances you can create differs by pricing plan.
