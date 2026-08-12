@@ -1,4 +1,5 @@
-## Compute > Instance > Troubleshooting Guide
+<a id="compute-instance-troubleshooting-guide"></a>
+## Compute > Instance > Troubleshooting Guide { #compute-instance-troubleshooting-guide }
 
 The document describes how to resolve issues you may encounter while using NHN Cloud.
 
