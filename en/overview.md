@@ -247,7 +247,7 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## Additional section for testing { #test-added-section }
+<a id="webhook-e2e-20260728-110207"></a>
+## Additional section for testing { #webhook-e2e-20260728-110207 }
 
 This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
