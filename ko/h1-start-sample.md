@@ -2,7 +2,7 @@
 
 이 문서는 최상위 제목이 `#`(h1)로 시작하는 문서 샘플입니다. 문서의 모든 섹션 제목에는 앵커 id가 부여되어 있습니다.
 
-## 문서 구조 { #h1-document-structure }
+## h2 문서 구조 { #h2-document-structure }
 
 `#`로 시작하는 문서는 문서 제목이 h1이고, 본문 섹션은 h2부터 시작합니다.
 
@@ -12,7 +12,7 @@
 | h2 | `##` | 본문 섹션 |
 | h3 | `###` | 하위 섹션 |
 
-## 앵커 id 규칙 { #h1-anchor-id-rule }
+## h2 앵커 id 규칙 { #h2-anchor-id-rule }
 
 제목 뒤에 `{ #id }` 형식으로 앵커 id를 지정합니다. id는 소문자와 하이픈만 사용합니다.
 
@@ -20,15 +20,15 @@
 ## 섹션 제목 { #section-title }
 ```
 
-### 문서 내 링크 { #h1-internal-link }
+### h3 문서 내 링크 { #h3-internal-link }
 
 같은 문서 안의 섹션은 `#id`로 링크합니다. 예: [앵커 id 규칙](#h1-anchor-id-rule)
 
-### 다른 문서 링크 { #h1-external-link }
+### 다른 문서 링크 { #h3-external-link }
 
 다른 문서의 섹션은 파일 경로와 앵커를 함께 사용합니다. 예: [H2 시작 문서 샘플](h2-start-sample.md#h2-start-sample)
 
-## 참고 사항 { #h1-notes }
+## h2 참고 사항 { #h2-notes }
 
 - 앵커 id는 문서 내에서 유일해야 합니다.
 - 제목 텍스트가 바뀌어도 앵커 id는 그대로 유지하는 것을 권장합니다.
