@@ -22,11 +22,59 @@
 
 #### h4 문서 내 링크 { #h4-internal-link }
 
-같은 문서 안의 섹션은 `#id`로 링크합니다. 예: [앵커 id 규칙](#h2-anchor-id-rule)
+같은 문서 안의 섹션은 `#id`로 링크합니다. 예: [앵커 id 규칙](#h3-anchor-id-rule)
 
 #### h4 다른 문서 링크 { #h4-external-link }
 
 다른 문서의 섹션은 파일 경로와 앵커를 함께 사용합니다. 예: [H1 시작 문서 샘플](h1-start-sample.md#h1-start-sample)
+
+### h3 코드 블록 { #h3-code-block }
+
+코드 블록은 언어를 지정한 fence 로 작성합니다.
+
+```bash
+curl -s "https://api.nhncloud.com/v2/instances" \
+  -H "X-Auth-Token: $TOKEN"
+```
+
+#### h4 인라인 코드 { #h4-inline-code }
+
+문장 안에서는 `` `백틱` `` 으로 감쌉니다. 예: `flavorId`, `availabilityZone`
+
+#### h4 code fence 안의 템플릿 문법 { #h4-template-in-fence }
+
+code fence 안에 있는 템플릿 문법은 렌더링되지 않고 그대로 노출되어야 합니다.
+
+```markdown
+{% raw %}{% if 'ngsc' in build_flags %}{% endraw %}
+```
+
+### h3 목록 { #h3-list }
+
+#### h4 순서 없는 목록 { #h4-unordered-list }
+
+- 첫 번째 항목
+- 두 번째 항목
+    - 중첩된 항목
+    - 중첩된 항목
+- 세 번째 항목
+
+#### h4 순서 있는 목록 { #h4-ordered-list }
+
+1. 인스턴스를 생성합니다.
+2. 보안 그룹을 연결합니다.
+3. 플로팅 IP를 할당합니다.
+
+##### h5 깊은 하위 섹션 { #h5-deep-section }
+
+h5 레벨까지 앵커 id가 정상적으로 부여되는지 확인하는 섹션입니다.
+
+### h3 인용과 강조 { #h3-blockquote-and-emphasis }
+
+> 인용문은 이렇게 표시됩니다.
+> 여러 줄로 이어질 수 있습니다.
+
+**굵게**, *기울임*, ~~취소선~~ 을 사용할 수 있습니다.
 
 ### h3 참고 사항 { #h3-notes }
 
