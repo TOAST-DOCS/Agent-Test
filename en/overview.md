@@ -41,6 +41,7 @@ NHN Cloud provides various instance flavors to support a wide range of use cases
 | t2 | A low-cost instance. Recommended for servers with low workloads.                                                                                                          |
 | u2 | The cheapest instance. Recommended for servers with low workloads.<br>This flavor utilizes local block storage, which makes it a less stable but more affordable option compared to other flavors.<br>Instances of this flavor do not guarantee I/O performance. |
 | x1 | A flavor that supports high-end CPU and memory. Recommended for services or applications that require high performance.                                                                                        |
+| x9c | A type added for concurrent PR testing. This type does not exist in the actual service. |
 
 <a id="availability-zone"></a>
 ### Availability Zone { #availability-zone }
@@ -245,3 +246,8 @@ $ sudo update-grub
 ## Additional section for testing { #test-added-section }
 
 This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+
+<a id="concurrent-b-added"></a>
+## Concurrent PR Test Added Section { #concurrent-b-added }
+
+This section is a section added by PR B for concurrent PR scenario validation. The translation of PR A must not delete the translation of this section.
