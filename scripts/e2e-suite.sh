@@ -2,7 +2,14 @@
 #
 # e2e 전체 suite 러너 — 여러 plan 을 순차 실행하고 결과를 요약한다.
 #
-#   scripts/e2e-suite.sh [--translate api|local] [--engine api|cli] [--model haiku|sonnet|opus] [plan ...]
+#   scripts/e2e-suite.sh [--translate api|local] [--engine api|cli] [--model haiku|sonnet|opus] \
+#                        [--sleep-between <sec>] [plan ...]
+#
+#   --sleep-between <sec> — plan 과 plan 사이 대기 (기본 0). Jenkins agent 의
+#       claude CLI (OAuth) 가 연속 실행으로 usage limit 에 걸려 align/ko-review
+#       가 무더기 is_error 로 무너지는 것(2026-08-13 08:15Z 실측: align build
+#       324=에러0 → 325/326=에러84)을 피하려면 3600(1시간) 권장. 마지막 plan
+#       뒤에는 자지 않는다.
 #
 # plan 미지정 시 기본: webhook round1 table-suite
 #   webhook     — GitHub webhook 라우팅 검증. base=alpha 로 PR 을 열어
@@ -53,8 +60,11 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PASS_ARGS=()
 EM_ARGS=()   # --engine/--model 만 — retranslate 스크립트는 --translate 계열 미지원
 PLANS=()
+SLEEP_BETWEEN=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --sleep-between)
+      SLEEP_BETWEEN="$2"; shift 2 ;;
     --engine|--model)
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); shift 2 ;;
     --translate|--tm-top-k|--chunk-workers)
@@ -86,7 +96,14 @@ mkdir -p "$outdir"
 
 declare -a RESULTS=()
 overall=0
+first_plan=1
 for plan in "${PLANS[@]}"; do
+  if (( first_plan )); then
+    first_plan=0
+  elif (( SLEEP_BETWEEN > 0 )); then
+    echo "=== ${SLEEP_BETWEEN}s 대기 (--sleep-between; claude CLI usage limit 회복) — $(date '+%H:%M:%S') 부터"
+    sleep "$SLEEP_BETWEEN"
+  fi
   log="$outdir/$plan.log"
   echo "=== [$plan] 시작 → $log"
   if [[ "$plan" == "retranslate" ]]; then
