@@ -72,7 +72,7 @@ NATインスタンスをルートゲートウェイに指定します。 NATイ�
 **接続** ボタンをクリックし、.rdpファイルをダウンロードした後に、獲得したパスワードを使用してインスタンスに接続します。
 
 <a id="allow-security-group-tcp-port-3389-rdp"></a>
-### 보안 그룹 TCP ポート 3389 (RDP) 許可 { #allow-security-group-tcp-port-3389-rdp }
+### セキュリティ グループ TCP ポート 3389 (RDP) 許可 { #allow-security-group-tcp-port-3389-rdp }
 
 <!-- TODO: translate body -->
 
