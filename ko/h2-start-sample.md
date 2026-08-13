@@ -84,3 +84,15 @@ h5 레벨까지 앵커 id가 정상적으로 부여되는지 확인하는 섹션
 
 
 #### h4 hello { #h4-hello }
+
+## h2 두 번째 최상위 섹션 { #h2-second-top-level }
+
+한 문서 안에 h2 가 두 개 이상 있을 때 목차와 앵커가 어떻게 처리되는지 확인하는 섹션입니다.
+
+### h3 두 번째 h2 의 하위 섹션 { #h3-second-top-level-child }
+
+두 번째 h2 아래에도 h3 이하 섹션을 동일한 규칙으로 둘 수 있습니다.
+
+#### h4 두 번째 h2 의 손자 섹션 { #h4-second-top-level-grandchild }
+
+앵커 id는 h2 가 바뀌어도 문서 전체에서 유일해야 합니다. 예: [첫 번째 h2](#h2-start-sample)
