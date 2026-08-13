@@ -251,7 +251,7 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## テスト用の追加セクション { #test-added-section }
+<a id="webhook-e2e-20260728-110207"></a>
+## テスト用の追加セクション { #webhook-e2e-20260728-110207 }
 
 このセクションは翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じアンカー ID が割り当てられているか確認します。
