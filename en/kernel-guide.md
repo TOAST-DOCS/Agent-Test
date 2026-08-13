@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=73ceeadcb5ee -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
@@ -623,3 +625,13 @@ Reboot the OS for the boot order change to take effect.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+## Test New Table Section { #test-added-table }
+
+This section has been newly added to validate table translations. All header text and cell content in the table below must be translated.
+
+| Item | Description | Default |
+|---|---|---|
+| Maximum Number of Nodes | The maximum number of nodes that can be created in a single node pool. | 10 |
+| Auto Scaling | Automatically adjusts the number of nodes based on load. | Not Set (Use Default) |
+| Health Check Interval | The interval at which node status is checked. | 5 minutes |
