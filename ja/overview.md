@@ -5,6 +5,9 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 概要 { #compute-instance-overview }
 
+テスト文です。既存の見出しはそのままにしておく必要があります。(並行 PR テスト A: この文は concurrent-a-edit 検証用です。)
+
+
 インスタンスは仮想の CPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールし、NHN Cloud が提供するさまざまなサービスを組み合わせて使用します。(本文修正テスト: この文は再翻訳時に反映される必要があります。)
 
 <a id="components"></a>
