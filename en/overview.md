@@ -41,6 +41,7 @@ NHN Cloud provides various instance flavors to support a wide range of use cases
 | t2 | A low-cost instance. Recommended for servers with low workloads.                                                                                                          |
 | u2 | The cheapest instance. Recommended for servers with low workloads.<br>This flavor utilizes local block storage, which makes it a less stable but more affordable option compared to other flavors.<br>Instances of this flavor do not guarantee I/O performance. |
 | x1 | A flavor that supports high-end CPU and memory. Recommended for services or applications that require high performance.                                                                                        |
+| x9c | A type added for concurrent PR testing. This type does not exist in actual service. |
 
 <a id="availability-zone"></a>
 ### Availability Zone { #availability-zone }
@@ -65,6 +66,11 @@ When a key pair is newly generated, its private key is downloaded. As private ke
 
 > [Note]
 > Key pair is a resource assigned to the user account, so it's not deleted when you delete a project.
+
+<a id="concurrent-b-added"></a>
+## Concurrent PR Test Added Section { #concurrent-b-added }
+
+This section is added by PR B to verify the concurrent PR scenario. The translation of PR A should not delete the translation of this section.
 
 <a id="security-groups"></a>
 ### Security Groups { #security-groups }
