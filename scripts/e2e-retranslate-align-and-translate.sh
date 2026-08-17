@@ -264,9 +264,9 @@ fi
 echo
 echo "[4/14] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
-deadline=$(( $(date +%s) + 1800 ))
+poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 fix_pr_url=""
-while (( $(date +%s) < deadline )); do
+while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open \
     --json url,headRefName \
     --jq '.[] | select(.headRefName | startswith("pre-align/fix-heading-syntax-")) | .url' \
@@ -344,9 +344,9 @@ fi
 echo
 echo "[6/14] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
-deadline=$(( $(date +%s) + 1800 ))
+poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 align_pr_url=""
-while (( $(date +%s) < deadline )); do
+while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
     --jq '.[].url' | sort -u > "$tmpdir/now"
   align_pr_url="$(comm -13 "$tmpdir/before" "$tmpdir/now" | head -n1 || true)"
@@ -440,9 +440,9 @@ fi
 
 # 잡 상태가 success 가 될 때까지 대기 (전체 재번역이라 최대 90분)
 echo "  retranslate 완료 대기: job_id=$retx_job_id (최대 90분)"
-deadline=$(( $(date +%s) + 5400 ))
+poll_left=180   # 5400s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 retx_status=""
-while (( $(date +%s) < deadline )); do
+while (( poll_left-- > 0 )); do
   retx_status="$(curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
     "$DASHBOARD_BASE_URL/api/jobs/$retx_job_id" \
     | python3 -c 'import json,sys
@@ -602,9 +602,9 @@ echo "[13/14] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60�
 
 ko_head_ref="$(gh pr view "$ko_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 
-deadline=$(( $(date +%s) + 3600 ))
+poll_left=60   # 3600s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 trans_pr_url=""
-while (( $(date +%s) < deadline )); do
+while (( poll_left-- > 0 )); do
   trans_pr_url="$(gh pr list --repo "$REPO" --base "$ko_head_ref" --state open \
     --json url,headRefName \
     --jq '.[] | select(.headRefName | startswith("translate/")) | .url' \

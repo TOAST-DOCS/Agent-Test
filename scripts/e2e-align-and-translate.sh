@@ -288,9 +288,9 @@ fi
 echo
 echo "[4/17] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
-deadline=$(( $(date +%s) + 1800 ))
+poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 fix_pr_url=""
-while (( $(date +%s) < deadline )); do
+while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open \
     --json url,headRefName \
     --jq '.[] | select(.headRefName | startswith("pre-align/fix-heading-syntax-")) | .url' \
@@ -375,9 +375,9 @@ echo "[7/17] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
   --jq '.[].url' | sort -u > "$tmpdir/before"
 
-deadline=$(( $(date +%s) + 1800 ))
+poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 align_pr_url=""
-while (( $(date +%s) < deadline )); do
+while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
     --jq '.[].url' | sort -u > "$tmpdir/now"
   align_pr_url="$(comm -13 "$tmpdir/before" "$tmpdir/now" | head -n1 || true)"
@@ -484,9 +484,9 @@ fi
 echo
 echo "[13/17] ko-review 완료 대기 (job_id=$koreview_job_id, 최대 30분)"
 
-deadline=$(( $(date +%s) + 1800 ))
+poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 koreview_status=""
-while (( $(date +%s) < deadline )); do
+while (( poll_left-- > 0 )); do
   # 주의: set -eo pipefail 아래라 폴링 curl 의 일시 오류(empty reply 등)가
   # 스크립트 전체를 죽인다 (2026-07-29 run 실측: curl 52 로 step 13 중단) —
   # 재시도 + `|| true` 로 흡수하고, 빈 응답은 status="" 로 계속 폴링한다.
@@ -718,8 +718,8 @@ if [[ -z "$trans_pr_url" ]]; then
   echo
   echo "[16/17] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60분)"
 
-  deadline=$(( $(date +%s) + 3600 ))
-  while (( $(date +%s) < deadline )); do
+  poll_left=60   # 3600s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+  while (( poll_left-- > 0 )); do
     trans_pr_url="$(gh pr list --repo "$REPO" --base "$ko_head_ref" --state open \
       --json url,headRefName \
       --jq '.[] | select(.headRefName | startswith("translate/")) | .url' \
