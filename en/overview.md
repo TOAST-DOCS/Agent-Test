@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
-
 ## Compute > Instance > Overview { #compute-instance-overview }
 
 This paragraph is a test paragraph added to an existing section. The existing headings must remain intact.
