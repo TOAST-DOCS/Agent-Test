@@ -1,23 +1,27 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=2e2588e1a607 -->
 
 <a id="compute-instance-api-v2-guide"></a>
-## Compute > Instance > API v2ガイド { #compute-instance-api-v2-guide }
 
-Instanceは、API呼び出し時の認証/認可のためにIaaSトークンを使用します。IaaSトークンは、NHN CloudのOpenStackベースのインフラサービス(IaaS)で使用する認証トークンです。IaaSトークンの発行及び使用に関する詳細は、[IaaSトークン](/nhncloud/ja/public-api/iaas-token) を参照してください。
+## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
-インスタンスAPIは`compute`タイプエンドポイントを利用します。正確なエンドポイントはトークン発行レスポンスの`serviceCatalog`を参照します。
+インスタンスは API 呼び出し時に認証/認可のため IaaS トークンを使用します。IaaS トークンは NHN Cloud の OpenStack ベースのインフラストラクチャサービス (IaaS) で使用される認証トークンです。IaaS トークンの発行および使用の詳細については、[IaaS トークン](/nhncloud/ja/public-api/iaas-token)を参照してください。
+
+インスタンス API は `compute` タイプのエンドポイントを使用します。正確なエンドポイントはトークン発行応答の `serviceCatalog` を参照してください。
 
 | タイプ | リージョン | エンドポイント |
 |---|---|---|
-| compute | 韓国(パンギョ)リージョン<br>韓国(ピョンチョン)リージョン<br>韓国(クァンジュ)リージョン<br>日本リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | Korea (Pangyo) リージョン<br>Korea (Pyeongchon) リージョン<br>Korea (Gwangju) リージョン<br>Japan リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
 
-APIレスポンスにガイドに明示されていないフィールドが表示される場合があります。それらのフィールドは、NHN Cloud内部用途で使用され、事前に告知せずに変更する場合があるため使用しないでください。
+API レスポンスには、このガイドに明記されていないフィールドが表示される場合があります。これらのフィールドは NHN Cloud 内部用途で使用されており、予告なく変更される可能性があるため、使用しないでください。
 
 <a id="instance-flavors"></a>
+
 ## インスタンスタイプ { #instance-flavors }
 
 <a id="list-flavors"></a>
-### タイプリスト表示 { #list-flavors }
+### タイプ一覧表示 { #list-flavors }
 
 ```
 GET /v2/{tenantId}/flavors
@@ -31,18 +35,18 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
-| minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズよりブロックストレージサイズが大きいタイプのみ返す |
-| minRam | Query | Integer | - | 最小RAMサイズ(MB)<br>指定したサイズよりRAMサイズが大きいタイプのみ返す |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
+| minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズより大きいブロックストレージサイズを持つタイプのみを返す |
+| minRam | Query | Integer | - | 最小 RAM サイズ(MB)<br>指定したサイズより大きい RAM サイズを持つタイプのみを返す |
 
 <a id="list-flavors-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
-| flavors | Body | Object | インスタンスタイプリストオブジェクト |
-| flavors.id | Body | UUID | インスタンスタイプID |
+| flavors | Body | Object | インスタンスタイプ一覧オブジェクト |
+| flavors.id | Body | UUID | インスタンスタイプ ID |
 | flavors.links | Body | Object | インスタンスタイプパスオブジェクト |
 | flavors.name | Body | String | インスタンスタイプ名 |
 
@@ -91,7 +95,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-flavors-with-details"></a>
-### タイプリスト詳細表示 { #list-flavors-with-details }
+### タイプの詳細な一覧表示 { #list-flavors-with-details }
 
 ```
 GET /v2/{tenantId}/flavors/detail
@@ -105,28 +109,28 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
-| minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズよりブロックストレージサイズが大きいタイプのみ返す |
-| minRam | Query | Integer | - | 最小RAMサイズ(MB)<br>指定したサイズよりRAMサイズが大きいタイプのみ返す |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
+| minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズより大きいブロックストレージサイズを持つタイプのみを返す |
+| minRam | Query | Integer | - | 最小 RAM サイズ(MB)<br>指定したサイズより大きい RAM サイズを持つタイプのみを返す |
 
 <a id="list-flavors-with-details-response"></a>
 #### レスポンス
 
-| 名前 | 種類 | 形式 | 説明            |
+| 名前 | 種類 | 形式 | 説明             |
 |---|---|---|----------------|
-| flavors | Body | Object | インスタンスタイプリストオブジェクト |
-| flavors.id | Body | UUID | インスタンスタイプID     |
-| flavors.links | Body | Object | インスタンスタイプパスオブジェクト |
-| flavors.name | Body | String | インスタンスタイプ名    |
+| flavors | Body | Object | インスタンスタイプ一覧オブジェクト  |
+| flavors.id | Body | UUID | インスタンスタイプ ID     |
+| flavors.links | Body | Object | インスタンスタイプパスオブジェクト  |
+| flavors.name | Body | String | インスタンスタイプ名     |
 | flavors.ram | Body | Integer | メモリサイズ(MB)     |
-| flavors.OS-FLV-DISABLED:disabled | Body | Boolean | 有効/無効         |
-| flavors.vcpus | Body | Integer | vCPU数       |
-| flavors.extra_specs | Body | Object | 追加仕様オブジェクト      |
+| flavors.OS-FLV-DISABLED:disabled | Body | Boolean | 有効化の有無         |
+| flavors.vcpus | Body | Integer | vCPU 数        |
+| flavors.extra_specs | Body | Object | 追加仕様オブジェクト       |
 | flavors.swap | Body | Integer | スワップ領域サイズ(GB)  |
-| flavors.os-flavor-access:is_public | Body | Boolean | 共有有無          |
-| flavors.rxtx_factor | Body | Float | ネットワーク送信/受信パケット比率 |
-| flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | 臨時ブロックストレージサイズ(GB) |
+| flavors.os-flavor-access:is_public | Body | Boolean | 公開状況          |
+| flavors.rxtx_factor | Body | Float | ネットワーク送受信パケット比率 |
+| flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | 一時ブロックストレージサイズ(GB)     |
 | flavors.disk | Body | Integer | ルートブロックストレージサイズ(GB) |
 
 <details><summary>例</summary>
@@ -195,10 +199,11 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="availability-zones"></a>
-## アベイラビリティゾーン { #availability-zones }
+
+## 可用性ゾーン { #availability-zones }
 
 <a id="list-availability-zones"></a>
-### 可用性リスト表示 { #list-availability-zones }
+### 可用性ゾーン一覧の表示 { #list-availability-zones }
 
 ```
 GET /v2/{tenantId}/os-availability-zone
@@ -207,21 +212,21 @@ X-Auth-Token: {tokenId}
 
 <a id="list-availability-zones-request"></a>
 #### リクエスト
-このAPIはリクエスト本文を要求しません。
+このAPIはリクエストボディを要求しません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
 
 <a id="list-availability-zones-response"></a>
 #### レスポンス
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
-| availabilityZoneInfo.hosts | Body | - | アベイラビリティゾーンに属しているホスト情報オブジェクト<br>常にnullと表示 |
-| availabilityZoneInfo.zoneName | Body | String | アベイラビリティゾーン名 |
-| availabilityZoneInfo.zoneState | Body | Object | アベイラビリティゾーン状態情報オブジェクト |
-| availabilityZoneInfo.available | Body | Object | アベイラビリティゾーンの状態 |
+| availabilityZoneInfo | Body | Object | 可用性ゾーン情報オブジェクト |
+| availabilityZoneInfo.zoneName | Body | String | 可用性ゾーン名 |
+| availabilityZoneInfo.zoneState | Body | Object | 可用性ゾーン状態情報オブジェクト |
+| availabilityZoneInfo.available | Body | Object | 可用性ゾーン状態 |
 
 <details><summary>例</summary>
 <p>
@@ -251,10 +256,11 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="key-pairs"></a>
+
 ## キーペア { #key-pairs }
 
 <a id="list-key-pairs"></a>
-### キーペアリスト表示 { #list-key-pairs }
+### キーペア一覧の表示 { #list-key-pairs }
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
@@ -266,19 +272,19 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
 
 <a id="list-key-pairs-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
-| keypairs | Body | Array | キーペアオブジェクトリスト |
+| keypairs | Body | Array | キーペアオブジェクトのリスト |
 | keypairs.keypair | Body | Object | キーペアオブジェクト |
 | keypairs.keypair.name | Body | String | キーペア名 |
 | keypairs.keypair.public_key | Body | String | 公開鍵 |
-| keypairs.keypair.fingerprint | Body | String | キーペア指紋 |
+| keypairs.keypair.fingerprint | Body | String | キーペアフィンガープリント |
 
 <details><summary>例</summary>
 <p>
@@ -303,7 +309,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="show-key-pair"></a>
-### キーペア表示 { #show-key-pair }
+### キーペアの表示 { #show-key-pair }
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -315,25 +321,25 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
+| tenantId | URL | String | O | テナント ID |
 | keypairName | URL | String | O | キーペア名 |
-| tokenId | Header | String | O | トークンID |
+| tokenId | Header | String | O | トークン ID |
 
 <a id="show-key-pair-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
-| keypair | Body | Object | キーペアオブジェクトリスト |
+| keypair | Body | Object | キーペアオブジェクトのリスト |
 | keypair.public_key | Body | String | 公開鍵 |
-| keypair.user_id | Body | String | キーペアのオーナーID |
+| keypair.user_id | Body | String | キーペア所有者 ID |
 | keypair.name | Body | String | キーペア名 |
 | keypair.deleted | Body | Boolean | キーペアが削除されているかどうか |
-| keypair.created_at | Body | Datetime | キーペア作成日時<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
-| keypair.updated_at | Body | Datetime | キーペア修正日時<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
-| keypair.deleted_at | Body | Datetime | キーペア削除日時<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
-| keypair.fingerprint | Body | String | キーペア指紋 |
-| keypair.id | Body | Integer | キーペアID |
+| keypair.created_at | Body | Datetime | キーペア作成時刻<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.updated_at | Body | Datetime | キーペア更新時刻<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.deleted_at | Body | Datetime | キーペア削除時刻<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.fingerprint | Body | String | キーペアフィンガープリント |
+| keypair.id | Body | Integer | キーペア ID |
 
 <details><summary>例</summary>
 <p>
@@ -372,11 +378,11 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
 | keypair | Body | Object | O | キーペアオブジェクト |
 | keypair.name | Body | String | O | 作成または登録するキーペア名 |
-| keypair.public_key | Body | String | - | 登録する公開鍵。このフィールドが省略されている場合、新しいキーペアを作成します。|
+| keypair.public_key | Body | String | - | 登録する公開鍵。このフィールドが省略される場合、新しいキーペアが作成されます。 |
 
 <details><summary>例</summary>
 <p>
@@ -400,10 +406,10 @@ X-Auth-Token: {tokenId}
 |---|---|---|---|
 | keypair | Body | Object | キーペアオブジェクト |
 | keypair.public_key | Body | String | 公開鍵 |
-| keypair.private_key | Body | String | 秘密鍵。新しいキーペアを作成した場合に秘密鍵を返します。|
-| keypair.user_id | Body | String | キーペアのオーナーID |
+| keypair.private_key | Body | String | 秘密鍵。新しいキーペアが作成される場合に返されます。 |
+| keypair.user_id | Body | String | キーペア所有者 ID |
 | keypair.name | Body | String | キーペア名 |
-| keypair.fingerprint | Body | String | キーペア指紋 |
+| keypair.fingerprint | Body | String | キーペアフィンガープリント |
 
 <details><summary>例</summary>
 <p>
@@ -425,7 +431,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="delete-key-pair"></a>
-### キーペアを削除する { #delete-key-pair }
+### キーペアの削除 { #delete-key-pair }
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -437,9 +443,9 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
+| tenantId | URL | String | O | テナント ID |
 | keypairName | URL | String | O | キーペア名 |
-| tokenId | Header | String | O | トークンID |
+| tokenId | Header | String | O | トークン ID |
 
 <a id="delete-key-pair-response"></a>
 #### レスポンス
@@ -447,36 +453,39 @@ X-Auth-Token: {tokenId}
 
 
 <a id="instance"></a>
+
 ## インスタンス { #instance }
 
 <a id="instance-status"></a>
-### インスタンス状態 { #instance-status }
 
-インスタンスはさまざまな状態を持ち、状態によって行える動作が決められています。インスタンス状態リストは次のとおりです。
+### インスタンスの状態 { #instance-status }
 
-| 状態名              | 説明                                                                                               |
+インスタンスはさまざまな状態を持ち、状態に応じて実行可能なアクションが決定されます。インスタンスの状態の一覧は次のとおりです。
+
+| 状態名              | 説明                                                                                                |
 |-------------------|---------------------------------------------------------------------------------------------------|
-| `ACTIVE` | インスタンスがアクティブな状態の場合 |
-| `BUILD` | インスタンスが作成中中の場合 |
+| `ACTIVE` | インスタンスがアクティブ状態である場合 |
+| `BUILD` | インスタンスが作成中の場合 |
 | `DELETED` | インスタンスが削除された場合 |
-| `ERROR` | 直前にインスタンスに行った動作が失敗した場合 |
-| `HARD_REBOOT` | インスタンスを強制的に再起動した場合<br> 物理サーバーの電源を切って再起動するのと同じ動作 |
-| `MIGRATING` | インスタンスがマイグレーション中の場合<br> これはリアルタイムマイグレーション(アクティブインスタンス移動)作業により発生する |
-| `PASSWORD` | インスタンスでパスワードをリセットしている場合 |
-| `PAUSED` | インスタンスが一時停止した場合<br>一時停止したインスタンスはハイパーバイザのメモリに保存される。 |
-| `REBOOT` | インスタンスがソフト再起動状態である場合<br> 再起動コマンドが仮想マシンのオペレーティングシステムに伝達される。 |
-| `REBUILD` | インスタンスを作成時、イメージから新たに作り出す状態 |
-| `RESCUE` | インスタンスを復旧モードで実行中の場合 |
-| `RESIZE` | インスタンスタイプを変更したり、インスタンスを別のホストに移動する場合<br>インスタンスが停止して再起動した状態 |
-| `REVERT_RESIZE` | インスタンスタイプを変更したり、インスタンスを他のホストに移動する過程で失敗したときに、元の状態に戻すために復旧する場合 |
-| `VERIFY_RESIZE` | インスタンスがタイプ変更またはインスタンスを他のホストに移動する過程を終えてユーザーの承認を待っている場合<br>NHN Cloudでは、この場合、自動的に`ACTIVE`状態になります。 |
-| `SHELVED_OFFLOADED` | インスタンスが終了した場合 |
-| `SHUTOFF` | インスタンスが停止した場合 |
-| `SUSPENDED` | インスタンスが管理者により最大節電モードになっている場合 |
-| `UNKNOWN` | インスタンスの状態が不明な場合<br>`インスタンスがこの状態になった場合、管理者に問い合わせます。` | 
+| `ERROR` | インスタンスに対して実行した直前のアクションが失敗した場合 |
+| `HARD_REBOOT` | インスタンスを強制的に再起動した場合<br>物理サーバーの電源を切ってから再度起動することと同じアクション |
+| `MIGRATING` | インスタンスがマイグレーション中の場合<br>これはライブマイグレーション（アクティブインスタンスの移動）作業が原因で発生します |
+| `PASSWORD` | インスタンスのパスワードをリセット中の場合 |
+| `PAUSED` | インスタンスが一時停止された場合<br>一時停止されたインスタンスはハイパーバイザーのメモリに保存されます |
+| `REBOOT` | インスタンスがソフト再起動状態の場合<br>再起動コマンドが仮想マシンオペレーティングシステムに渡されます |
+| `REBUILD` | インスタンスが作成時のイメージから新しく作成される状態 |
+| `RESCUE` | インスタンスがレスキューモードで実行中の場合 |
+| `RESIZE` | インスタンスタイプを変更するか、インスタンスを別のホストに移動する場合<br>インスタンスが停止された後に再起動される状態 |
+| `REVERT_RESIZE` | インスタンスタイプを変更するか、別のホストへのインスタンス移動が失敗したときに元の状態に戻すために復旧される場合 |
+| `VERIFY_RESIZE` | インスタンスがタイプ変更または別のホストへの移行を完了し、ユーザーの承認を待っている場合<br>NHN Cloudでは、この場合は自動的に`ACTIVE`状態になります |
+| `SHELVED_OFFLOADED` | インスタンスが終了された場合 |
+| `SHUTOFF` | インスタンスが停止された場合 |
+| `SUSPENDED` | インスタンスが管理者によって休止モードに入った場合 |
+| `UNKNOWN` | インスタンスの状態を判定できない場合<br>`この状態に入った場合は、管理者に問い合わせてください。` |
 
 <a id="list-instances"></a>
-### インスタンスリスト表示 { #list-instances }
+
+### インスタンス一覧の表示 { #list-instances }
 
 ```
 GET /v2/{tenantId}/servers
@@ -486,29 +495,29 @@ X-Auth-Token: {tokenId}
 <a id="list-instances-request"></a>
 #### リクエスト
 
-このAPIはリクエスト本文を要求しません。
+このAPIはリクエストボディを要求しません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
 | tenantId | URL | String | O | テナントID |
 | tokenId | Header | String | O | トークンID |
-| reservation_id | Query | String | - | インスタンス作成予約ID。<br>予約IDを指定すると、同時に作成されたインスタンスリストのみ返す。 |
-| changes-since | Query | Datetime | - | 指定された日時以降に変更されたインスタンスリストを返す。`YYYY-MM-DDThh:mm:ss`の形式。|
-| image | Query | UUID | - | イメージID<br>指定されたイメージを使用したインスタンスリストを返す |
-| flavor | Query | UUID | - | インスタンスタイプID<br>指定されたタイプを使用しているインスタンスリストを返す |
-| name | Query | String | - | インスタンス名<br>指定された名前のインスタンスリストを返す。正規表現を使用可能。|
-| status | Query | Enum | - | インスタンスの状態<br>指定された状態のインスタンスリストを返す |
-| limit | Query | Integer | - | インスタンスリスト数<br>指定された数のインスタンスリストを返す |
-| marker | Query | UUID | - | リストの最初のインスタンスUUID<br>ソート基準に従って`marker`に指定されたインスタンスから`limit`数分のインスタンスリストを返す |
+| reservation_id | Query | String | - | インスタンス作成予約ID。<br>予約IDを指定すると、同時に作成されたインスタンス一覧のみが返されます。 |
+| changes-since | Query | Datetime | - | 指定された時刻以降に変更されたインスタンス一覧を返します。`YYYY-MM-DDThh:mm:ss`形式。 |
+| image | Query | UUID | - | イメージID<br>指定されたイメージを使用したインスタンス一覧を返します。 |
+| flavor | Query | UUID | - | インスタンスタイプID<br>指定されたタイプを使用したインスタンス一覧を返します。 |
+| name | Query | String | - | インスタンス名<br>指定された名前を持つインスタンス一覧を返します。正規表現でクエリ可能です。 |
+| status | Query | Enum | - | インスタンスステータス<br>指定されたステータスを持つインスタンス一覧を返します。 |
+| limit | Query | Integer | - | インスタンス一覧の件数<br>指定した件数のインスタンス一覧を返します。 |
+| marker | Query | UUID | - | 一覧の最初のインスタンスUUID<br>ソート基準に従い、`marker`で指定されたインスタンスから`limit`件のインスタンス一覧を返します。 |
 
 <a id="list-instances-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
-| servers | Body | Object | インスタンスリストオブジェクト |
+| servers | Body | Object | インスタンス一覧オブジェクト |
 | id | Body | UUID | インスタンスUUID |
-| links | body | Object | インスタンスパスオブジェクト |
+| links | body | Object | インスタンス経路オブジェクト |
 | name | body | String | インスタンス名 |
 
 <details><summary>例</summary>
@@ -541,9 +550,10 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-instances-with-details"></a>
-### インスタンスリスト詳細表示 { #list-instances-with-details }
 
-インスタンスリスト表示と同じように現在テナントに作成されているインスタンスリストを返します。ただし、各インスタンスの詳細な情報が一緒に照会されます。
+### インスタンス一覧の詳細表示 { #list-instances-with-details }
+
+インスタンス一覧の表示と同様に、現在のテナントで作成されたインスタンス一覧を返します。ただし、インスタンス別の詳細情報も取得されます。
 
 ```
 GET /v2/{tenantId}/servers/detail
@@ -551,50 +561,52 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-instances-with-details-request"></a>
+
 #### リクエスト
 
-インスタンスリスト表示と同じリクエスト形式です。
+インスタンス一覧の表示と同じリクエスト形式です。
 
 <a id="list-instances-with-details-response"></a>
+
 #### レスポンス
 
-| 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                       |
+| 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                        |
 |---|---|---|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| servers | body | Object | インスタンスリストオブジェクト                                                                                                                                                                                               |
-| status | body | Enum | インスタンスの状態                                                                                                                                                                                                  |
-| servers.id | Body | UUID | インスタンスID                                                                                                                                                                                                   |
-| servers.name | Body | String | インスタンス名。最大255文字。                                                                                                                                                                                         |
-| servers.updated | Body | Datetime | インスタンスの最終修正日時。`YYYY-MM-DDThh:mm:ssZ`形式。                                                                                                                                                                 |
-| servers.hostId | Body | String | インスタンスが起動中のホストID                                                                                                                                                                                        |
-| servers.addresses | Body | Object | インスタンスIPリストオブジェクト。<br>インスタンスに接続されたポート数分のリストが作成される。                                                                                                                                                             |
-| servers.addresses."Network名" | Body | Object | インスタンスに接続されている各Networkのポート情報                                                                                                                                                                                 |
-| servers.addresses."Network名".OS-EXT-IPS-MAC:mac_addr | Body | String | インスタンスに接続されたポートのMACアドレス                                                                                                                                                                                     |
-| servers.addresses."Network名".version | Body | Integer | インスタンスに接続されたポートのIPバージョン<br>NHN CloudはIPv4のみサポート                                                                                                                                                               |
-| servers.addresses."Network名".addr | Body | String | インスタンスに接続されたポートのIPアドレス                                                                                                                                                                                      |
-| servers.addresses."Network名".OS-EXT-IPS:type | Body | Enum | ポートのIPアドレスタイプ<br>`fixed`または`floating`のいずれか1つ                                                                                                                                                                |
-| servers.links | Body | Object | インスタンスパスオブジェクト                                                                                                                                                                                               |
-| servers.key_name | Body | String | インスタンスキーペア名                                                                                                                                                                                              |
-| servers.image | Body | Object | インスタンスイメージオブジェクト                                                                                                                                                                                              |
-| servers.image.id | Body | UUID | インスタンスイメージID                                                                                                                                                                                               |
-| servers.image.links | Body | Object | インスタンスイメージパスオブジェクト                                                                                                                                                                                           |
-| servers.OS-EXT-STS:task_state | Body | String | インスタンス作業状態<br>インスタンスに動作を加えた時、動作進行状態を伝える。                                                                                                                                                               |
-| servers.OS-EXT-STS:vm_state | Body | String | インスタンスの現在の状態                                                                                                                                                                                               |
-| servers.OS-SRV-USG:launched_at | Body | Datetime | インスタンスの最終起動日時<br>`YYYY-MM-DDThh:mm:ss.ssssss`形式                                                                                                                                                        |
-| servers.OS-SRV-USG:terminated_at | Body | Datetime | インスタンスの削除日時<br>`YYYY-MM-DDThh:mm:ssZ`形式                                                                                                                                                                  |
-| servers.flavor | Body | Object | インスタンスタイプ情報オブジェクト                                                                                                                                                                                            |
-| servers.flavor.id | Body | UUID | インスタンスタイプID                                                                                                                                                                                                |
-| servers.flavor.links | Body | Object | インスタンスタイプパスオブジェクト                                                                                                                                                                                            |
-| servers.security_groups | Body | Object | インスタンスに割り当てられたセキュリティグループリストオブジェクト                                                                                                                                                                                    |
-| servers.security_groups.name | Body | String | インスタンスに割り当てられたセキュリティグループ名                                                                                                                                                                                       |
-| servers.user_id | Body | String | インスタンスを作成したユーザーID                                                                                                                                                                                          |
-| servers.created | Body | Datetime | インスタンス作成日時。`YYYY-MM-DDThh:mm:ssZ`形式                                                                                                                                                                    |
-| servers.tenant_id | Body | String | インスタンスが属しているテナントID                                                                                                                                                                                           |
-| servers.os-extended-volumes:volumes_attached | Body | Object | インスタンスに接続された追加ブロックストレージリストオブジェクト                                                                                                                                                                               |
-| servers.os-extended-volumes:volumes_attached.id | Body | UUID | インスタンスに接続された追加ブロックストレージID                                                                                                                                                                                   |
-| servers.OS-EXT-STS:power_state | Body | Integer | インスタンスの電源の状態<br>- `1`: On<br>- `4`: Off                                                                                                                                                                    |
-| servers.metadata | Body | Object | インスタンスメタデータオブジェクト<br>インスタンスメタデータをキーと値のペアで保管                                                                                                                                                                  |
-| server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | インスタンスに接続された追加ローカルブロックストレージサイズ                                                                                                                                                                 |
-| server.NHN-EXT-ATTR:protect | Body | Boolean | インスタンス削除保護の有無      
+| servers | body | Object | インスタンスリストオブジェクト                                                                                                                                                                                                |
+| status | body | Enum | インスタンスステータス                                                                                                                                                                                                   |
+| servers.id | Body | UUID | インスタンス ID                                                                                                                                                                                                   |
+| servers.name | Body | String | インスタンス名、最大255文字                                                                                                                                                                                          |
+| servers.updated | Body | Datetime | インスタンス最終更新時刻、`YYYY-MM-DDThh:mm:ssZ` 形式                                                                                                                                                                  |
+| servers.hostId | Body | String | インスタンスが稼働中のホスト ID                                                                                                                                                                                        |
+| servers.addresses | Body | Object | インスタンス IP リストオブジェクト。 <br>インスタンスに接続されたポート数分だけリストが生成されます。                                                                                                                                                             |
+| servers.addresses."ネットワーク名" | Body | Object | インスタンスに接続されたネットワーク別ポート情報                                                                                                                                                                                  |
+| servers.addresses."ネットワーク名".OS-EXT-IPS-MAC:mac_addr | Body | String | インスタンスに接続されたポートの MAC アドレス                                                                                                                                                                                      |
+| servers.addresses."ネットワーク名".version | Body | Integer | インスタンスに接続されたポートの IP バージョン<br>NHN Cloud は IPv4 のみサポート                                                                                                                                                                |
+| servers.addresses."ネットワーク名".addr | Body | String | インスタンスに接続されたポートの IP アドレス                                                                                                                                                                                       |
+| servers.addresses."ネットワーク名".OS-EXT-IPS:type | Body | Enum | ポートの IP アドレスタイプ<br>`fixed` または `floating` のいずれか                                                                                                                                                                |
+| servers.links | Body | Object | インスタンスパスオブジェクト                                                                                                                                                                                                |
+| servers.key_name | Body | String | インスタンスキーペア名                                                                                                                                                                                               |
+| servers.image | Body | Object | インスタンスイメージオブジェクト                                                                                                                                                                                               |
+| servers.image.id | Body | UUID | インスタンスイメージ ID                                                                                                                                                                                               |
+| servers.image.links | Body | Object | インスタンスイメージパスオブジェクト                                                                                                                                                                                            |
+| servers.OS-EXT-STS:task_state | Body | String | インスタンスタスク状態<br>インスタンスに操作を実行したときの操作進捗状態を表示します。                                                                                                                                                               |
+| servers.OS-EXT-STS:vm_state | Body | String | インスタンス現在状態                                                                                                                                                                                                |
+| servers.OS-SRV-USG:launched_at | Body | Datetime | インスタンス最終ブート時刻<br>`YYYY-MM-DDThh:mm:ss.ssssss` 形式                                                                                                                                                         |
+| servers.OS-SRV-USG:terminated_at | Body | Datetime | インスタンス削除時刻<br>`YYYY-MM-DDThh:mm:ssZ` 形式                                                                                                                                                                   |
+| servers.flavor | Body | Object | インスタンスタイプ情報オブジェクト                                                                                                                                                                                             |
+| servers.flavor.id | Body | UUID | インスタンスタイプ ID                                                                                                                                                                                                |
+| servers.flavor.links | Body | Object | インスタンスタイプパスオブジェクト                                                                                                                                                                                             |
+| servers.security_groups | Body | Object | インスタンスに割り当てられたセキュリティグループリストオブジェクト                                                                                                                                                                                     |
+| servers.security_groups.name | Body | String | インスタンスに割り当てられたセキュリティグループ名                                                                                                                                                                                        |
+| servers.user_id | Body | String | インスタンスを作成したユーザー ID                                                                                                                                                                                          |
+| servers.created | Body | Datetime | インスタンス作成時刻。`YYYY-MM-DDThh:mm:ssZ` 形式                                                                                                                                                                     |
+| servers.tenant_id | Body | String | インスタンスが属するテナント ID                                                                                                                                                                                           |
+| servers.os-extended-volumes:volumes_attached | Body | Object | インスタンスに接続された追加ブロックストレージリストオブジェクト                                                                                                                                                                                |
+| servers.os-extended-volumes:volumes_attached.id | Body | UUID | インスタンスに接続された追加ブロックストレージ ID                                                                                                                                                                                   |
+| servers.OS-EXT-STS:power_state | Body | Integer | インスタンスの電源状態<br>- `1`: On<br>- `4`: Off                                                                                                                                                                    |
+| servers.metadata | Body | Object | インスタンスメタデータオブジェクト<br>インスタンスメタデータをキー-値ペアとして保存                                                                                                                                                                   |
+| server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | インスタンスに接続された追加ローカルブロックストレージサイズ                                                                                                                                                                   |
+| server.NHN-EXT-ATTR:protect | Body | Boolean | インスタンス削除保護の有無                                                                                                                                                                   |
 
 <details><summary>例</summary>
 <p>
@@ -697,6 +709,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="get-instance"></a>
+
 ### インスタンス表示 { #get-instance }
 
 ```
@@ -705,56 +718,58 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="get-instance-request"></a>
+
 #### リクエスト
 
-このAPIはリクエスト本文を要求しません。
+このAPIはリクエストボディを必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| serverId | URL | UUID | O | インスタンスID |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | O | テナント ID |
+| serverId | URL | UUID | O | インスタンス ID |
+| tokenId | Header | String | O | トークン ID |
 
 <a id="get-instance-response"></a>
+
 #### レスポンス
 
-| 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                      |
-|---|---|---|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| server | body | Object | インスタンスオブジェクト                                                                                                                                                                                                 |
-| status | body | Enum | インスタンスの状態                                                                                                                                                                                                 |
-| server.id | Body | UUID | インスタンスID                                                                                                                                                                                                  |
-| server.name | Body | String | インスタンス名、最大255文字                                                                                                                                                                                        |
-| server.updated | Body | Datetime | インスタンスの最終修正日時。`YYYY-MM-DDThh:mm:ssZ`形式。                                                                                                                                                                |
-| server.hostId | Body | String | インスタンスが起動中のホストID                                                                                                                                                                                       |
-| server.addresses | Body | Object | インスタンスIPリストオブジェクト。<br>インスタンスに接続されたポート数分のリストが作成される。                                                                                                                                                             |
-| server.addresses."Network名" | Body | Object | インスタンスに接続された各Networkのポート情報                                                                                                                                                                                |
-| server.addresses."Network名".OS-EXT-IPS-MAC:mac_addr | Body | String | インスタンスに接続されたポートのMACアドレス                                                                                                                                                                                    |
-| server.addresses."Network名".version | Body | Integer | インスタンスに接続されたポートのIPバージョン<br>NHN CloudはIPv4のみサポート                                                                                                                                                              |
-| server.addresses."Network名".addr | Body | String | インスタンスに接続されたポートのIPアドレス                                                                                                                                                                                     |
-| server.addresses."Network名".OS-EXT-IPS:type | Body | Enum | ポートのIPアドレスタイプ<br>`fixed`または`floating`のいずれか1つ。                                                                                                                                                               |
-| server.links | Body | Object | インスタンスパスオブジェクト                                                                                                                                                                                              |
-| server.key_name | Body | String | インスタンスキーペア名                                                                                                                                                                                             |
-| server.image | Body | Object | インスタンスイメージオブジェクト                                                                                                                                                                                             |
-| server.image.id | Body | UUID | インスタンスイメージID                                                                                                                                                                                              |
-| server.image.links | Body | Object | インスタンスイメージパスオブジェクト                                                                                                                                                                                          |
-| server.OS-EXT-STS:task_state | Body | String | インスタンス作業状態<br>インスタンスに動作を加えた時、動作進行状態を伝える。                                                                                                                                                              |
-| server.OS-EXT-STS:vm_state | Body | String | インスタンスの現在状態                                                                                                                                                                                              |
-| server.OS-SRV-USG:launched_at | Body | Datetime | インスタンスの最終起動日時<br>`YYYY-MM-DDThh:mm:ss.ssssss`形式                                                                                                                                                       |
-| server.OS-SRV-USG:terminated_at | Body | Datetime | インスタンスの削除日時<br>`YYYY-MM-DDThh:mm:ssZ`形式                                                                                                                                                                 |
-| server.flavor | Body | Object | インスタンスタイプ情報オブジェクト                                                                                                                                                                                           |
-| server.flavor.id | Body | UUID | インスタンスタイプID                                                                                                                                                                                               |
-| server.flavor.links | Body | Object | インスタンスタイプパスオブジェクト                                                                                                                                                                                           |
-| server.security_groups | Body | Object | インスタンスに割り当てられたセキュリティグループリストオブジェクト                                                                                                                                                                                   |
-| server.security_groups.name | Body | String | インスタンスに割り当てられたセキュリティグループ名                                                                                                                                                                                      |
-| server.user_id | Body | String | インスタンスを作成したユーザーID                                                                                                                                                                                         |
-| server.created | Body | Datetime | インスタンスの作成日時。`YYYY-MM-DDThh:mm:ssZ`形式                                                                                                                                                                   |
-| server.tenant_id | Body | String | インスタンスが属しているテナントID                                                                                                                                                                                          |
-| server.os-extended-volumes:volumes_attached | Body | Object | インスタンスに接続された追加ブロックストレージリストオブジェクト                                                                                                                                                                              |
-| server.os-extended-volumes:volumes_attached.id | Body | UUID | インスタンスに接続された追加ブロックストレージID                                                                                                                                                                                  |
-| server.OS-EXT-STS:power_state | Body | Integer | インスタンスの電源の状態<br>- `1`: On<br>- `4`: Off                                                                                                                                                                   |
-| server.metadata | Body | Object | インスタンスメタデータオブジェクト<br>インスタンスメタデータをキーと値のペアで保管                                                                                                                                                                 |
-| server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | インスタンスに接続された追加ローカルブロックストレージサイズ                                                                                                                                                                |
-| server.NHN-EXT-ATTR:protect | Body | Boolean | インスタンス削除保護の有無                                                                                                                                                                 |
+| 名前 | 種類 | 形式 | 説明 |
+|---|---|---|---|
+| server | body | Object | インスタンス オブジェクト |
+| status | body | Enum | インスタンスの状態 |
+| server.id | Body | UUID | インスタンス ID |
+| server.name | Body | String | インスタンス名、最大 255 文字 |
+| server.updated | Body | Datetime | インスタンス最終更新時刻、`YYYY-MM-DDThh:mm:ssZ` 形式 |
+| server.hostId | Body | String | インスタンスが実行中のホスト ID |
+| server.addresses | Body | Object | インスタンス IP リスト オブジェクト <br>インスタンスに接続されたポート数分のリストが生成されます |
+| server.addresses."Network 이름" | Body | Object | インスタンスに接続されたネットワーク別のポート情報 |
+| server.addresses."Network 이름".OS-EXT-IPS-MAC:mac_addr | Body | String | インスタンスに接続されたポートの MAC アドレス |
+| server.addresses."Network 이름".version | Body | Integer | インスタンスに接続されたポートの IP バージョン<br>NHN Cloud は IPv4 のみをサポート |
+| server.addresses."Network 이름".addr | Body | String | インスタンスに接続されたポートの IP アドレス |
+| server.addresses."Network 이름".OS-EXT-IPS:type | Body | Enum | ポートの IP アドレスタイプ<br>`fixed` または `floating` のいずれか |
+| server.links | Body | Object | インスタンス パス オブジェクト |
+| server.key_name | Body | String | インスタンス キーペア名 |
+| server.image | Body | Object | インスタンス イメージ オブジェクト |
+| server.image.id | Body | UUID | インスタンス イメージ ID |
+| server.image.links | Body | Object | インスタンス イメージ パス オブジェクト |
+| server.OS-EXT-STS:task_state | Body | String | インスタンス タスク状態<br>インスタンスに操作を実行したときの操作の進行状況を表示 |
+| server.OS-EXT-STS:vm_state | Body | String | インスタンスの現在の状態 |
+| server.OS-SRV-USG:launched_at | Body | Datetime | インスタンスの最終起動時刻<br>`YYYY-MM-DDThh:mm:ss.ssssss` 形式 |
+| server.OS-SRV-USG:terminated_at | Body | Datetime | インスタンス削除時刻<br>`YYYY-MM-DDThh:mm:ssZ` 形式 |
+| server.flavor | Body | Object | インスタンス タイプ情報 オブジェクト |
+| server.flavor.id | Body | UUID | インスタンス タイプ ID |
+| server.flavor.links | Body | Object | インスタンス タイプ パス オブジェクト |
+| server.security_groups | Body | Object | インスタンスに割り当てられたセキュリティグループ リスト オブジェクト |
+| server.security_groups.name | Body | String | インスタンスに割り当てられたセキュリティグループ名 |
+| server.user_id | Body | String | インスタンスを作成したユーザー ID |
+| server.created | Body | Datetime | インスタンス作成時刻、`YYYY-MM-DDThh:mm:ssZ` 形式 |
+| server.tenant_id | Body | String | インスタンスが属するテナント ID |
+| server.os-extended-volumes:volumes_attached | Body | Object | インスタンスに接続された追加ブロックストレージ リスト オブジェクト |
+| server.os-extended-volumes:volumes_attached.id | Body | UUID | インスタンスに接続された追加ブロックストレージ ID |
+| server.OS-EXT-STS:power_state | Body | Integer | インスタンスの電源状態<br>- `1`: On<br>- `4`: Off |
+| server.metadata | Body | Object | インスタンス メタデータ オブジェクト<br>インスタンス メタデータをキーと値のペアで保存 |
+| server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | インスタンスに接続された追加ローカルブロックストレージサイズ |
+| server.NHN-EXT-ATTR:protect | Body | Boolean | インスタンス削除保護の有無 |
 
 <details><summary>例</summary>
 <p>
@@ -851,6 +866,3 @@ X-Auth-Token: {tokenId}
 
 </p>
 </details>
-
----
-
