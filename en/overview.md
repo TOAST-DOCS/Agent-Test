@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
@@ -37,6 +39,7 @@ NHN Cloud provides various instance flavors to support a wide range of use cases
 | t2 | A low-cost instance. Recommended for servers with low workloads.                                                                                                          |
 | u2 | The cheapest instance. Recommended for servers with low workloads.<br>This flavor utilizes local block storage, which makes it a less stable but more affordable option compared to other flavors.<br>Instances of this flavor do not guarantee I/O performance. |
 | x1 | A flavor that supports high-end CPU and memory. Recommended for services or applications that require high performance.                                                                                        |
+| x9c | A type added for concurrent PR testing. This type does not exist in the actual service. |
 
 <a id="availability-zone"></a>
 ### Availability Zone
@@ -232,3 +235,8 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 ```
 $ sudo update-grub
 ```
+
+<a id="concurrent-b-added"></a>
+## Concurrent PR Test Added Section { #concurrent-b-added }
+
+This section is a section added by PR B for validating concurrent PR scenarios. The translation of PR A must not erase the translation of this section.
