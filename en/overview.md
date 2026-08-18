@@ -3,7 +3,7 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Concurrent PR Test A: This sentence is for validating concurrent-a-edit.)
 
 <a id="components"></a>
 ## Components
