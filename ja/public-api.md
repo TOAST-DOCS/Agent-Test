@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=2e2588e1a607 -->
+<!-- pre-align:aligned sig=7a0f7935f0fd -->
 
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
@@ -11,7 +11,8 @@
 
 | タイプ | リージョン | エンドポイント |
 |---|---|---|
-| compute | Korea (Pangyo) リージョン<br>Korea (Pyeongchon) リージョン<br>Korea (Gwangju) リージョン<br>Japan リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | 韓国(パンギョ) リージョン<br>韓国(ピョンチョン) リージョン<br>韓国(光州) リージョン<br>日本 リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com (行修正テスト) |
+| TEST-ROW | (新規行テスト) | (新規行テスト) |
 
 API レスポンスには、このガイドに明記されていないフィールドが表示される場合があります。これらのフィールドは NHN Cloud 内部用途で使用されており、予告なく変更される可能性があるため、使用しないでください。
 
@@ -853,3 +854,29 @@ X-Auth-Token: {tokenId}
 
 </p>
 </details>
+
+<a id="test-added-endpoint"></a>
+### テスト用新規エンドポイント { #test-added-endpoint }
+
+```
+POST /v2/{tenantId}/test-added-endpoint
+X-Auth-Token: {tokenId}
+```
+
+<a id="test-added-request"></a>
+#### リクエスト { #test-added-request }
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|---|
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
+| name | Body | String | O | エンドポイント名 |
+
+<a id="test-added-response"></a>
+#### 応答 { #test-added-response }
+
+| 名前 | 種類 | 形式 | 説明 |
+|---|---|---|---|
+| endpoint | Body | Object | 作成されたエンドポイントオブジェクト |
+| endpoint.id | Body | String | エンドポイント ID |
+| endpoint.name | Body | String | エンドポイント名 |
