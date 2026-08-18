@@ -59,11 +59,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "[1/8] clone ${REPO} + 세션 브랜치 ${SESSION}"
+echo "[1/8] clone ${REPO} + 세션 브랜치 ${SESSION} + fixture 복원"
 git clone --quiet "$REPO_URL" "$WORK/repo"
 cd "$WORK/repo"
 git checkout --quiet -b "$SESSION" "origin/${BASE_SOURCE_BRANCH}"
 git push --quiet origin "$SESSION"
+# alpha 의 ko/en/ja 는 다른 작업으로 드리프트할 수 있다 (실측: ko/overview.md
+# 만 섹션 2개 앞서가 anchor splice 가 드리프트까지 번역 대상으로 잡아 load
+# guard 4.5x 로 스킵). main e2e 의 step 2 처럼 세션 브랜치를 canonical
+# 스냅샷(archive/alpha-origin/)으로 복원해 재현을 결정적으로 만든다.
+bash scripts/restore-alpha-origin.sh >/dev/null
 
 # ── ko/overview.md 변형기 ──────────────────────────────────────────────
 mutate() {  # $1: a|b
