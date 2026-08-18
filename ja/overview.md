@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 概要
 
@@ -37,6 +39,7 @@ NHN Cloudは顧客の使用用途に合った様々なタイプのインスタ�
 | t2 | 安価なインスタンスです。作業負荷が高くないサーバーに使用します。                                                                                                          |
 | u2 | 最も安価なインスタンスです。作業負荷が高くないサーバーで使用します。<br>ローカルブロックストレージを使用するため、相対的に他のインスタンスより安定性が落ちますが、低価格で利用できます。<br>このタイプのインスタンスはI/O性能を保障しません。 |
 | x1 | ハイスペックのCPUとメモリをサポートしている仕様です。高い性能が必要なサービスやアプリケーションに使用します。                                                                                        |
+| x9c | 同時PRテスト用に追加されたタイプです。実際のサービスに存在しません。 |
 
 
 <a id="availability-zone"></a>
@@ -239,3 +242,8 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
+
+<a id="concurrent-b-added"></a>
+## 同時 PR テスト追加セクション { #concurrent-b-added }
+
+このセクションは、同時 PR シナリオ検証のため、PR B が追加したセクションです。PR A の翻訳がこのセクションの翻訳を削除してはいけません。
