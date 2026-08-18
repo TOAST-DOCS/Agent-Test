@@ -69,6 +69,18 @@ git push --quiet origin "$SESSION"
 # guard 4.5x 로 스킵). main e2e 의 step 2 처럼 세션 브랜치를 canonical
 # 스냅샷(archive/alpha-origin/)으로 복원해 재현을 결정적으로 만든다.
 bash scripts/restore-alpha-origin.sh >/dev/null
+# 스냅샷의 ko 는 fix-heading-syntax 이전 상태(`###인스턴스 타입` — # 뒤 공백
+# 없음)라 splice 가 그 heading 을 경계로 안 보고 flavor 표를 '### 이미지'
+# 유닛에 흡수한다 → B 의 표 행 추가가 "표 전체 재번역" 판정 → skip-full-table
+# 발화 → LLM-patch fallback 의존 (apply-failed 면 그 언어가 통째로 빠져 FAIL
+# 오귀속). main e2e 는 fix-heading-syntax 잡이 정규화하지만 이 스크립트는
+# Jenkins 없이 돌므로 로컬로 동등 정규화한다.
+sed -i -E 's/^(#{1,6})([^ #])/\1 \2/' ko/*.md en/*.md ja/*.md
+if ! git diff --quiet; then
+  git add ko en ja
+  git commit --quiet -m "e2e(concurrent): normalize heading syntax after restore"
+  git push --quiet origin "$SESSION"
+fi
 
 # ── ko/overview.md 변형기 ──────────────────────────────────────────────
 mutate() {  # $1: a|b
@@ -168,12 +180,19 @@ echo "  B 번역 PR: $TRANS_B_URL"
 merge_pr "$TRANS_B_URL"
 echo "  B 번역 PR 머지 완료"
 
-# sanity: 세션 브랜치 en 에 B 콘텐츠가 실제로 들어갔는지
+# sanity: 세션 브랜치 en/ja 양쪽에 B 콘텐츠가 실제로 들어갔는지 — 여기서
+# 빠진 언어는 A 가 지운 게 아니라 B 번역이 스킵된 것이므로 exit 2 (하네스
+# 전제 실패)로 구분한다. 실측: skip-full-table→LLM-patch apply-failed 로 ja 가
+# B 번역 PR 에서 통째로 빠져 step 7 이 FAIL 을 오귀속한 적 있음.
 git fetch --quiet origin "$SESSION"
-if ! git show "origin/${SESSION}:en/overview.md" | grep -q "$TOKEN_B_ANCHOR"; then
-  echo "error: B 번역이 세션 브랜치 en 에 반영되지 않음 (하네스 전제 실패)" >&2
-  exit 2
-fi
+for lang in en ja; do
+  for tok in "$TOKEN_B_ANCHOR" "$TOKEN_B_ROW"; do
+    if ! git show "origin/${SESSION}:${lang}/overview.md" | grep -q "$tok"; then
+      echo "error: B 번역이 세션 브랜치 ${lang} 에 반영되지 않음 (token=${tok} — 하네스 전제 실패)" >&2
+      exit 2
+    fi
+  done
+done
 
 echo "[5/8] A 머지"
 merge_pr "$PR_A_URL"
