@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=2e2588e1a607 -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
 Instance は API 呼び出し時の認証/認可のために IaaS トークンを使用します。IaaS トークンは NHN Cloud の OpenStack ベースのインフラストラクチャサービス(IaaS)で使用される認証トークンです。IaaS トークンの発行と使用に関する詳細については、[IaaS トークン](/nhncloud/ja/public-api/iaas-token)を参照してください。
@@ -17,7 +16,6 @@ Instance は API 呼び出し時の認証/認可のために IaaS トークン�
 API 応答に、ガイドに明記されていないフィールドが表示される場合があります。これらのフィールドは NHN Cloud 内部用途で使用され、予告なく変更される可能性があるため、使用しません。
 
 <a id="instance-flavors"></a>
-
 ## インスタンスタイプ { #instance-flavors }
 
 <a id="list-flavors"></a>
@@ -199,7 +197,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="availability-zones"></a>
-
 ## 可用性ゾーン { #availability-zones }
 
 <a id="list-availability-zones"></a>
@@ -256,7 +253,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="key-pairs"></a>
-
 ## キーペア { #key-pairs }
 
 <a id="list-key-pairs"></a>
@@ -453,11 +449,9 @@ X-Auth-Token: {tokenId}
 
 
 <a id="instance"></a>
-
 ## インスタンス { #instance }
 
 <a id="instance-status"></a>
-
 ### インスタンスの状態 { #instance-status }
 
 インスタンスはさまざまな状態を持ち、状態に応じて実行できるアクションが決まります。インスタンスの状態の一覧は、次のとおりです。
@@ -484,7 +478,6 @@ X-Auth-Token: {tokenId}
 | `UNKNOWN` | インスタンスの状態が不明である場合<br>`インスタンスがこの状態に進入した場合は、管理者にお問い合わせください。` | 
 
 <a id="list-instances"></a>
-
 ### インスタンス一覧表示 { #list-instances }
 
 ```
@@ -550,7 +543,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-instances-with-details"></a>
-
 ### インスタンス一覧詳細表示 { #list-instances-with-details }
 
 インスタンス一覧表示と同様に、現在のテナントに作成されたインスタンス一覧を返します。ただし、インスタンスごとの詳細な情報も同時に照会されます。
@@ -561,13 +553,11 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-instances-with-details-request"></a>
-
 #### リクエスト
 
 インスタンス一覧表示と同じリクエスト形式です。
 
 <a id="list-instances-with-details-response"></a>
-
 #### 応答
 
 | 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                        |
@@ -709,7 +699,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="get-instance"></a>
-
 ### インスタンス表示 { #get-instance }
 
 ```
@@ -718,7 +707,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="get-instance-request"></a>
-
 #### リクエスト
 
 このAPIはリクエスト本文を要求しません。
@@ -730,7 +718,6 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | トークンID |
 
 <a id="get-instance-response"></a>
-
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明                                                                                                                                                                                                       |
