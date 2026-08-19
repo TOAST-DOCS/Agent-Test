@@ -311,7 +311,7 @@ print(t.get('status', '') or '-', t.get('build_url', '') or '-')
         return 0
         ;;
     esac
-    sleep 15
+    sleep 5
   done
   echo "  WARN: build did not finish within ${BUILD_TIMEOUT}s (last status=$status build_url=$build_url) — cleanup may race" >&2
   return 1

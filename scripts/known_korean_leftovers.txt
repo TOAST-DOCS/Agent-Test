@@ -1,0 +1,13 @@
+# 규칙 (5) "en/ja 한글 잔류" 판정에서 제외할 한글 리터럴.
+#
+# 여기 적힌 것은 "번역되면 좋지만 지금 픽스처에서는 남는 것이 정상" 인 문자열
+# 이다. check_docs_align.py 는 이 리터럴에 걸친 한글만 FAIL 대신 `~` 경고로
+# 보고한다 — 새로 생긴 잔류는 그대로 FAIL 로 잡히므로 신호는 유지된다.
+#
+# 한 줄에 리터럴 하나. `#` 뒤는 주석.
+
+# public-api.md 의 응답 필드 경로 — ko 원문이 `servers.addresses."Network 이름"`
+# 처럼 JSON 키 경로 안에 한글 placeholder 를 쓴다. 번역 잡은 이 셀을 키 경로로
+# 보고 그대로 보존한다 (2026-08-18 PR #487 en/ja 각 5건 실측; dashboard API 는
+# --fix-korean-leftover 를 노출하지 않아 jenkins 모드에서 항상 남는다).
+Network 이름

@@ -8,7 +8,9 @@
 #   5. scripts/restore-aligned-public-api.sh 실행 후 commit+push
 #   6. dashboard /api/align 호출 (= fix_headings job, 권장 preset, base=alpha)
 #   7. Jenkins align 잡이 새로 만든 PR 을 gh 로 감지
-#   8. claude CLI(fable model)로 align PR 브랜치의 ko/en/ja heading·anchor-id 정렬 검사
+#   8. align PR 브랜치의 ko/en/ja heading·anchor-id 정렬 검사
+#      (scripts/check_docs_align.py — 결정적, <1초. --verify fable 로 예전
+#       claude -p 검사로 되돌릴 수 있다)
 #   9. 검증 통과 시 align PR 을 alpha 로 merge (실패 시 PR 은 open 으로 남김)
 #  10. scripts/create-translate-test-pr.sh 실행 (ko 변형 → translate-test PR 생성)
 #  11. ko 변경 PR 생성 확인
@@ -18,7 +20,8 @@
 #      ko 변경 PR head 브랜치로 commit + push
 #  15. ko 변경 PR (suggestion 반영본) 대상으로 dashboard /api/translate 호출
 #  16. translate 잡이 생성하는 번역 PR(base=ko PR head 브랜치) 감지 대기
-#  17. claude CLI(fable)로 번역 PR 검증 (heading·id·표 행 수) → 결과를 PR 댓글로 등록
+#  17. 번역 PR 검증 (heading·id·표 행 수·셀 수·한글 잔류·식별자 행) → 결과를
+#      PR 댓글로 등록. 같은 checker 의 --mode translate (markup-churn 은 +--markup)
 #
 # 상단 두 변수(DASHBOARD_BASE_URL, DASHBOARD_API_TOKEN)를 채우고 실행.
 # 아니면 같은 이름의 환경변수를 export 해도 됩니다.
@@ -31,6 +34,8 @@
 #                                      [--align-v2|--no-align-v2]
 #                                      [--plan round1|round2|row-drop-repro|table-suite|markup-churn]
 #                                      [--translate api|local]
+#                                      [--verify py|fable]
+#                                      [--from-aligned <branch>]
 #
 #   --engine api   translate 잡을 api 엔진으로 실행
 #   --engine cli   translate 잡을 claude-code(CLI) 엔진으로 실행 (기본값)
@@ -94,7 +99,24 @@
 #                                engine/model 은 api+haiku 로 고정(기존 run 과 동일 조건),
 #                                나머지 preset 플래그도 dashboard 와 동일하게 전달.
 #
-# 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
+#   --verify py                  8·17 단계 구조 검증을 scripts/check_docs_align.py
+#                                (기본). 규칙은 예전 fable 프롬프트와 1:1 이고
+#                                판정 계약(마지막 줄 "ALIGNMENT: OK|FAIL")도 동일
+#                                하지만 11개 문서 검사가 20분 -> 0.05초가 된다.
+#   --verify fable               예전 `claude -p --model fable` agentic 검증.
+#                                프롬프트를 바꿔 시맨틱 검사를 추가할 때만 사용.
+#
+#   --from-aligned <branch>      restore/fix-heading-syntax/align/검증/merge
+#                                (2~9단계) 를 건너뛰고, 이미 align 이 끝난
+#                                <branch> 에서 새 세션 브랜치를 갈라낸다.
+#                                픽스처가 고정이라 plan 마다 같은 align 결과가
+#                                나오므로, suite 는 첫 plan 에서만 2~9단계를
+#                                돌리고 그 스냅샷(`<session>-aligned`) 을 이후
+#                                plan 에 넘긴다 (plan 당 6~8분 절감).
+#                                9단계 직후 `E2E_ALIGNED_BRANCH=<branch>` 를
+#                                출력하므로 wrapper 가 그 값을 파싱해 쓴다.
+#
+# 의존성: git, gh (로그인), curl, python3 (--verify fable 일 때만 claude CLI)
 
 set -euo pipefail
 
@@ -118,6 +140,8 @@ TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|table-suite|markup-churn
 TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기본) | local = 로컬 translate_pr.py
+VERIFY_MODE="py"                          # py = check_docs_align.py (기본, 결정적·<1초) | fable = 예전 claude -p 검증
+FROM_ALIGNED=""                            # 이미 align 이 끝난 브랜치에서 세션을 갈라내고 2~9단계를 건너뛴다
 # --translate local 이 사용할 cloud-translate 체크아웃/venv. 워크트리를 가리키면
 # 미배포 브랜치(예: PR #290 fix/table-sync-repair)의 번역 로직을 그대로 검증할 수 있다.
 # 전제: $CLOUD_TRANSLATE_DIR/.env 에 TRANSLATE_GITHUB_TOKEN + TRANSLATE_ANTHROPIC_API_KEY.
@@ -184,9 +208,16 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --translate 는 api|local 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
+    --verify)
+      case "${2:-}" in
+        py|fable) VERIFY_MODE="$2" ;;
+        *) echo "error: --verify 는 py|fable 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    --from-aligned)  FROM_ALIGNED="$2"; shift 2 ;;       # align 완료 스냅샷 브랜치 재사용 (2~9단계 skip)
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 e2e 세션 브랜치 재사용
     --base-source)   BASE_SOURCE_BRANCH="$2"; shift 2 ;; # 새 e2e 브랜치를 갈라낼 원본 (기본 alpha)
-    -h|--help) sed -n '3,55p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,119p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -198,6 +229,8 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
+
+tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
 
 # ── 1) e2e 세션 브랜치 준비 (기본: 새로 생성; --base-branch 로 override 가능) ─
 
@@ -241,6 +274,15 @@ PYEOF
 echo "[0/17] webhook 비활성화 (번역 e2e 는 webhook 경유 잡 중복 트리거 방지)"
 set_webhook_repo_enabled false
 
+SKIP_PROLOGUE=0
+if [[ -n "$FROM_ALIGNED" ]]; then
+  # align 이 이미 끝난 스냅샷에서 세션을 갈라낸다 — 2~9단계(restore·
+  # fix-heading-syntax·align·검증·merge)는 픽스처가 고정이라 plan 마다 결과가
+  # 같으므로 suite 안에서 한 번만 돌리면 충분하다 (plan 당 6~8분 절감).
+  SKIP_PROLOGUE=1
+  BASE_SOURCE_BRANCH="$FROM_ALIGNED"
+fi
+
 if [[ -z "$BASE_BRANCH" ]]; then
   BASE_BRANCH="e2e/$(date -u +%Y%m%d-%H%M%S)"
   echo "[1/17] Creating fresh e2e session branch: $BASE_BRANCH (from origin/$BASE_SOURCE_BRANCH)"
@@ -255,6 +297,11 @@ else
   git pull --ff-only origin "$BASE_BRANCH"
 fi
 
+if (( SKIP_PROLOGUE )); then
+  echo
+  echo "[2-9/17] skip — 이미 align 된 스냅샷에서 시작 (--from-aligned $FROM_ALIGNED)"
+  echo "  E2E_ALIGNED_BRANCH=$FROM_ALIGNED"   # suite 가 다음 plan 에 그대로 넘긴다
+else
 # ── 2) restore-alpha-origin (내부에서 commit+push) ────────────────────
 echo
 echo "[2/17] scripts/restore-alpha-origin.sh"
@@ -265,7 +312,6 @@ echo
 echo "[3/17] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
 
 # 트리거 직전 open PR 목록을 baseline 으로 저장 (step 4 의 신규 PR 감지용)
-tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
   --jq '.[].url' | sort -u > "$tmpdir/fix_before"
 
@@ -295,7 +341,7 @@ fi
 echo
 echo "[4/17] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
-poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+poll_left=180  # 1800s 상당 (10s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 fix_pr_url=""
 while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open \
@@ -307,7 +353,7 @@ while (( poll_left-- > 0 )); do
     echo "  detected fix-heading-syntax PR: $fix_pr_url"
     break
   fi
-  sleep 30
+  sleep 10
 done
 
 if [[ -z "$fix_pr_url" ]]; then
@@ -382,7 +428,7 @@ echo "[7/17] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
   --jq '.[].url' | sort -u > "$tmpdir/before"
 
-poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+poll_left=180  # 1800s 상당 (10s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 align_pr_url=""
 while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
@@ -392,7 +438,7 @@ while (( poll_left-- > 0 )); do
     echo "  detected new PR: $align_pr_url"
     break
   fi
-  sleep 30
+  sleep 10
 done
 
 if [[ -z "$align_pr_url" ]]; then
@@ -415,9 +461,16 @@ fenced code block(```)을 제외한 (1) heading level 순서와 (2) anchor id �
 파일별 결과를 OK/FAIL 표로 출력하고, FAIL 인 파일은 어긋난 위치와 내용을 설명해줘.
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 
-check_out="$(cd "$check_wt" && claude -p "$check_prompt" \
-  --model fable \
-  --allowedTools "Bash,Read,Grep,Glob")"
+if [[ "$VERIFY_MODE" == "py" ]]; then
+  # 결정적 검사 (규칙 1·2) — fable agentic 검사와 판정 계약(마지막 줄)이 동일.
+  set +e
+  check_out="$(python3 "$REPO_ROOT/scripts/check_docs_align.py" --root "$check_wt" --mode align)"
+  set -e
+else
+  check_out="$(cd "$check_wt" && claude -p "$check_prompt" \
+    --model fable \
+    --allowedTools "Bash,Read,Grep,Glob")"
+fi
 
 echo "$check_out"
 
@@ -434,6 +487,14 @@ echo "[9/17] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
 gh pr merge "$align_pr_url" --repo "$REPO" --merge --delete-branch
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated: $align_pr_url"
+
+# align 이 끝난 상태를 스냅샷 브랜치로 남긴다 — 뒤따르는 plan 들이
+# --from-aligned 로 재사용해 2~9단계를 건너뛴다. 세션 브랜치 자체는 이후
+# ko 변형·번역 PR 이 머지되며 오염되므로 별도 ref 로 고정해야 한다.
+aligned_snapshot="${BASE_BRANCH}-aligned"
+git push -f origin "HEAD:refs/heads/$aligned_snapshot"
+echo "  E2E_ALIGNED_BRANCH=$aligned_snapshot"
+fi
 
 # ── 10) create-translate-test-pr (ko 변형 → translate-test PR 생성) ───
 echo
@@ -491,7 +552,7 @@ fi
 echo
 echo "[13/17] ko-review 완료 대기 (job_id=$koreview_job_id, 최대 30분)"
 
-poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+poll_left=180  # 1800s 상당 (10s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 koreview_status=""
 while (( poll_left-- > 0 )); do
   # 주의: set -eo pipefail 아래라 폴링 curl 의 일시 오류(empty reply 등)가
@@ -510,7 +571,7 @@ except Exception:
   case "$koreview_status" in
     success|failure|cancelled|partial) break ;;
   esac
-  sleep 30
+  sleep 10
 done
 
 if [[ "$koreview_status" != "success" ]]; then
@@ -725,7 +786,7 @@ if [[ -z "$trans_pr_url" ]]; then
   echo
   echo "[16/17] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60분)"
 
-  poll_left=60   # 3600s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+  poll_left=180  # 3600s 상당 (20s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
   while (( poll_left-- > 0 )); do
     trans_pr_url="$(gh pr list --repo "$REPO" --base "$ko_head_ref" --state open \
       --json url,headRefName \
@@ -735,7 +796,7 @@ if [[ -z "$trans_pr_url" ]]; then
       echo "  detected translation PR: $trans_pr_url"
       break
     fi
-    sleep 60
+    sleep 20
   done
 else
   echo
@@ -779,9 +840,18 @@ fenced code block(```)을 제외하고 다음 여섯 가지를 검사해줘.
 파일별 결과를 OK/FAIL 표로 출력하고 (표 개수·행 수 포함), FAIL 인 파일은 어긋난 위치와 내용을 설명해줘.
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 
-trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
-  --model fable \
-  --allowedTools "Bash,Read,Grep,Glob")"
+if [[ "$VERIFY_MODE" == "py" ]]; then
+  # 결정적 검사 (규칙 1~6, markup-churn 은 +7) — 위 fable 프롬프트와 1:1.
+  py_verify_args=(--root "$trans_wt" --mode translate)
+  [[ "$PLAN_NAME" == "markup-churn" ]] && py_verify_args+=(--markup)
+  set +e
+  trans_check_out="$(python3 "$REPO_ROOT/scripts/check_docs_align.py" "${py_verify_args[@]}")"
+  set -e
+else
+  trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
+    --model fable \
+    --allowedTools "Bash,Read,Grep,Glob")"
+fi
 
 echo "$trans_check_out"
 

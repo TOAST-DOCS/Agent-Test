@@ -50,7 +50,7 @@ while [[ $# -gt 0 ]]; do
     --plan)          PLAN_NAME="$2"; shift 2 ;;
     --timeout)       JOB_TIMEOUT="$2"; shift 2 ;;
     --skip-fable)    SKIP_FABLE=1; shift ;;
-    -h|--help)       sed -n '3,32p' "$0"; exit 0 ;;
+    -h|--help)       sed -n '3,31p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -189,7 +189,7 @@ except Exception:
   case "$koreview_status" in
     success|failure|cancelled|partial) break ;;
   esac
-  sleep 30
+  sleep 10
 done
 
 if [[ "$koreview_status" != "success" ]]; then

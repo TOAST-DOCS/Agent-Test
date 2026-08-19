@@ -53,6 +53,9 @@
 #   --chunk-workers N     chunk 병렬도 (기본값 2, PR#192/#199).
 #   --guidelines-variant-en <v>  en 가이드라인 크기 (aws|unified|unified-v2|default, PR#199)
 #   --guidelines-variant-ja <v>  ja 가이드라인 크기 (aws|unified|default, PR#199)
+#   --verify py|fable            8·14 단계 구조 검증 방식. py(기본) =
+#                                scripts/check_docs_align.py (결정적·<1초),
+#                                fable = 예전 claude -p agentic 검증.
 #   --align-v2 / --no-align-v2   PR#218 v2 모드 (기본 --align-v2)
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
@@ -78,6 +81,7 @@ TRANSLATE_TM_TOP_K="1"                    # TM few-shot 개수 기본값 1
 TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199)
 TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
 TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
+VERIFY_MODE="py"                          # py = check_docs_align.py (기본) | fable = 예전 claude -p 검증
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 ALIGN_PIPELINE_BRANCH=""                  # cloud-translate 의 Jenkins multibranch child (기본: 미지정 → main)
 while [[ $# -gt 0 ]]; do
@@ -127,13 +131,19 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --guidelines-variant-ja 은 aws|unified|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
+    --verify)
+      case "${2:-}" in
+        py|fable) VERIFY_MODE="$2" ;;
+        *) echo "error: --verify 는 py|fable 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
     --align-v2)      ALIGN_V2=1; shift ;;
     --no-align-v2)   ALIGN_V2=0; shift ;;
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 세션 브랜치 재사용
     --base-source)   BASE_SOURCE_BRANCH="$2"; shift 2 ;; # 새 세션 브랜치를 갈라낼 원본 (기본 alpha)
     --pipeline-branch|--align-pipeline-branch)
       ALIGN_PIPELINE_BRANCH="$2"; shift 2 ;;            # /api/align 을 이 cloud-translate 브랜치로 실행
-    -h|--help) sed -n '3,44p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,61p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -264,7 +274,7 @@ fi
 echo
 echo "[4/14] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
-poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+poll_left=180  # 1800s 상당 (10s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 fix_pr_url=""
 while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open \
@@ -276,7 +286,7 @@ while (( poll_left-- > 0 )); do
     echo "  detected fix-heading-syntax PR: $fix_pr_url"
     break
   fi
-  sleep 30
+  sleep 10
 done
 
 if [[ -z "$fix_pr_url" ]]; then
@@ -344,7 +354,7 @@ fi
 echo
 echo "[6/14] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
 
-poll_left=60   # 1800s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+poll_left=180  # 1800s 상당 (10s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 align_pr_url=""
 while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
@@ -354,7 +364,7 @@ while (( poll_left-- > 0 )); do
     echo "  detected new PR: $align_pr_url"
     break
   fi
-  sleep 30
+  sleep 10
 done
 
 if [[ -z "$align_pr_url" ]]; then
@@ -440,7 +450,7 @@ fi
 
 # 잡 상태가 success 가 될 때까지 대기 (전체 재번역이라 최대 90분)
 echo "  retranslate 완료 대기: job_id=$retx_job_id (최대 90분)"
-poll_left=180   # 5400s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+poll_left=540  # 5400s 상당 (10s x 540) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 retx_status=""
 while (( poll_left-- > 0 )); do
   retx_status="$(curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
@@ -455,7 +465,7 @@ except Exception:
   case "$retx_status" in
     success|failure|cancelled|partial) break ;;
   esac
-  sleep 30
+  sleep 10
 done
 
 if [[ "$retx_status" != "success" ]]; then
@@ -480,9 +490,15 @@ fenced code block(```)을 제외한 (1) heading level 순서와 (2) anchor id �
 파일별 결과를 OK/FAIL 표로 출력하고, FAIL 인 파일은 어긋난 위치와 내용을 설명해줘.
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 
-check_out="$(cd "$check_wt" && claude -p "$check_prompt" \
-  --model fable \
-  --allowedTools "Bash,Read,Grep,Glob")"
+if [[ "$VERIFY_MODE" == "py" ]]; then
+  set +e
+  check_out="$(python3 "$REPO_ROOT/scripts/check_docs_align.py" --root "$check_wt" --mode align)"
+  set -e
+else
+  check_out="$(cd "$check_wt" && claude -p "$check_prompt" \
+    --model fable \
+    --allowedTools "Bash,Read,Grep,Glob")"
+fi
 
 echo "$check_out"
 
@@ -602,7 +618,7 @@ echo "[13/14] translate 잡이 생성하는 번역 PR 감지 대기 (최대 60�
 
 ko_head_ref="$(gh pr view "$ko_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 
-poll_left=60   # 3600s 상당 — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+poll_left=180  # 3600s 상당 (20s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
 trans_pr_url=""
 while (( poll_left-- > 0 )); do
   trans_pr_url="$(gh pr list --repo "$REPO" --base "$ko_head_ref" --state open \
@@ -613,7 +629,7 @@ while (( poll_left-- > 0 )); do
     echo "  detected translation PR: $trans_pr_url"
     break
   fi
-  sleep 60
+  sleep 20
 done
 
 if [[ -z "$trans_pr_url" ]]; then
@@ -638,9 +654,15 @@ fenced code block(```)을 제외하고 다음 세 가지가 세 언어에서 완
 파일별 결과를 OK/FAIL 표로 출력하고 (표 개수·행 수 포함), FAIL 인 파일은 어긋난 위치와 내용을 설명해줘.
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 
-trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
-  --model fable \
-  --allowedTools "Bash,Read,Grep,Glob")"
+if [[ "$VERIFY_MODE" == "py" ]]; then
+  set +e
+  trans_check_out="$(python3 "$REPO_ROOT/scripts/check_docs_align.py" --root "$trans_wt" --mode translate)"
+  set -e
+else
+  trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
+    --model fable \
+    --allowedTools "Bash,Read,Grep,Glob")"
+fi
 
 echo "$trans_check_out"
 
