@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
-<!-- pre-align:aligned sig=74b0e7f9672e -->
 
+<!-- pre-align:aligned sig=55b274b1858c -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview { #compute-instance-overview }
