@@ -822,21 +822,34 @@ declare -a PLAN_TABLE_SUITE=(
 #       번역됨 (PASS)
 #   실측(#181 ko/cli-guide.md, ja): load 2992자 -> 1012자, ratio 5.3x -> 1.8x.
 #
-#   파일별 기대값 (measure probe 실측, en/ja 동일):
+#   파일별 기대값:
 #
 #   component-guide.md: 세 규칙 모두 + 내용 변경 1건. 펜스 105 + <br> 9 + 헤딩 91.
-#                       load 16304자(47.5x) -> 222자(0.6x). 222자 = 실제로 수정된
-#                       문단 하나 — 마크업이 부하에서 완전히 빠진다.
 #   public-api.md     : M2(<br> 98개, 표 행 안) + M3 + 내용 변경 1건.
-#                       load 972자(4.8x) -> 301자(1.5x).
-#   overview.md       : **잔여 케이스 (미러링 후에도 SKIP 유지가 정상)**.
-#                       작은 문서 + 작은 내용 변경이라 ko diff 49자 대비 유닛
-#                       하나가 966자 — 마크업을 다 걷어내도 19.7x 로 cap 초과.
-#                       이건 마크업 문제가 아니라 "문자 단위 diff vs 유닛 단위
-#                       부하" 라는 지표 자체의 단위 불일치이며, 가드가 스킵 대신
-#                       full 재번역으로 라우팅하도록 고치는 별도 작업(C2a) 의
-#                       대상이다. 그 작업 전까지는 이 파일이 제외되는 게 기대값.
-#   troubleshooting   : 대조군 (변경 없음 — en/ja 무변경이어야 정상)
+#   overview.md       : 세 규칙 중 M1/M2 + 내용 변경 1건 (작은 문서).
+#   troubleshooting   : 대조군 (변경 없음 — en/ja 무변경, 번역 PR 미포함이어야 정상)
+#
+#   PASS 판정은 "load guard 미발동 + LLM 패치 폴백 미발동 + PR 본문에 제외 섹션
+#   없음 + en/ja 의 <br/>·```lang 개수가 ko 와 일치" 다. 특정 load/ratio 수치를
+#   기대값으로 박아두지 말 것 — ko-review 가 accept 하는 suggestion 개수에 따라
+#   ko diff 가 매 실행 달라지므로 수치는 실행마다 변한다.
+#
+#   2026-08-19 실측 (--translate local, 미배포 워크트리):
+#     * 세 파일 모두 load guard 미발동. 미러링 후 부하가 component-guide 174자,
+#       overview 150자까지 떨어져 diff_load_min_chars(500) floor 아래로 내려가
+#       ratio 검사 자체가 생략됐다.
+#     * en/ja 에서 모델이 만진 것은 파일당 본문 1줄 + machine_translated 마커뿐.
+#       <br/> 71/8/1개, ```lang 51/2개는 전부 결정적으로 미러링됐다.
+#     * 17단계 검증 11파일 x 6규칙 전부 OK, LLM 패치 폴백 0회.
+#
+#   ratio 경로(부하가 floor 위인데 cap 아래)를 직접 태운 실측은 이 플랜이 아니라
+#   원 사고 데이터다 — Storage-Object-Storage#181 ko/cli-guide.md:
+#   load 2992자 5.3x -> 1012자 1.8x (measure probe, 빌드 311 로그와 일치).
+#
+#   알려진 잡음 (이 플랜과 무관, 판정에 넣지 말 것): 14단계 ko-review suggestion
+#   accept 가 ko/public-api.md 의 EOL 을 CRLF -> LF 로 정규화해 ko PR 에 4000줄대
+#   허위 diff 가 생긴다. 마크업 변형 자체는 CRLF 를 보존한다(변형 커밋 시점
+#   CRLF 1984 유지 확인). 번역 결과에는 영향 없음 — en/ja 는 원래 LF.
 declare -a PLAN_MARKUP_CHURN=(
   "markup_fence_info|ko/component-guide.md"
   "markup_br_slash|ko/component-guide.md"

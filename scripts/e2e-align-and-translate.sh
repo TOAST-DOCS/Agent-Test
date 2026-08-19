@@ -69,7 +69,9 @@
 #                                markup-churn: 코스메틱 마크업 churn(펜스 info string,
 #                                  <br/>, 헤딩 뒤 빈 줄) + 소수 내용 변경. load guard 가
 #                                  정상 리뷰 PR 을 runaway 로 오판해 파일을 제외하던 것을
-#                                  재현 (Storage-Object-Storage#181/#185).
+#                                  재현 (Storage-Object-Storage#181/#185). PASS 판정은
+#                                  load guard/LLM 패치 폴백 미발동 + PR 본문 제외 섹션
+#                                  없음 + en/ja 의 <br/>·```lang 개수가 ko 와 일치.
 #                                (중간 행 삽입·헤더 수정·행 삭제·행 수정·행 추가·신규 표)
 #                                의 종합 검증.
 #                                - version-guide: CK 인시던트 동형 (LLM-patch 경로).
