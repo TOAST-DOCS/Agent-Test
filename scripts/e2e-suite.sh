@@ -11,7 +11,7 @@
 #       324=에러0 → 325/326=에러84)을 피하려면 3600(1시간) 권장. 마지막 plan
 #       뒤에는 자지 않는다.
 #
-# plan 미지정 시 기본: webhook round1 table-suite
+# plan 미지정 시 기본: webhook round1 table-suite markup-churn
 #   webhook     — GitHub webhook 라우팅 검증. base=alpha 로 PR 을 열어
 #                 pull_request/opened → Jenkins ko-review, PR merge →
 #                 pull_request/closed → Jenkins translate 트리거를 dashboard
@@ -31,6 +31,16 @@
 #   table-suite — 표 변형 종합 + stale 결함 재현 (stale-ify 커밋 포함).
 #                 기대: 번역 로직에 table-row reconcile(PR #290)이 있으면 exit 0,
 #                 없으면 exit 3 (version-guide/release-notes FAIL).
+#   markup-churn— 코스메틱 마크업 churn(펜스 info string, <br/>, 헤딩 뒤 빈 줄,
+#                 Jinja 태그 whitespace 제어) + 소수 내용 변경. load guard 가
+#                 정상 리뷰 PR 을 runaway 로 오판해 파일을 제외하던 것을 재현
+#                 (Storage-Object-Storage#181/#185, Storage-Online-NAS#92).
+#                 기대: exit 0 **이고** 로그에 load guard skip 이 0건.
+#                 exit code 만으로는 판별되지 않는다 — 미러링이 없어도 일부
+#                 파일은 floor 아래라 통과해 PR 이 만들어지기 때문. 그래서 이
+#                 러너가 로그에서 mirrored=/guard-skips= 를 세어 verdict 에 붙이고,
+#                 guard-skips 가 0 이 아니면 suite 실패로 잡는다.
+#                 기본 plan 집합에 포함된다.
 #   retranslate — public-api.md 전체 재번역 변형 (e2e-retranslate-align-and-
 #                 translate.sh). dashboard /api/translate/file (DIFF_MODE=full)
 #                 경로 검증 — 다른 plan 이 커버하지 않는 유일한 API. dashboard
@@ -41,7 +51,8 @@
 #
 # 별칭:
 #   all         — round2 를 제외한 실행 가능한 plan 전체
-#                 = webhook korean-review round1 table-suite row-drop-repro retranslate
+#                 = webhook korean-review round1 table-suite row-drop-repro
+#                   markup-churn retranslate
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
@@ -69,12 +80,12 @@ while [[ $# -gt 0 ]]; do
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); shift 2 ;;
     --translate|--tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|round1|round2|row-drop-repro|table-suite|retranslate)
+    webhook|korean-review|round1|round2|row-drop-repro|table-suite|markup-churn|retranslate)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
       # `scripts/e2e-suite.sh all round2` 처럼 뒤에 명시적으로 이어붙인다.
-      PLANS+=(webhook korean-review round1 table-suite row-drop-repro retranslate); shift ;;
+      PLANS+=(webhook korean-review round1 table-suite row-drop-repro markup-churn retranslate); shift ;;
     -h|--help) sed -n '3,31p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -88,7 +99,7 @@ if (( ${#PLANS[@]} )); then
   done
   PLANS=("${_dedup[@]}")
 fi
-(( ${#PLANS[@]} )) || PLANS=(webhook round1 table-suite)
+(( ${#PLANS[@]} )) || PLANS=(webhook round1 table-suite markup-churn)
 
 ts="$(date +%Y%m%d-%H%M%S)"
 outdir="/tmp/e2e-suite-$ts"
@@ -138,6 +149,13 @@ for plan in "${PLANS[@]}"; do
     ec=$?
     verdict="$(grep -oE '^ALIGNMENT: (OK|FAIL)' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    if [[ "$plan" == "markup-churn" ]]; then
+      # ALIGNMENT 만으로는 이 plan 의 핵심(가드 미발동)을 알 수 없다 — 미러링이
+      # 없어도 정렬은 OK 로 나온다. 로그에서 직접 센다.
+      mc_mirrored="$(grep -c 'Cosmetic markup mirrored' "$log" 2>/dev/null || true)"
+      mc_guard="$(grep -c 'load guard: .*skipped —' "$log" 2>/dev/null || true)"
+      verdict="${verdict:-<no-verdict>} mirrored=${mc_mirrored:-0} guard-skips=${mc_guard:-0}"
+    fi
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
   fi
   echo "=== [$plan] 종료: exit=$ec ${verdict:-}"
@@ -147,10 +165,16 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" == "korean-review" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "round1" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
+  # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
+  # 마크업 미러링이 동작하지 않은 것이므로 suite 실패로 잡는다.
+  if [[ "$plan" == "markup-churn" ]]; then
+    if (( ec != 0 )) || [[ "$verdict" != *"guard-skips=0"* ]]; then overall=1; fi
+  fi
 done
 
 echo
 echo "===== e2e suite 요약 ($outdir) ====="
 for r in "${RESULTS[@]}"; do echo "  $r"; done
 echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포함이면 exit 3 이 정상)"
+echo "  (markup-churn: exit 0 + guard-skips=0 이 PASS. guard-skips>0 이면 마크업 미러링 미동작)"
 exit $overall

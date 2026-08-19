@@ -29,7 +29,7 @@
 #                                      [--guidelines-variant-en aws|unified|unified-v2|default]
 #                                      [--guidelines-variant-ja aws|unified|default]
 #                                      [--align-v2|--no-align-v2]
-#                                      [--plan round1|round2|row-drop-repro|table-suite]
+#                                      [--plan round1|round2|row-drop-repro|table-suite|markup-churn]
 #                                      [--translate api|local]
 #
 #   --engine api   translate 잡을 api 엔진으로 실행
@@ -55,7 +55,8 @@
 #                                잔여 diff 1..5 인 (doc, lang) 은 자동 escalation 됨.
 #
 #   --plan <name>                create-translate-test-pr.sh 에 전달할 ko 변형 plan.
-#                                round1(기본) / round2 / row-drop-repro / table-suite.
+#                                round1(기본) / round2 / row-drop-repro / table-suite /
+#                                markup-churn.
 #                                row-drop-repro: cloud-translate PR #283 회귀 재현용.
 #                                version-guide.md 의 en/ja stale(행 1개 결여) 상태는
 #                                create-translate-test-pr.sh 가 base 브랜치에 stale-ify
@@ -65,6 +66,12 @@
 #                                LLM-patch fallback 활성. 결함 상태에서는 en/ja 가 stale
 #                                행을 유지하고, fix 배포 후에는 backfill 또는 todo-stub.
 #                                table-suite: 결함 재현 2케이스 + 정상 표 변형들
+#                                markup-churn: 코스메틱 마크업 churn(펜스 info string,
+#                                  <br/>, 헤딩 뒤 빈 줄) + 소수 내용 변경. load guard 가
+#                                  정상 리뷰 PR 을 runaway 로 오판해 파일을 제외하던 것을
+#                                  재현 (Storage-Object-Storage#181/#185). PASS 판정은
+#                                  load guard/LLM 패치 폴백 미발동 + PR 본문 제외 섹션
+#                                  없음 + en/ja 의 <br/>·```lang 개수가 ko 와 일치.
 #                                (중간 행 삽입·헤더 수정·행 삭제·행 수정·행 추가·신규 표)
 #                                의 종합 검증.
 #                                - version-guide: CK 인시던트 동형 (LLM-patch 경로).
@@ -109,7 +116,7 @@ TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199). "defa
 TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
 TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
-PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|table-suite
+PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|table-suite|markup-churn
 TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기본) | local = 로컬 translate_pr.py
 # --translate local 이 사용할 cloud-translate 체크아웃/venv. 워크트리를 가리키면
 # 미배포 브랜치(예: PR #290 fix/table-sync-repair)의 번역 로직을 그대로 검증할 수 있다.
@@ -167,8 +174,8 @@ while [[ $# -gt 0 ]]; do
     --no-align-v2)   ALIGN_V2=0; shift ;;
     --plan)
       case "${2:-}" in
-        round1|round2|row-drop-repro|table-suite) PLAN_NAME="$2" ;;
-        *) echo "error: --plan 은 round1|round2|row-drop-repro|table-suite 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+        round1|round2|row-drop-repro|table-suite|markup-churn) PLAN_NAME="$2" ;;
+        *) echo "error: --plan 은 round1|round2|row-drop-repro|table-suite|markup-churn 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --translate)
