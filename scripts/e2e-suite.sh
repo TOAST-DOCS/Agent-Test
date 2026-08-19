@@ -11,7 +11,7 @@
 #       324=에러0 → 325/326=에러84)을 피하려면 3600(1시간) 권장. 마지막 plan
 #       뒤에는 자지 않는다.
 #
-# plan 미지정 시 기본: webhook round1 table-suite
+# plan 미지정 시 기본: webhook round1 table-suite markup-churn
 #   webhook     — GitHub webhook 라우팅 검증. base=alpha 로 PR 을 열어
 #                 pull_request/opened → Jenkins ko-review, PR merge →
 #                 pull_request/closed → Jenkins translate 트리거를 dashboard
@@ -40,6 +40,7 @@
 #                 파일은 floor 아래라 통과해 PR 이 만들어지기 때문. 그래서 이
 #                 러너가 로그에서 mirrored=/guard-skips= 를 세어 verdict 에 붙이고,
 #                 guard-skips 가 0 이 아니면 suite 실패로 잡는다.
+#                 기본 plan 집합에 포함된다.
 #   retranslate — public-api.md 전체 재번역 변형 (e2e-retranslate-align-and-
 #                 translate.sh). dashboard /api/translate/file (DIFF_MODE=full)
 #                 경로 검증 — 다른 plan 이 커버하지 않는 유일한 API. dashboard
@@ -98,7 +99,7 @@ if (( ${#PLANS[@]} )); then
   done
   PLANS=("${_dedup[@]}")
 fi
-(( ${#PLANS[@]} )) || PLANS=(webhook round1 table-suite)
+(( ${#PLANS[@]} )) || PLANS=(webhook round1 table-suite markup-churn)
 
 ts="$(date +%Y%m%d-%H%M%S)"
 outdir="/tmp/e2e-suite-$ts"
