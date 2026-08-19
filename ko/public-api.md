@@ -2,23 +2,20 @@
 
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 가이드 { #compute-instance-api-v2-guide }
-
-Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용에 대한 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token) 을 참고하세요.
+Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용에 대한 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token) 을 참고하세요. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
 
 인스턴스 API는 `compute` 타입 엔드포인트를 이용합니다. 정확한 엔드포인트는 토큰 발급 응답의 `serviceCatalog`를 참조합니다.
 
 | 타입 | 리전 | 엔드포인트 |
 |---|---|---|
-| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | 한국(판교) 리전<br/>한국(평촌) 리전<br/>한국(광주) 리전<br/>일본 리전 | https://kr1-api-instance-infrastructure.nhncloudservice.com<br/>https://kr2-api-instance-infrastructure.nhncloudservice.com<br/>https://kr3-api-instance-infrastructure.nhncloudservice.com<br/>https://jp1-api-instance-infrastructure.nhncloudservice.com |
 
 API 응답에 가이드에 명시되지 않은 필드가 나타날 수 있습니다. 이런 필드는 NHN Cloud 내부 용도로 사용되며 사전 공지 없이 변경될 수 있으므로 사용하지 않습니다.
 
 <a id="instance-flavors"></a>
 ## 인스턴스 타입 { #instance-flavors }
-
 <a id="list-flavors"></a>
 ### 타입 목록 보기 { #list-flavors }
-
 ```
 GET /v2/{tenantId}/flavors
 X-Auth-Token: {tokenId}
@@ -26,19 +23,17 @@ X-Auth-Token: {tokenId}
 
 <a id="request"></a>
 #### 요청
-
 이 API는 요청 본문을 요구하지 않습니다.
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
-| minDisk | Query | Integer | - | 최소 블록 스토리지 크기(GB)<br>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
-| minRam | Query | Integer | - | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
+| minDisk | Query | Integer | - | 최소 블록 스토리지 크기(GB)<br/>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
+| minRam | Query | Integer | - | 최소 RAM 크기(MB)<br/>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
 
 <a id="response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |---|---|---|---|
 | flavors | Body | Object | 인스턴스 타입 목록 객체 |
@@ -92,7 +87,6 @@ X-Auth-Token: {tokenId}
 
 <a id="list-flavors-with-details"></a>
 ### 타입 목록 상세 보기 { #list-flavors-with-details }
-
 ```
 GET /v2/{tenantId}/flavors/detail
 X-Auth-Token: {tokenId}
@@ -100,19 +94,17 @@ X-Auth-Token: {tokenId}
 
 <a id="list-flavors-with-details-request"></a>
 #### 요청
-
 이 API는 요청 본문을 요구하지 않습니다.
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
-| minDisk | Query | Integer | - | 최소 블록 스토리지 크기(GB)<br>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
-| minRam | Query | Integer | - | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
+| minDisk | Query | Integer | - | 최소 블록 스토리지 크기(GB)<br/>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
+| minRam | Query | Integer | - | 최소 RAM 크기(MB)<br/>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
 
 <a id="list-flavors-with-details-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명             |
 |---|---|---|----------------|
 | flavors | Body | Object | 인스턴스 타입 목록 객체  |
@@ -196,10 +188,8 @@ X-Auth-Token: {tokenId}
 
 <a id="availability-zones"></a>
 ## 가용성 영역 { #availability-zones }
-
 <a id="list-availability-zones"></a>
 ### 가용성 목록 보기 { #list-availability-zones }
-
 ```
 GET /v2/{tenantId}/os-availability-zone
 X-Auth-Token: {tokenId}
@@ -252,7 +242,6 @@ X-Auth-Token: {tokenId}
 
 <a id="key-pairs"></a>
 ## 키페어 { #key-pairs }
-
 <a id="list-key-pairs"></a>
 ### 키페어 목록 보기 { #list-key-pairs }
 ```
@@ -271,7 +260,6 @@ X-Auth-Token: {tokenId}
 
 <a id="list-key-pairs-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |---|---|---|---|
 | keypairs | Body | Array | 키페어 객체 목록 |
@@ -321,7 +309,6 @@ X-Auth-Token: {tokenId}
 
 <a id="show-key-pair-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |---|---|---|---|
 | keypair | Body | Object | 키페어 객체 목록 |
@@ -329,9 +316,9 @@ X-Auth-Token: {tokenId}
 | keypair.user_id | Body | String | 키페어 소유주 ID |
 | keypair.name | Body | String | 키페어 이름 |
 | keypair.deleted | Body | Boolean | 키페어 삭제 여부 |
-| keypair.created_at | Body | Datetime | 키페어 생성 시각<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
-| keypair.updated_at | Body | Datetime | 키페어 수정 시각<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
-| keypair.deleted_at | Body | Datetime | 키페어 삭제 시각<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.created_at | Body | Datetime | 키페어 생성 시각<br/>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.updated_at | Body | Datetime | 키페어 수정 시각<br/>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.deleted_at | Body | Datetime | 키페어 삭제 시각<br/>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
 | keypair.fingerprint | Body | String | 키페어 지문 |
 | keypair.id | Body | Integer | 키페어 ID |
 
@@ -361,7 +348,6 @@ X-Auth-Token: {tokenId}
 
 <a id="createregister-key-pair"></a>
 ### 키페어 생성/등록하기 { #createregister-key-pair }
-
 ```
 POST /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
@@ -369,7 +355,6 @@ X-Auth-Token: {tokenId}
 
 <a id="createregister-key-pair-request"></a>
 #### 요청
-
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
 | tenantId | URL | String | O | 테넌트 ID |
@@ -395,7 +380,6 @@ X-Auth-Token: {tokenId}
 
 <a id="createregister-key-pair-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |---|---|---|---|
 | keypair | Body | Object | 키페어 객체 |
@@ -448,10 +432,8 @@ X-Auth-Token: {tokenId}
 
 <a id="instance"></a>
 ## 인스턴스 { #instance }
-
 <a id="instance-status"></a>
 ### 인스턴스 상태 { #instance-status }
-
 인스턴스는 다양한 상태를 가지며 상태에 따라 취할 수 있는 동작이 정해져 있습니다. 인스턴스 상태 목록은 다음과 같습니다.
 
 | 상태명              | 설명                                                                                                |
@@ -460,24 +442,23 @@ X-Auth-Token: {tokenId}
 | `BUILD` | 인스턴스가 생성 중인 경우 |
 | `DELETED` | 인스턴스가 삭제된 경우 |
 | `ERROR` | 직전 인스턴스에 취한 동작이 실패한 경우 |
-| `HARD_REBOOT` | 인스턴스를 강제 재시작한 경우<br> 물리 서버의 전원을 내리고 다시 켜는 것과 동일한 동작 |
-| `MIGRATING` | 인스턴스가 마이그레이션 중인 경우<br> 이는 실시간 마이그레이션(활성 인스턴스 이동) 작업으로 인해 발생함 |
+| `HARD_REBOOT` | 인스턴스를 강제 재시작한 경우<br/> 물리 서버의 전원을 내리고 다시 켜는 것과 동일한 동작 |
+| `MIGRATING` | 인스턴스가 마이그레이션 중인 경우<br/> 이는 실시간 마이그레이션(활성 인스턴스 이동) 작업으로 인해 발생함 |
 | `PASSWORD` | 인스턴스에서 비밀번호를 재설정하는 중인 경우 |
-| `PAUSED` | 인스턴스가 일시 정지된 경우<br>일시 정지된 인스턴스는 하이퍼바이저의 메모리에 저장됨 |
-| `REBOOT` | 인스턴스가 소프트 재부팅 상태인 경우<br> 재부팅 명령이 가상머신 운영 체제에 전달됨 |
+| `PAUSED` | 인스턴스가 일시 정지된 경우<br/>일시 정지된 인스턴스는 하이퍼바이저의 메모리에 저장됨 |
+| `REBOOT` | 인스턴스가 소프트 재부팅 상태인 경우<br/> 재부팅 명령이 가상머신 운영 체제에 전달됨 |
 | `REBUILD` | 인스턴스를 생성 당시 이미지로부터 새롭게 만들어 내는 상태 |
 | `RESCUE` | 인스턴스를 복구 모드에서 실행 중인 경우 |
-| `RESIZE` | 인스턴스 타입을 변경하거나 인스턴스를 다른 호스트로 옮기는 경우<br>인스턴스가 중지되었다가 다시 시작된 상태 |
+| `RESIZE` | 인스턴스 타입을 변경하거나 인스턴스를 다른 호스트로 옮기는 경우<br/>인스턴스가 중지되었다가 다시 시작된 상태 |
 | `REVERT_RESIZE` | 인스턴스 타입을 변경하거나 인스턴스를 다른 호스트로 옮기는 과정에서 실패했을 때 원상태로 돌아가기 위해 복구하는 경우 |
-| `VERIFY_RESIZE` | 인스턴스가 타입 변경 또는 인스턴스를 다른 호스트로 옮기는 과정을 마치고 사용자의 승인을 기다리는 경우<br>NHN Cloud에서는 이 경우 자동으로 `ACTIVE` 상태가 됨 |
+| `VERIFY_RESIZE` | 인스턴스가 타입 변경 또는 인스턴스를 다른 호스트로 옮기는 과정을 마치고 사용자의 승인을 기다리는 경우<br/>NHN Cloud에서는 이 경우 자동으로 `ACTIVE` 상태가 됨 |
 | `SHELVED_OFFLOADED` | 인스턴스가 종료된 경우 |
 | `SHUTOFF` | 인스턴스가 중지된 경우 |
 | `SUSPENDED` | 인스턴스가 관리자에 의해 최대 절전 모드로 진입한 경우 |
-| `UNKNOWN` | 인스턴스의 상태를 알 수 없는 경우<br>`인스턴스가 이 상태로 진입한 경우 관리자에게 문의합니다.` | 
+| `UNKNOWN` | 인스턴스의 상태를 알 수 없는 경우<br/>`인스턴스가 이 상태로 진입한 경우 관리자에게 문의합니다.` | 
 
 <a id="list-instances"></a>
 ### 인스턴스 목록 보기 { #list-instances }
-
 ```
 GET /v2/{tenantId}/servers
 X-Auth-Token: {tokenId}
@@ -485,25 +466,23 @@ X-Auth-Token: {tokenId}
 
 <a id="list-instances-request"></a>
 #### 요청
-
 이 API는 요청 본문을 요구하지 않습니다.
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
-| reservation_id | Query | String | - | 인스턴스 생성 예약 ID. <br>예약 ID를 지정하면 동시에 생성된 인스턴스 목록만 반환함 |
+| reservation_id | Query | String | - | 인스턴스 생성 예약 ID. <br/>예약 ID를 지정하면 동시에 생성된 인스턴스 목록만 반환함 |
 | changes-since | Query | Datetime | - | 지정된 시각 이후로 변경된 인스턴스 목록을 반환. `YYYY-MM-DDThh:mm:ss`의 형태. |
-| image | Query | UUID | - | 이미지 ID<br>지정된 이미지를 사용한 인스턴스 목록을 반환 |
-| flavor | Query | UUID | - | 인스턴스 타입 ID<br>지정된 타입을 사용한 인스턴스 목록을 반환 |
-| name | Query | String | - | 인스턴스 이름<br>지정된 이름을 가진 인스턴스 목록을 반환, 정규 표현식으로 질의 가능 |
-| status | Query | Enum | - | 인스턴스 상태<br>지정된 상태를 가진 인스턴스 목록을 반환 |
-| limit | Query | Integer | - | 인스턴스 목록 개수<br>지정된 개수 만큼의 인스턴스 목록을 반환 |
-| marker | Query | UUID | - | 목록의 첫번째 인스턴스 UUID<br>정렬 기준에 따라 `marker`로 지정된 인스턴스부터 `limit` 개수 만큼의 인스턴스 목록을 반환 |
+| image | Query | UUID | - | 이미지 ID<br/>지정된 이미지를 사용한 인스턴스 목록을 반환 |
+| flavor | Query | UUID | - | 인스턴스 타입 ID<br/>지정된 타입을 사용한 인스턴스 목록을 반환 |
+| name | Query | String | - | 인스턴스 이름<br/>지정된 이름을 가진 인스턴스 목록을 반환, 정규 표현식으로 질의 가능 |
+| status | Query | Enum | - | 인스턴스 상태<br/>지정된 상태를 가진 인스턴스 목록을 반환 |
+| limit | Query | Integer | - | 인스턴스 목록 개수<br/>지정된 개수 만큼의 인스턴스 목록을 반환 |
+| marker | Query | UUID | - | 목록의 첫번째 인스턴스 UUID<br/>정렬 기준에 따라 `marker`로 지정된 인스턴스부터 `limit` 개수 만큼의 인스턴스 목록을 반환 |
 
 <a id="list-instances-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |---|---|---|---|
 | servers | Body | Object | 인스턴스 목록 객체 |
@@ -542,7 +521,6 @@ X-Auth-Token: {tokenId}
 
 <a id="list-instances-with-details"></a>
 ### 인스턴스 목록 상세 보기 { #list-instances-with-details }
-
 인스턴스 목록 보기와 동일하게 현재 테넌트에 생성된 인스턴스 목록을 반환합니다. 단, 인스턴스별 상세한 정보가 같이 조회됩니다.
 
 ```
@@ -552,12 +530,10 @@ X-Auth-Token: {tokenId}
 
 <a id="list-instances-with-details-request"></a>
 #### 요청
-
 인스턴스 목록 보기와 동일한 요청 형태입니다.
 
 <a id="list-instances-with-details-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명                                                                                                                                                                                                        |
 |---|---|---|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | servers | body | Object | 인스턴스 목록 객체                                                                                                                                                                                                |
@@ -566,21 +542,21 @@ X-Auth-Token: {tokenId}
 | servers.name | Body | String | 인스턴스 이름, 최대 255자                                                                                                                                                                                          |
 | servers.updated | Body | Datetime | 인스턴스 최종 수정 시각, `YYYY-MM-DDThh:mm:ssZ` 형식                                                                                                                                                                  |
 | servers.hostId | Body | String | 인스턴스가 구동 중인 호스트 ID                                                                                                                                                                                        |
-| servers.addresses | Body | Object | 인스턴스 IP 목록 객체. <br>인스턴스에 연결된 포트 수 만큼 목록이 생성됨.                                                                                                                                                             |
+| servers.addresses | Body | Object | 인스턴스 IP 목록 객체. <br/>인스턴스에 연결된 포트 수 만큼 목록이 생성됨.                                                                                                                                                             |
 | servers.addresses."Network 이름" | Body | Object | 인스턴스에 연결된 Network별 포트 정보                                                                                                                                                                                  |
 | servers.addresses."Network 이름".OS-EXT-IPS-MAC:mac_addr | Body | String | 인스턴스에 연결된 포트의 MAC 주소                                                                                                                                                                                      |
-| servers.addresses."Network 이름".version | Body | Integer | 인스턴스에 연결된 포트의 IP 버전<br>NHN Cloud는 IPv4만 지원                                                                                                                                                                |
+| servers.addresses."Network 이름".version | Body | Integer | 인스턴스에 연결된 포트의 IP 버전<br/>NHN Cloud는 IPv4만 지원                                                                                                                                                                |
 | servers.addresses."Network 이름".addr | Body | String | 인스턴스에 연결된 포트의 IP 주소                                                                                                                                                                                       |
-| servers.addresses."Network 이름".OS-EXT-IPS:type | Body | Enum | 포트의 IP 주소 타입<br>`fixed` 또는 `floating` 중 하나                                                                                                                                                                |
+| servers.addresses."Network 이름".OS-EXT-IPS:type | Body | Enum | 포트의 IP 주소 타입<br/>`fixed` 또는 `floating` 중 하나                                                                                                                                                                |
 | servers.links | Body | Object | 인스턴스 경로 객체                                                                                                                                                                                                |
 | servers.key_name | Body | String | 인스턴스 키페어 이름                                                                                                                                                                                               |
 | servers.image | Body | Object | 인스턴스 이미지 객체                                                                                                                                                                                               |
 | servers.image.id | Body | UUID | 인스턴스 이미지 ID                                                                                                                                                                                               |
 | servers.image.links | Body | Object | 인스턴스 이미지 경로 객체                                                                                                                                                                                            |
-| servers.OS-EXT-STS:task_state | Body | String | 인스턴스 작업 상태<br>인스턴스에 동작을 가했을 때 동작 진행 상태를 알려줌                                                                                                                                                               |
+| servers.OS-EXT-STS:task_state | Body | String | 인스턴스 작업 상태<br/>인스턴스에 동작을 가했을 때 동작 진행 상태를 알려줌                                                                                                                                                               |
 | servers.OS-EXT-STS:vm_state | Body | String | 인스턴스 현재 상태                                                                                                                                                                                                |
-| servers.OS-SRV-USG:launched_at | Body | Datetime | 인스턴스 마지막 부팅 시각<br>`YYYY-MM-DDThh:mm:ss.ssssss` 형식                                                                                                                                                         |
-| servers.OS-SRV-USG:terminated_at | Body | Datetime | 인스턴스 삭제 시각<br>`YYYY-MM-DDThh:mm:ssZ` 형식                                                                                                                                                                   |
+| servers.OS-SRV-USG:launched_at | Body | Datetime | 인스턴스 마지막 부팅 시각<br/>`YYYY-MM-DDThh:mm:ss.ssssss` 형식                                                                                                                                                         |
+| servers.OS-SRV-USG:terminated_at | Body | Datetime | 인스턴스 삭제 시각<br/>`YYYY-MM-DDThh:mm:ssZ` 형식                                                                                                                                                                   |
 | servers.flavor | Body | Object | 인스턴스 타입 정보 객체                                                                                                                                                                                             |
 | servers.flavor.id | Body | UUID | 인스턴스 타입 ID                                                                                                                                                                                                |
 | servers.flavor.links | Body | Object | 인스턴스 타입 경로 객체                                                                                                                                                                                             |
@@ -591,8 +567,8 @@ X-Auth-Token: {tokenId}
 | servers.tenant_id | Body | String | 인스턴스가 속한 테넌트 ID                                                                                                                                                                                           |
 | servers.os-extended-volumes:volumes_attached | Body | Object | 인스턴스에 연결된 추가 블록 스토리지 목록 객체                                                                                                                                                                                |
 | servers.os-extended-volumes:volumes_attached.id | Body | UUID | 인스턴스에 연결된 추가 블록 스토리지 ID                                                                                                                                                                                   |
-| servers.OS-EXT-STS:power_state | Body | Integer | 인스턴스의 전원 상태<br>- `1`: On<br>- `4`: Off                                                                                                                                                                    |
-| servers.metadata | Body | Object | 인스턴스 메타데이터 객체<br>인스턴스 메타데이터를 키-값 쌍으로 보관                                                                                                                                                                   |
+| servers.OS-EXT-STS:power_state | Body | Integer | 인스턴스의 전원 상태<br/>- `1`: On<br/>- `4`: Off                                                                                                                                                                    |
+| servers.metadata | Body | Object | 인스턴스 메타데이터 객체<br/>인스턴스 메타데이터를 키-값 쌍으로 보관                                                                                                                                                                   |
 | server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | 인스턴스에 연결된 추가 로컬 블록 스토리지 크기                                                                                                                                                                   |
 | server.NHN-EXT-ATTR:protect | Body | Boolean | 인스턴스 삭제 보호 여부                                                                                                                                                                   |
 
@@ -698,7 +674,6 @@ X-Auth-Token: {tokenId}
 
 <a id="get-instance"></a>
 ### 인스턴스 보기 { #get-instance }
-
 ```
 GET /v2/{tenantId}/servers/{serverId}
 X-Auth-Token: {tokenId}
@@ -706,7 +681,6 @@ X-Auth-Token: {tokenId}
 
 <a id="get-instance-request"></a>
 #### 요청
-
 이 API는 요청 본문을 요구하지 않습니다.
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -717,7 +691,6 @@ X-Auth-Token: {tokenId}
 
 <a id="get-instance-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명                                                                                                                                                                                                       |
 |---|---|---|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | server | body | Object | 인스턴스 객체                                                                                                                                                                                                  |
@@ -726,21 +699,21 @@ X-Auth-Token: {tokenId}
 | server.name | Body | String | 인스턴스 이름, 최대 255자                                                                                                                                                                                         |
 | server.updated | Body | Datetime | 인스턴스 최종 수정 시각, `YYYY-MM-DDThh:mm:ssZ` 형식                                                                                                                                                                 |
 | server.hostId | Body | String | 인스턴스가 구동 중인 호스트 ID                                                                                                                                                                                       |
-| server.addresses | Body | Object | 인스턴스 IP 목록 객체 <br>인스턴스에 연결된 포트 수 만큼 목록이 생성됨                                                                                                                                                              |
+| server.addresses | Body | Object | 인스턴스 IP 목록 객체 <br/>인스턴스에 연결된 포트 수 만큼 목록이 생성됨                                                                                                                                                              |
 | server.addresses."Network 이름" | Body | Object | 인스턴스에 연결된 Network별 포트 정보                                                                                                                                                                                 |
 | server.addresses."Network 이름".OS-EXT-IPS-MAC:mac_addr | Body | String | 인스턴스에 연결된 포트의 MAC 주소                                                                                                                                                                                     |
-| server.addresses."Network 이름".version | Body | Integer | 인스턴스에 연결된 포트의 IP 버전<br>NHN Cloud는 IPv4만 지원                                                                                                                                                               |
+| server.addresses."Network 이름".version | Body | Integer | 인스턴스에 연결된 포트의 IP 버전<br/>NHN Cloud는 IPv4만 지원                                                                                                                                                               |
 | server.addresses."Network 이름".addr | Body | String | 인스턴스에 연결된 포트의 IP 주소                                                                                                                                                                                      |
-| server.addresses."Network 이름".OS-EXT-IPS:type | Body | Enum | 포트의 IP 주소 타입<br>`fixed` 또는 `floating` 중 하나                                                                                                                                                               |
+| server.addresses."Network 이름".OS-EXT-IPS:type | Body | Enum | 포트의 IP 주소 타입<br/>`fixed` 또는 `floating` 중 하나                                                                                                                                                               |
 | server.links | Body | Object | 인스턴스 경로 객체                                                                                                                                                                                               |
 | server.key_name | Body | String | 인스턴스 키페어 이름                                                                                                                                                                                              |
 | server.image | Body | Object | 인스턴스 이미지 객체                                                                                                                                                                                              |
 | server.image.id | Body | UUID | 인스턴스 이미지 ID                                                                                                                                                                                              |
 | server.image.links | Body | Object | 인스턴스 이미지 경로 객체                                                                                                                                                                                           |
-| server.OS-EXT-STS:task_state | Body | String | 인스턴스 작업 상태<br>인스턴스에 동작을 가했을 때 동작 진행 상태를 알림                                                                                                                                                               |
+| server.OS-EXT-STS:task_state | Body | String | 인스턴스 작업 상태<br/>인스턴스에 동작을 가했을 때 동작 진행 상태를 알림                                                                                                                                                               |
 | server.OS-EXT-STS:vm_state | Body | String | 인스턴스 현재 상태                                                                                                                                                                                               |
-| server.OS-SRV-USG:launched_at | Body | Datetime | 인스턴스 마지막 부팅 시각<br>`YYYY-MM-DDThh:mm:ss.ssssss` 형식                                                                                                                                                        |
-| server.OS-SRV-USG:terminated_at | Body | Datetime | 인스턴스 삭제 시각<br>`YYYY-MM-DDThh:mm:ssZ` 형식                                                                                                                                                                  |
+| server.OS-SRV-USG:launched_at | Body | Datetime | 인스턴스 마지막 부팅 시각<br/>`YYYY-MM-DDThh:mm:ss.ssssss` 형식                                                                                                                                                        |
+| server.OS-SRV-USG:terminated_at | Body | Datetime | 인스턴스 삭제 시각<br/>`YYYY-MM-DDThh:mm:ssZ` 형식                                                                                                                                                                  |
 | server.flavor | Body | Object | 인스턴스 타입 정보 객체                                                                                                                                                                                            |
 | server.flavor.id | Body | UUID | 인스턴스 타입 ID                                                                                                                                                                                               |
 | server.flavor.links | Body | Object | 인스턴스 타입 경로 객체                                                                                                                                                                                            |
@@ -751,8 +724,8 @@ X-Auth-Token: {tokenId}
 | server.tenant_id | Body | String | 인스턴스가 속한 테넌트 ID                                                                                                                                                                                          |
 | server.os-extended-volumes:volumes_attached | Body | Object | 인스턴스에 연결된 추가 블록 스토리지 목록 객체                                                                                                                                                                               |
 | server.os-extended-volumes:volumes_attached.id | Body | UUID | 인스턴스에 연결된 추가 블록 스토리지 ID                                                                                                                                                                                  |
-| server.OS-EXT-STS:power_state | Body | Integer | 인스턴스의 전원 상태<br>- `1`: On<br>- `4`: Off                                                                                                                                                                   |
-| server.metadata | Body | Object | 인스턴스 메타데이터 객체<br>인스턴스 메타데이터를 키-값 쌍으로 보관                                                                                                                                                                  |
+| server.OS-EXT-STS:power_state | Body | Integer | 인스턴스의 전원 상태<br/>- `1`: On<br/>- `4`: Off                                                                                                                                                                   |
+| server.metadata | Body | Object | 인스턴스 메타데이터 객체<br/>인스턴스 메타데이터를 키-값 쌍으로 보관                                                                                                                                                                  |
 | server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | 인스턴스에 연결된 추가 로컬 블록 스토리지 크기                                                                                                                                                                  |
 | server.NHN-EXT-ATTR:protect | Body | Boolean | 인스턴스 삭제 보호 여부                                                                                                                                                                  |
 
@@ -856,7 +829,6 @@ X-Auth-Token: {tokenId}
 
 <a id="create-instance"></a>
 ### 인스턴스 생성하기 { #create-instance }
-
 인스턴스를 생성합니다.
 
 인스턴스 생성 API를 호출한 후에 인스턴스 조회를 통해 인스턴스 상태를 확인합니다.
@@ -883,40 +855,39 @@ X-Auth-Token: {tokenId}
 
 <a id="create-instance-request"></a>
 #### 요청
-
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
 | server | body | Object | O | 서버 객체 |
-| server.security_groups | body | Object | - | 보안 그룹 목록 객체<br>생략할 경우 `default` 그룹이 추가됨 |
+| server.security_groups | body | Object | - | 보안 그룹 목록 객체<br/>생략할 경우 `default` 그룹이 추가됨 |
 | server.security_groups.name | body | String | - | **(조건부 필수)** 인스턴스에 추가할 보안 그룹 이름 |
-| server.user_data | body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br>base64 인코딩된 문자열로 65535 바이트까지 허용 |
-| server.availability_zone | body | String | - | 인스턴스를 생성할 가용성 영역<br>지정하지 않을 경우 임의로 선택됨<br>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 원본 블록 스토리지의 가용성 영역과 동일하게 설정 필요 |
-| server.imageRef | Body | String | - | 인스턴스를 생성할 때 사용할 이미지 ID<br>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요 |
+| server.user_data | body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br/>base64 인코딩된 문자열로 65535 바이트까지 허용 |
+| server.availability_zone | body | String | - | 인스턴스를 생성할 가용성 영역<br/>지정하지 않을 경우 임의로 선택됨<br/>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 원본 블록 스토리지의 가용성 영역과 동일하게 설정 필요 |
+| server.imageRef | Body | String | - | 인스턴스를 생성할 때 사용할 이미지 ID<br/>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요 |
 | server.flavorRef | Body | String | O | 인스턴스를 생성할 때 사용할 인스턴스 타입 ID |
-| server.networks | Body | Object | O | 인스턴스를 생성할 때 사용할 네트워크 정보 객체<br>지정한 개수만큼 NIC가 추가되며, 네트워크 ID, 서브넷 ID, 포트 ID, 고정 IP 중 하나로 지정 |
+| server.networks | Body | Object | O | 인스턴스를 생성할 때 사용할 네트워크 정보 객체<br/>지정한 개수만큼 NIC가 추가되며, 네트워크 ID, 서브넷 ID, 포트 ID, 고정 IP 중 하나로 지정 |
 | server.networks.uuid | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크 ID |
 | server.networks.subnet | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크의 서브넷 ID |
-| server.networks.port | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 포트 ID<br>포트 ID 지정 시 요청한 보안 그룹은 지정한 기존 포트에 적용되지 않음 |
+| server.networks.port | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 포트 ID<br/>포트 ID 지정 시 요청한 보안 그룹은 지정한 기존 포트에 적용되지 않음 |
 | server.networks.fixed_ip | Body | String | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 고정 IP |
-| server.name | Body | String | O | 인스턴스의 이름<br>영문자 기준 255자까지 허용되지만, Windows 이미지의 경우 15자 이하여야 함 |
-| server.metadata | Body | Object | - | 인스턴스에 추가할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍 |
+| server.name | Body | String | O | 인스턴스의 이름<br/>영문자 기준 255자까지 허용되지만, Windows 이미지의 경우 15자 이하여야 함 |
+| server.metadata | Body | Object | - | 인스턴스에 추가할 메타데이터 객체<br/>최대 길이 255자 이하의 키-값 쌍 |
 | server.block_device_mapping_v2 | Body | Object | O | 인스턴스의 블록 스토리지 정보 객체 |
-| server.block_device_mapping_v2.source_type | Body | Enum | O | 생성할 블록 스토리지 원본의 타입<br>- `image`: 이미지를 이용해 블록 스토리지 생성<br>- `blank`: 빈 블록 스토리지 생성(루트 블록 스토리지로 사용할 수 없음)<br>- `volume`: 기존에 생성된 블록 스토리지를 사용<br>- `snapshot`: 스냅숏을 이용해 블록 스토리지 생성 |
-| server.block_device_mapping_v2.uuid | Body | String | - | **(조건부 필수)** 블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br>- 소스 타입이 `image`인 경우 이미지 ID를 설정<br>- 소스 타입이 `volume`인 경우 기존에 생성된 블록 스토리지 ID를 설정<br>- 소스 타입이 `snapshot`인 경우 스냅숏 ID를 설정<br>- 소스 타입이 `blank`인 경우 설정 불필요<br>루트 블록 스토리지인 경우 반드시 부팅 가능한 원본이어야 함 |
-| server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br>-`0`이면 루트 블록 스토리지<br>- 그 외는 추가 블록 스토리지<br>크기가 클수록 부팅 순서는 낮아짐 |
-| server.block_device_mapping_v2.destination_type | Body | Enum | O | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br>- `local`: GPU 인스턴스, U2 인스턴스 타입을 이용하는 경우<br>- `volume`: 그 외의 인스턴스 타입을 이용하는 경우 |
-| server.block_device_mapping_v2.volume_type | Body | Enum    | - | **(조건부 필수)** 생성할 블록 스토리지의 타입<br>블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요<br>`사용자 가이드 > Storage > Block Storage > API v2 가이드`에서 **블록 스토리지 타입 목록 보기** 응답의 `name` 참고 |
-| server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br>`true`면 삭제, `false`면 유지 |
-| server.block_device_mapping_v2.volume_size | Body | Integer | - | **(조건부 필수)** 생성할 블록 스토리지 크기<br>블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br>- 소스 타입이 `volume`인 경우 설정 불필요<br>- 소스 타입이 `snapshot`인 경우 원본 블록 스토리지 크기보다 같거나 크게 설정<br>`GB` 단위<br>U2 인스턴스 타입을 사용하고 루트 블록 스토리지를 생성하는 경우에는 U2 인스턴스 타입에 명시된 크기로 생성되며 이 값은 무시됨<br>인스턴스 타입에 따라 생성할 수 있는 루트 블록 스토리지의 크기가 다르므로 자세한 내용은 `사용자 가이드 > Compute > Instance > 콘솔 사용 가이드 > 인스턴스 생성 > 블록 스토리지 크기`를 참고 |
+| server.block_device_mapping_v2.source_type | Body | Enum | O | 생성할 블록 스토리지 원본의 타입<br/>- `image`: 이미지를 이용해 블록 스토리지 생성<br/>- `blank`: 빈 블록 스토리지 생성(루트 블록 스토리지로 사용할 수 없음)<br/>- `volume`: 기존에 생성된 블록 스토리지를 사용<br/>- `snapshot`: 스냅숏을 이용해 블록 스토리지 생성 |
+| server.block_device_mapping_v2.uuid | Body | String | - | **(조건부 필수)** 블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br/>- 소스 타입이 `image`인 경우 이미지 ID를 설정<br/>- 소스 타입이 `volume`인 경우 기존에 생성된 블록 스토리지 ID를 설정<br/>- 소스 타입이 `snapshot`인 경우 스냅숏 ID를 설정<br/>- 소스 타입이 `blank`인 경우 설정 불필요<br/>루트 블록 스토리지인 경우 반드시 부팅 가능한 원본이어야 함 |
+| server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br/>-`0`이면 루트 블록 스토리지<br/>- 그 외는 추가 블록 스토리지<br/>크기가 클수록 부팅 순서는 낮아짐 |
+| server.block_device_mapping_v2.destination_type | Body | Enum | O | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br/>- `local`: GPU 인스턴스, U2 인스턴스 타입을 이용하는 경우<br/>- `volume`: 그 외의 인스턴스 타입을 이용하는 경우 |
+| server.block_device_mapping_v2.volume_type | Body | Enum    | - | **(조건부 필수)** 생성할 블록 스토리지의 타입<br/>블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요<br/>`사용자 가이드 > Storage > Block Storage > API v2 가이드`에서 **블록 스토리지 타입 목록 보기** 응답의 `name` 참고 |
+| server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br/>`true`면 삭제, `false`면 유지 |
+| server.block_device_mapping_v2.volume_size | Body | Integer | - | **(조건부 필수)** 생성할 블록 스토리지 크기<br/>블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br/>- 소스 타입이 `volume`인 경우 설정 불필요<br/>- 소스 타입이 `snapshot`인 경우 원본 블록 스토리지 크기보다 같거나 크게 설정<br/>`GB` 단위<br/>U2 인스턴스 타입을 사용하고 루트 블록 스토리지를 생성하는 경우에는 U2 인스턴스 타입에 명시된 크기로 생성되며 이 값은 무시됨<br/>인스턴스 타입에 따라 생성할 수 있는 루트 블록 스토리지의 크기가 다르므로 자세한 내용은 `사용자 가이드 > Compute > Instance > 콘솔 사용 가이드 > 인스턴스 생성 > 블록 스토리지 크기`를 참고 |
 | server.block_device_mapping_v2.nhn_encryption                   | Body | Object | - | **(조건부 필수)** 블록 스토리지의 암호화 정보                                                                                                                                                                                        |
 | server.block_device_mapping_v2.nhn_encryption.skm_appkey        | Body | String | - | **(조건부 필수)** Secure Key Manager 서비스의 앱키                                                                                                                                                                              |
 | server.block_device_mapping_v2.nhn_encryption.skm_key_id        | Body | String | - | **(조건부 필수)** 암호화 블록 스토리지 생성에 사용할 Secure Key Manager의 대칭 키 ID                                                                                                                                  |
 | server.key_name | Body | String | O | 인스턴스 접속에 사용할 키페어 |
-| server.min_count | Body | Integer | - | 현재 요청으로 생성할 인스턴스 개수의 최솟값.<br>기본값은 1.<br>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
-| server.max_count | Body | Integer | - | 현재 요청으로 생성할 인스턴스 개수의 최댓값.<br>기본값은 min_count, 최댓값은 10.<br>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
-| server.return_reservation_id | Body | Boolean | - | 인스턴스 생성 요청 예약 ID.<br>True로 지정하면 인스턴스 생성 정보 대신 예약 ID를 반환.<br>기본값은 False |
+| server.min_count | Body | Integer | - | 현재 요청으로 생성할 인스턴스 개수의 최솟값.<br/>기본값은 1.<br/>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
+| server.max_count | Body | Integer | - | 현재 요청으로 생성할 인스턴스 개수의 최댓값.<br/>기본값은 min_count, 최댓값은 10.<br/>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
+| server.return_reservation_id | Body | Boolean | - | 인스턴스 생성 요청 예약 ID.<br/>True로 지정하면 인스턴스 생성 정보 대신 예약 ID를 반환.<br/>기본값은 False |
 | os:scheduler_hints | Body | Object | - | 스케줄러 힌트 객체 |
 | os:scheduler_hints.group | Body | String | - | 배치 정책 ID |
 
@@ -959,7 +930,6 @@ X-Auth-Token: {tokenId}
 
 <a id="create-instance-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명                                                                                                                                                                                                           |
 |---|---|---|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | server.security_groups.name | Body | String | 생성한 인스턴스의 보안 그룹 이름                                                                                                                                                                                           |
@@ -1007,7 +977,6 @@ X-Auth-Token: {tokenId}
 
 <a id="modify-instance-request"></a>
 #### 요청
-
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
 | tenantId | URL | String | O | 테넌트 ID |
@@ -1063,7 +1032,6 @@ X-Auth-Token: {tokenId}
 
 <a id="manage-block-storage-attachment"></a>
 ## 블록 스토리지 연결 관리 { #manage-block-storage-attachment }
-
 <a id="list-additional-block-storage-attached-to-the-instance"></a>
 ### 인스턴스에 연결된 블록 스토리지 목록 보기 { #list-additional-block-storage-attached-to-the-instance }
 ```
@@ -1081,15 +1049,14 @@ X-Auth-Token: {tokenId}
 | serverId | URL | UUID | O | 변경할 인스턴스 ID |
 | tokenId | Header | String | O | 토큰 ID |
 | limit | Query | Integer | - | 조회할 목록 개수 |
-| offset | Query | Integer | - | 반환할 목록의 시작점<br>전체 목록 중 offset번째 블록 스토리지부터 반환 |
+| offset | Query | Integer | - | 반환할 목록의 시작점<br/>전체 목록 중 offset번째 블록 스토리지부터 반환 |
 
 <a id="list-additional-block-storage-attached-to-the-instance-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |---|---|---|---|
 | volumeAttachments | Body | Array | 연결 정보 객체 목록 |
-| volumeAttachments.device | Body | String | 인스턴스의 블록 스토리지 이름<br>예) `/dev/vdb` |
+| volumeAttachments.device | Body | String | 인스턴스의 블록 스토리지 이름<br/>예) `/dev/vdb` |
 | volumeAttachments.id | Body | UUID | 연결 정보 ID |
 | volumeAttachments.serverId | Body | UUID | 인스턴스 ID |
 | volumeAttachments.volumeId | Body | UUID | 블록 스토리지 ID |
@@ -1141,11 +1108,10 @@ X-Auth-Token: {tokenId}
 
 <a id="list-additional-block-storage-attached-to-the-instance-response-2"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |---|---|---|---|
 | volumeAttachment | Body | Object | 연결 정보 객체 |
-| volumeAttachment.device | Body | String | 인스턴스의 블록 스토리지 이름<br>예) `/dev/vdb` |
+| volumeAttachment.device | Body | String | 인스턴스의 블록 스토리지 이름<br/>예) `/dev/vdb` |
 | volumeAttachment.id | Body | UUID | 연결 정보 ID |
 | volumeAttachment.serverId | Body | UUID | 인스턴스 ID |
 | volumeAttachment.volumeId | Body | UUID | 블록 스토리지 ID |
@@ -1178,7 +1144,6 @@ X-Auth-Token: {tokenId}
 
 <a id="attach-additional-block-storage-to-the-instance-request"></a>
 #### 요청
-
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|--|
 | tenantId | URL | String | O | 테넌트 ID |
@@ -1203,11 +1168,10 @@ X-Auth-Token: {tokenId}
 
 <a id="attach-additional-block-storage-to-the-instance-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |---|---|---|---|
 | volumeAttachment | Body | Object | 연결 정보 객체 |
-| volumeAttachment.device | Body | String | 인스턴스의 블록 스토리지 이름<br>예) `/dev/vdb` |
+| volumeAttachment.device | Body | String | 인스턴스의 블록 스토리지 이름<br/>예) `/dev/vdb` |
 | volumeAttachment.id | Body | UUID | 연결 정보 ID |
 | volumeAttachment.serverId | Body | UUID | 인스턴스 ID |
 | volumeAttachment.volumeId | Body | UUID | 블록 스토리지 ID |
@@ -1266,7 +1230,6 @@ NHN Cloud는 다음과 같은 인스턴스 제어 및 부가 기능을 제공합
 
 <a id="start-stopped-instance"></a>
 ### 중지된 인스턴스 시작 { #start-stopped-instance }
-
 중지된 인스턴스를 다시 시작하고 상태를 **ACTIVE**로 변경합니다. 이 API를 호출하려면 인스턴스의 상태가 **SHUTOFF**여야 합니다.
 
 ```
@@ -1303,7 +1266,6 @@ X-Auth-Token: {tokenId}
 
 <a id="start-terminated-instance"></a>
 ### 종료된 인스턴스 시작 { #start-terminated-instance }
-
 종료된 인스턴스를 다시 시작하고 상태를 **ACTIVE**로 변경합니다. 이 API를 호출하려면 인스턴스의 상태가 **SHELVED_OFFLOADED**여야 합니다.
 
 ```
@@ -1340,7 +1302,6 @@ X-Auth-Token: {tokenId}
 
 <a id="stop-instance"></a>
 ### 인스턴스 중지 { #stop-instance }
-
 인스턴스를 중지하고 상태를 **SHUTOFF**로 변경합니다. 이 API를 호출하려면 인스턴스의 상태가 **ACTIVE** 또는 **ERROR**여야 합니다.
 
 ```
@@ -1377,7 +1338,6 @@ X-Auth-Token: {tokenId}
 
 <a id="additional-instance-features-1"></a>
 ### 인스턴스 종료 { #additional-instance-features-1 }
-
 인스턴스를 종료하고 상태를 **SHELVED_OFFLOADED**로 변경합니다. 이 API를 호출하려면 인스턴스의 상태가 **ACTIVE**여야 합니다.
 
 ```
@@ -1414,7 +1374,6 @@ X-Auth-Token: {tokenId}
 
 <a id="additional-instance-features-2"></a>
 ### 인스턴스 재시작 { #additional-instance-features-2 }
-
 인스턴스를 재시작합니다. 재시작 방식은 **SOFT**와 **HARD**로 나눌 수 있습니다.
 
 * **SOFT** 방식: **"우아한 연결 중지(Graceful shutdown)"**를 통해 인스턴스를 중지하고 재시작합니다. 인스턴스가 **ACTIVE** 상태여야 합니다.
@@ -1464,7 +1423,6 @@ X-Auth-Token: {tokenId}
 
 <a id="additional-instance-features-3"></a>
 ### 인스턴스 타입 변경 { #additional-instance-features-3 }
-
 인스턴스 타입을 변경합니다. 인스턴스가 **ACTIVE**이거나 **SHUTOFF** 상태일 때만 인스턴스 타입 변경할 수 있습니다. 인스턴스의 상태가 **ACTIVE**인 경우에는 인스턴스 타입 변경 과정에서 인스턴스는 중지되고 다시 시작됩니다.
 
 사용하는 이미지나 인스턴스 타입에 따라 변경할 수 있는 타입이 제한될 수 있습니다. 자세한 변경 제약 사항은 콘솔 사용자 가이드를 참고합니다.
@@ -1507,7 +1465,6 @@ X-Auth-Token: {tokenId}
 
 <a id="additional-instance-features-4"></a>
 ### 인스턴스 이미지 생성 { #additional-instance-features-4 }
-
 인스턴스로부터 이미지를 생성합니다. `U2` 타입의 인스턴스만 이 API를 통해 이미지를 생성할 수 있습니다. `U2` 타입 이외의 인스턴스 이미지 생성은 [블록 스토리지 API](/Storage/Block Storage/ko/public-api/#create-image-with-block-storage)를 참고합니다.
 
 인스턴스의 상태가 **ACTIVE**, **SHUTOFF**, **SUSPENDED**, **PAUSED**일 때만 이미지를 생성할 수 있습니다. 이미지 생성은 데이터 정합성을 보장하기 위해 인스턴스를 중지한 상태에서 진행하는 것을 권장합니다.
@@ -1531,7 +1488,7 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 | createImage | Body | Object | O | 이미지 생성 요청 |
 | createImage.name | Body | String | O | 생성할 이미지 이름 |
-| createImage.metadata | Body | Object | - | 생성할 이미지의 메타데이터<br>Key-Value 형태로 기술 |
+| createImage.metadata | Body | Object | - | 생성할 이미지의 메타데이터<br/>Key-Value 형태로 기술 |
 
 <details><summary>예시</summary>
 <p>
@@ -1553,7 +1510,6 @@ X-Auth-Token: {tokenId}
 
 <a id="additional-instance-features-4-response"></a>
 #### 응답
-
 이 API는 응답 본문을 반환하지 않습니다. 생성된 이미지는 응답 헤더의 `Location`으로 확인합니다.
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -1564,7 +1520,6 @@ X-Auth-Token: {tokenId}
 
 <a id="additional-instance-features-5"></a>
 ### 보안 그룹 추가 { #additional-instance-features-5 }
-
 인스턴스에 보안 그룹을 추가합니다. 추가한 보안 그룹은 인스턴스의 모든 포트에 적용됩니다.
 
 ```
@@ -1605,7 +1560,6 @@ X-Auth-Token: {tokenId}
 
 <a id="additional-instance-features-6"></a>
 ### 보안 그룹 삭제 { #additional-instance-features-6 }
-
 인스턴스에서 보안 그룹을 삭제합니다. 인스턴스의 모든 포트로부터 지정한 보안 그룹이 삭제됩니다.
 
 ```
@@ -1645,13 +1599,12 @@ X-Auth-Token: {tokenId}
 
 <a id="terminate-instance"></a>
 ## 인스턴스 메타데이터 { #terminate-instance }
-
 인스턴스 메타데이터 값에 따라 콘솔의 **Compute > Instance** 서비스 페이지에서 인스턴스 상세 정보 화면의 내용을 결정합니다. 인스턴스 메타데이터별 내용은 다음과 같습니다.
 
 | 인스턴스 메타데이터     | 내용                                           |
 |----------------|----------------------------------------------|
-| os_distro      | **기본 정보**의 **OS**의 이름<br>os_version과 조합하여 사용 |
-| os_version     | **기본 정보**의 **OS**의 버전<br>os_distro와 조합하여 사용  |
+| os_distro      | **기본 정보**의 **OS**의 이름<br/>os_version과 조합하여 사용 |
+| os_version     | **기본 정보**의 **OS**의 버전<br/>os_distro와 조합하여 사용  |
 | image_name     | **기본 정보**의 **이미지 이름**                        |
 | os_type      | **접속 정보** 형식                                 |
 | login_username | **접속 정보**의 사용자 이름                            |
@@ -1660,7 +1613,6 @@ X-Auth-Token: {tokenId}
 
 <a id="view-a-list-of-instance-metadata"></a>
 ### 인스턴스 메타데이터 목록 보기 { #view-a-list-of-instance-metadata }
-
 ```
 GET /v2/{tenantId}/servers/{serverId}/metadata
 X-Auth-Token: {tokenId}
@@ -1678,10 +1630,9 @@ X-Auth-Token: {tokenId}
 
 <a id="view-a-list-of-instance-metadata-response"></a>
 #### 응답
-
 | 이름       | 종류 | 형식 | 설명                                               |
 |----------|---|---|--------------------------------------------------|
-| metadata | Body | Object | 인스턴스에 생성 혹은 수정할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍 |
+| metadata | Body | Object | 인스턴스에 생성 혹은 수정할 메타데이터 객체<br/>최대 길이 255자 이하의 키-값 쌍 |
 
 <details><summary>예시</summary>
 <p>
@@ -1710,7 +1661,6 @@ X-Auth-Token: {tokenId}
 
 <a id="restart-instance"></a>
 ### 인스턴스 메타데이터 보기 { #restart-instance }
-
 ```
 GET /v2/{tenantId}/servers/{serverId}/metadata/{key}
 X-Auth-Token: {tokenId}
@@ -1729,10 +1679,9 @@ X-Auth-Token: {tokenId}
 
 <a id="restart-instance-response"></a>
 #### 응답
-
 | 이름   | 종류 | 형식 | 설명                                               |
 |------|---|---|--------------------------------------------------|
-| meta | Body | Object | 인스턴스에 생성 혹은 수정할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍 |
+| meta | Body | Object | 인스턴스에 생성 혹은 수정할 메타데이터 객체<br/>최대 길이 255자 이하의 키-값 쌍 |
 
 <details><summary>예시</summary>
 <p>
@@ -1750,7 +1699,6 @@ X-Auth-Token: {tokenId}
 
 <a id="change-instance-flavor"></a>
 ### 인스턴스 메타데이터 생성/수정하기 { #change-instance-flavor }
-
 인스턴스의 메타데이터를 생성하거나 수정합니다.
 요청하는 키가 기존 키와 일치하는 경우 키-값을 요청 값으로 변경합니다.
 
@@ -1767,7 +1715,7 @@ X-Auth-Token: {tokenId}
 | serverId | URL | UUID | O | 인스턴스 ID                                          |
 | key      | URL | String | O | 인스턴스에 생성 혹은 수정할 메타데이터의 키                         |
 | tokenId  | Header | String | O | 토큰 ID                                            |
-| meta     | Body | Object | O | 인스턴스에 생성 혹은 수정할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍 |
+| meta     | Body | Object | O | 인스턴스에 생성 혹은 수정할 메타데이터 객체<br/>최대 길이 255자 이하의 키-값 쌍 |
 
 <details>
 <summary>예시</summary>
@@ -1787,10 +1735,9 @@ X-Auth-Token: {tokenId}
 
 <a id="change-instance-flavor-response"></a>
 #### 응답
-
 | 이름   | 종류 | 형식 | 설명                                               |
 |------|---|---|--------------------------------------------------|
-| meta | Body | Object | 인스턴스에 생성 혹은 수정할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍 |
+| meta | Body | Object | 인스턴스에 생성 혹은 수정할 메타데이터 객체<br/>최대 길이 255자 이하의 키-값 쌍 |
 
 <details><summary>예시</summary>
 <p>
@@ -1809,7 +1756,6 @@ X-Auth-Token: {tokenId}
 
 <a id="create-instance-image"></a>
 ### 인스턴스 메타데이터 삭제하기 { #create-instance-image }
-
 요청하는 키와 일치하는 인스턴스의 메타데이터를 삭제합니다.
 
 ```
@@ -1835,10 +1781,8 @@ X-Auth-Token: {tokenId}
 
 <a id="placement-policy"></a>
 ## 배치 정책 { #placement-policy }
-
 <a id="add-security-group"></a>
 ### 배치 정책 생성하기 { #add-security-group }
-
 배치 정책을 생성합니다.
 분산 배치를 위한 `anti-affinity` 배치 정책 유형만 제공합니다.
 
@@ -1855,7 +1799,7 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 | server_group | Body | Object | O | 배치 정책 객체 |
 | server_group.name | Body | String | O | 배치 정책 이름 |
-| server_group.policies | Body | Array | O | 배치 정책 유형<br>`anti-affinity`만 설정 가능 |
+| server_group.policies | Body | Array | O | 배치 정책 유형<br/>`anti-affinity`만 설정 가능 |
 
 <details>
 <summary>예시</summary>
@@ -1877,7 +1821,6 @@ X-Auth-Token: {tokenId}
 
 <a id="add-security-group-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |-----|-----|-----|-----|
 | server_group | Body | Object | 배치 정책 객체 |
@@ -1885,7 +1828,7 @@ X-Auth-Token: {tokenId}
 | server_group.name | Body | String | 배치 정책 이름 |
 | server_group.policies | Body | Array | 배치 정책 유형 |
 | server_group.members | Body | Array | 배치 정책에 할당된 인스턴스 ID 목록 |
-| server_group.metadata | Body | Object | 배치 정책 메타데이터 객체<br>항상 빈 값으로 표시됨 |
+| server_group.metadata | Body | Object | 배치 정책 메타데이터 객체<br/>항상 빈 값으로 표시됨 |
 
 <details><summary>예시</summary>
 <p>
@@ -1909,7 +1852,6 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-security-group"></a>
 ### 배치 정책 목록 보기 { #delete-security-group }
-
 ```
 GET /v2/{tenantId}/os-server-groups
 X-Auth-Token: {tokenId}
@@ -1917,7 +1859,6 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-security-group-request"></a>
 #### 요청
-
 이 API는 요청 본문을 요구하지 않습니다.
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1927,7 +1868,6 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-security-group-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |-----|-----|-----|-----|
 | server_groups | Body | Array | 배치 정책 객체 목록 |
@@ -1935,7 +1875,7 @@ X-Auth-Token: {tokenId}
 | server_groups.name | Body | String | 배치 정책 이름 |
 | server_groups.policies | Body | Array | 배치 정책 유형 |
 | server_groups.members | Body | Array | 배치 정책에 할당된 인스턴스 ID 목록 |
-| server_groups.metadata | Body | Object | 배치 정책 메타데이터 객체<br>항상 빈 값으로 표시됨 |
+| server_groups.metadata | Body | Object | 배치 정책 메타데이터 객체<br/>항상 빈 값으로 표시됨 |
 
 <details><summary>예시</summary>
 <p>
@@ -1973,7 +1913,6 @@ X-Auth-Token: {tokenId}
 
 <a id="view-placement-policies"></a>
 ### 배치 정책 보기 { #view-placement-policies }
-
 ```
 GET /v2/{tenantId}/os-server-groups/{servergroupId}
 X-Auth-Token: {tokenId}
@@ -1981,7 +1920,6 @@ X-Auth-Token: {tokenId}
 
 <a id="view-placement-policies-request"></a>
 #### 요청
-
 이 API는 요청 본문을 요구하지 않습니다.
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1992,7 +1930,6 @@ X-Auth-Token: {tokenId}
 
 <a id="view-placement-policies-response"></a>
 #### 응답
-
 | 이름 | 종류 | 형식 | 설명 |
 |-----|-----|-----|-----|
 | server_group | Body | Object | 배치 정책 객체 |
@@ -2000,7 +1937,7 @@ X-Auth-Token: {tokenId}
 | server_group.name | Body | String | 배치 정책 이름 |
 | server_group.policies | Body | Array | 배치 정책 유형 |
 | server_group.members | Body | Array | 배치 정책에 할당된 인스턴스 ID 목록 |
-| server_group.metadata | Body | Object | 배치 정책 메타데이터 객체<br>항상 빈 값으로 표시됨 |
+| server_group.metadata | Body | Object | 배치 정책 메타데이터 객체<br/>항상 빈 값으로 표시됨 |
 
 <details><summary>예시</summary>
 <p>
@@ -2027,7 +1964,6 @@ X-Auth-Token: {tokenId}
 
 <a id="deleting-a-placement-policy"></a>
 ### 배치 정책 삭제하기 { #deleting-a-placement-policy }
-
 ```
 DELETE /v2/{tenantId}/os-server-groups/{servergroupId}
 X-Auth-Token: {tokenId}
@@ -2035,7 +1971,6 @@ X-Auth-Token: {tokenId}
 
 <a id="deleting-a-placement-policy-request"></a>
 #### 요청
-
 이 API는 요청 본문을 요구하지 않습니다.
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -2046,5 +1981,4 @@ X-Auth-Token: {tokenId}
 
 <a id="deleting-a-placement-policy-response"></a>
 #### 응답
-
 이 API는 응답 본문을 반환하지 않습니다.
