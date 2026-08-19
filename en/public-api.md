@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=b1a7b6e8f7ec -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
 
 Instance uses the IaaS token for authentication/authorization when making API calls. The IaaS token is the authentication token used by the NHN Cloud's OpenStack-based infrastructure service (IaaS). For more information on IaaS token issuance and usage, see [IaaS token](/nhncloud/en/public-api/iaas-token). (Body update test: This sentence should be reflected when the translation is re-executed.)
@@ -437,7 +436,6 @@ This API does not return a response body.
 <a id="instance"></a>
 ## Instance { #instance }
 <a id="instance-status"></a>
-
 ### Instance Status { #instance-status }
 Instances exist in various statuses, and each status defines its own set of permissible operations. See the following list of instance statuses.
 
@@ -470,7 +468,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-instances-request"></a>
-
 #### Request
 This API does not require a request body.
 
@@ -539,7 +536,6 @@ X-Auth-Token: {tokenId}
 The request format is the same as List Instances.
 
 <a id="list-instances-with-details-response"></a>
-
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|-----------|
@@ -697,7 +693,6 @@ This API does not require a request body.
 | tokenId | Header | String | O | Token ID |
 
 <a id="get-instance-response"></a>
-
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|---|
@@ -862,7 +857,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="create-instance-request"></a>
-
 #### Request
 | Name | Type | Format | Required | Description |
 |---|---|---|---|---|
@@ -1061,7 +1055,6 @@ This API does not require a request body.
 | offset | Query | Integer | - | Starting point of the list to return<br/>Return block storage starting from offset of the entire list |
 
 <a id="list-additional-block-storage-attached-to-the-instance-response"></a>
-
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|---|
@@ -1117,7 +1110,6 @@ This API does not require a request body.
 | tokenId | Header | String | O | Token ID |
 
 <a id="list-additional-block-storage-attached-to-the-instance-response-2"></a>
-
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|---|
@@ -1178,7 +1170,6 @@ X-Auth-Token: {tokenId}
 </details>
 
 <a id="attach-additional-block-storage-to-the-instance-response"></a>
-
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|---|
@@ -1642,7 +1633,6 @@ This API does not require a request body.
 | tokenId | Header | String | O | Token ID |
 
 <a id="view-a-list-of-instance-metadata-response"></a>
-
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|---|
@@ -1692,7 +1682,6 @@ This API does not require a request body.
 | tokenId | Header | String | O | Token ID |
 
 <a id="restart-instance-response"></a>
-
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|---|
@@ -1723,7 +1712,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="change-instance-flavor-request"></a>
-
 #### Request
 | Name | Type | Format | Required | Description |
 |---|---|---|---|---|
@@ -1750,7 +1738,6 @@ X-Auth-Token: {tokenId}
 
 
 <a id="change-instance-flavor-response"></a>
-
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|---|
