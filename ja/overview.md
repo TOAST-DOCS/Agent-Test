@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
-
 ## Compute > Instance > 概要 { #compute-instance-overview }
 
 インスタンスは、仮想 CPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールし、NHN Cloud が提供するさまざまなサービスを組み合わせて使用します。(本文修正テスト: この文は翻訳再実行時に反映される必要があります。)
