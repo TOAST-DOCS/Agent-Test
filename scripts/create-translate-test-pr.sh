@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]]; do
     --base-branch) BASE_BRANCH="$2"; shift 2 ;;   # 기본 alpha, e2e 세션 브랜치로 override
     --title)  TITLE="$2";  shift 2 ;;
     --body)   BODY="$2";   shift 2 ;;
-    --plan)   PLAN_NAME="$2"; shift 2 ;;   # round1(기본) | round2
+    --plan)   PLAN_NAME="$2"; shift 2 ;;   # round1|round2|row-drop-repro|table-suite|markup-churn
     --dry-run|-n) DRY_RUN=1; shift ;;
     -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
@@ -113,6 +113,65 @@ elif mutation == "edit_body":
         j += 1
     if not done:
         raise SystemExit(f"edit_body: no prose paragraph found in {path}")
+    out = join(lines)
+
+elif mutation == "markup_fence_info":
+    # 코스메틱 마크업 churn ①: 여는 코드펜스에 info string 부여 (``` -> ```bash).
+    # 펜스 한 줄이 바뀌면 block granularity 에서 그 유닛 전체가 "변경됨" 이 되어
+    # 번역 부하가 부풀지만, 실제로 번역할 내용은 없다.
+    out_lines, opened, n = [], False, 0
+    for l in lines:
+        s = l.rstrip("\r")
+        if re.match(r'^\s*(```|~~~)', s):
+            if not opened:
+                opened = True
+                if re.match(r'^\s*```\s*$', s):
+                    s = s.rstrip() + "bash"
+                    n += 1
+            else:
+                opened = False
+        out_lines.append(s)
+    if not n:
+        raise SystemExit(f"markup_fence_info: no bare opening fence in {path}")
+    out = join(out_lines)
+
+elif mutation == "markup_br_slash":
+    # 코스메틱 마크업 churn ②: <br> -> <br/> 전면 치환. 표 행 안에 들어있어서
+    # 한 글자 차이로 긴 행 전체가 재번역 대상이 된다 (실측 기여도 1위).
+    if "<br>" not in text:
+        raise SystemExit(f"markup_br_slash: no <br> in {path}")
+    out = text.replace("<br>", "<br/>")
+
+elif mutation == "markup_heading_blank":
+    # 코스메틱 마크업 churn ③: 헤딩 바로 뒤 빈 줄을 토글. block granularity 에서
+    # 헤딩+본문 한 유닛이 두 유닛으로 쪼개지거나 합쳐져 유닛 정렬이 통째로
+    # 어긋난다. 방향은 문서 상태에 맞춰 정한다 — 빈 줄이 이미 있으면 제거,
+    # 없으면 삽입. (코드 펜스 안의 '#' 줄은 헤딩이 아니므로 제외.)
+    def _heads(ls):
+        out, fence = [], False
+        for i, l in enumerate(ls):
+            if re.match(r'^\s*(```|~~~)', l.rstrip("\r")):
+                fence = not fence
+                continue
+            if not fence and re.match(r'^#{1,6} \S', l.rstrip("\r")):
+                out.append(i)
+        return out
+    heads = _heads(lines)
+    if not heads:
+        raise SystemExit(f"markup_heading_blank: no heading outside fences in {path}")
+    with_blank = [i for i in heads if i + 1 < len(lines) and not lines[i + 1].strip()]
+    n = 0
+    if with_blank:                       # 제거 방향
+        for i in sorted(with_blank, reverse=True):
+            del lines[i + 1]
+            n += 1
+    else:                                # 삽입 방향
+        for i in sorted(heads, reverse=True):
+            if i + 1 < len(lines) and lines[i + 1].strip():
+                lines.insert(i + 1, "")
+                n += 1
+    if not n:
+        raise SystemExit(f"markup_heading_blank: nothing to toggle in {path}")
     out = join(lines)
 
 elif mutation == "rename_heading":
@@ -745,12 +804,59 @@ declare -a PLAN_TABLE_SUITE=(
   "add_new_table|ko/kernel-guide.md"
   "noop|ko/troubleshooting-guide.md"
 )
+# --plan markup-churn : 코스메틱 마크업 churn + 소수의 실제 내용 변경.
+#   Storage-Object-Storage#181 재현 — ko "가이드 리뷰 반영" PR 이 문서 전반에
+#   ``` -> ```bash (41곳), <br/> <-> <br> (64곳), 헤딩 뒤 빈 줄 (28곳) 을 뿌리면서
+#   실제 내용 변경은 20여 줄뿐이었다. block granularity 에서 이 한 글자들이 각
+#   유닛을 통째로 "변경됨" 으로 만들어 번역 부하가 폭증하는 반면 문자 단위 ko diff
+#   는 거의 안 움직이므로, load guard 가 정상 리뷰 PR 을 runaway 로 오판해 파일을
+#   제외한다 (#185 는 8개 파일x언어 전부 제외, 최대 97x). 제외된 파일은 취약한
+#   LLM 패치 폴백으로 넘어갔고 ja/cli-guide.md 는 번역이 통째로 누락됐다.
+#
+#   기대값 — cloud-translate 의 코스메틱 마크업 미러링
+#   (TRANSLATE_DIFF_COSMETIC_MARKUP, 기본 on) 배포 전/후:
+#     * 배포 전 = 번역 로그에 "load guard: ... skipped" + 번역 PR 본문에 제외 섹션
+#       (FAIL / 재현)
+#     * 배포 후 = "Cosmetic markup mirrored (br, fence, heading_blank)" 로그,
+#       load guard 미발동, en/ja 에 마크업이 그대로 미러링되고 실제 내용 변경만
+#       번역됨 (PASS)
+#   실측(#181 ko/cli-guide.md, ja): load 2992자 -> 1012자, ratio 5.3x -> 1.8x.
+#
+#   파일별 기대값 (measure probe 실측, en/ja 동일):
+#
+#   component-guide.md: 세 규칙 모두 + 내용 변경 1건. 펜스 105 + <br> 9 + 헤딩 91.
+#                       load 16304자(47.5x) -> 222자(0.6x). 222자 = 실제로 수정된
+#                       문단 하나 — 마크업이 부하에서 완전히 빠진다.
+#   public-api.md     : M2(<br> 98개, 표 행 안) + M3 + 내용 변경 1건.
+#                       load 972자(4.8x) -> 301자(1.5x).
+#   overview.md       : **잔여 케이스 (미러링 후에도 SKIP 유지가 정상)**.
+#                       작은 문서 + 작은 내용 변경이라 ko diff 49자 대비 유닛
+#                       하나가 966자 — 마크업을 다 걷어내도 19.7x 로 cap 초과.
+#                       이건 마크업 문제가 아니라 "문자 단위 diff vs 유닛 단위
+#                       부하" 라는 지표 자체의 단위 불일치이며, 가드가 스킵 대신
+#                       full 재번역으로 라우팅하도록 고치는 별도 작업(C2a) 의
+#                       대상이다. 그 작업 전까지는 이 파일이 제외되는 게 기대값.
+#   troubleshooting   : 대조군 (변경 없음 — en/ja 무변경이어야 정상)
+declare -a PLAN_MARKUP_CHURN=(
+  "markup_fence_info|ko/component-guide.md"
+  "markup_br_slash|ko/component-guide.md"
+  "markup_heading_blank|ko/component-guide.md"
+  "edit_body|ko/component-guide.md"
+  "markup_br_slash|ko/public-api.md"
+  "markup_heading_blank|ko/public-api.md"
+  "edit_body|ko/public-api.md"
+  "markup_fence_info|ko/overview.md"
+  "markup_br_slash|ko/overview.md"
+  "edit_body|ko/overview.md"
+  "noop|ko/troubleshooting-guide.md"
+)
 case "$PLAN_NAME" in
   round1) PLAN=("${PLAN_ROUND1[@]}") ;;
   round2) PLAN=("${PLAN_ROUND2[@]}") ;;
   row-drop-repro) PLAN=("${PLAN_ROW_DROP_REPRO[@]}") ;;
   table-suite) PLAN=("${PLAN_TABLE_SUITE[@]}") ;;
-  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro|table-suite)" >&2; exit 1 ;;
+  markup-churn) PLAN=("${PLAN_MARKUP_CHURN[@]}") ;;
+  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro|table-suite|markup-churn)" >&2; exit 1 ;;
 esac
 
 if [[ -z "$BRANCH" ]]; then
