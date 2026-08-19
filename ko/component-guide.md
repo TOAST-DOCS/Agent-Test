@@ -4,7 +4,7 @@
 ## Compute > Instance > 설치 구성 요소 가이드 { #compute-instance-installation-component-guide }
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
-NAT 인스턴스는 프라이빗 네트워크 인스턴스에서 특정 IP 주소 대역에 대해 인터넷에 액세스할 수 있게 하는 인스턴스입니다. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
+NAT 인스턴스는 프라이빗 네트워크 인스턴스에서 특정 IP 주소 대역으로 인터넷에 액세스할 수 있게 하는 인스턴스입니다. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
 한국(판교), 한국(평촌) 리전에서만 제공하는 기능입니다.
 
 <a id="key-features"></a>
