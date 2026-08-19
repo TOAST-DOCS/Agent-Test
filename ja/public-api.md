@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=8e6d00d3460b -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
 インスタンスは、API 呼び出し時の認証/認可に IaaS トークンを使用します。IaaS トークンは、NHN Cloud の OpenStack ベースのインフラストラクチャサービス (IaaS) で使用される認証トークンです。IaaS トークンの発行および使用の詳細については、「[IaaS トークン](/nhncloud/ja/public-api/iaas-token)」を参照してください。
@@ -1065,6 +1064,7 @@ X-Auth-Token: {tokenId}
 
 ---
 
+<a id="test-added-endpoint"></a>
 ### テスト用新規エンドポイント { #test-added-endpoint }
 
 ```
@@ -1073,7 +1073,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="test-added-request"></a>
-
 #### リクエスト { #test-added-request }
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1083,7 +1082,6 @@ X-Auth-Token: {tokenId}
 | name | Body | String | O | エンドポイント名 |
 
 <a id="test-added-response"></a>
-
 #### 応答 { #test-added-response }
 
 | 名前 | 種類 | 形式 | 説明 |
