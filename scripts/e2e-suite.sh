@@ -55,7 +55,12 @@
 #                 exit code 만으로는 판별되지 않는다 — 미러링이 없어도 일부
 #                 파일은 floor 아래라 통과해 PR 이 만들어지기 때문. 그래서 이
 #                 러너가 로그에서 mirrored=/guard-skips= 를 세어 verdict 에 붙이고,
-#                 guard-skips 가 0 이 아니면 suite 실패로 잡는다.
+#                 guard-skips 가 0 이 아니면 suite 실패로 잡는다. 단 그 두
+#                 카운터는 --translate local 에서만 의미가 있다 (api 모드는
+#                 번역 로그가 Jenkins 쪽) — api 모드의 실제 증거는 번역 PR
+#                 본문의 "제외된 파일" 섹션이라 pr-excl= 로 따로 센다.
+#                 구조적으로는 checker 규칙 (7) 이 "ko 에 맨몸 <br> 이 0 인데
+#                 en/ja 에 남아있으면 FAIL" 로 미러링 미동작을 직접 잡는다.
 #                 기본 plan 집합에 포함된다.
 #   retranslate — public-api.md 전체 재번역 변형 (e2e-retranslate-align-and-
 #                 translate.sh). dashboard /api/translate/file (DIFF_MODE=full)
@@ -119,7 +124,7 @@ while [[ $# -gt 0 ]]; do
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
       # `scripts/e2e-suite.sh all round2` 처럼 뒤에 명시적으로 이어붙인다.
       PLANS+=(webhook korean-review round1 table-suite row-drop-repro markup-churn retranslate concurrent); shift ;;
-    -h|--help) sed -n '3,94p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,99p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
 done
@@ -205,7 +210,15 @@ for plan in "${PLANS[@]}"; do
       # 없어도 정렬은 OK 로 나온다. 로그에서 직접 센다.
       mc_mirrored="$(grep -c 'Cosmetic markup mirrored' "$log" 2>/dev/null || true)"
       mc_guard="$(grep -c 'load guard: .*skipped —' "$log" 2>/dev/null || true)"
-      verdict="${verdict:-<no-verdict>} mirrored=${mc_mirrored:-0} guard-skips=${mc_guard:-0}"
+      # --translate api (jenkins) 모드에서는 번역 로그가 Jenkins 쪽에만 있어서
+      # 위 두 카운터가 항상 0 이 된다 — 즉 "guard-skips=0" 이 공허하게 통과한다
+      # (2026-08-19 실측). 그 모드의 실제 증거는 번역 PR 본문의 제외 섹션이다.
+      mc_excl=0
+      if [[ -n "$trans_pr" && "$trans_pr" != "<no-pr>" ]]; then
+        mc_excl="$(gh pr view "$trans_pr" --json body --jq .body 2>/dev/null \
+          | grep -cE '^### (번역 부하 가드로|구조 불일치로) 제외된' || true)"
+      fi
+      verdict="${verdict:-<no-verdict>} mirrored=${mc_mirrored:-0} guard-skips=${mc_guard:-0} pr-excl=${mc_excl:-0}"
     fi
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
   fi
@@ -221,7 +234,8 @@ for plan in "${PLANS[@]}"; do
   # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
   # 마크업 미러링이 동작하지 않은 것이므로 suite 실패로 잡는다.
   if [[ "$plan" == "markup-churn" ]]; then
-    if (( ec != 0 )) || [[ "$verdict" != *"guard-skips=0"* ]]; then overall=1; fi
+    if (( ec != 0 )) || [[ "$verdict" != *"guard-skips=0"* ]] \
+       || [[ "$verdict" != *"pr-excl=0"* ]]; then overall=1; fi
   fi
 done
 
@@ -229,7 +243,7 @@ echo
 echo "===== e2e suite 요약 ($outdir) ====="
 for r in "${RESULTS[@]}"; do echo "  $r"; done
 echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포함이면 exit 3 이 정상)"
-echo "  (markup-churn: exit 0 + guard-skips=0 이 PASS. guard-skips>0 이면 마크업 미러링 미동작)"
+echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
 [[ -n "$ALIGNED_BRANCH" ]] && echo "  (align 스냅샷: $ALIGNED_BRANCH — 재현/디버그용, 정리는 수동)"
 exit $overall
