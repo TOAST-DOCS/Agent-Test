@@ -5,7 +5,6 @@
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
 <a id="nat-instance"></a>
-
 ## NAT Instance { #nat-instance }
 NAT instance is an instance that allows you to access internet over a specific IP address band in the private network instance. (Body text modification test: This sentence should be reflected when translation is re-run.)
 This feature is available only in the Korea (Pangyo) and Korea (Pyeongchon) regions.
