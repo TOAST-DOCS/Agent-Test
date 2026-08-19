@@ -1,17 +1,16 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
-
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
-
-NAT instance is an instance that allows you to access internet over a specific IP address band in the private network instance.
+NAT instance is an instance that allows you to access internet over a specific IP address band in the private network instance. (Body text modification test: This sentence should be reflected when translation is re-run.)
 This feature is available only in the Korea (Pangyo) and Korea (Pyeongchon) regions.
 
 <a id="key-features"></a>
 ### Key Features { #key-features }
-
 * The instance of a private network not connect with an internet gateway can access the internet via the NAT instance.
 * Accesses the Internet by changing the floating IP of the NAT instance to source IP.
 * The packets delivered to the NAT instance are delivered according to the routing setting of the routing table connected to the subnet of NAT instance.
@@ -62,7 +61,6 @@ Specifies the NAT instance as a route gateway. The packets delivered to the NAT 
 
 <a id="ms-sql-instance"></a>
 ## MS-SQL Instance { #ms-sql-instance }
-
 <a id="allow-security-group-tcp-port-3389-rdp"></a>
 ### Allow Security Group TCP Port 3389 (RDP) { #allow-security-group-tcp-port-3389-rdp }
 After instance is created, access the instance by using Remote Desktop Protocol (RDP).
@@ -75,10 +73,8 @@ Click **Associate** and download .rdp file, to access the instance by using the 
 
 <a id="initial-settings-after-microsoft-sql-image-is-created"></a>
 ### Initial Settings after Microsoft SQL Image is Created { #initial-settings-after-microsoft-sql-image-is-created }
-
 <a id="initial-settings-after-microsoft-sql-image-is-created-set-sql-certification-mode"></a>
 #### 1. Set SQL Certification Mode
-
 The default certification mode of the server is set with "Windows Certification Mode".
 To use Microsoft SQL database account, the mode must be changed to SQL Certification Mode.
 
@@ -95,7 +91,6 @@ Execute Microsoft SQL Server Management Studio and associate to an object under 
 
 <a id="initial-settings-after-microsoft-sql-image-is-created-change-microsoft-sql-service-port"></a>
 #### 2. Change Microsoft SQL Service Port
-
 The default port 1433 for Microsoft SQL is widely known and might serve as a security vulnerability.
 A change is recommended to another port.
 ※ For Express, no default port is specified.
@@ -114,13 +109,11 @@ Execute SQL Server configuration manager as below.
 
 <a id="initial-settings-after-microsoft-sql-image-is-created-allow-external-access-to-microsoft-sql-database"></a>
 #### 3. Allow External Access to Microsoft SQL Database
-
 To allow external access to Microsoft SQL Database, go to the **Security Group** tab of **Network > VPC** and add Microsoft SQL service port for security rules.
 Also, register Microsoft SQL service port (default port: 1433) to allow access, as well as remote IP.
 
 <a id="data-volume-assignment"></a>
 ### Data Volume Assignment { #data-volume-assignment }
-
 Microsoft SQL data/log files (MDF/LDF) and backup files are recommended to be applied with separate block storages.
 
 ![mssqlinstance_05_201812](https://static.toastoven.net/prod_ms_sql/mssqlinstance_05_201812_en.png)
@@ -184,11 +177,9 @@ When the service start mode for **SQL SERVER (MSSSQLSERVER) and SQL Server Agent
 
 <a id="mysql-instance"></a>
 ## MySQL Instance { #mysql-instance }
-
 <a id="startingstopping-mysql"></a>
 ### Starting/Stopping MySQL { #startingstopping-mysql }
-
-```
+```bash
 #Start mysql Service
 shell> service mysqld start
 
@@ -201,21 +192,18 @@ shell> service mysqld restart
 
 <a id="connecting-to-mysql"></a>
 ### Connecting to MySQL { #connecting-to-mysql }
-
 For initial connection, connect to MySQL with default user name.
 
-```
+```bash
 shell> mysql -uroot
 ```
 
 <a id="initial-settings-for-mysql-instance"></a>
 ### Initial Settings for MySQL Instance { #initial-settings-for-mysql-instance }
-
 <a id="initial-settings-for-mysql-instance-1-set-the-password"></a>
 #### 1\. Set the Password
-
 There's no password on root user on initial installation. Therefore, it is required to set password as soon as possible. You can change the password as follows.
-```
+```bash
 mysql> ALTER USER USER() IDENTIFIED BY 'NEW PASSWORD';
 ```
 
@@ -226,10 +214,9 @@ Default MySQL validate\_password\_policy is as below:
 
 <a id="initial-settings-for-mysql-instance-2-change-the-port"></a>
 #### 2\. Change the Port
-
 The default MySQL port number is 3306. It is recommended to change the port number for security reasons.
 
-```
+```bash
 shell> vi /etc/my.cnf
 
 # Specify a port to use in the my.cnf file.
@@ -249,14 +236,13 @@ shell> mysql -uroot -P[changed port number]
 
 <a id="description-of-mycnf"></a>
 ### Description of my.cnf { #description-of-mycnf }
-
 The default path of my.cnf is `/etc/my.cnf`, and NHN Cloud recommended variables are set as below:
 
 | Name | Description |
 | --- | --- |
 | default\_storage\_engine | Specify a default storage engine: Default is InnoDB with Online-DDL and transactions available. |
 | expire\_logs\_days | Set log expiration period for logs provided by binlog settings. Default is three days. |
-| innodb\_log\_file\_size | Specify the size of log files which save redo logs of transactions. <br>Recommended size is 256MB or higher in actual environment, and it is set as 512MB by default. In order for the changes to take effect, please restart the database. |
+| innodb\_log\_file\_size | Specify the size of log files which save redo logs of transactions. <br/>Recommended size is 256MB or higher in actual environment, and it is set as 512MB by default. In order for the changes to take effect, please restart the database. |
 | innodb\_file\_per\_table | When a table is deleted or truncated, the table space is immediately returned to the OS. |
 | innodb\_log\_files\_in\_group | Set the number of innodb\_log\_file files and use them in circular fashion: requires at least two. |
 | log_timestamps | Default log time of MySQL 5.7 is displayed in UTC time format; therefore, change log time to system local time. |
@@ -265,7 +251,6 @@ The default path of my.cnf is `/etc/my.cnf`, and NHN Cloud recommended variables
 
 <a id="description-of-mysql-directory"></a>
 ### Description of MySQL Directory { #description-of-mysql-directory }
-
 Directory and file description of MySQL are as below:
 
 | Name | Description |
@@ -279,11 +264,9 @@ Directory and file description of MySQL are as below:
 
 <a id="postgresql-instance"></a>
 ## PostgreSQL Instance { #postgresql-instance }
-
 <a id="how-to-startstop-postgresql"></a>
 ### How to start/stop PostgreSQL { #how-to-startstop-postgresql }
-
-```
+```bash
 ##Ubuntu
 # Start postgresql service 
 shell> sudo systemctl start postgresql
@@ -295,10 +278,9 @@ shell> sudo systemctl restart postgresql
 
 <a id="log-in-to-postgresql"></a>
 ### Log in to PostgreSQL { #log-in-to-postgresql }
-
 For initial connection, connect to MySQL with default user name.
-<br>
-```
+<br/>
+```bash
 #Switch account to postgres and log in
 shell> sudo su - postgres
 shell> psql
@@ -306,13 +288,11 @@ shell> psql
 
 <a id="create-postgresql-instance-and-perform-initial-setup"></a>
 ### Create PostgreSQL instance and perform initial setup { #create-postgresql-instance-and-perform-initial-setup }
-
 <a id="create-postgresql-instance-and-perform-initial-setup-1-change-the-port"></a>
 #### 1\. Change the Port
-
 The image port provided is 5432, the default PostgreSQL port. Port change is recommended for security purposes.
-<br>
-```
+<br/>
+```bash
 shell> vi postgresql.conf
 
 #Specify the port to be used in the postgresql.conf file.
@@ -333,10 +313,9 @@ shell> psql -p[changed port number]
 
 <a id="create-postgresql-instance-and-perform-initial-setup-2-change-server-log-timezone"></a>
 #### 2\. Change server log timezone
-
 The default timezone recorded in the server log is set to UTC. It is recommended to change it to match the local time of the SYSTEM.
-<br>
-```
+<br/>
+```bash
 shell> vi postgresql.conf
 
 #Specify the timezone to be used in the postgresql.conf file.
@@ -361,10 +340,9 @@ postgres=# SHOW log_timezone;
 
 <a id="create-postgresql-instance-and-perform-initial-setup-3-cancel-public-schema-permission"></a>
 #### 3\. Cancel public schema permission
-
 Since all users are provided with CREATE and USAGE permissions for public schema by default, users who can log in to the DB can create objects in public schema. It is recommended to cancel the permissions so that no users can create objects in public schema.
-<br>
-```
+<br/>
+```bash
 #Log in to postgresql
 
 shell> psql
@@ -376,10 +354,9 @@ postgres=# REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 
 <a id="create-postgresql-instance-and-perform-initial-setup-4-allow-remote-login"></a>
 #### 4\. Allow remote login
-
 To allow logins other than local host, you need to change the listen_addresses variable and client authentication setup file.
-<br>
-```
+<br/>
+```bash
 shell> vi postgresql.conf
 
 #Specify the address to be used in the postgresql.conf file.
@@ -412,7 +389,6 @@ shell> pg_ctl reload -D /var/lib/postgresql/${version}/main
 
 <a id="postgresql-directory-description"></a>
 ### PostgreSQL directory description { #postgresql-directory-description }
-
 PostgreSQL directory and file description is as follows:
 
 | Name | Description | Ubuntu |
@@ -423,12 +399,10 @@ PostgreSQL directory and file description is as follows:
 
 <a id="cubrid-instance"></a>
 ## CUBRID Instance { #cubrid-instance }
-
 <a id="how-to-startstop-the-cubrid-service"></a>
 ### How to Start/Stop the CUBRID service { #how-to-startstop-the-cubrid-service }
-
 You can start or stop the CUBRID service as follows by logging in with the `cubrid` Linux account.
-```
+```bash
 # Start the CUBRID service/server
 shell> sudo su - cubrid
 shell> cubrid service start
@@ -453,34 +427,29 @@ shell> cubrid broker restart
 
 <a id="connect-to-cubrid"></a>
 ### Connect to CUBRID { #connect-to-cubrid }
-
 For initial connection, connect to MySQL with default user name.
-```
+```bash
 shell> sudo su - cubrid
 shell> csql -u dba demodb@localhost
 ```
 
 <a id="initial-setup-after-creating-a-cubrid-instance"></a>
 ### Initial Setup After Creating a CUBRID Instance { #initial-setup-after-creating-a-cubrid-instance }
-
 <a id="initial-setup-after-creating-a-cubrid-instance-1-set-the-password"></a>
 #### 1\. Set the Password
-
 After initial installation, the CUBRID dba account password is not set. Therefore, you must set a password after installation.
-```
+```bash
 shell> csql -u dba -c "ALTER USER dba PASSWORD 'new_password'" demodb@localhost
 ```
 
 <a id="initial-setup-after-creating-a-cubrid-instance-2-change-the-broker-port"></a>
 #### 2\. Change the Broker Port
-
 The broker port for `query_editor` defaults to `30000`, and the broker port for `broker1` defaults to `33000`.
 For security reasons, it is recommended to change the port.
 
 ###### 1) Modify the broker file
-
 Open the following file and enter the port address to change as shown below.
-```
+```bash
 shell> vi /opt/cubrid/conf/cubrid_broker.conf
 
 [%query_editor]
@@ -491,38 +460,33 @@ BROKER_PORT             =[port address to change]
 ```
 
 ###### 2) Restart the broker
-
 Restart the broker for the port change to take effect.
-```
+```bash
 shell> cubrid broker restart
 ```
 
 <a id="initial-setup-after-creating-a-cubrid-instance-3-change-the-manager-server-port"></a>
 #### 3\. Change the Manager Server Port
-
 The manager server port defaults to `8001`.
 For security reasons, it is recommended to change the port.
 
 ###### 1)  Modify the cm.conf file
-
 Open the following file and enter the port address to change as shown below.
-```
+```bash
 shell> vi /opt/cubrid/conf/cm.conf
 
 cm_port =[port address to change]
 ```
 
 ###### 2) Restart the manager server
-
 Restart the manager for the port change to take effect.
-```
+```bash
 shell> cubrid manager stop
 shell> cubrid manager start
 ```
 
 <a id="cubrid-directory-description"></a>
 ### CUBRID Directory Description { #cubrid-directory-description }
-
 The CUBRID directory and file descriptions are as follows.
 
 | Name | Description |
@@ -536,19 +500,17 @@ The CUBRID directory and file descriptions are as follows.
 
 <a id="cubrid-directory-description-cubridconf-description"></a>
 #### cubrid.conf Description
-
 A server configuration file that allows you to configure the memory of the database you want to operate, the number of threads according to the number of concurrent users, and the communication port between the broker and the server.
 
 | Name | Description |
 | --- | --- |
-| service  | A parameter to register processes that start automatically when the CUBRID service starts.<br>By default, server, broker, and manager processes are registered. |
+| service  | A parameter to register processes that start automatically when the CUBRID service starts.<br/>By default, server, broker, and manager processes are registered. |
 | cubrid\_port\_id | The port used by the master process. |
 | max\_clients | The maximum number of concurrently connected clients per database server process. |
-| data\_buffer\_size | A parameter to set the size of the data buffer that the database server caches in memory.<br>It is recommended to set the required memory size to a value within 2/3 of the system memory. |
+| data\_buffer\_size | A parameter to set the size of the data buffer that the database server caches in memory.<br/>It is recommended to set the required memory size to a value within 2/3 of the system memory. |
 
 <a id="cubrid-directory-description-brokerconf-description"></a>
 #### broker.conf Description
-
 A broker configuration file that allows you to set the port used by the broker you want to operate, the number of application servers (CAS), SQL LOG, etc.
 
 | Name | Description |
@@ -561,7 +523,6 @@ A broker configuration file that allows you to set the port used by the broker y
 
 <a id="cubrid-directory-description-cmconf-description"></a>
 #### cm.conf Description
-
 A CUBRID manager configuration file that allows you to set the port used by the manager server process you want to operate, the monitoring collection cycle, etc.
 
 | Name | Description |
@@ -573,10 +534,8 @@ A CUBRID manager configuration file that allows you to set the port used by the 
 
 <a id="mariadb-instance"></a>
 ## MariaDB Instance { #mariadb-instance }
-
 <a id="how-to-startstop-mariadb"></a>
 ### How to Start/Stop MariaDB { #how-to-startstop-mariadb }
-
 ``` sh
 # Start the MariaDB service
 shell> sudo systemctl start mariadb.service
@@ -590,7 +549,6 @@ shell> sudo systemctl restart mariadb.service
 
 <a id="connect-to-mariadb"></a>
 ### Connect to MariaDB { #connect-to-mariadb }
-
 For initial connection, connect to MySQL with default user name.
 
 ``` sh
@@ -606,13 +564,11 @@ Enter password:
 
 <a id="initial-setup-after-creating-a-mariadb-instance"></a>
 ### Initial Setup After Creating a MariaDB Instance { #initial-setup-after-creating-a-mariadb-instance }
-
 <a id="initial-setup-after-creating-a-mariadb-instance-1-set-the-password"></a>
 #### 1\. Set the Password
-
 After initial installation, the MariaDB root account password is not set. Therefore, you must set a password after installation.
 
-```
+```bash
 SET PASSWORD [FOR user] = password_option
 
 MariaDB> SET PASSWORD = PASSWORD('password');
@@ -620,37 +576,32 @@ MariaDB> SET PASSWORD = PASSWORD('password');
 
 <a id="initial-setup-after-creating-a-mariadb-instance-2-change-the-port"></a>
 #### 2\. Change the Port
-
 After initial installation, the port is 3306, which is MariaDB's default port. For security reasons, it is recommended to change the port.
 
 ##### 1) Modify the `/etc/my.cnf.d/server.cnf` file
-
 Open the `/etc/my.cnf.d/server.cnf` file and enter the port address to change under [mariadb] as follows.
 
-```
+```bash
 shell> sudo vi /etc/my.cnf.d/server.cnf
 ```
 
-```
+```bash
 [mariadb]
 port=[port address to change]
 ```
 
 ##### 2) Restart the instance
 Restart the instance for the port change to take effect.
-```
+```bash
 sudo systemctl restart mariadb.service
 ```
 
 <a id="tibero-instance"></a>
 ## Tibero Instance { #tibero-instance }
-
 <a id="create-a-tibero-instance"></a>
 ### Create a Tibero Instance { #create-a-tibero-instance }
-
 <a id="create-a-tibero-instance-minimum-recommended-specifications"></a>
 #### Minimum Recommended Specifications
-
 - Root block storage 
     - SSD is recommended for speed, and we recommend setting it to at least 50 GBto avoid root disk full.
 
@@ -659,13 +610,11 @@ sudo systemctl restart mariadb.service
 
 <a id="create-a-tibero-instance-additional-block-storage"></a>
 #### Additional Block Storage
-
 - Create additional volumes other than the root volume.
     - Tibero Machine Image (TMI) requires 150GB of additional volume, so you must set up at least 150 GB of additional block storage.
 
 <a id="connect-to-instance"></a>
 ### Connect to Instance { #connect-to-instance }
-
 - After the instance creation is complete, use SSH to access the instance.
 - The instance must have a floating IP associated and TCP port 22 (SSH) must be allowed in the security group.
 - Connect to the instance using an SSH client and the set key pair.
@@ -673,9 +622,8 @@ sudo systemctl restart mariadb.service
 
 <a id="install-tmi"></a>
 ### Install TMI { #install-tmi }
-
 Run the dbca command in the /root path with the root account.
-```
+```bash
 $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 ```
 
@@ -688,7 +636,7 @@ $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 | 5 | DB\_PORT | Service IP port used by Tibero |
 
 ##### Tibero 7 Installation
-```
+```bash
 [rocky@tiberoinstance ~]$ sudo su - root
 [root@tiberoinstance ~]# pwd
 /root
@@ -697,11 +645,10 @@ $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 
 <a id="install-tmi-complete-installation"></a>
 #### Complete Installation
-
 When the dbca command is run, the progress is output and the database is created in the nomount mode. It takes less than 10 minutes. 
 When finished, the output is as below.
 
-```
+```bash
 SQL>
 System altered.
 
@@ -714,10 +661,9 @@ SQL> Disconnected.
 
 <a id="install-tmi-check-the-operation-and-the-installation-log"></a>
 #### Check the Operation and the Installation Log
-
 Check if Tibero is running.
 
-```
+```bash
 [root@tiberoinstance ~]# ps -ef |grep tbsvr
 nhncloud  9886     1  1 14:14 ?        00:00:00 tbsvr          -t NORMAL -SVR_SID tiberotestdb
 nhncloud  9888  9886  0 14:15 ?        00:00:00 tbsvr_MGWP     -t NORMAL -SVR_SID tiberotestdb
@@ -746,7 +692,7 @@ root     13517  8366  0 14:15 pts/0    00:00:00 grep --color=auto tbsvr
 
 The installation log can be found in /root/.dbset.log.
 
-```
+```bash
 [root@tiberoinstance ~]# ls -alh
 Total 20K
 dr-xr-x---.  4 root root 104 Oct 17 14:15 .
@@ -761,13 +707,11 @@ drwx------ 2 root root 29 Oct 17 14:04 .ssh
 
 <a id="connect-to-tibero"></a>
 ### Connect to Tibero { #connect-to-tibero }
-
 <a id="connect-to-tibero-change-the-account"></a>
 #### Change the Account
-
 Log in with the OS\_ACCOUNT created with the dbca command.
 
-```
+```bash
 [root@tiberoinstance ~]# su - nhncloud
 마지막 로그인: 목  1월 13 11:34:43 KST 2022 일시 pts/0
 
@@ -785,8 +729,7 @@ Log in with the OS\_ACCOUNT created with the dbca command.
 
 <a id="connect-to-tibero-check-connection"></a>
 #### Check Connection
-
-```
+```bash
 [nhncloud@tiberoinstance ~]$ tbsql sys/tibero
 
 tbSQL 7
@@ -826,7 +769,6 @@ SQL>
 
 <a id="tibero-default-accounts"></a>
 ### Tibero Default Accounts { #tibero-default-accounts }
-
 The default accounts provided by Tibero are as follows.
 
 | Schema | Password | Description |
@@ -851,7 +793,7 @@ The default accounts provided by Tibero are as follows.
 
 <a id="start-and-stop-zookeeper-kafka-broker"></a>
 ### Start and Stop Zookeeper, Kafka broker { #start-and-stop-zookeeper-kafka-broker }
-```
+```bash
 # Start Zookeeper, Kafka broker (Zookeeper first)
 shell> sudo systemctl start zookeeper.service
 shell> sudo systemctl start kafka.service
@@ -875,13 +817,13 @@ shell> sudo systemctl restart kafka.service
 - For Kafka-related port communication between instances, set security group as follows.
 
 Set security group
-```
+```bash
 Direction: Inbound
 IP protocol: TCP
 Port: 22, 9092, 2181, 2888, 3888
 ```
 How to check Hostname and IP
-```
+```bash
 # Check Hostname
 shell> hostname
 
@@ -890,7 +832,7 @@ Console screen
 or shell> hostname -i
 ```
 Example of executing the cluster installation script (enter the hostname and IP checked above)
-```
+```bash
 shell> sh ~/.kafka_make_cluster.sh
 
 Enter Cluster Node Count: 3
@@ -935,14 +877,13 @@ ls: cannot access /tmp/zookeeper: No such file or directory
 
 <a id="initial-setup-after-creating-a-kafka-instance"></a>
 ### Initial Setup After Creating a Kafka Instance { #initial-setup-after-creating-a-kafka-instance }
-
 <a id="initial-setup-after-creating-a-kafka-instance-change-the-port"></a>
 #### Change the Port
 After initial installation, the ports are 9092, which is the Kafka default port, and 2181, which is the Zookeeper default port. It is recommended to change the port for security.
 
 ##### 1) Modify the ~/kafka/config/zookeeper.properties file
 Open the ~/kafka/config/zookeeper.properties file and enter the Zookeeper port to change in clientPort.
-```
+```bash
 shell> vi ~/kafka/config/zookeeper.properties
 
 clientPort=zookeeper port to change
@@ -952,11 +893,11 @@ clientPort=zookeeper port to change
 Open the ~/kafka/config/server.properties file and enter the Kafka port to change in listeners.
 
 How to check Instance IP
-```
+```bash
 Private IP on the console screen
 or shell> hostname -i
 ```
-```
+```bash
 shell> vi ~/kafka/config/server.properties
 
 # Uncomment
@@ -968,7 +909,7 @@ zookeeper.connect=Instance IP:zookeeper port to change
 ```
 
 ##### 3) Restart Zookeeper, Kafka broker
-```
+```bash
 shell> sudo systemctl stop kafka.service
 shell> sudo systemctl stop zookeeper.service
 
@@ -978,16 +919,15 @@ shell> sudo systemctl start kafka.service
 
 ##### 4) Check Zookeeper, Kafka Port Change
 Check if the changed port is in use.
-```
+```bash
 shell> netstat -ntl | grep [Kafka port]
 shell> netstat -ntl | grep [Zookeeper port]
 ```
 
 <a id="create-and-use-kafka-topic-and-data"></a>
 ### Create and Use Kafka Topic and Data { #create-and-use-kafka-topic-and-data }
-
 Create and query a topic
-```
+```bash
 # Instance IP = Private IP / Kafka default port = 9092
 # Create a topic
 shell> ~/kafka/bin/kafka-topics.sh --create --bootstrap-server [Instance IP]:[Kafka PORT] --topic kafka
@@ -1002,7 +942,7 @@ shell> ~/kafka/bin/kafka-topics.sh --describe --bootstrap-server [Instance IP]:[
 shell> ~/kafka/bin/kafka-topics.sh --delete --bootstrap-server [Instance IP]:[Kafka PORT] --topic kafka
 ```
 Create and use data
-```
+```bash
 # Start producer
 shell> ~/kafka/bin/kafka-console-producer.sh --broker-list  [Instance IP]:[Kafka PORT] --topic kafka
 
@@ -1012,10 +952,9 @@ shell> ~/kafka/bin/kafka-console-consumer.sh --bootstrap-server [Instance IP]:[K
 
 <a id="redis-instance"></a>
 ## Redis Instance { #redis-instance }
-
 <a id="startstop-redis"></a>
 ### Start/Stop Redis { #startstop-redis }
-```
+```bash
 # Start the MySQL service
 shell> sudo systemctl start mysqld
 
@@ -1029,7 +968,7 @@ shell> sudo systemctl restart mysqld
 <a id="connect-to-redis"></a>
 ### Connect to Redis { #connect-to-redis }
 Connect to a Redis instance by using the `redis-cli` command.
-```
+```bash
 shell> redis-cli
 ```
 
@@ -1050,7 +989,7 @@ Value for an IP used by Redis. To allow access to a Redis instance from outside 
 
 Port is 6379, a default value for Redis. It is recommended to change the port for security reasons. After changing the port, you can connect to Redis with the following command.
 
-```
+```bash
 shell> redis-cli -p <new port>
 ```
 
@@ -1070,7 +1009,7 @@ To use the script, the following settings are required.
 The instance running the installation script must have a key pair (PEM file) required to connect to other instances. The key pair can be copied as follows.
 
 - ubuntu
-```
+```bash
 local> scp -i <key pair>.pem <key pair>.pem ubuntu@<floating ip>:/home/ubuntu/
 ```
 
@@ -1089,12 +1028,12 @@ You must set a security group (**Network** > **Security Groups**) for communicat
 #### Sentinel Automatic Configuration
 You will need 3 Redis instances to configure Sentinel. After copying the key pair to the instance used as the master, run the script as follows.
 
-```
+```bash
 shell> sh .redis_make_sentinel.sh
 ```
 Enter the master name (= Master Name) to be used in the connection information and the private IP in turn. You can check the private IP of each instance with the `hostname -I` command.
 
-```
+```bash
 shell> sh .redis_make_sentinel.sh
 Enter Master's Name (ex> mymaster) : mymaster
 Enter Master's IP: 192.168.0.33
@@ -1103,7 +1042,7 @@ Enter Replica-2's IP: 192.168.0.97
 ```
 
 Enter the file name of the copied key pair.
-```
+```bash
 shell> Enter Pemkey's name: <key pair>.pem
 ```
 
@@ -1111,13 +1050,13 @@ shell> Enter Pemkey's name: <key pair>.pem
 #### Cluster Automatic Configuration
 6 Redis instances are required for Cluster configuration. After copying the key pair to the instance used as the master, run the script as follows.
 
-```
+```bash
 shell> sh .redis_make_cluster.sh
 ```
 
 Enter the private IPs of Redis instances used for a cluster in turn. You can check the private IP of each instance with the `hostname -I` command.
 
-```
+```bash
 shell> sh .redis_make_cluster.sh
 Enter cluster-1'IP:  192.168.0.79
 Enter cluster-2'IP:  192.168.0.10
@@ -1129,12 +1068,12 @@ Enter cluster-6'IP:  192.168.0.32
 
 Enter the file name of the copied key pair.
 
-```
+```bash
 shell> Enter Pemkey's name: <key pair>.pem
 ```
 
 Enter `yes` to complete cluster configuration.
-```
+```bash
 >>> Performing hash slots allocation on 6 nodes...
 Master[0] -> Slots 0 - 5460
 Master[1] -> Slots 5461 - 10922
@@ -1157,7 +1096,7 @@ S: ab2aa9e37cee48ef8e4237fd63e8301d81193818 192.168.0.32:6379
 Can I set the above configuration? (type 'yes' to accept):
 ```
 
-```
+```bash
 [OK] All nodes agree about slots configuration.
 >>> Check for open slots...
 >>> Check slots coverage...
