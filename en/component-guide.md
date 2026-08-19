@@ -5,7 +5,6 @@
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
 <a id="nat-instance"></a>
-
 ## NAT Instance { #nat-instance }
 
 NAT instance is an instance that allows you to access internet over a specific IP address band in the private network instance. (Body text modification test: this sentence should be reflected when the translation is re-run.)
