@@ -5,7 +5,6 @@
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > インストールコンポーネントガイド { #compute-instance-installation-component-guide }
 <a id="nat-instance"></a>
-
 ## NAT Instance { #nat-instance }
 NAT インスタンスは、プライベートネットワークインスタンスから特定の IP アドレス範囲へのインターネットアクセスを可能にするインスタンスです。（本文修正テスト：このテキストは再実行時に反映される必要があります。）
 韓国（パンギョ）、韓国（ピョンチョン）リージョンでのみ提供される機能です。
