@@ -3,7 +3,7 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Concurrent PR Test A: This sentence is for validation of concurrent-a-edit.)
 
 <a id="components"></a>
 ## Components
@@ -39,7 +39,6 @@ NHN Cloud provides various instance flavors to support a wide range of use cases
 | t2 | A low-cost instance. Recommended for servers with low workloads.                                                                                                          |
 | u2 | The cheapest instance. Recommended for servers with low workloads.<br>This flavor utilizes local block storage, which makes it a less stable but more affordable option compared to other flavors.<br>Instances of this flavor do not guarantee I/O performance. |
 | x1 | A flavor that supports high-end CPU and memory. Recommended for services or applications that require high performance.                                                                                        |
-| x9c | A type added for concurrent PR testing. This type does not exist in the actual service. |
 
 <a id="availability-zone"></a>
 ### Availability Zone
