@@ -4,7 +4,6 @@
 
 {%- set api_host = "api-jinja.gov-nhncloudservice.com" if "gov" in build_flags else "api-jinja.nhncloudservice.com" %}
 <a id="sample-jinja-guide"></a>
-
 ## Sample > Jinja Guide { #sample-jinja-guide }
 
 This document is a fixture for validating that Jinja conditional branching and variable substitution in mkdocs-macros are consistently maintained across three languages: ko/en/ja. Tags are control syntax and are not translated; only the body content varies by language. (Body content modification test: this sentence should be reflected when translation is rerun.)
