@@ -142,6 +142,26 @@ elif mutation == "markup_br_slash":
         raise SystemExit(f"markup_br_slash: no <br> in {path}")
     out = text.replace("<br>", "<br/>")
 
+elif mutation == "markup_jinja_ws":
+    # 코스메틱 마크업 churn ④: Jinja/mkdocs 템플릿 태그의 whitespace 제어를
+    # 여는 쪽으로 이동 ({% if x -%} -> {%- if x %}). Storage-Online-NAS#92 형태로,
+    # 변경된 28줄 중 26줄이 이 이동이었다. 태그는 제어 문법이라 번역할 내용이
+    # 0인데도 유닛 전체를 "변경됨" 으로 만들어 부하를 부풀린다.
+    # 태그 개수는 보존되는 in-place 수정이어야 cloud-translate 의 M4 미러링
+    # 대상이 된다 (삽입/삭제는 그쪽에서 의도적으로 bail).
+    n = 0
+    def _move_ws(m):
+        global n
+        raw = m.group(0)
+        inner = raw[2:-2].strip().lstrip("-").rstrip("-").strip()
+        out = "{%- " + inner + " %}"
+        if out != raw:
+            n += 1
+        return out
+    out = re.sub(r"\{%.*?%\}", _move_ws, text, flags=re.DOTALL)
+    if not n:
+        raise SystemExit(f"markup_jinja_ws: no jinja tag to move in {path}")
+
 elif mutation == "markup_heading_blank":
     # 코스메틱 마크업 churn ③: 헤딩 바로 뒤 빈 줄을 토글. block granularity 에서
     # 헤딩+본문 한 유닛이 두 유닛으로 쪼개지거나 합쳐져 유닛 정렬이 통째로
@@ -827,6 +847,16 @@ declare -a PLAN_TABLE_SUITE=(
 #   component-guide.md: 세 규칙 모두 + 내용 변경 1건. 펜스 105 + <br> 9 + 헤딩 91.
 #   public-api.md     : M2(<br> 98개, 표 행 안) + M3 + 내용 변경 1건.
 #   overview.md       : 세 규칙 중 M1/M2 + 내용 변경 1건 (작은 문서).
+#   jinja-guide.md    : Jinja/mkdocs 템플릿 태그(M4). ko/en/ja 가 동일한 태그 7개를
+#                       갖도록 만든 픽스처로, whitespace 제어를 여는 쪽으로 이동
+#                       ({% if x -%} -> {%- if x %}) + 내용 변경 1건.
+#                       Storage-Online-NAS#92 형태 — 그 PR 은 변경 28줄 중 26줄이
+#                       이 이동이었다. 태그는 번역할 내용이 0인데도 유닛 전체를
+#                       "변경됨" 으로 만들어 부하를 부풀린다.
+#                       주의: M4 는 ko 와 대상의 태그가 1:1 이어야 동작한다. 실제
+#                       Storage-Online-NAS 는 en/ja 에 태그가 0개라(번역이 템플릿화
+#                       이전) 그 레포에서는 안전한 no-op 이다 — 이 픽스처는 en/ja 도
+#                       태그를 갖게 된 "이후" 상태를 재현한다.
 #   troubleshooting   : 대조군 (변경 없음 — en/ja 무변경, 번역 PR 미포함이어야 정상)
 #
 #   PASS 판정은 "load guard 미발동 + LLM 패치 폴백 미발동 + PR 본문에 제외 섹션
@@ -861,6 +891,8 @@ declare -a PLAN_MARKUP_CHURN=(
   "markup_fence_info|ko/overview.md"
   "markup_br_slash|ko/overview.md"
   "edit_body|ko/overview.md"
+  "markup_jinja_ws|ko/jinja-guide.md"
+  "edit_body|ko/jinja-guide.md"
   "noop|ko/troubleshooting-guide.md"
 )
 case "$PLAN_NAME" in
