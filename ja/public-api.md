@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=8e6d00d3460b -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 Instance は API 呼び出し時に認証/認可のために IaaS トークンを使用します。IaaS トークンは NHN Cloud の OpenStack ベースのインフラストラクチャサービス (IaaS) で使用される認証トークンです。IaaS トークンの発行および使用に関する詳細については、「[IaaS トークン](/nhncloud/ja/public-api/iaas-token)」を参照してください。(本文修正テスト：この文は翻訳の再実行時に反映される必要があります。)
 
@@ -436,7 +435,6 @@ X-Auth-Token: {tokenId}
 <a id="instance"></a>
 ## インスタンス { #instance }
 <a id="instance-status"></a>
-
 ### インスタンスの状態 { #instance-status }
 インスタンスはさまざまな状態を持ち、状態に応じて実行できるアクションが決まっています。インスタンスの状態一覧は次のとおりです。
 
@@ -469,7 +467,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-instances-request"></a>
-
 #### リクエスト
 このAPIはリクエスト本文を必要としません。
 
@@ -538,7 +535,6 @@ X-Auth-Token: {tokenId}
 インスタンス一覧を表示と同じリクエスト形式です。
 
 <a id="list-instances-with-details-response"></a>
-
 #### レスポンス
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
@@ -696,7 +692,6 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | トークン ID |
 
 <a id="get-instance-response"></a>
-
 #### レスポンス
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
@@ -861,7 +856,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="create-instance-request"></a>
-
 #### リクエスト
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
