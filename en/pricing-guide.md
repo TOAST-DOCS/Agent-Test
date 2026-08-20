@@ -1,9 +1,12 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=585936601439 -->
 
 <a id="compute-instance-pricing-guide"></a>
+
 ## Compute > Instance > Pricing guide { #compute-instance-pricing-guide }
 
-This document summarizes the instance pricing plans and the limits each plan provides. Prices may vary by region and payment method; see the pricing calculator in the console for details.
+This document outlines Instance pricing plans and the service limits for each plan. Pricing may vary depending on the region and billing method. You can check detailed rates in the console's pricing calculator. (Content update test: This sentence should be reflected when the translation is re-run.)
 
 <a id="plan-limits"></a>
 ### Limits by plan { #plan-limits }
@@ -12,6 +15,7 @@ This document summarizes the instance pricing plans and the limits each plan pro
 |---|---|---|---|
 | Basic plan | 10 | 1TB | Email support |
 | Standard plan | 50 | 10TB | Email and phone support |
+| Advanced plan | 200 | 50TB | Dedicated engineer support |
 
 <a id="billing-notes"></a>
 ### Billing notes { #billing-notes }
