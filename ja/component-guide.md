@@ -1,12 +1,14 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > インストールコンポーネントガイド { #compute-instance-installation-component-guide }
-
 <a id="nat-instance"></a>
+
 ## NAT Instance { #nat-instance }
-NATインスタンスは、プライベートネットワークインスタンスから特定IPアドレス帯域にインターネットアクセスできるようにするインスタンスです。
-韓国(パンギョ)、韓国(ピョンチョン)リージョンでのみ提供する機能です。
+NAT インスタンスは、プライベート ネットワーク インスタンスが特定の IP アドレス帯域を使用してインターネットにアクセスできるようにするインスタンスです。 (本文修正テスト: この文は翻訳を再実行するときに反映される必要があります。)
+韓国(판교)、韓国(평촌) リージョンでのみ提供される機能です。
 
 <a id="key-features"></a>
 ### 主な機能 { #key-features }
@@ -71,15 +73,12 @@ NATインスタンスをルートゲートウェイに指定します。 NATイ�
 
 <a id="allow-security-group-tcp-port-3389-rdp"></a>
 ### セキュリティグループ TCP ポート 3389 (RDP) 許可 { #allow-security-group-tcp-port-3389-rdp }
-
 <!-- TODO: translate body -->
 
 <a id="initial-settings-after-microsoft-sql-image-is-created"></a>
 ### MS-SQLイメージ作成後の初期設定 { #initial-settings-after-microsoft-sql-image-is-created }
-
 <a id="initial-settings-after-microsoft-sql-image-is-created-set-sql-certification-mode"></a>
 #### 1. SQL認証モード設定
-
 サーバーの基本認証モードが「Windows認証モード」になっています。
 MS-SQLのデータベースアカウントを使用するには、SQL認証モードに変更する必要があります。
 
@@ -96,7 +95,6 @@ Microsoft SQL Server Management Studioを実行して、インスタンス名で
 
 <a id="initial-settings-after-microsoft-sql-image-is-created-change-microsoft-sql-service-port"></a>
 #### 2. MS-SQLサービスポート変更
-
 MS-SQLのデフォルトのサービスポート1433は、広く認知されているポートなので、セキュリティー脆弱性になることがあります。
 次のポートに変更することを推奨します。
 ※ Expressの場合、デフォルトのポートが指定されていません。
@@ -115,13 +113,11 @@ SQL Server構成管理者を実行します。
 
 <a id="initial-settings-after-microsoft-sql-image-is-created-allow-external-access-to-microsoft-sql-database"></a>
 #### 3. 外部からのMS-SQLデータベース接続許可設定
-
 外部からMS-SQLデータベースに接続するには、 **Network > Security Group** でMS-SQLサービスポートをSecurity Groupsに追加する必要があります。
 Security Groupsに追加する時、接続を許可するMS-SQLサービスポート(基本ポート：1433)および遠隔IPを登録します。
 
 <a id="data-volume-assignment"></a>
 ### データボリューム割り当て { #data-volume-assignment }
-
 MS-SQLのデータ/ログファイル(MDF/LDF)、バックアップファイルは別途のBlock Storageの使用を推奨します。
 Block Storageを作成するには、**Compute > Instance > Block Storage** タブで + Block Storage作成ボタンをクリックします。
 
@@ -188,8 +184,7 @@ SQL Server構成管理者のSQL Server構成管理者(ローカル) > SQL Server
 ## MySQL Instance { #mysql-instance }
 <a id="startingstopping-mysql"></a>
 ### MySQL起動/停止方法 { #startingstopping-mysql }
-
-```
+```bash
 #mysqlサービス起動
 shell> service mysqld start
 
@@ -202,22 +197,19 @@ shell> service mysqld restart
 
 <a id="connecting-to-mysql"></a>
 ### MySQL接続 { #connecting-to-mysql }
-
 イメージ作成後、最初は下記のように接続します。
 
-```
+```bash
 shell> mysql -uroot
 ```
 
 <a id="initial-settings-for-mysql-instance"></a>
 ### MySQLインスタンス作成後の初期設定 { #initial-settings-for-mysql-instance }
-
 <a id="initial-settings-for-mysql-instance-1-set-the-password"></a>
 #### 1\.パスワード設定
-
 初期インストール後、MySQL ROOTアカウントパスワードは指定されていません。したがってインストール後、すぐにパスワードを設定する必要があります。
 
-```
+```bash
 mysql> ALTER USER USER() IDENTIFIED BY '新しいパスワード';
 ```
 
@@ -228,10 +220,9 @@ MySQL基本validate\_password\_policyは下記の通りです。
 
 <a id="initial-settings-for-mysql-instance-2-change-the-port"></a>
 #### 2\.ポート(port)変更
-
 提供されるイメージポートはMySQL基本ポートの3306です。セキュリティー上、ポートの変更を推奨します。
 
-```
+```bash
 shell> vi /etc/my.cnf
 
 
@@ -257,14 +248,13 @@ shell> mysql -uroot -P[変更されたポート番号]
 
 <a id="description-of-mycnf"></a>
 ### my.cnf説明 { #description-of-mycnf }
-
 my.cnfのデフォルトのパスは `/etc/my.cnf` で、NHN Cloud推奨変数(variable)が設定されています。内容は下記の通りです。
 
 | 名前 | 説明 |
 | --- | --- |
 | default\_storage\_engine | 基本ストレージエンジン(storage engine)を指定します。InnoDBが指定され、Online-DDLとトランザクション(transaction)を使用できます。 |
 | expire\_logs\_days | binlog設定で、 ログを保存する日数を設定します。デフォルトで3日に指定されています。 |
-| innodb\_log\_file\_size | トランザクション(transaction)のredo logを保存するログファイルのサイズを指定します。<br><br>実際の運営環境では256MB以上を推奨しており、現在512MBに設定されています。設定値を修正した時は、DBの再起動が必要です。 |
+| innodb\_log\_file\_size | トランザクション(transaction)のredo logを保存するログファイルのサイズを指定します。<br/><br/>実際の運営環境では256MB以上を推奨しており、現在512MBに設定されています。設定値を修正した時は、DBの再起動が必要です。 |
 | innodb\_file\_per\_table | テーブルが削除されたりTRUNCATEされる時、テーブルスペースがOSにすぐに返却されます。 |
 | innodb\_log\_files\_in\_group | innodb\_log\_fileファイルの個数を設定し、循環的\(circular\)に使用されます。最小2個以上で構成されます。 |
 | log_timestamps | MySQL 5.7の基本log時間はUTCで表示されます。したがってログ時間をSYSTEMローカル時間に変更します。 |
@@ -273,7 +263,6 @@ my.cnfのデフォルトのパスは `/etc/my.cnf` で、NHN Cloud推奨変数(v
 
 <a id="description-of-mysql-directory"></a>
 ### MySQLディレクトリ説明 { #description-of-mysql-directory }
-
 MySQLディレクトリおよびファイル説明は下記の通りです。
 
 | 名前 | 説明 |
@@ -291,8 +280,7 @@ MySQLディレクトリおよびファイル説明は下記の通りです。
 ## PostgreSQL Instance { #postgresql-instance }
 <a id="how-to-startstop-postgresql"></a>
 ### PostgreSQL開始/停止方法 { #how-to-startstop-postgresql }
-
-```
+```bash
 ##Ubuntuの場合
 # postgresqlサービス開始
 shell> sudo systemctl start postgresql
@@ -304,10 +292,9 @@ shell> sudo systemctl restart postgresql
 
 <a id="log-in-to-postgresql"></a>
 ### PostgreSQL接続 { #log-in-to-postgresql }
-
 イメージ作成後、最初は下記のように接続します。
-<br>
-```
+<br/>
+```bash
 #postgresにアカウント切り替え後、接続
 shell> sudo su - postgres
 shell> psql
@@ -315,13 +302,11 @@ shell> psql
 
 <a id="create-postgresql-instance-and-perform-initial-setup"></a>
 ### PostgreSQLインスタンス作成後、初期設定 { #create-postgresql-instance-and-perform-initial-setup }
-
 <a id="create-postgresql-instance-and-perform-initial-setup-1-change-the-port"></a>
 #### 1\. ポート\(port\)変更
-
 提供されるイメージポートはPostgreSQL基本ポート5432です。セキュリティ上、ポートの変更を推奨します。
-<br>
-```
+<br/>
+```bash
 
 shell> vi postgresql.conf
 
@@ -343,10 +328,9 @@ shell> psql -p[変更されたポート番号]
 
 <a id="create-postgresql-instance-and-perform-initial-setup-2-change-server-log-timezone"></a>
 #### 2\. サーバーログタイムゾーン変更
-
 サーバーログに記録される基本時間帯がUTCに設定されています。SYSTEMローカル時間と同じタイムゾーンに変更することを推奨します。
-<br>
-```
+<br/>
+```bash
 shell> vi postgresql.conf
 
 
@@ -376,10 +360,9 @@ postgres=# SHOW log_timezone;
 
 <a id="create-postgresql-instance-and-perform-initial-setup-3-cancel-public-schema-permission"></a>
 #### 3\. publicスキーマ権限の削除
-
 基本的にすべてのユーザーにpublicスキーマのCREATEおよびUSAGE権限を付与しているため、データベースに接続できるユーザーはpublicスキーマからオブジェクトを作成できます。すべてのユーザーがpublicスキーマからオブジェクトを作成できないように権限を削除すことを推奨します。
-<br>
-```
+<br/>
+```bash
 #postgresql接続
 
 shell> psql
@@ -392,10 +375,9 @@ postgres=# REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 
 <a id="create-postgresql-instance-and-perform-initial-setup-4-allow-remote-login"></a>
 #### 4\. 遠隔接続許可
-
 ローカルホスト以外の接続を許可するにはlisten_addresses変数とクライアント認証設定ファイルを変更する必要があります。
-<br>
-```
+<br/>
+```bash
 shell> vi postgresql.conf
 
 
@@ -434,7 +416,6 @@ shell> pg_ctl reload -D /var/lib/postgresql/${version}/main
 
 <a id="postgresql-directory-description"></a>
 ### PostgreSQLディレクトリ説明 { #postgresql-directory-description }
-
 PostgreSQLディレクトリおよびファイルの説明は下記のとおりです。
 
 | 名前 | 説明 | Ubuntu |
@@ -445,12 +426,10 @@ PostgreSQLディレクトリおよびファイルの説明は下記のとおり�
 
 <a id="cubrid-instance"></a>
 ## CUBRID Instance { #cubrid-instance }
-
 <a id="how-to-startstop-the-cubrid-service"></a>
 ### CUBRIDサービスの起動/停止方法 { #how-to-startstop-the-cubrid-service }
-
 `cubrid` LinuxアカウントにログインしてCUBRIDサービスを次のように開始または停止できます。
-```
+```bash
 # CUBRIDサービス/サーバーの起動
 shell> sudo su - cubrid
 shell> cubrid service start
@@ -475,34 +454,29 @@ shell> cubrid broker restart
 
 <a id="connect-to-cubrid"></a>
 ### CUBRID接続 { #connect-to-cubrid }
-
 イメージ作成後、最初は以下のように接続します。
-```
+```bash
 shell> sudo su - cubrid
 shell> csql -u dba demodb@localhost
 ```
 
 <a id="initial-setup-after-creating-a-cubrid-instance"></a>
 ### CUBRIDインスタンス作成後の初期設定 { #initial-setup-after-creating-a-cubrid-instance }
-
 <a id="initial-setup-after-creating-a-cubrid-instance-1-set-the-password"></a>
 #### 1\. パスワード設定
-
 初期インストール後、CUBRID dbaアカウントのパスワードは指定されていません。そのため、インストール後に必ずパスワードを設定する必要があります。
-```
+```bash
 shell> csql -u dba -c "ALTER USER dba PASSWORD 'new_password'" demodb@localhost
 ```
 
 <a id="initial-setup-after-creating-a-cubrid-instance-2-change-the-broker-port"></a>
 #### 2\. ブローカーポート\(port\)の変更
-
 `query_editor`のブローカーポートはデフォルト値が`30000`に設定され、`broker1`のブローカーポートはデフォルト値が`33000`に設定されます。
 セキュリティ上、ポートの変更を推奨します。
 
 ###### 1)ブローカーファイルの修正
-
 以下のファイルを開き、以下のように変更するポートアドレスを入力します。
-```
+```bash
 shell> vi /opt/cubrid/conf/cubrid_broker.conf
 
 [%query_editor]
@@ -513,38 +487,33 @@ BROKER_PORT             =[変更するportアドレス]
 ```
 
 ###### 2)ブローカーの再起動
-
 ポートの変更を適用するためにブローカーを再起動します。
-```
+```bash
 shell> cubrid broker restart
 ```
 
 <a id="initial-setup-after-creating-a-cubrid-instance-3-change-the-manager-server-port"></a>
 #### 3\. マネージャサーバーポート\(port\)変更
-
 マネージャサーバーポートはデフォルト値が`8001`に設定されます。
 セキュリティ上、ポート変更を推奨します。
 
 ###### 1)  cm.confファイルの修正
-
 以下のファイルを開き、次のように変更するポートアドレスを入力します。
-```
+```bash
 shell> vi /opt/cubrid/conf/cm.conf
 
 cm_port =[変更するportアドレス]
 ```
 
 ###### 2)マネージャサーバーの再起動
-
 ポートの変更を適用するためにマネージャを再起動します。
-```
+```bash
 shell> cubrid manager stop
 shell> cubrid manager start
 ```
 
 <a id="cubrid-directory-description"></a>
 ### CUBRIDディレクトリの説明 { #cubrid-directory-description }
-
 CUBRIDディレクトリおよびファイルの説明は次のとおりです。
 
 | 名前 | 説明 |
@@ -558,19 +527,17 @@ CUBRIDディレクトリおよびファイルの説明は次のとおりです�
 
 <a id="cubrid-directory-description-cubridconf-description"></a>
 #### cubrid.conf説明
-
 サーバー設定用ファイルです。運営するデータベースのメモリ、同時ユーザー数に応じたスレッド数、ブローカーとサーバー間の通信ポートなどを設定できます。
 
 | 名前 | 説明 |
 | --- | --- |
-| service  | CUBRIDサービス開始時に自動的に開始するプロセスを登録するパラメータです。 <br>デフォルトでserver、broker、managerプロセスが登録されています。 |
+| service  | CUBRIDサービス開始時に自動的に開始するプロセスを登録するパラメータです。 <br/>デフォルトでserver、broker、managerプロセスが登録されています。 |
 | cubrid\_port\_id | マスタープロセスが使用するポートです。 |
 | max\_clients | 1つデータベースサーバープロセスが同時に接続できるクライアントの最大数です。 |
-| data\_buffer\_size | データベースサーバーがメモリ内にキャッシュするデータバッファのサイズを設定するためのパラメータです。 <br>必要なメモリサイズがシステムメモリの2/3以内になるように設定することを推奨します。 |
+| data\_buffer\_size | データベースサーバーがメモリ内にキャッシュするデータバッファのサイズを設定するためのパラメータです。 <br/>必要なメモリサイズがシステムメモリの2/3以内になるように設定することを推奨します。 |
 
 <a id="cubrid-directory-description-brokerconf-description"></a>
 #### broker.confの説明
-
 ブローカー設定ファイルです。運営するブローカーが使用するポート、応用サーバー(CAS)数、SQL LOGなどを設定できます。
 
 | 名前 | 説明 |
@@ -583,7 +550,6 @@ CUBRIDディレクトリおよびファイルの説明は次のとおりです�
 
 <a id="cubrid-directory-description-cmconf-description"></a>
 #### cm.confの説明
-
 CUBRIDマネージャ設定ファイルです。運営するマネージャサーバープロセスが使用するポート、モニタリング収集サイクルなどを設定できます。
 
 | 名前 | 説明 |
@@ -596,10 +562,8 @@ CUBRIDマネージャ設定ファイルです。運営するマネージャサ�
 
 <a id="mariadb-instance"></a>
 ## MariaDB Instance { #mariadb-instance }
-
 <a id="how-to-startstop-mariadb"></a>
 ### MariaDB 起動/停止方法 { #how-to-startstop-mariadb }
-
 ``` sh
 # MariaDBサービスの開始
 shell> sudo systemctl start mariadb.service
@@ -613,7 +577,6 @@ shell> sudo systemctl restart mariadb.service
 
 <a id="connect-to-mariadb"></a>
 ### MariaDB接続 { #connect-to-mariadb }
-
 イメージ作成後、最初は以下のように接続します。
 
 ``` sh
@@ -629,13 +592,11 @@ Enter password:
 
 <a id="initial-setup-after-creating-a-mariadb-instance"></a>
 ### MariaDBインスタンス作成後の初期設定 { #initial-setup-after-creating-a-mariadb-instance }
-
 <a id="initial-setup-after-creating-a-mariadb-instance-1-set-the-password"></a>
 #### 1\. パスワード設定
-
 初期インストール後、MariaDB rootアカウントパスワードは指定されていません。そのため、インストール後に必ずパスワードを設定する必要があります。
 
-```
+```bash
 SET PASSWORD [FOR user] = password_option
 
 MariaDB> SET PASSWORD = PASSWORD('パスワード');
@@ -643,37 +604,32 @@ MariaDB> SET PASSWORD = PASSWORD('パスワード');
 
 <a id="initial-setup-after-creating-a-mariadb-instance-2-change-the-port"></a>
 #### 2\. ポート\(port\)の変更
-
 初期インストール後のポートはMariaDBのデフォルトポートである3306です。セキュリティ上、ポートの変更を推奨します。
 
 ##### 1) `/etc/my.cnf.d/servfer.cnf`ファイルの修正
-
 `/etc/my.cnf.d/server.cnf`ファイルを開き、[mariadb]の下に以下のように変更するポートアドレスを入力します。
 
-```
+```bash
 shell> sudo vi /etc/my.cnf.d/server.cnf
 ```
 
-```
+```bash
 [mariadb]
 port=[変更するportアドレス]
 ```
 
 ##### 2)インスタンスの再起動
 ポートの変更が適用されるようにインスタンスを再起動します。
-```
+```bash
 sudo systemctl restart mariadb.service
 ```
 
 <a id="tibero-instance"></a>
 ## Tibero Instance { #tibero-instance }
-
 <a id="create-a-tibero-instance"></a>
 ### Tibero Instance作成 { #create-a-tibero-instance }
-
 <a id="create-a-tibero-instance-minimum-recommended-specifications"></a>
 #### 最小推奨仕様
-
 - ルートブロックストレージ
     - 高速化のためにSSDを推奨し、root disk fullが発生しないように50GB以上に設定することを推奨します。
 
@@ -682,13 +638,11 @@ sudo systemctl restart mariadb.service
 
 <a id="create-a-tibero-instance-additional-block-storage"></a>
 #### 追加ブロックストレージ
-
 - ルートボリューム以外の追加ボリュームを作成します。
     - TMI(Tibero machine image)は追加ボリューム150GBを必要とするため、追加ブロックストレージ150GB以上を必ず設定する必要があります
 
 <a id="connect-to-instance"></a>
 ### インスタンス接続 { #connect-to-instance }
-
 - インスタンスの作成が完了したら、SSHを使用してインスタンスにアクセスします。
 - インスタンスにFloating IPが接続されていて、セキュリティグループでTCPポート22(SSH)が許可されている必要があります。
 - SSHクライアントと設定したキーペアを使用してインスタンスに接続します。
@@ -697,9 +651,8 @@ sudo systemctl restart mariadb.service
 <a id="install-tmi"></a>
 ### TMIインストール { #install-tmi }
 
-
 rootアカウントで /rootパスからdbcaコマンドを実行します。
-```
+```bash
 $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 ```
 
@@ -712,7 +665,7 @@ $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 | 5 | DB\_PORT | Tiberoで使用するサービスIPのポート |
 
 ##### Tibero 7インストール
-```
+```bash
 [rocky@tiberoinstance ~]$ sudo su - root
 [root@tiberoinstance ~]# pwd
 /root
@@ -721,11 +674,10 @@ $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 
 <a id="install-tmi-complete-installation"></a>
 #### インストール完了
-
 dbcaコマンドを実行すると進行状況が表示され、nomountモードで データベースが作成されます。所要時間は10分以下です。 
 完了すると下記のように出力されます。
 
-```
+```bash
 SQL>
 System altered.
 
@@ -739,10 +691,9 @@ SQL> Disconnected.
 
 <a id="install-tmi-check-the-operation-and-the-installation-log"></a>
 #### 動作確認とインストールログの確認
-
 Tiberoが動作していることを確認します。
 
-```
+```bash
 [root@tiberoinstance ~]# ps -ef |grep tbsvr
 nhncloud  9886     1  1 14:14 ?        00:00:00 tbsvr          -t NORMAL -SVR_SID tiberotestdb
 nhncloud  9888  9886  0 14:15 ?        00:00:00 tbsvr_MGWP     -t NORMAL -SVR_SID tiberotestdb
@@ -771,7 +722,7 @@ root     13517  8366  0 14:15 pts/0    00:00:00 grep --color=auto tbsvr
 
 インストールログは /root/.dbset.logで確認できます。
 
-```
+```bash
 [root@tiberoinstance ~]# ls -alh
 合計20K
 dr-xr-x---.  4 root root  104 10月17 14:15 .
@@ -787,14 +738,12 @@ drwx------   2 root root   29 10月17 14:04 .ssh
 <a id="connect-to-tibero"></a>
 ### Tibero接続 { #connect-to-tibero }
 
-
 <a id="connect-to-tibero-change-the-account"></a>
 #### アカウント変更
-
 dbcaコマンドで作成したOS\_ACCOUNTにログインします。
 
 
-```
+```bash
 [root@tiberoinstance ~]# su - nhncloud
 最終ログイン：1月13(木) 11:34:43 KST 2022日時pts/0
 
@@ -812,8 +761,7 @@ dbcaコマンドで作成したOS\_ACCOUNTにログインします。
 
 <a id="connect-to-tibero-check-connection"></a>
 #### 接続確認
-
-```
+```bash
 [nhncloud@tiberoinstance ~]$ tbsql sys/tibero
 
 tbSQL 7
@@ -855,7 +803,6 @@ SQL>
 
 <a id="tibero-default-accounts"></a>
 ### Tibero基本アカウント { #tibero-default-accounts }
-
 Tiberoで提供する基本アカウントは次のとおりです。
 
 | スキーマ | パスワード | 説明 |
@@ -880,7 +827,7 @@ Tiberoで提供する基本アカウントは次のとおりです。
 
 <a id="start-and-stop-zookeeper-kafka-broker"></a>
 ### Zookeeper、Kafka broker起動/停止 { #start-and-stop-zookeeper-kafka-broker }
-```
+```bash
 # Zookeeper、Kafka broker起動(Zookeeperを先に起動)
 shell> sudo systemctl start zookeeper.service
 shell> sudo systemctl start kafka.service
@@ -902,13 +849,13 @@ shell> sudo systemctl restart kafka.service
 - インスタンス間のKafka関連ポート通信のために、以下のセキュリティグループ設定を追加します。
 
 セキュリティグループ設定
-```
+```bash
 方向：受信
 IPプロトコル： TCP
 ポート： 22, 9092, 2181, 2888, 3888
 ```
 Hostname、IPの確認方法
-```
+```bash
 # Hostname確認
 shell> hostname
 # IP確認
@@ -916,7 +863,7 @@ shell> hostname
 またはshell> hostname -i
 ```
 Clusterインストールスクリプト実行例(上で確認したhostname、IPを入力)
-```
+```bash
 shell> sh ~/.kafka_make_cluster.sh
 Enter Cluster Node Count: 3
 ### 3 is odd number.
@@ -960,14 +907,13 @@ ls: cannot access /tmp/zookeeper: No such file or directory
 
 <a id="initial-setup-after-creating-a-kafka-instance"></a>
 ### Kafkaインスタンス作成後の初期設定 { #initial-setup-after-creating-a-kafka-instance }
-
 <a id="initial-setup-after-creating-a-kafka-instance-change-the-port"></a>
 #### ポート(port)変更
 最初のインストール後、ポートはKafkaデフォルトポート9092、Zookeeperデフォルトポート2181です。セキュリティのためにポートを変更することを推奨します。
 
 ##### 1) ~/kafka/config/zookeeper.propertiesファイル修正
 ~/kafka/config/zookeeper.propertiesファイルを開いてclientPortに変更するZookeeper portを入力します。
-```
+```bash
 shell> vi ~/kafka/config/zookeeper.properties
 clientPort=変更するzookeeper port
 ```
@@ -975,11 +921,11 @@ clientPort=変更するzookeeper port
 ~/kafka/config/server.propertiesファイルを開いてlistenersに変更するKafka portを入力します。
 
 インスタンスIPの確認方法
-```
+```bash
 コンソール画面のPrivate IP
 またはshell> hostname -i
 ```
-```
+```bash
 shell> vi ~/kafka/config/server.properties
 
 # コメント解除
@@ -991,7 +937,7 @@ zookeeper.connect=インスタンスIP：変更するzookeeper port
 ```
 
 ##### 3) Zookeeper、Kafka brokerの再起動
-```
+```bash
 shell> sudo systemctl stop kafka.service
 shell> sudo systemctl stop zookeeper.service
 shell> sudo systemctl start zookeeper.service
@@ -1000,16 +946,15 @@ shell> sudo systemctl start kafka.service
 
 ##### 4) Zookeeper、Kafka port変更確認
 変更されたポートが使用されていることを確認します。
-```
+```bash
 shell> netstat -ntl | grep [Kafka port]
 shell> netstat -ntl | grep [Zookeeper port]
 ```
 
 <a id="create-and-use-kafka-topic-and-data"></a>
 ### Kafkaトピックおよびデータ作成/使用 { #create-and-use-kafka-topic-and-data }
-
 トピックの作成/照会
-```
+```bash
 # インスタンスIP = Private IP / Kafka基本port = 9092
 # トピック作成
 shell> ~/kafka/bin/kafka-topics.sh --create --bootstrap-server [インスタンスIP]:[Kafka PORT] --topic kafka
@@ -1021,7 +966,7 @@ shell> ~/kafka/bin/kafka-topics.sh --describe --bootstrap-server [インスタ�
 shell> ~/kafka/bin/kafka-topics.sh --delete --bootstrap-server [インスタンスIP]:[Kafka PORT] --topic kafka
 ```
 データ作成/使用
-```
+```bash
 # producer起動
 shell> ~/kafka/bin/kafka-console-producer.sh --broker-list [インスタンスIP]:[Kafka PORT] --topic kafka
 # consumer起動
@@ -1030,10 +975,9 @@ shell> ~/kafka/bin/kafka-console-consumer.sh --bootstrap-server [インスタン
 
 <a id="redis-instance"></a>
 ## Redis Instance { #redis-instance }
-
 <a id="startstop-redis"></a>
 ### Redis起動/停止 { #startstop-redis }
-```
+```bash
 # Redisサービスの起動
 shell> sudo systemctl start redis
 
@@ -1047,7 +991,7 @@ shell> sudo systemctl restart redis
 <a id="connect-to-redis"></a>
 ### Redis接続 { #connect-to-redis }
 `redis-cli`コマンドでRedisインスタンスに接続できます。
-```
+```bash
 shell> redis-cli
 ```
 
@@ -1068,7 +1012,7 @@ Redisが使用するipの値です。サーバー外部からRedisインスタ�
 
 ポートはRedisデフォルト値である6379です。セキュリティ上、ポートを変更することを推奨します。ポートを変更した後は、以下のコマンドでRedisに接続できます。
 
-```
+```bash
 shell> redis-cli -p <新しいポート>
 ```
 
@@ -1087,7 +1031,7 @@ NHN CloudのRedisインスタンスは自動的にHA環境を構成するスク�
 ##### キーペアコピー
 インストールスクリプトを実行するインスタンスに他のインスタンス接続に必要なキーペア(PEMファイル)が必要です。キーペアは次のようにコピーできます。
 - ubuntu
-```
+```bash
 local> scp -i <キーペア>.pem <キーペア>.pem ubuntu@<floating ip>:/home/ubuntu/
 ```
 作成したインスタンスのキーペアは、すべて同じである必要があります。
@@ -1105,13 +1049,13 @@ Redisインスタンス間の通信に必要なセキュリティグループ(**
 #### Sentinel自動構成
 Sentinel構成のために3つのRedisインスタンスが必要です。マスターとして使用するインスタンスにキーペアをコピーし、以下のようにスクリプトを実行してください。
 
-```
+```bash
 shell> sh .redis_make_sentinel.sh
 ```
 
 その後、接続情報で使用するマスター名(Master Name)とマスター及びレプリカのprivate IPを順番に入力します。各インスタンスのprivate IPは`hostname -I`コマンドで確認できます。
 
-```
+```bash
 shell> sh .redis_make_sentinel.sh
 Enter Master's Name (ex> mymaster) : mymaster
 Enter Master's IP: 192.168.0.33
@@ -1120,7 +1064,7 @@ Enter Replica-2's IP: 192.168.0.97
 ```
 
 コピーしたキーペアのファイル名を入力します。
-```
+```bash
 shell> Enter Pemkey's name: <キーペア>.pem
 ```
 
@@ -1128,13 +1072,13 @@ shell> Enter Pemkey's name: <キーペア>.pem
 #### Cluster自動構成
 Cluster構成のために6つのRedisインスタンスが必要です。マスターとして使用するインスタンスにキーペアをコピーし、以下のようにスクリプトを実行してください。
 
-```
+```bash
 shell> sh .redis_make_cluster.sh
 ```
 
 その後、クラスタに使用するRedisインスタンスのprivate IPを順番に入力します。各インスタンスのprivate IPは`hostname -I`コマンドで確認できます。
 
-```
+```bash
 shell> sh .redis_make_cluster.sh
 Enter cluster-1'IP:  192.168.0.79
 Enter cluster-2'IP:  192.168.0.10
@@ -1146,12 +1090,12 @@ Enter cluster-6'IP:  192.168.0.32
 
 コピーしたキーペアのファイル名を入力します。
 
-```
+```bash
 shell> Enter Pemkey's name: <キーペア>.pem
 ```
 
 `yes`を入力し、クラスタ構成を完了します。
-```
+```bash
 >>> Performing hash slots allocation on 6 nodes...
 Master[0] -> Slots 0 - 5460
 Master[1] -> Slots 5461 - 10922
@@ -1174,7 +1118,7 @@ S: ab2aa9e37cee48ef8e4237fd63e8301d81193818 192.168.0.32:6379
 Can I set the above configuration? (type 'yes' to accept):
 ```
 
-```
+```bash
 [OK] All nodes agree about slots configuration.
 >>> Check for open slots...
 >>> Check slots coverage...
