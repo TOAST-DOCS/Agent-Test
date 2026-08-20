@@ -245,3 +245,22 @@ $ sudo update-grub
 ## Additional section for testing { #test-added-section }
 
 This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+
+<a id="e2e-fence-noop"></a>
+### Token issuance sample
+
+<details>
+<summary>cURL</summary>
+
+```
+$ curl -X POST -H 'Content-Type: application/json' \
+https://api-identity-infrastructure.nhncloudservice.com/v2.0/tokens \
+-d '{"auth": {"tenantId": "6dbc368b", "passwordCredentials": {"username": "*****"}}}'
+
+{
+  "access": {
+    "token": { "id": "b587ae461278419da6ecd21a2344c8aa" }
+  }
+}
+```
+</details>

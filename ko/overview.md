@@ -265,3 +265,22 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
 webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
 마커는 정기 restore-alpha-origin 으로 정리됩니다.
+
+<a id="e2e-fence-noop"></a>
+### Token issuance sample
+
+<details>
+<summary>cURL</summary>
+
+```
+$ curl -X POST -H 'Content-Type: application/json' \
+https://api-identity-infrastructure.nhncloudservice.com/v2.0/tokens \
+-d '{"auth": {"tenantId": "6dbc368b", "passwordCredentials": {"username": "*****"}}}'
+
+{
+  "access": {
+    "token": { "id": "b587ae461278419da6ecd21a2344c8aa" }
+  }
+}
+```
+</details>
