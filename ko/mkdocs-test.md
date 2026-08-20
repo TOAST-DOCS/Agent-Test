@@ -36,4 +36,13 @@
 {% include-markdown './mkdocs-test-public.md' %}
 {% endif %}
 
+## include 하위 폴더 테스트
+
+하위 폴더(`ko/include-test/`)에 있는 파일을 상대 경로로 include 합니다. 하위 폴더 파일이 배포 시에도 수집되는지, 앵커 id 가 유지되는지 확인용입니다.
+
+- Code: [ko/mkdocs-test.md](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ko/mkdocs-test.md)
+- Code: [ko/include-test/sub-include.md](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ko/include-test/sub-include.md)
+- 하위 섹션 링크: [sub-include-id](#sub-include-id)
+
+{% include-markdown './include-test/sub-include.md' %}
 
