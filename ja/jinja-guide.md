@@ -4,7 +4,6 @@
 
 {%- set api_host = "api-jinja.gov-nhncloudservice.com" if "gov" in build_flags else "api-jinja.nhncloudservice.com" %}
 <a id="sample-jinja-guide"></a>
-
 ## Sample > Jinja ガイド { #sample-jinja-guide }
 
 このドキュメントは mkdocs-macros の Jinja 条件分岐と変数置換が ko/en/ja 3つの言語で同じように保たれるかを検証するためのフィクスチャです。タグは制御構文であるため翻訳されず、本文のみが言語ごとに異なります。(本文修正テスト: この文は翻訳の再実行時に反映されるべきです。)
