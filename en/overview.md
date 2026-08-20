@@ -241,6 +241,7 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 $ sudo update-grub
 ```
 
+<a id="webhook-e2e-20260728-110207"></a>
 ## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
 This section is a temporary marker inserted by scripts/e2e-webhook.sh.
@@ -248,7 +249,6 @@ After verifying that the webhook routes this PR to the ko-review / translate job
 the marker will be cleaned up by the scheduled restore-alpha-origin process.
 
 <a id="webhook-e2e-20260728-111509"></a>
-
 ## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
 
 This section is a temporary marker inserted by scripts/e2e-webhook.sh.
@@ -256,7 +256,6 @@ After verifying that the webhook routes this PR to the ko-review / translate job
 the marker will be cleaned up by the scheduled restore-alpha-origin run.
 
 <a id="webhook-e2e-20260728-113416"></a>
-
 ## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
 
 This section is a temporary marker inserted by scripts/e2e-webhook.sh.
@@ -264,7 +263,6 @@ After verifying that the webhook routes this PR to the ko-review / translate job
 the marker is cleaned up by the periodic restore-alpha-origin process.
 
 <a id="webhook-e2e-20260820-035458"></a>
-
 ## webhook e2e marker (20260820-035458) { #webhook-e2e-20260820-035458 }
 
 This section is a temporary marker inserted by scripts/e2e-webhook.sh.
