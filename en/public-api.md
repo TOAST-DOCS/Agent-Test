@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=8e6d00d3460b -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
 
 Instance uses the IaaS token for authentication/authorization when making API calls. The IaaS token is an authentication token used for NHN Cloud's OpenStack-based infrastructure services (IaaS). For more information on IaaS token issuance and usage, see [IaaS token](/nhncloud/en/public-api/iaas-token).
@@ -1068,6 +1067,7 @@ This API does not return a response body.
 
 ---
 
+<a id="test-added-endpoint"></a>
 ### New Test Endpoint { #test-added-endpoint }
 
 ```
@@ -1076,7 +1076,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="test-added-request"></a>
-
 #### Request { #test-added-request }
 
 | Name | Type | Format | Required | Description |
@@ -1086,7 +1085,6 @@ X-Auth-Token: {tokenId}
 | name | Body | String | O | Endpoint name |
 
 <a id="test-added-response"></a>
-
 #### Response { #test-added-response }
 
 | Name | Type | Format | Description |
