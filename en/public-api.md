@@ -3,6 +3,7 @@
 <!-- pre-align:aligned sig=2e2588e1a607 -->
 
 <a id="compute-instance-api-v2-guide"></a>
+
 ## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
 
 Instance uses the IaaS token for authentication/authorization when making API calls. The IaaS token is the authentication token used by the NHN Cloud's OpenStack-based infrastructure service (IaaS). For more information on IaaS token issuance and usage, see [IaaS token](/nhncloud/en/public-api/iaas-token).
@@ -11,7 +12,8 @@ The Instance API uses the `compute` type endpoint. For the exact endpoint, refer
 
 | Type | Region | Endpoint |
 |---|---|---|
-| compute | Korea (Pangyo) Region<br>Korea (Pyeongchon) Region<br>Korea (Gwangju) Region<br>Japan Region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | Korea (Pangyo) region<br>Korea (Pyeongchon) region<br>Korea (Gwangju) region<br>Japan region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com (row modification test) |
+| TEST-ROW | (New row test) | (New row test) |
 
 Fields not specified in the guide may appear in the API response. These fields are used for internal NHN Cloud purposes and may be changed without prior notice, so do not use them.
 
@@ -853,3 +855,30 @@ This API does not require a request body.
 
 </p>
 </details>
+
+### New Test Endpoint { #test-added-endpoint }
+
+```
+POST /v2/{tenantId}/test-added-endpoint
+X-Auth-Token: {tokenId}
+```
+
+<a id="test-added-request"></a>
+
+#### Request { #test-added-request }
+
+| Name | Type | Format | Required | Description |
+|---|---|---|---|---|
+| tenantId | URL | String | O | Tenant ID |
+| tokenId | Header | String | O | Token ID |
+| name | Body | String | O | Endpoint name |
+
+<a id="test-added-response"></a>
+
+#### Response { #test-added-response }
+
+| Name | Type | Format | Description |
+|---|---|---|---|
+| endpoint | Body | Object | Created endpoint object |
+| endpoint.id | Body | String | Endpoint ID |
+| endpoint.name | Body | String | Endpoint name |
