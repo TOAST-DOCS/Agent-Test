@@ -3,9 +3,12 @@
 
 
 <a id="compute-instance-overview"></a>
+
 ## Compute > Instance > Overview { #compute-instance-overview }
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Text modification test: This sentence should be reflected when retranslating.)
+This paragraph is a new test paragraph added to an existing section. Existing headings must be kept as-is. (e2e isolation verification 20260820-064921)
+
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Body text modification test: This sentence should be reflected when the translation is re-executed.)
 
 <a id="components"></a>
 ## Components { #components }
@@ -241,7 +244,24 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## Additional section for testing { #test-added-section }
+## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
-This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After validating that the webhook routes this PR to the ko-review / translate job,
+the marker is cleaned up by a scheduled restore-alpha-origin.
+
+<a id="webhook-e2e-20260728-111509"></a>
+
+## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After the webhook verifies that it routes this PR to ko-review / translate jobs,
+the marker is cleaned up by the regular restore-alpha-origin.
+
+<a id="webhook-e2e-20260728-113416"></a>
+
+## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After the webhook is validated to route this PR to the ko-review / translate job,
+the marker is cleaned up by the regular restore-alpha-origin.
