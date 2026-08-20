@@ -106,6 +106,19 @@
 #   --verify fable               예전 `claude -p --model fable` agentic 검증.
 #                                프롬프트를 바꿔 시맨틱 검사를 추가할 때만 사용.
 #
+#   --translate-pipeline-branch <name>
+#                                translate 잡을 cloud-translate 의 Jenkins
+#                                multibranch child <name> (예: PR-532) 에서
+#                                실행한다. 미머지 PR 의 번역 로직을 배포 없이
+#                                **Jenkins 경로로** 검증할 때 사용 (--translate
+#                                local 은 로컬 프로세스로 도는 별개 경로).
+#                                align/fix-heading-syntax/ko-review 잡은 그대로
+#                                main 에서 돈다 — 번역 외 잡까지 바꾸려면 각
+#                                잡의 pipeline_branch 를 따로 손봐야 한다.
+#                                child job 은 첫 빌드 전 파라미터가 등록돼
+#                                있지 않아 400 이 난다 — 빈 /build 한 번으로
+#                                등록한 뒤 쓸 것.
+#
 #   --from-aligned <branch>      restore/fix-heading-syntax/align/검증/merge
 #                                (2~9단계) 를 건너뛰고, 이미 align 이 끝난
 #                                <branch> 에서 새 세션 브랜치를 갈라낸다.
@@ -141,6 +154,7 @@ ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|table-suite|markup-churn
 TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기본) | local = 로컬 translate_pr.py
 VERIFY_MODE="py"                          # py = check_docs_align.py (기본, 결정적·<1초) | fable = 예전 claude -p 검증
+TRANSLATE_PIPELINE_BRANCH=""              # translate 잡을 돌릴 cloud-translate multibranch child (빈 값=main)
 FROM_ALIGNED=""                            # 이미 align 이 끝난 브랜치에서 세션을 갈라내고 2~9단계를 건너뛴다
 # --translate local 이 사용할 cloud-translate 체크아웃/venv. 워크트리를 가리키면
 # 미배포 브랜치(예: PR #290 fix/table-sync-repair)의 번역 로직을 그대로 검증할 수 있다.
@@ -214,10 +228,12 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --verify 는 py|fable 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
+    --translate-pipeline-branch)
+      TRANSLATE_PIPELINE_BRANCH="$2"; shift 2 ;;   # /api/translate 를 이 cloud-translate 브랜치로 실행
     --from-aligned)  FROM_ALIGNED="$2"; shift 2 ;;       # align 완료 스냅샷 브랜치 재사용 (2~9단계 skip)
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 e2e 세션 브랜치 재사용
     --base-source)   BASE_SOURCE_BRANCH="$2"; shift 2 ;; # 새 e2e 브랜치를 갈라낼 원본 (기본 alpha)
-    -h|--help) sed -n '3,119p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,132p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -753,9 +769,19 @@ fi
 # PR#207/#211 (within/cross-opcode batching) 은 자동 활성 — 별도 설정 없음.
 # PR#220 (api-guide dedup) 은 파일명 substring 매치 (기본 "api-guide"). Agent-Test
 # 는 "public-api.md" 라 자동 미매치 — 대시보드에 dedup path override API 는 없음.
+# --translate-pipeline-branch: translate 잡을 cloud-translate 의 특정 Jenkins
+# multibranch child (예: PR-532) 에서 실행 — 미머지 브랜치의 번역 로직을
+# 배포 없이 Jenkins 경로로 검증할 때. 빈 값이면 필드 미전송(=main).
+translate_pipeline_branch_json=""
+if [[ -n "$TRANSLATE_PIPELINE_BRANCH" ]]; then
+  translate_pipeline_branch_json="\"pipeline_branch\": \"$TRANSLATE_PIPELINE_BRANCH\","
+  echo "  translate pipeline_branch: $TRANSLATE_PIPELINE_BRANCH"
+fi
+
 translate_body=$(cat <<JSON
 {
   "pr_url": "$ko_pr_url",
+  $translate_pipeline_branch_json
   $engine_json
   $model_json
   $tm_top_k_json

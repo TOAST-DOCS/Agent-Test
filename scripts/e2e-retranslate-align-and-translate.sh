@@ -82,6 +82,7 @@ TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199)
 TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
 TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
 VERIFY_MODE="py"                          # py = check_docs_align.py (기본) | fable = 예전 claude -p 검증
+TRANSLATE_PIPELINE_BRANCH=""              # translate/translate-file 잡의 multibranch child (빈 값=main)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 ALIGN_PIPELINE_BRANCH=""                  # cloud-translate 의 Jenkins multibranch child (기본: 미지정 → main)
 while [[ $# -gt 0 ]]; do
@@ -141,6 +142,8 @@ while [[ $# -gt 0 ]]; do
     --no-align-v2)   ALIGN_V2=0; shift ;;
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 세션 브랜치 재사용
     --base-source)   BASE_SOURCE_BRANCH="$2"; shift 2 ;; # 새 세션 브랜치를 갈라낼 원본 (기본 alpha)
+    --translate-pipeline-branch)
+      TRANSLATE_PIPELINE_BRANCH="$2"; shift 2 ;;   # /api/translate·/api/translate/file 을 이 브랜치로
     --pipeline-branch|--align-pipeline-branch)
       ALIGN_PIPELINE_BRANCH="$2"; shift 2 ;;            # /api/align 을 이 cloud-translate 브랜치로 실행
     -h|--help) sed -n '3,61p' "$0"; exit 0 ;;
@@ -415,9 +418,16 @@ if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]]; then
   retx_gv_ja_json="\"guidelines_variant_ja\": \"$TRANSLATE_GUIDELINES_VARIANT_JA\","
 fi
 
+retx_pipeline_branch_json=""
+if [[ -n "$TRANSLATE_PIPELINE_BRANCH" ]]; then
+  retx_pipeline_branch_json="\"pipeline_branch\": \"$TRANSLATE_PIPELINE_BRANCH\","
+  echo "  translate/file pipeline_branch: $TRANSLATE_PIPELINE_BRANCH"
+fi
+
 retx_body=$(cat <<JSON
 {
   "repo": "$REPO",
+  $retx_pipeline_branch_json
   "pr_number": $align_pr_number,
   "source": "$RETRANSLATE_SOURCE",
   "path": "$RETRANSLATE_PATH",
@@ -587,9 +597,19 @@ fi
 #   --workers 2 --table-rows --skip-full-table --skip-anchor-only
 #   --assign-anchors --align-headings
 # PR#207/#211 (within/cross-opcode batching) 은 자동 활성.
+# --translate-pipeline-branch: translate 잡을 cloud-translate 의 특정 Jenkins
+# multibranch child (예: PR-532) 에서 실행 — 미머지 브랜치의 번역 로직을
+# 배포 없이 Jenkins 경로로 검증할 때. 빈 값이면 필드 미전송(=main).
+translate_pipeline_branch_json=""
+if [[ -n "$TRANSLATE_PIPELINE_BRANCH" ]]; then
+  translate_pipeline_branch_json="\"pipeline_branch\": \"$TRANSLATE_PIPELINE_BRANCH\","
+  echo "  translate pipeline_branch: $TRANSLATE_PIPELINE_BRANCH"
+fi
+
 translate_body=$(cat <<JSON
 {
   "pr_url": "$ko_pr_url",
+  $translate_pipeline_branch_json
   $engine_json
   $model_json
   $tm_top_k_json

@@ -4,6 +4,7 @@
 #
 #   scripts/e2e-suite.sh [--translate api|local] [--engine api|cli] [--model haiku|sonnet|opus] \
 #                        [--verify py|fable] [--no-reuse-align] \
+#                        [--translate-pipeline-branch <jenkins-child>] \
 #                        [--sleep-between <sec>] [plan ...]
 #
 #   --sleep-between <sec> — plan 과 plan 사이 대기 (기본 0). Jenkins agent 의
@@ -94,6 +95,13 @@
 # 서로 간섭하지 않는다. --no-reuse-align 이면 plan 마다 프롤로그를 다시 돈다
 # (align/fix-heading-syntax 잡 자체를 여러 번 태우고 싶을 때).
 #
+# --translate-pipeline-branch <name> 이면 translate 잡을 cloud-translate 의
+# Jenkins multibranch child <name> (예: PR-532) 에서 돌린다 — 미머지 PR 의 번역
+# 로직을 배포 없이 Jenkins 경로로 검증할 때. align/fix-heading-syntax/ko-review
+# 잡과 webhook plan 은 그대로 main 에서 돈다. concurrent plan 은 로컬
+# translate_pr.py 를 쓰므로 대신 CLOUD_TRANSLATE_DIR 을 그 브랜치의 워크트리로
+# export 해야 같은 코드를 태운다.
+#
 # 구조 검증(8·17단계)은 scripts/check_docs_align.py 가 결정적으로 수행한다
 # (예전 `claude -p --model fable` agentic 검사 대비 plan 당 30~40분 절감).
 # --verify fable 로 예전 방식으로 되돌릴 수 있다.
@@ -116,6 +124,9 @@ while [[ $# -gt 0 ]]; do
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); shift 2 ;;
     --no-reuse-align)
       REUSE_ALIGN=0; shift ;;
+    --translate-pipeline-branch)
+      # translate 잡만 특정 cloud-translate 브랜치에서 — align/retranslate 양쪽에 전달
+      PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); shift 2 ;;
     --translate|--tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
     webhook|korean-review|round1|round2|row-drop-repro|table-suite|markup-churn|retranslate|concurrent)
@@ -124,7 +135,7 @@ while [[ $# -gt 0 ]]; do
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
       # `scripts/e2e-suite.sh all round2` 처럼 뒤에 명시적으로 이어붙인다.
       PLANS+=(webhook korean-review round1 table-suite row-drop-repro markup-churn retranslate concurrent); shift ;;
-    -h|--help) sed -n '3,99p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,107p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
 done
