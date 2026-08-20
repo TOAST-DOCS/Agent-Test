@@ -267,7 +267,7 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 마커는 정기 restore-alpha-origin 으로 정리됩니다.
 
 <a id="e2e-fence-noop"></a>
-### Token issuance sample
+### Token issuance sample { #e2e-fence-noop }
 
 <details>
 <summary>cURL</summary>
