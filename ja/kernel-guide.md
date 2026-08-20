@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=73ceeadcb5ee -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
@@ -630,3 +632,13 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+## テスト用の新しい表セクション { #test-added-table }
+
+このセクションは、表の翻訳検証のために新しく追加されました。以下の表のヘッダーとセルテキストはすべて翻訳する必要があります。
+
+| 項目 | 説明 | デフォルト値 |
+|---|---|---|
+| 最大ノード数 | 単一のノードプールに作成できるノードの最大数です。 | 10 |
+| 自動スケーリング | 負荷に応じてノード数を自動的に調整します。 | 無効 |
+| 点検周期 | ノード状態を確認する周期です。 | 5分 |
