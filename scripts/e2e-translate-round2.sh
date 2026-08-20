@@ -119,6 +119,9 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
+# e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
+source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
+
 tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
 
 # ── 1) alpha 최신화 + 1라운드 산출물 존재 확인 ────────────────────────
@@ -259,6 +262,7 @@ while (( $(date +%s) < deadline )); do
     | sort -u | head -n1 || true)"
   if [[ -n "$trans_pr_url" ]]; then
     echo "  detected translation PR: $trans_pr_url"
+    e2e_label_pr "$REPO" "$trans_pr_url"
     break
   fi
   sleep 60

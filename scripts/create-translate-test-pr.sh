@@ -55,6 +55,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 cd "$REPO_ROOT"
+# e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
+source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
+
 
 # ── ko/ 변형기 (파이썬) ────────────────────────────────────────────────────
 # 인자: <mutation> <ko-file-path>. 파일을 in-place 로 수정.
@@ -1047,4 +1050,8 @@ fi
 
 git commit -m "$TITLE"
 git push -u origin "$BRANCH"
-gh pr create --base "$BASE_BRANCH" --head "$BRANCH" --title "$TITLE" --body "$BODY"
+# 라벨은 create 시점에 붙인다 — 사후 `gh pr edit` 는 stdout 에 URL 을 한 줄 더
+# 찍어 호출부의 `grep -oE 'https://…/pull/[0-9]+' | tail -n1` 파싱을 깨뜨린다.
+e2e_ensure_label "${REPO:-TOAST-DOCS/Agent-Test}"
+gh pr create --base "$BASE_BRANCH" --head "$BRANCH" --title "$TITLE" --body "$BODY" \
+  --label "$E2E_LABEL"

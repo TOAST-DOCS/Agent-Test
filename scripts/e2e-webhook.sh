@@ -39,6 +39,9 @@ DASHBOARD_BASE_URL="${DASHBOARD_BASE_URL:-}"
 DASHBOARD_API_TOKEN="${DASHBOARD_API_TOKEN:-}"
 
 REPO="TOAST-DOCS/Agent-Test"
+# e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
+source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
+
 REPO_LOWER="toast-docs/agent-test"
 BASE_BRANCH=""       # 미지정 → 세션 브랜치 e2e-webhook/<ts> 자동 생성. --base 로 override.
 BASE_SOURCE="alpha"  # 세션 브랜치를 갈라낼 원본
@@ -421,14 +424,14 @@ echo "[3/6] PR open (base=$BASE_BRANCH) — GitHub 이 pull_request/opened 발�
 # translate 필터의 label_require (`content-agent,한글 검수`) 를 통과하도록 라벨 부착.
 # 두 라벨 모두 없으면 먼저 만든 뒤 PR 에 붙인다 (dashboard 에서 필터가 라벨을
 # 요구하는데 Agent-Test 레포에는 라벨이 없어 스킵되던 실측 케이스 대응).
-for lbl in "content-agent" "한글 검수"; do
+for lbl in "content-agent" "한글 검수" "$E2E_LABEL"; do
   if ! gh label list --repo "$REPO" --search "$lbl" --json name --jq '.[].name' 2>/dev/null | grep -Fxq "$lbl"; then
     gh label create "$lbl" --repo "$REPO" --color "1d76db" --description "webhook filter label" 2>/dev/null || true
   fi
 done
 pr_url="$(gh pr create --repo "$REPO" \
   --base "$BASE_BRANCH" --head "$HEAD_BRANCH" \
-  --label "content-agent" --label "한글 검수" \
+  --label "content-agent" --label "한글 검수" --label "$E2E_LABEL" \
   --title "test(webhook-e2e): $HEAD_BRANCH" \
   --body "webhook e2e 검증용 임시 PR — scripts/e2e-webhook.sh 가 open/merge 흐름을 통해 ko-review 와 translate 트리거를 확인한다.")"
 echo "  PR: $pr_url"

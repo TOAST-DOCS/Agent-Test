@@ -23,6 +23,8 @@ There is **no build, no test framework, no lint**. The e2e scripts are the tests
 - `pre-align/fix-headings-*`, `pre-align/fix-heading-syntax-*` — head branches of PRs produced by the Jenkins align / fix-heading-syntax jobs.
 - `alpha-origin` (remote) — historical reference; the *directory* `archive/alpha-origin/` is what restore uses, not this branch.
 
+**Every PR an e2e run produces carries the `e2e` label** — the ko-mutation PR and the concurrent A/B PRs get it at `gh pr create` time, and the PRs the Jenkins jobs open (translate / align / fix-heading-syntax) get it right after the harness detects them. `scripts/e2e-label.sh` holds the two helpers (`e2e_ensure_label`, `e2e_label_pr`); it creates the label on first use and never fails a run over a labeling error. This matters because verification failures deliberately leave PRs open, so the open-PR list mixes fixture output with anything a human opened — `gh pr list --repo TOAST-DOCS/Agent-Test --label e2e` separates them. Labeling helpers print to **stderr**: several callers parse a PR URL off stdout.
+
 ## Running the e2e pipeline
 
 Prerequisites (all must be on PATH): `git`, `gh` (logged in), `curl`, `python3`, `claude` (Claude Code CLI).

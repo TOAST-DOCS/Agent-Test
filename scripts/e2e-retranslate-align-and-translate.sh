@@ -155,6 +155,9 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
+# e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
+source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
+
 
 # ── 1) e2e 세션 브랜치 준비 (기본: 새로 생성; --base-branch 로 override 가능) ─
 
@@ -284,6 +287,7 @@ while (( poll_left-- > 0 )); do
   fix_pr_url="$(comm -13 "$tmpdir/fix_before" "$tmpdir/fix_now" | head -n1 || true)"
   if [[ -n "$fix_pr_url" ]]; then
     echo "  detected fix-heading-syntax PR: $fix_pr_url"
+    e2e_label_pr "$REPO" "$fix_pr_url"
     break
   fi
   sleep 10
@@ -362,6 +366,7 @@ while (( poll_left-- > 0 )); do
   align_pr_url="$(comm -13 "$tmpdir/before" "$tmpdir/now" | head -n1 || true)"
   if [[ -n "$align_pr_url" ]]; then
     echo "  detected new PR: $align_pr_url"
+    e2e_label_pr "$REPO" "$align_pr_url"
     break
   fi
   sleep 10
@@ -627,6 +632,7 @@ while (( poll_left-- > 0 )); do
     | sort -u | head -n1 || true)"
   if [[ -n "$trans_pr_url" ]]; then
     echo "  detected translation PR: $trans_pr_url"
+    e2e_label_pr "$REPO" "$trans_pr_url"
     break
   fi
   sleep 20

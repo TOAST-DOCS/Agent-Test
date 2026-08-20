@@ -52,6 +52,9 @@ TOKEN_B_ROW="x9c"                            # B 신규 표 행의 key 셀 (한�
 TOKEN_A_EDIT="concurrent-a-edit"             # A 본문 수정 문장에 심는 ASCII 토큰
 
 WORK="$(mktemp -d /tmp/e2e-concurrent-XXXXXX)"
+# e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
+source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
+
 LOGDIR="$WORK/logs"; mkdir -p "$LOGDIR"
 echo "workdir: $WORK"
 cleanup() {
@@ -141,9 +144,11 @@ make_pr() {  # $1: branch  $2: a|b  $3: title  → PR URL 출력
   git commit --quiet -m "$3"
   git push --quiet origin "$1"
   gh pr create --repo "$REPO" --base "$SESSION" --head "$1" \
-    --title "$3" --body "concurrent-PR e2e ($2)" 2>/dev/null | tail -1
+    --title "$3" --body "concurrent-PR e2e ($2)" --label "$E2E_LABEL" 2>/dev/null | tail -1
   git checkout --quiet "$SESSION"
 }
+
+e2e_ensure_label "$REPO"
 
 echo "[2/8] PR A 생성 (본문 수정)"
 PR_A_URL="$(make_pr "$BR_A" a "[e2e] concurrent PR A — body edit (${TS})")"
@@ -177,6 +182,7 @@ merge_pr "$PR_B_URL"
 TRANS_B_URL="$(run_translate "$PR_B_URL" translate-b)"
 [[ -n "$TRANS_B_URL" ]] || { echo "error: B 번역 PR URL 파싱 실패 — $LOGDIR/translate-b.log" >&2; exit 2; }
 echo "  B 번역 PR: $TRANS_B_URL"
+e2e_label_pr "$REPO" "$TRANS_B_URL"
 merge_pr "$TRANS_B_URL"
 echo "  B 번역 PR 머지 완료"
 
@@ -206,6 +212,7 @@ echo "[6/8] A 번역"
 TRANS_A_URL="$(run_translate "$PR_A_URL" translate-a)"
 [[ -n "$TRANS_A_URL" ]] || { echo "error: A 번역 PR URL 파싱 실패 — $LOGDIR/translate-a.log" >&2; exit 2; }
 echo "  A 번역 PR: $TRANS_A_URL"
+e2e_label_pr "$REPO" "$TRANS_A_URL"
 
 echo "[7/8] 검증: A 번역 PR head 의 en/ja 가 B 콘텐츠를 보존하는가"
 TRANS_A_NUM="${TRANS_A_URL##*/}"
