@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=fcc451b0bec8 -->
 
 <a id="compute-instance-version-guide"></a>
-
 ## Compute > Instance > Version guide { #compute-instance-version-guide }
 
 This document provides information about the cluster image versions and release history that are supported by the Instance service. It also describes the major changes introduced in each version, the minor version upgrade policy, and the end of support schedule. When you create a new cluster, the latest minor version is selected by default. You can request a minor version upgrade for running clusters through the console or API. Minor version upgrades are performed on a per-node-pool basis using a zero-downtime rolling update, and the data plane is not affected. However, brief latency can occur in the control plane, so we recommend that you schedule the upgrade during low-traffic periods. During the upgrade, new workload deployments and node pool expansion requests are queued and processed sequentially after the upgrade completes. Before the upgrade begins, you can check the estimated time and progress status for each node on the console's details page. If needed, you can pause or roll back the upgrade on a per-node-pool basis. Rollback is only possible to the last successful minor version. Even after a rollback, the control plane maintains the latest minor version. To attempt the upgrade again after a rollback, resolve the cause of the failure and click the retry button in the console. (Body content test: This sentence should be reflected when the translation is re-executed.)
