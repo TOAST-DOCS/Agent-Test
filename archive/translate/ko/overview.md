@@ -1,15 +1,10 @@
-<!-- pre-align:aligned sig=74b0e7f9672e -->
-
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 개요 { #compute-instance-overview }
 
-이 문단은 기존 섹션에 추가된 테스트 문단입니다. 기존 heading 은 그대로 유지되어야 합니다. (e2e 격리 검증 20260820-063528)
-
-
-인스턴스는 가상의 CPU, 메모리, 루트 블록 스토리지로 구성된 가상 서버입니다. 이 서버에 고객의 서비스나 애플리케이션을 설치하고 NHN Cloud가 제공하는 다양한 서비스를 조합하여 사용합니다. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
+인스턴스는 가상의 CPU, 메모리, 루트 블록 스토리지로 구성된 가상 서버입니다. 이 서버에 고객의 서비스나 애플리케이션을 설치하고 NHN Cloud가 제공하는 다양한 서비스를 조합하여 사용합니다. 인스턴스는 몇 분 안에 생성할 수 있으며, 필요에 따라 언제든지 확장하거나 축소할 수 있습니다.
 
 <a id="components"></a>
-## 인스턴스 구성 요소 { #components }
+## 인스턴스 구성 요소 개요 { #components }
 
 인스턴스를 구성하는 요소는 다음과 같습니다.
 
@@ -19,11 +14,12 @@
 - **키페어**(key-pair): 인스턴스 접속 수단으로 사용되는 키
 - **보안 그룹**(security groups): 인스턴스 네트워크 보안 설정
 - **네트워크**: 인스턴스가 연결될 가상 네트워크
+- **태그**(tags): 인스턴스를 분류하고 검색하기 위한 사용자 정의 레이블
 
 이 정보에 따라 인스턴스의 속성과 사용 방식이 바뀝니다. 이 정보 중, 이미지와 가용성 영역을 제외한 설정은 인스턴스 생성 이후에도 변경할 수 있으나, 일부 인스턴스 타입(flavor)은 인스턴스 생성 이후에 변경할 수 없습니다. 인스턴스 타입 변경에 대한 자세한 설명은 [콘솔 사용 가이드의 인스턴스 타입 변경](./console-guide/#modify-flavor)을 참고합니다.
 
 <a id="image"></a>
-### 이미지 { #image }
+### 인스턴스 이미지 { #image }
 
 이미지는 운영체제를 담고 있는 가상 디스크입니다. NHN Cloud는 현재 Debian, Ubuntu, Rocky와 Windows를 지원하고 있습니다.
 
@@ -91,6 +87,17 @@ NHN Cloud는 물리 하드웨어 문제로 생기는 장애에 대비하기 위�
 * 종료된 인스턴스는 과금되지 않습니다.
 
 과금에 대한 더 자세한 사항은 서비스별 [요금 페이지](https://www.toast.com/kr/service/compute/instance#price)를 참고합니다.
+
+<a id="regions-and-availability"></a>
+## 지원 리전 및 가용성 { #regions-and-availability }
+
+인스턴스는 NHN Cloud의 여러 리전에서 사용할 수 있으며, 각 리전은 서로 독립된 가용성 영역으로 구성됩니다. 리전 선택 시에는 서비스 대상 사용자의 위치, 규제 요구 사항, 그리고 다른 NHN Cloud 서비스와의 연동성을 함께 고려합니다.
+
+- **한국(판교) 리전**: 국내 서비스에 가장 낮은 지연 시간을 제공합니다.
+- **한국(평촌) 리전**: 판교 리전의 재해 복구 사이트로 활용하기 좋습니다.
+- **일본 리전**: 일본 및 동아시아 지역 사용자를 대상으로 하는 서비스에 적합합니다.
+
+각 리전에서 제공되는 인스턴스 타입과 이미지는 다를 수 있으므로, 인스턴스를 생성하기 전에 콘솔의 리전별 지원 목록을 확인합니다.
 
 <a id="how-to-access-instances"></a>
 ## 인스턴스 접속 방법 { #how-to-access-instances }
@@ -225,7 +232,7 @@ Windows 서버에 접속하려면, NHN Cloud 콘솔에서 접속하려는 Window
 > 시리얼 콘솔로 인스턴스에 접속하여 부팅 방법 변경 시 부팅에 실패할 수 있으며, 이에 따른 결과에 대한 책임은 사용자에게 있습니다.
 > 일반적인 상황에서는 SSH 클라이언트 접속 사용을 권장합니다.
 
-<a id="how-to-connect-serial-console-change-grub-bootloader-settings"></a>
+<a id="change-grub-bootloader-settings"></a>
 #### GRUB 부트로더 설정 변경
 
 2024년 11월 26일 배포 이전에 생성한 인스턴스에서 부트로더를 조작하기 위해서는 GRUB 설정이 필요합니다.
@@ -237,31 +244,10 @@ $ sudo vi /etc/default/grub.d/50-cloudimg-settings.cfg
 GRUB_TIMEOUT=3
 GRUB_TERMINAL="console serial"
 GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
-````
+```
 
 변경된 설정을 적용합니다. OS에 따라 GRUB 설정 적용 명령어가 다를 수 있습니다.
 
 ```
 $ sudo update-grub
 ```
-
-<a id="webhook-e2e-20260728-110207"></a>
-## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
-
-이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
-webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
-마커는 정기 restore-alpha-origin 으로 정리됩니다.
-
-<a id="webhook-e2e-20260728-111509"></a>
-## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
-
-이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
-webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
-마커는 정기 restore-alpha-origin 으로 정리됩니다.
-
-<a id="webhook-e2e-20260728-113416"></a>
-## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
-
-이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
-webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
-마커는 정기 restore-alpha-origin 으로 정리됩니다.

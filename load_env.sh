@@ -1,0 +1,3 @@
+
+export DASHBOARD_BASE_URL=http://content-agent.cloud.toastoven.net
+export DASHBOARD_API_TOKEN="81c737b7369585628f0c634b24148f2032abe526b195c5ab0c1e48dc61e11f50"
