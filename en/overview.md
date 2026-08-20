@@ -3,9 +3,12 @@
 
 
 <a id="compute-instance-overview"></a>
+
 ## Compute > Instance > Overview { #compute-instance-overview }
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Text modification test: This sentence should be reflected when retranslating.)
+This paragraph is a test paragraph added to an existing section. Existing headings must be maintained as-is. (fence-noop control group 20260820-073410)
+
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Text revision test: This sentence should be reflected when the translation is re-executed.)
 
 <a id="components"></a>
 ## Components { #components }
@@ -241,12 +244,30 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## Additional section for testing { #test-added-section }
+## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
-This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+It verifies whether the webhook routes this PR to the ko-review / translate job,
+and the marker is cleaned up regularly by restore-alpha-origin.
+
+<a id="webhook-e2e-20260728-111509"></a>
+
+## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying that the webhook routes this PR to the ko-review / translate job,
+the marker will be cleaned up by the regular restore-alpha-origin process.
+
+<a id="webhook-e2e-20260728-113416"></a>
+
+## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying that the webhook routes this PR to the ko-review / translate job,
+the marker is cleaned up by a scheduled restore-alpha-origin.
 
 <a id="e2e-fence-noop"></a>
+
 ### Token issuance sample
 
 <details>
@@ -254,7 +275,7 @@ This is a newly added section for testing the translation pipeline. This verifie
 
 ```
 $ curl -X POST -H 'Content-Type: application/json' \
-https://api-identity-infrastructure.nhncloudservice.com/v2.0/tokens \
+$[ identity_url ]$/v2.0/tokens \
 -d '{"auth": {"tenantId": "6dbc368b", "passwordCredentials": {"username": "*****"}}}'
 
 {
