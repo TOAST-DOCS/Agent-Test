@@ -3,9 +3,12 @@
 
 
 <a id="compute-instance-overview"></a>
+
 ## Compute > Instance > 概要 { #compute-instance-overview }
 
-インスタンスは仮想の CPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールし、NHN Cloud が提供するさまざまなサービスを組み合わせて使用します。(本文修正テスト: この文は再翻訳時に反映される必要があります。)
+この段落は既存のセクションに追加されたテスト段落です。既存の見出しはそのままに保持される必要があります。(fence-noop 対照群 20260820-073410)
+
+インスタンスは仮想 CPU、メモリ、ルートブロックストレージで構成される仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールし、NHN Cloud が提供する様々なサービスを組み合わせて使用します。(本文修正テスト: この文は翻訳の再実行時に反映される必要があります。)
 
 <a id="components"></a>
 ## インスタンス構成要素 { #components }
@@ -248,12 +251,30 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## テスト用の追加セクション { #test-added-section }
+## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
-このセクションは翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じアンカー ID が割り当てられているか確認します。
+このセクションは scripts/e2e-webhook.sh が挿入した一時的なマーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングするかを検証した後、
+マーカーは定期的な restore-alpha-origin でクリーンアップされます。
+
+<a id="webhook-e2e-20260728-111509"></a>
+
+## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
+
+このセクションは scripts/e2e-webhook.sh が挿入した一時的なマーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングするかを検証した後、
+マーカーは定期的な restore-alpha-origin でクリーンアップされます。
+
+<a id="webhook-e2e-20260728-113416"></a>
+
+## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
+
+このセクションは scripts/e2e-webhook.sh が挿入した一時的なマーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングするかを検証した後、
+マーカーは定期的な restore-alpha-origin で削除されます。
 
 <a id="e2e-fence-noop"></a>
+
 ### Token issuance sample
 
 <details>
@@ -261,7 +282,7 @@ $ sudo update-grub
 
 ```
 $ curl -X POST -H 'Content-Type: application/json' \
-https://api-identity-infrastructure.nhncloudservice.com/v2.0/tokens \
+$[ identity_url ]$/v2.0/tokens \
 -d '{"auth": {"tenantId": "6dbc368b", "passwordCredentials": {"username": "*****"}}}'
 
 {
