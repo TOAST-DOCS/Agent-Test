@@ -16,3 +16,12 @@ This document summarizes the instance pricing plans and the limits each plan pro
 ### Billing notes { #billing-notes }
 
 Billing is calculated hourly, and storage charges continue to accrue even when an instance is stopped. If you use a monthly-cap plan, any usage above the cap is not billed.
+
+<a id="snapshot-defaults"></a>
+### Snapshot defaults { #snapshot-defaults }
+
+| Item | Description |
+|---|---|
+| Backup cycle | A snapshot is taken automatically once per day. |
+| Retention period | Snapshots that have been created are kept for 30 days. |
+| Restore method | You can perform a restore straight from the console. |

@@ -783,10 +783,30 @@ declare -a PLAN_ROW_DROP_REPRO=(
 #                       → load guard 미작동 → anchor-path row-splice 가 stale 표(4행)에
 #                       positional 매핑되어 2.4.1 번역이 2.4.0 행을 덮어쓰고 고아
 #                       중복 행이 생기는 조용한 손상을 노출한다 (2026-07-23 run 실측).
-#   pricing-guide.md  : (결함 B', 산문형 표 변형) en/ja 가 '고급 요금제' 행을
-#                       결여한 stale 산문 표 (첫 셀이 번역되는 텍스트 = row key
-#                       없음). 문단만 수정 → cloud-translate PR #290 의 reconcile
-#                       이 참조 주입 whole-table 재번역으로 행을 복구해야 한다.
+#   pricing-guide.md  : (결함 B', 산문형 표 변형) 같은 문서에 산문형 stale 표가
+#                       둘 있고, 문단만 수정한다 → cloud-translate PR #290 의
+#                       reconcile 이 참조 주입 whole-table 재번역으로 행을
+#                       복구해야 한다. 첫 셀이 번역되는 텍스트라 row key 가 없어
+#                       (`_table_key_column` → None) 키 백필이 아닌 재번역 경로다.
+#                         (1) '요금제별 한도' 표 (ko 167자): en/ja 에 '고급 요금제'
+#                             행 없음.
+#                         (2) '스냅샷 기본 정책' 표 (ko 125자 — **300자 하한 미만**):
+#                             en/ja 에 '복원 방식' 행 없음.
+#                       (2) 는 `diff_full_preserve_min_chunk_chars`(=300) 의 표 예외
+#                       (`_table_preserve_ctx`) 전용 픽스처다. 그 하한은 preserve
+#                       베이스라인이 청크를 압도할 때의 문서 재현 폭주를 막는
+#                       가드인데, 표 reconcile 의 베이스라인은 재작성 대상 표
+#                       자신이라 그 실패 형태가 성립하지 않는다. 예외 없이 하한을
+#                       적용하면 참조가 사라져 **기존 행 문구가 새로 번역된다** —
+#                       행 수·열 수 검사는 그대로 통과하므로 조용한 churn 이다.
+#                       기대값: 복구된 행 1개만 diff 에 등장하고, 남아있던 두 행
+#                       (`Backup cycle` / `Retention period`, ja 는 `バックアップ周期`
+#                       / `保管期間`) 은 **diff 에 전혀 나타나지 않는다**(바이트 보존).
+#                       en/ja 의 기존 문구는 신선 번역이 그대로 재현하기 어려운
+#                       표현으로 일부러 골라 두었으므로, 예외가 빠지면 diff 에
+#                       바로 드러난다. 실측(2026-08-22, haiku-4-5, 실 API 3회):
+#                       예외 ON = 2/2 행 바이트 보존 3/3, 예외 OFF = 2/3 회에서
+#                       `Basic plan`→`Basic Plan`, `1TB`→`1 TB` 식으로 churn.
 #   spec-guide.md     : (결함 D — 컬럼 drift 혼재; notification-hub PR #209 지적
 #                       4번 동형) ko 는 4컬럼 표(경로|타입|Not Null|설명), en/ja 는
 #                       stale-ify 로 'Not Null' 컬럼(3번째)이 제거된 3컬럼 표
@@ -957,6 +977,8 @@ case "$PLAN_NAME" in
       "ja/release-notes.md|2.4.1"
       "en/pricing-guide.md|Premium plan"
       "ja/pricing-guide.md|プレミアムプラン"
+      "en/pricing-guide.md|Restore method"
+      "ja/pricing-guide.md|復元方法"
     )
     # 결함 D (컬럼 drift): en/ja 표에서 N번째 컬럼을 통째로 제거해 "ko 는 4컬럼,
     # target 은 3컬럼" 상태를 조성 — notification-hub 의 'Not Null' 컬럼 미반영
