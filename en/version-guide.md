@@ -1,9 +1,11 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=fcc451b0bec8 -->
 
 <a id="compute-instance-version-guide"></a>
 ## Compute > Instance > Version guide { #compute-instance-version-guide }
 
-This document summarizes the supported cluster image versions and release history of the instance service. For each version, it introduces the major changes, the minor upgrade policy, and the end-of-support schedule. When creating a new cluster, the latest minor version is selected by default; for clusters already in operation, minor upgrades can be requested through the console or the API. Minor upgrades roll out node-pool by node-pool with zero downtime and do not affect the data plane. A brief control-plane delay may occur, however, so scheduling the upgrade during low-traffic hours is recommended. While an upgrade is in progress, new workload deployments and node-pool expansion requests are queued and are processed sequentially after the upgrade completes. Before the upgrade starts, you can review the estimated duration and per-node progress on the console detail page, and if necessary you can pause or roll back the upgrade at the node-pool level. Rollbacks are only allowed to the previously successful minor version, and after a rollback the control plane still stays on the latest minor version. To retry the upgrade after a rollback, resolve the failure cause and click the retry button on the console.
+This document describes the cluster image versions supported by the Instance service and its release history. It covers major changes introduced in each version, minor version upgrade policies, and end-of-support schedules. When you create a new cluster, the latest minor version is selected by default, and for clusters already in operation, you can request a minor version upgrade through the console or API. Minor version upgrades proceed in a rolling fashion without downtime on a node pool basis, and the data plane is not affected. However, a brief delay may occur in the control plane, so we recommend that you schedule the upgrade during periods of low traffic. During the upgrade process, new workload deployments and node pool scaling requests are queued and processed sequentially after the upgrade is complete. Before the upgrade begins, you can check the estimated duration and progress status for each node on the details page in the console, and if necessary, you can pause or roll back the upgrade on a node pool basis. A rollback is only possible to the last successful minor version, and even after a rollback, the control plane maintains the latest minor version. To retry an upgrade after a rollback, resolve the failure cause and then click the retry button in the console. (Test for body modification: This sentence should be reflected when the translation is re-run.)
 
 <a id="version-history"></a>
 ### Version history { #version-history }
@@ -11,7 +13,9 @@ This document summarizes the supported cluster image versions and release histor
 | Version | Release date | Key changes |
 |---|---|---|
 | 1.202601.1 | 2026-01-15 | Initial release. Node pool automation, autoscaling, and multi-region support. |
+| 1.202602.1 | 2026-02-21 | Improved system log collector and expanded backup storage. Added node self-healing feature. |
 | 1.202603.1 | 2026-03-25 | Network performance tuning. LB node health-check interval reduced. Pod scheduler improved. |
+| 1.202603.9 | 2026-03-28 | This is a new version inserted in the middle. It must be translated. |
 | 1.202604.1 | 2026-04-30 | Security patch. Container runtime vulnerability fixed. Audit log fields expanded. |
 | 1.202605.1 | 2026-05-30 | Dashboard UI redesign. Notification channels expanded. Unified monitoring widget added. |
 
