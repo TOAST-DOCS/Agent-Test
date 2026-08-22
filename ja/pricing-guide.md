@@ -1,5 +1,7 @@
+<!-- pre-align:aligned sig=28a7da0909f0 -->
+
 <a id="compute-instance-pricing-guide"></a>
-## Compute > Instance > 料金ガイド
+## Compute > Instance > 料金ガイド { #compute-instance-pricing-guide }
 
 インスタンスの料金プランとプランごとの提供上限をまとめたドキュメントです。料金はリージョンや決済方法によって異なる場合があり、詳細な金額はコンソールの料金計算機で確認できます。
 
