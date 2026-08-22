@@ -632,6 +632,7 @@ Reboot the OS for the boot order change to take effect.
 [root@rocky810 ~]# sync; reboot
 ```
 
+<a id="test-added-table"></a>
 ## Test New Table Section { #test-added-table }
 
 This section has been added to verify table translation. All header text and cell content in the table below must be translated.
