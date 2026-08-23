@@ -121,6 +121,19 @@
 #                                파라미터를 default 로 보내므로 여기서도 미전송
 #                                ($CLOUD_TRANSLATE_DIR/.env 기본값).
 #
+#   --no-table-reconcile         translate_pr.py 에 --no-table-reconcile 을 전달해 표 행
+#                                reconcile 을 끈다 (기본은 ON = translate_pr.py 기본값).
+#                                stale 표가 splice 이전에 복구되지 않으므로 행 splice 의
+#                                1:1 가드가 깨져 full 로 떨어지고, skip-full-table 가드가
+#                                그 문서를 제외하려다 **LLM-patch fallback** 을 태운다 —
+#                                reconcile 이 켜진 기본 실행에서는 도달 불가한 경로다
+#                                (2026-08-23 실측: 8 plan 전체에서 LLM-patch 0건, 원인은
+#                                row-drop-repro 의 stale 행이 reconcile 단계에서 backfill
+#                                되어 부하가 cap 아래로 떨어지기 때문). dashboard
+#                                /api/translate 에는 이 필드가 없어 **--translate local
+#                                전용**이며, api 모드와 함께 주면 하드 실패한다 (조용히
+#                                reconcile ON 으로 돌아 통과하는 것이 최악이므로).
+#
 #   --ko-review / --no-ko-review 12~14단계(한글 검수 + suggestion accept) 실행 여부.
 #                                기본값은 plan 별로 갈린다 — table-suite /
 #                                row-drop-repro / markup-churn 은 **생략**, 그 외
@@ -187,6 +200,12 @@ TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기�
 # 하고 (검수 suggestion 이 픽스처를 흔들면 판정이 흐려진다) 검증 대상도 번역
 # 로직이라 ko-review 를 태울 이유가 없다. round1 은 종합 plan 이라 유지.
 KO_REVIEW_MODE="auto"                     # auto = plan 기본값 | on | off
+# 표 행 reconcile (--table-reconcile / --no-table-reconcile 로 translate_pr.py 에
+# 전달). 기본 1 = translate_pr.py 기본값(ON) 그대로. 0 으로 끄면 stale 표가
+# splice 이전에 복구되지 않아 LLM-patch fallback 경로가 열린다 — row-drop-repro
+# 의 reconcile-off 변형이 그 경로를 검증한다. dashboard /api/translate 에는 이
+# 필드가 없으므로 **local 모드 전용**이다.
+TABLE_RECONCILE=1
 VERIFY_MODE="py"                          # py = check_docs_align.py (기본, 결정적·<1초) | fable = 예전 claude -p 검증
 TRANSLATE_PIPELINE_BRANCH=""              # translate 잡을 돌릴 cloud-translate multibranch child (빈 값=main)
 FROM_ALIGNED=""                            # 이미 align 이 끝난 브랜치에서 세션을 갈라내고 2~9단계를 건너뛴다
@@ -264,12 +283,14 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --translate-pipeline-branch)
       TRANSLATE_PIPELINE_BRANCH="$2"; shift 2 ;;   # /api/translate 를 이 cloud-translate 브랜치로 실행
+    --table-reconcile)    TABLE_RECONCILE=1; shift ;;   # (기본) 표 행 reconcile 켜기
+    --no-table-reconcile) TABLE_RECONCILE=0; shift ;;   # reconcile 끄기 → LLM-patch 경로 노출 (local 전용)
     --ko-review)     KO_REVIEW_MODE="on"; shift ;;       # plan 기본값을 무시하고 ko-review 실행
     --no-ko-review)  KO_REVIEW_MODE="off"; shift ;;      # plan 기본값을 무시하고 ko-review 생략
     --from-aligned)  FROM_ALIGNED="$2"; shift 2 ;;       # align 완료 스냅샷 브랜치 재사용 (2~9단계 skip)
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 e2e 세션 브랜치 재사용
     --base-source)   BASE_SOURCE_BRANCH="$2"; shift 2 ;; # 새 e2e 브랜치를 갈라낼 원본 (기본 alpha)
-    -h|--help) sed -n '3,155p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,180p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -298,6 +319,16 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
     echo "error: CLOUD_TRANSLATE_PY 가 실행 가능하지 않습니다: $CLOUD_TRANSLATE_PY" >&2
     exit 1
   fi
+fi
+
+# --no-table-reconcile 은 dashboard /api/translate 가 노출하지 않는 플래그다.
+# api 모드에서 조용히 reconcile ON 으로 도는 것이 최악 — 변형이 검증하려던
+# LLM-patch 경로를 안 태우고도 통과해 "검증했다" 는 오판을 남긴다 (markup-churn
+# 의 guard-skips 카운터가 같은 함정에 빠진 전례가 있다). 그래서 하드 실패.
+if (( ! TABLE_RECONCILE )) && (( ! LOCAL_MODE )); then
+  echo "error: --no-table-reconcile 은 --translate local 에서만 지원됩니다." >&2
+  echo "       (dashboard /api/translate 에 table_reconcile 필드가 없어 api 모드로는 끌 수 없습니다)" >&2
+  exit 1
 fi
 
 # local 단계 실행 헬퍼 — cloud-translate 체크아웃에서 python 스크립트를 돌린다.
@@ -861,12 +892,17 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   # 플래그는 dashboard 권장 preset 과 동일; engine/model 은 CLI 플래그가
   # 없으므로 env 로 고정 (api + haiku = 기존 e2e run 과 동일 조건).
   echo
-  echo "[15/17] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=api, model=claude-haiku-4-5)"
+  echo "[15/17] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=api, model=claude-haiku-4-5, table_reconcile=$( ((TABLE_RECONCILE)) && echo on || echo off ))"
   if [[ ! -f "$CLOUD_TRANSLATE_DIR/.env" ]]; then
     echo "error: $CLOUD_TRANSLATE_DIR/.env 가 없습니다 (TRANSLATE_GITHUB_TOKEN / TRANSLATE_ANTHROPIC_API_KEY 필요)" >&2
     exit 1
   fi
   local_log="$tmpdir/local_translate.log"
+  # reconcile-off 변형: stale 표를 splice 이전에 복구하지 않으므로 행 splice 의
+  # 1:1 가드가 깨지고 full 로 떨어지며, skip-full-table 가드가 그 문서를 제외
+  # 하려다 LLM-patch fallback 을 태운다 — 그 경로가 이 변형의 검증 대상이다.
+  reconcile_opt=()
+  if (( ! TABLE_RECONCILE )); then reconcile_opt=(--no-table-reconcile); fi
   set +e
   (cd "$CLOUD_TRANSLATE_DIR" && \
     TRANSLATE_TRANSLATE_ENGINE=api \
@@ -876,7 +912,7 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
       --workers 2 --chunk-workers 2 --tm-top-k 1 \
       --table-rows --skip-full-table --skip-anchor-only \
       --assign-anchors --align-headings --llm-patch-fallback \
-      --fix-korean-leftover \
+      --fix-korean-leftover "${reconcile_opt[@]}" \
   ) 2>&1 | tee "$local_log"
   # ↑ --fix-korean-leftover: 표 헤더/짧은 조각 재번역 시 간헐적으로 남는 한글
   #   잔류(결함 C — 예: ja 헤더 `판교`)를 커밋 전에 스캔·수정. step 17 의

@@ -35,6 +35,18 @@
 #                 대조군으로 overview.md 에 정상 문단 추가. 결함 상태에서는
 #                 en/ja 가 stale 행을 유지(FAIL), 수정 배포 후에는 backfill
 #                 또는 todo-stub 으로 해소(exit 0). exit 3 도 정상 허용.
+#   row-drop-repro-noreconcile
+#               — 위와 같은 ko 픽스처를 **표 행 reconcile OFF** 로 돌리는 변형
+#                 (--no-table-reconcile). reconcile 이 켜져 있으면 stale 행이
+#                 splice 이전에 backfill 되어 부하가 cap 아래로 떨어지고
+#                 **LLM-patch fallback 경로에 아예 도달하지 못한다** (2026-08-23
+#                 실측: 8 plan 전체 LLM-patch 0건). 끄면 행 splice 의 1:1 가드가
+#                 깨져 full 로 떨어지고 skip-full-table 가드가 그 문서를
+#                 제외하려다 LLM-patch fallback 을 태운다 — 그 경로가 검증 대상.
+#                 dashboard /api/translate 에 table_reconcile 필드가 없어
+#                 **--translate local 전용** (api 모드와 함께 주면 하드 실패).
+#                 판정: exit 0/3 허용, 단 로그에 LLM-patch fallback 이 0건이면
+#                 suite 실패 — 경로를 안 태운 실행은 검증한 게 없으므로.
 #   concurrent  — 같은 ko 파일을 만지는 동시 PR 시나리오 (e2e-concurrent-prs.sh).
 #                 A 생성 → B 생성 → B 머지·번역·번역 머지 → A 머지 → A 번역
 #                 순서에서, A 번역이 B 의 신규 섹션·표 행을 지우지 않는지
@@ -74,7 +86,7 @@
 # 별칭:
 #   all         — round2 를 제외한 실행 가능한 plan 전체
 #                 = webhook korean-review round1 table-suite row-drop-repro
-#                   markup-churn retranslate concurrent
+#                   row-drop-repro-noreconcile markup-churn retranslate concurrent
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
@@ -154,13 +166,14 @@ while [[ $# -gt 0 ]]; do
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2"); shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|round1|round2|row-drop-repro|table-suite|markup-churn|retranslate|concurrent)
+    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|table-suite|markup-churn|retranslate|concurrent)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
       # `scripts/e2e-suite.sh all round2` 처럼 뒤에 명시적으로 이어붙인다.
-      PLANS+=(webhook korean-review round1 table-suite row-drop-repro markup-churn retranslate concurrent); shift ;;
-    -h|--help) sed -n '3,125p' "$0"; exit 0 ;;
+      PLANS+=(webhook korean-review round1 table-suite row-drop-repro
+              row-drop-repro-noreconcile markup-churn retranslate concurrent); shift ;;
+    -h|--help) sed -n '3,139p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
 done
@@ -232,8 +245,18 @@ for plan in "${PLANS[@]}"; do
       reuse_args+=(--from-aligned "$ALIGNED_BRANCH")
       echo "    (align 프롤로그 재사용: --from-aligned $ALIGNED_BRANCH)"
     fi
+    # row-drop-repro-noreconcile 은 같은 ko 픽스처를 reconcile OFF 로 돌리는
+    # 변형이다 — 별도 plan 이름이지만 create-translate-test-pr.sh 에는
+    # row-drop-repro 로 넘어간다.
+    plan_arg="$plan"
+    variant_args=()
+    if [[ "$plan" == "row-drop-repro-noreconcile" ]]; then
+      plan_arg="row-drop-repro"
+      variant_args+=(--no-table-reconcile)
+    fi
     bash "$REPO_ROOT/scripts/e2e-align-and-translate.sh" \
-      --plan "$plan" "${PASS_ARGS[@]}" "${reuse_args[@]}" > "$log" 2>&1
+      --plan "$plan_arg" "${PASS_ARGS[@]}" "${reuse_args[@]}" \
+      "${variant_args[@]}" > "$log" 2>&1
     ec=$?
     if (( REUSE_ALIGN )) && [[ -z "$ALIGNED_BRANCH" ]]; then
       ALIGNED_BRANCH="$(grep -oE 'E2E_ALIGNED_BRANCH=[^ ]+' "$log" | tail -n1 | cut -d= -f2 || true)"
@@ -241,11 +264,26 @@ for plan in "${PLANS[@]}"; do
     fi
     verdict="$(grep -oE '^ALIGNMENT: (OK|FAIL)' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    if [[ "$plan" == "row-drop-repro-noreconcile" ]]; then
+      # 이 변형의 존재 이유는 **LLM-patch fallback 경로를 실제로 태우는 것**이다.
+      # exit code 만으로는 그걸 알 수 없다 — reconcile 이 어쩌다 켜져 있거나
+      # 픽스처가 부하 임계에 못 미치면 경로를 안 타고도 통과한다 (markup-churn 의
+      # guard-skips 가 정확히 그 함정에 빠졌던 전례).  그래서 로그에서 직접 센다.
+      rd_patch="$(grep -c 'LLM-patch fallback' "$log" 2>/dev/null || true)"
+      rd_skipfull="$(grep -c 'skip-full-table: .*skipped —' "$log" 2>/dev/null || true)"
+      rd_stub="$(grep -cE 'table todo-stub|<todo: translate>' "$log" 2>/dev/null || true)"
+      verdict="${verdict:-<no-verdict>} llm-patch=${rd_patch:-0} skip-full-table=${rd_skipfull:-0} todo-stub=${rd_stub:-0}"
+    fi
     if [[ "$plan" == "markup-churn" ]]; then
       # ALIGNMENT 만으로는 이 plan 의 핵심(가드 미발동)을 알 수 없다 — 미러링이
       # 없어도 정렬은 OK 로 나온다. 로그에서 직접 센다.
       mc_mirrored="$(grep -c 'Cosmetic markup mirrored' "$log" 2>/dev/null || true)"
-      mc_guard="$(grep -c 'load guard: .*skipped —' "$log" 2>/dev/null || true)"
+      # 'load guard: … skipped —' 는 **더 이상 존재하지 않는 문구**다 — 부하
+      # 가드는 파일을 제외하지 않고 'load signal:' / 'load routing:' 으로만
+      # 알린다 (worker.py: skipped-load 는 legacy). 그래서 이 grep 은 항상 0 을
+      # 돌려주며 guard-skips=0 이 공허하게 통과했다 (2026-08-23 발견). 지금 실제로
+      # 파일을 제외하는 가드는 skip-full-table 뿐이므로 그것을 센다.
+      mc_guard="$(grep -c 'skip-full-table: .*skipped —' "$log" 2>/dev/null || true)"
       # --translate api (jenkins) 모드에서는 번역 로그가 Jenkins 쪽에만 있어서
       # 위 두 카운터가 항상 0 이 된다 — 즉 "guard-skips=0" 이 공허하게 통과한다
       # (2026-08-19 실측). 그 모드의 실제 증거는 번역 PR 본문의 제외 섹션이다.
@@ -269,6 +307,14 @@ for plan in "${PLANS[@]}"; do
         && "$plan" != "concurrent" && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
   # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
   # 마크업 미러링이 동작하지 않은 것이므로 suite 실패로 잡는다.
+  # row-drop-repro-noreconcile: exit 0/3 은 둘 다 허용 (todo-stub 으로 해소되면
+  # 구조 검사가 표 개수 불일치로 FAIL 을 낼 수 있고, 그건 회귀가 아니라 완전성
+  # 검사가 유실을 가시화한 것). 대신 **LLM-patch fallback 이 0건이면 실패** —
+  # 그 경로를 태우지 못한 실행은 이 변형이 검증하려던 것을 검증하지 않았다.
+  if [[ "$plan" == "row-drop-repro-noreconcile" ]] && [[ "$verdict" == *"llm-patch=0"* ]]; then
+    echo "    ! LLM-patch fallback 미발동 — 이 변형은 그 경로 검증이 목적이므로 실패로 집계" >&2
+    overall=1
+  fi
   if [[ "$plan" == "markup-churn" ]]; then
     if (( ec != 0 )) || [[ "$verdict" != *"guard-skips=0"* ]] \
        || [[ "$verdict" != *"pr-excl=0"* ]]; then overall=1; fi
@@ -281,5 +327,6 @@ for r in "${RESULTS[@]}"; do echo "  $r"; done
 echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포함이면 exit 3 이 정상)"
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
+echo "  (row-drop-repro-noreconcile: exit 0/3 허용, 단 llm-patch=0 이면 실패 — 그 경로를 안 태운 실행)"
 [[ -n "$ALIGNED_BRANCH" ]] && echo "  (align 스냅샷: $ALIGNED_BRANCH — 재현/디버그용, 정리는 수동)"
 exit $overall
