@@ -47,6 +47,31 @@
 #                 **--translate local 전용** (api 모드와 함께 주면 하드 실패).
 #                 판정: exit 0/3 허용, 단 로그에 LLM-patch fallback 이 0건이면
 #                 suite 실패 — 경로를 안 태운 실행은 검증한 게 없으므로.
+#
+#                 **2026-08-24 실측: 이 가설은 틀렸다 — reconcile 을 꺼도
+#                 LLM-patch 에 도달하지 못한다.** 그래서 아직 `all` 에서 제외한다.
+#                 실제로 관찰된 것 (PR #650):
+#                   - `load signal: … 17.0x > 2.0x, 43% of the document;
+#                     translating anyway` — 부하 가드는 **정보성**이라 파일을
+#                     제외하지 않는다 (worker.py 의 skipped-load 는 legacy).
+#                     LLM-patch 의 과거 트리거 하나가 이미 사라져 있었다.
+#                   - `Pre-aligned anchor splice: translated 1 of 4 sections` —
+#                     ko 변형(edit_body)이 표가 **아닌** 옆 문단을 건드리므로
+#                     표가 속한 섹션은 anchor splice 가 그대로 재사용한다. 표
+#                     전체를 재번역할 일이 없어 skip-full-table 가드가 안 걸리고,
+#                     LLM-patch 는 그 가드의 skip 뒤에만 호출된다.
+#                   - 결과는 #283 결함의 정직한 재현: en/ja version-guide 표#1 이
+#                     ko 5행 대비 4행, 식별자 `1.202602.1` 유실 → 구조 검사 FAIL.
+#                     즉 이 변형이 실제로 증명한 것은 "**reconcile 이 그 유실을
+#                     막고 있다**" 는 것이고, 그것만으로도 회귀 가치가 있다.
+#                   - `--no-table-reconcile` 은 완전성 backstop(`_guard_rows` →
+#                     `_stub_incomplete_tables`)까지 함께 끄는 통합 kill switch 다
+#                     (translator.py 의 docstring 이 그렇게 규정). 그래서
+#                     todo-stub 도 0건이고, 유실은 e2e 자체 checker 가 잡았다.
+#                 LLM-patch 를 태우려면 ko 변형이 **표 자신의 섹션 안**을 고쳐서
+#                 그 표 단위가 전량 재번역 대상이 되어야 한다 (그때 target 행 수가
+#                 달라 skip-full-table 이 걸리고 LLM-patch 가 호출된다) —
+#                 create-translate-test-pr.sh 에 그 변형을 추가하는 별도 작업.
 #   concurrent  — 같은 ko 파일을 만지는 동시 PR 시나리오 (e2e-concurrent-prs.sh).
 #                 A 생성 → B 생성 → B 머지·번역·번역 머지 → A 머지 → A 번역
 #                 순서에서, A 번역이 B 의 신규 섹션·표 행을 지우지 않는지
@@ -84,9 +109,9 @@
 #                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
 #
 # 별칭:
-#   all         — round2 를 제외한 실행 가능한 plan 전체
+#   all         — round2 / row-drop-repro-noreconcile 을 제외한 plan 전체
 #                 = webhook korean-review round1 table-suite row-drop-repro
-#                   row-drop-repro-noreconcile markup-churn retranslate concurrent
+#                   markup-churn retranslate concurrent
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
@@ -171,9 +196,13 @@ while [[ $# -gt 0 ]]; do
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
       # `scripts/e2e-suite.sh all round2` 처럼 뒤에 명시적으로 이어붙인다.
+      # row-drop-repro-noreconcile 은 아직 all 에서 제외 — 아래 plan 설명의
+      # "2026-08-24 실측" 참고. 현재 픽스처로는 LLM-patch 경로에 도달하지 못해
+      # 이 plan 의 필수 조건(llm-patch>0)이 항상 실패한다. 픽스처가 갖춰지면
+      # 여기에 다시 넣는다. 그때까지는 명시 지정으로만 실행.
       PLANS+=(webhook korean-review round1 table-suite row-drop-repro
-              row-drop-repro-noreconcile markup-churn retranslate concurrent); shift ;;
-    -h|--help) sed -n '3,139p' "$0"; exit 0 ;;
+              markup-churn retranslate concurrent); shift ;;
+    -h|--help) sed -n '3,165p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
 done
