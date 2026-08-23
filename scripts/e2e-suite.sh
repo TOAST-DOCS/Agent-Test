@@ -93,6 +93,10 @@
 # **webhook plan 만 예외** — GitHub webhook → 배포된 webhook pod → Jenkins 라는
 # 배포 경로 자체가 검증 대상이라 로컬 대응물이 없다. concurrent plan 은 원래부터
 # 항상 로컬 translate_pr.py 다.
+# 그리고 local 모드도 dashboard 를 **한 곳** 쓴다 — 각 plan 0단계의 webhook 킬
+# 스위치 (POST /api/webhooks/repos). 파이프라인 단계가 아니라 배포된 파이프라인이
+# 같은 ko 변형 PR 을 동시에 처리하지 않게 막는 스위치라서 local 에서 더 중요하다.
+# 그래서 local 모드도 DASHBOARD_BASE_URL / DASHBOARD_API_TOKEN 이 필수다.
 # 사전 준비(.env, 워크트리)는 e2e-align-and-translate.sh 헤더 및
 # /verify-translate-e2e 참고.
 #

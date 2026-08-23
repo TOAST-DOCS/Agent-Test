@@ -110,6 +110,12 @@
 #                                조립하는 것과 1:1 로 맞춰져 있다 (한쪽만 바뀌면 local
 #                                과 api 판정이 갈리므로 함께 고칠 것). 동기 실행이라
 #                                잡 완료 폴링이 없어지고 PR 감지 폴링은 1분으로 줄어든다.
+#                                **예외 한 곳**: 0단계의 webhook 킬 스위치
+#                                (POST /api/webhooks/repos) 는 local 에서도 호출한다 —
+#                                파이프라인 단계가 아니라 배포된 파이프라인이 같은 PR 을
+#                                동시에 처리하지 않게 막는 스위치라서, 끄지 않으면 local
+#                                번역과 배포본 번역이 섞인다. 그래서 local 모드도
+#                                DASHBOARD_BASE_URL/_TOKEN 이 필수다.
 #                                번역의 engine/model 은 api+haiku 로 고정(기존 run 과
 #                                동일 조건), align/ko-review 는 api 모드에서도 잡
 #                                파라미터를 default 로 보내므로 여기서도 미전송
@@ -304,14 +310,17 @@ run_local_step() {
   return "${PIPESTATUS[0]}"
 }
 
+# local 모드에서도 dashboard 자격은 필수다 — 0단계의 webhook 킬 스위치
+# (POST /api/webhooks/repos) 는 파이프라인 단계가 아니라 **배포된 파이프라인을
+# 억제하는 스위치**라서 local 에서도 반드시 호출해야 한다. 안 끄면 e2e 가 여는
+# ko 변형 PR 이 webhook 을 타고 배포 Jenkins 의 ko-review/translate 를 중복
+# 트리거하고, local 번역과 배포본 번역이 같은 PR 을 동시에 처리해 결과가 섞인다.
+# 토글 실패는 `|| echo ... 계속 진행` 으로 흡수되므로 자격이 없으면 조용히
+# 무방비가 된다 — 그래서 여기서 하드 실패시킨다.
 if [[ -z "$DASHBOARD_BASE_URL" || -z "$DASHBOARD_API_TOKEN" ]]; then
-  if (( LOCAL_MODE )) && [[ "$KO_REVIEW_MODE" == "off" ]]; then
-    # local + ko-review 생략이면 dashboard 를 한 번도 호출하지 않는다.
-    : 
-  else
-    echo "error: DASHBOARD_BASE_URL 과 DASHBOARD_API_TOKEN 을 스크립트 상단(또는 env)으로 지정하세요." >&2
-    exit 1
-  fi
+  echo "error: DASHBOARD_BASE_URL 과 DASHBOARD_API_TOKEN 을 스크립트 상단(또는 env)으로 지정하세요." >&2
+  echo "       (--translate local 도 0단계 webhook 비활성화에 dashboard 를 씁니다)" >&2
+  exit 1
 fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

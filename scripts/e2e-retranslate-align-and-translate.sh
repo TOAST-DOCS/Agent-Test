@@ -72,6 +72,8 @@
 #                                engine/model 은 이 스크립트의 --engine/--model 설정을
 #                                env (TRANSLATE_TRANSLATE_ENGINE / _ANTHROPIC_MODEL) 로
 #                                전달해 7·12단계가 같은 엔진을 태운다.
+#                                local 에서도 0단계 webhook 킬 스위치는 dashboard 를
+#                                호출하므로 DASHBOARD_BASE_URL/_TOKEN 은 여전히 필수.
 #
 #   --align-v2 / --no-align-v2   PR#218 v2 모드 (기본 --align-v2)
 #

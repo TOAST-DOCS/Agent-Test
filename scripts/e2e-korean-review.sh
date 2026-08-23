@@ -68,6 +68,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# ko-review 잡 id — api 경로에서만 채워진다. local 경로에는 잡이 없으므로
+# 미리 선언해 둔다 (set -u 아래에서 마지막 요약/PR 댓글 블록이 이 값을
+# 참조하는데, 2026-08-23 실측: 판정을 다 내고 KO_REVIEW: OK 를 출력한 뒤
+# `koreview_job_id: unbound variable` 로 exit 1 → suite 가 실패로 집계).
+koreview_job_id="(local — Jenkins 잡 없음)"
+
 LOCAL_MODE=0
 if [[ "$REVIEW_VIA" == "local" ]]; then
   LOCAL_MODE=1
