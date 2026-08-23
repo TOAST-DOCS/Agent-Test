@@ -248,6 +248,7 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 $ sudo update-grub
 ```
 
+<a id="test-added-section"></a>
 ## テスト用追加セクション { #test-added-section }
 
 このセクションは、翻訳パイプラインのテストのために新たに追加したセクションです。新しいセクションが翻訳され、ko/en/jaで同じアンカー ID が割り当てられているかを確認します。
