@@ -864,6 +864,7 @@ This API does not require a request body.
 </p>
 </details>
 
+<a id="test-added-endpoint"></a>
 ### New Test Endpoint { #test-added-endpoint }
 
 ```
