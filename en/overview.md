@@ -3,7 +3,7 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Concurrent PR Test A: This sentence is for concurrent-a-edit validation.)
 
 <a id="components"></a>
 ## Components
@@ -98,7 +98,7 @@ For more details on pricing, see [Pricing](https://www.toast.com/kr/service/comp
 
 You can access your Linux instances using an SSH client. An instance cannot be accessed if its security group does not have SSH ports (22 by default) allowed. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to allow SSH access. If a floating IP is not assigned to an instance, the instance cannot be accessed from outside NHN Cloud. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to assign floating IP.
 
-#### How to connect to a Linux instance using an SSH client on Mac or Linux
+#### How to access a Linux instance from SSH client on Mac or Linux
 
 Generally, Mac and Linux have SSH clients installed by default. Use a key pair's private key to access an instance from an SSH client as shown below.
 
@@ -201,17 +201,17 @@ Your key pair's private key that you input in **Confirm Password** is not sent t
 
 Click **Connect** next to **Confirm Password** to receive the rdp file configured for remote desktop access and run it to access your Windows server. Use `Administrator` for your Windows server ID, and use the password that you checked from the NHN Cloud console.
 
-## How to access the serial console
+### Serial console access
 
-You can connect to the serial console to access your instance in situations where you cannot use an SSH client, such as when boot fails or there are network configuration issues.
+You can use the serial console to access an instance in situations where you cannot use an SSH client, such as when boot fails or network configuration issues occur.
 
 The serial console feature has the following limitations:
 
-* Only one serial console connection per instance is possible. Multiple connection attempts may fail to connect properly.
-* Instances created from user-uploaded images and instances created from personal images do not guarantee serial console access.
-* A serial console connection can be accessed for a maximum of 10 minutes.
+* Only one serial console connection per instance is possible. Multiple connection attempts may result in failed connections.
+* Instances created from user-uploaded images or personal images do not guarantee serial console access.
+* Serial console connections can remain connected for a maximum of 10 minutes.
 * Windows instances do not support the serial console feature.
-* For instances created before the January 27, 2026 deployment, you must **Stop the instance** followed by **Start the instance**. The **Reboot instance** feature does not apply the changes.
+* For instances created before the January 27, 2026 deployment, you must **stop the instance** and then **start the instance**. The **reboot instance** feature does not apply the changes.
 
 > [Caution]
 > If you access an instance through the serial console and change the boot method, the boot may fail, and the user is responsible for the consequences.
