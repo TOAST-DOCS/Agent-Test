@@ -1,27 +1,32 @@
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=2e2588e1a607 -->
+
 <a id="compute-instance-api-v2-guide"></a>
-## Compute > Instance > API v2 Guide
+## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
 
-Instance uses IaaS tokens for authentication and authorization when making API calls. The IaaS token is an authentication token used for NHN Cloud's OpenStack-based infrastructure services (IaaS). For more information on issuing and using IaaS tokens, please refer to the [IaaS Token](/nhncloud/en/public-api/iaas-token).
+Instance uses the IaaS token for authentication/authorization when making API calls. The IaaS token is the authentication token used by NHN Cloud's OpenStack-based infrastructure service (IaaS). For more information on IaaS token issuance and usage, see [IaaS token](/nhncloud/en/public-api/iaas-token).
 
-The Instance API uses the `compute` type endpoint. For the exact endpoint, see `serviceCatalog` from the token issue response.
+The Instance API uses `compute`-type endpoints. For the exact endpoint, refer to the `serviceCatalog` in the token issuance response.
 
 | Type | Region | Endpoint |
 |---|---|---|
 | compute | Korea (Pangyo) Region<br>Korea (Pyeongchon) Region<br>Korea (Gwangju) Region<br>Japan Region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
 
-In each API response, you may find fields that are not specified within this guide. Those fields are for NHN Cloud internal usage, and as such refrain from using them since they may be changed without prior notice.
+The API response may contain fields not specified in this guide. These fields are used for NHN Cloud internal purposes and may change without prior notice, so do not use them.
 
 <a id="instance-flavors"></a>
-## Instance Flavors
+## Instance Flavor { #instance-flavors }
 
 <a id="list-flavors"></a>
-### List Flavors
+### List Flavors { #list-flavors }
 
 ```
 GET /v2/{tenantId}/flavors
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-flavors-request"></a>
 #### Request
 
 This API does not require a request body.
@@ -30,9 +35,10 @@ This API does not require a request body.
 |---|---|---|---|---|
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
-| minDisk | Query | Integer | - | Minimum block storage size (GB)<br>Returns only flavors with block storage sizes greater than specified value |
-| minRam | Query | Integer | - | Minimum RAM Size (MB)<br>Returns only flavors with RAM sizes greater than specified value |
+| minDisk | Query | Integer | - | Minimum Block Storage size (GB)<br>Returns only types with a Block Storage size larger than the specified size. |
+| minRam | Query | Integer | - | Minimum RAM size (MB)<br>Returns only types with a RAM size larger than the specified size. |
 
+<a id="list-flavors-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
@@ -87,13 +93,14 @@ This API does not require a request body.
 ---
 
 <a id="list-flavors-with-details"></a>
-### List Flavors with Details
+### List Flavors with Details { #list-flavors-with-details }
 
 ```
 GET /v2/{tenantId}/flavors/detail
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-flavors-with-details-request"></a>
 #### Request
 
 This API does not require a request body.
@@ -102,26 +109,27 @@ This API does not require a request body.
 |---|---|---|---|---|
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
-| minDisk | Query | Integer | - | Minimum block storage size (GB)<br/>Returns only flavors with block storage sizes greater than specified value |
-| minRam | Query | Integer | - | Minimum RAM Size (MB)<br/>Returns only flavors with RAM sizes greater than specified value |
+| minDisk | Query | Integer | - | Minimum Block Storage size (GB)<br>Returns only types with a Block Storage size larger than the specified size. |
+| minRam | Query | Integer | - | Minimum RAM size (MB)<br>Returns only types with a RAM size larger than the specified size. |
 
+<a id="list-flavors-with-details-response"></a>
 #### Response
 
-| Name | Type | Format | Description             |
-|---|---|---|----------------|
-| flavors | Body | Object | Instance flavor list object  |
-| flavors.id | Body | UUID | Instance flavor ID     |
-| flavors.links | Body | Object | Instance flavor path object  |
-| flavors.name | Body | String | Instance flavor name     |
-| flavors.ram | Body | Integer | Memory size (MB)     |
-| flavors.OS-FLV-DISABLED:disabled | Body | Boolean | Indicates whether the flavor is enabled         |
-| flavors.vcpus | Body | Integer | Number of vCPUs        |
-| flavors.extra_specs | Body | Object | Extra specifications object       |
-| flavors.swap | Body | Integer | Swap space size (GB)  |
-| flavors.os-flavor-access:is_public | Body | Boolean | Indicates whether the flavor is publicly visible          |
-| flavors.rxtx_factor | Body | Float | Network transmission packet rate |
-| flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | Temporary block storage size (GB)     |
-| flavors.disk | Body | Integer | Root block storage size (GB) |
+| Name | Type | Format | Description |
+|---|---|---|---|
+| flavors | Body | Object | Instance flavor list object |
+| flavors.id | Body | UUID | Instance flavor ID |
+| flavors.links | Body | Object | Instance flavor path object |
+| flavors.name | Body | String | Instance flavor name |
+| flavors.ram | Body | Integer | Memory size (MB) |
+| flavors.OS-FLV-DISABLED:disabled | Body | Boolean | Whether enabled |
+| flavors.vcpus | Body | Integer | Number of vCPUs |
+| flavors.extra_specs | Body | Object | Additional specifications object |
+| flavors.swap | Body | Integer | Swap area size (GB) |
+| flavors.os-flavor-access:is_public | Body | Boolean | Whether public |
+| flavors.rxtx_factor | Body | Float | Network transmit/receive packet ratio |
+| flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | Temporary Block Storage size (GB) |
+| flavors.disk | Body | Integer | Root Block Storage size (GB) |
 
 <details><summary>Example</summary>
 <p>
@@ -189,16 +197,17 @@ This API does not require a request body.
 ---
 
 <a id="availability-zones"></a>
-## Availability Zones
+## Availability Zone { #availability-zones }
 
 <a id="list-availability-zones"></a>
-### List Availability Zones
+### List Availability Zones { #list-availability-zones }
 
 ```
 GET /v2/{tenantId}/os-availability-zone
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-availability-zones-request"></a>
 #### Request
 This API does not require a request body.
 
@@ -207,13 +216,14 @@ This API does not require a request body.
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
 
+<a id="list-availability-zones-response"></a>
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|---|
-| availabilityZoneInfo | Body | Object | Availability zone info object |
+| availabilityZoneInfo | Body | Object | Availability zone information object |
 | availabilityZoneInfo.zoneName | Body | String | Availability zone name |
-| availabilityZoneInfo.zoneState | Body | Object | Availability zone state info object |
-| availabilityZoneInfo.available | Body | Object | Availability zone state |
+| availabilityZoneInfo.zoneState | Body | Object | Availability zone status information object |
+| availabilityZoneInfo.available | Body | Object | Availability zone status |
 
 <details><summary>Example</summary>
 <p>
@@ -243,15 +253,16 @@ This API does not require a request body.
 ---
 
 <a id="key-pairs"></a>
-## Key Pairs
+## Key Pairs { #key-pairs }
 
 <a id="list-key-pairs"></a>
-### List Key Pairs
+### List Key Pairs { #list-key-pairs }
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-key-pairs-request"></a>
 #### Request
 This API does not require a request body.
 
@@ -260,6 +271,7 @@ This API does not require a request body.
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
 
+<a id="list-key-pairs-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
@@ -267,7 +279,7 @@ This API does not require a request body.
 | keypairs | Body | Array | List of key pair objects |
 | keypairs.keypair | Body | Object | Key pair object |
 | keypairs.keypair.name | Body | String | Key pair name |
-| keypairs.keypair.public_key | Body | String | Pubic key |
+| keypairs.keypair.public_key | Body | String | Public key |
 | keypairs.keypair.fingerprint | Body | String | Key pair fingerprint |
 
 <details><summary>Example</summary>
@@ -293,12 +305,13 @@ This API does not require a request body.
 ---
 
 <a id="show-key-pair"></a>
-### Show Key Pair
+### Show Key Pair { #show-key-pair }
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="show-key-pair-request"></a>
 #### Request
 This API does not require a request body.
 
@@ -308,18 +321,19 @@ This API does not require a request body.
 | keypairName | URL | String | O | Key pair name |
 | tokenId | Header | String | O | Token ID |
 
+<a id="show-key-pair-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
 |---|---|---|---|
 | keypair | Body | Object | List of key pair objects |
-| keypair.public_key | Body | String | Pulbic key |
+| keypair.public_key | Body | String | Public key |
 | keypair.user_id | Body | String | Key pair owner ID |
 | keypair.name | Body | String | Key pair name |
-| keypair.deleted | Body | Boolean | Indicates whether the key pair has been deleted |
-| keypair.created_at | Body | Datetime | Key pair created time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
-| keypair.updated_at | Body | Datetime | Key pair updated time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
-| keypair.deleted_at | Body | Datetime | Key pair deleted time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.deleted | Body | Boolean | Whether the key pair is deleted |
+| keypair.created_at | Body | Datetime | Key pair creation time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.updated_at | Body | Datetime | Key pair modification time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.deleted_at | Body | Datetime | Key pair deletion time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
 | keypair.fingerprint | Body | String | Key pair fingerprint |
 | keypair.id | Body | Integer | Key pair ID |
 
@@ -348,13 +362,14 @@ This API does not require a request body.
 ---
 
 <a id="createregister-key-pair"></a>
-### Create/Register Key Pair
+### Create/Register Key Pair { #createregister-key-pair }
 
 ```
 POST /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="createregister-key-pair-request"></a>
 #### Request
 
 | Name | Type | Format | Required | Description |
@@ -362,8 +377,8 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
 | keypair | Body | Object | O | Key pair object |
-| keypair.name | Body | String | O | Key pair name to create or register |
-| keypair.public_key | Body | String | - | Public key to register. If left blank, a new key pair is created. |
+| keypair.name | Body | String | O | Name of the key pair to create or register |
+| keypair.public_key | Body | String | - | Public key to register. If this field is omitted, a new key pair is created. |
 
 <details><summary>Example</summary>
 <p>
@@ -380,13 +395,14 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="createregister-key-pair-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
 |---|---|---|---|
 | keypair | Body | Object | Key pair object |
 | keypair.public_key | Body | String | Public key |
-| keypair.private_key | Body | String | Private key. Visible if a key pair has been newly generated. |
+| keypair.private_key | Body | String | Private key. Returned when a new key pair is created. |
 | keypair.user_id | Body | String | Key pair owner ID |
 | keypair.name | Body | String | Key pair name |
 | keypair.fingerprint | Body | String | Key pair fingerprint |
@@ -411,12 +427,13 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="delete-key-pair"></a>
-### Delete Key Pair
+### Delete Key Pair { #delete-key-pair }
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="delete-key-pair-request"></a>
 #### Request
 This API does not require a request body.
 
@@ -426,46 +443,49 @@ This API does not require a request body.
 | keypairName | URL | String | O | Key pair name |
 | tokenId | Header | String | O | Token ID |
 
+<a id="delete-key-pair-response"></a>
 #### Response
 This API does not return a response body.
 
 
-## Instance
+<a id="instance"></a>
+## Instance { #instance }
 
 <a id="instance-status"></a>
-### Instance Status
+### Instance status { #instance-status }
 
 Instances exist in various statuses, and each status defines its own set of permissible operations. See the following list of instance statuses.
 
-| Status Name              | Description                                                                                                |
+| Status              | Description                                                                                                |
 |-------------------|---------------------------------------------------------------------------------------------------|
-| `ACTIVE` | Instance is activated |
-| `BUILD` | Instance is building |
-| `DELETED` | Instance is deleted |
-| `ERROR` | Previous operation on the instance has failed |
-| `HARD_REBOOT` | Instance is forcefully rebooted<br> Same as turning the physical server's power switch off and back on again |
-| `MIGRATING` | Instance is migrating<br> This is caused by a real-time migration (moving active instances) |
-| `PASSWORD` | Password is being reset on instance |
-| `PAUSED` | Instance is paused<br>Paused instances are saved in hypervisor memory |
-| `REBOOT` | Instance is in a soft reboot state<br> Reboot command is passed to the virtual machine operating system |
-| `REBUILD` | Instance is rebuilt from the original image used for creation |
-| `RESCUE` | Instance is running in recovery mode |
-| `RESIZE` | Instance is changing flavors or migrating to another host<br>Instance is stopped and restarted |
-| `REVERT_RESIZE` | Instance is restored to its original state when a failure occurs while changing flavors or migrating to another host |
-| `VERIFY_RESIZE` | Instance is waiting for confirmation after changing flavors or migrating to another host<br>In NHN Cloud, the status is automatically changed to `ACTIVE`. |
-| `SHELVED_OFFLOADED` | Instance is terminated |
-| `SHUTOFF` | Instance is stopped |
-| `SUSPENDED` | Instance has entered maximum power saving mode by the administrator |
-| `UNKNOWN` | Instance status is unknown<br>`Contact the administrator if the instance is in this status.` | 
+| `ACTIVE` | The instance is in an active state. |
+| `BUILD` | The instance is being created. |
+| `DELETED` | The instance has been deleted. |
+| `ERROR` | The operation that was last performed on the instance has failed. |
+| `HARD_REBOOT` | The instance has been forcibly restarted.<br> This is equivalent to powering off and then powering on the physical server. |
+| `MIGRATING` | The instance is being migrated.<br> This occurs due to a live migration operation (moving an active instance). |
+| `PASSWORD` | A password reset is in progress on the instance. |
+| `PAUSED` | The instance is paused.<br>A paused instance is stored in the hypervisor's memory. |
+| `REBOOT` | The instance is in a soft reboot state.<br> The reboot command is sent to the virtual machine's operating system. |
+| `REBUILD` | The instance is being recreated from the image used when it was originally created. |
+| `RESCUE` | The instance is running in rescue mode. |
+| `RESIZE` | The instance type is being changed, or the instance is being moved to another host.<br>The instance has been stopped and then restarted. |
+| `REVERT_RESIZE` | The instance is being restored to its original state after a failure occurred while changing the instance type or moving the instance to another host. |
+| `VERIFY_RESIZE` | The instance has completed changing its type or being moved to another host, and is waiting for user approval.<br>In NHN Cloud, the instance automatically transitions to the `ACTIVE` status in this case. |
+| `SHELVED_OFFLOADED` | The instance has been shut down. |
+| `SHUTOFF` | The instance has been stopped. |
+| `SUSPENDED` | The instance has been put into hibernation mode by an administrator. |
+| `UNKNOWN` | The status of the instance is unknown.<br>`If the instance enters this status, contact the administrator.` | 
 
 <a id="list-instances"></a>
-### List Instances
+### List Instances { #list-instances }
 
 ```
 GET /v2/{tenantId}/servers
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-instances-request"></a>
 #### Request
 
 This API does not require a request body.
@@ -474,15 +494,16 @@ This API does not require a request body.
 |---|---|---|---|---|
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
-| reservation_id | Query | String | - | Reservation ID for instance creation. <br>If specified, only returns list of instances that have been created simultaneously |
-| changes-since | Query | Datetime | - | Returns list of instances changed since the specified time. `YYYY-MM-DDThh:mm:ss` format. |
-| image | Query | UUID | - | Image ID<br>Return list of instances with specified image |
-| flavor | Query | UUID | - | Instance flavor ID<br>Return list of instances with specified flavor |
-| name | Query | String | - | Instance name<br>Return list of instances with specified name, regex is supported |
-| status | Query | Enum | - | Instance status<br>Return list of instances with specified status |
-| limit | Query | Integer | - | Number of instances to query<br>Return list with up to specified number of instances |
-| marker | Query | UUID | - | UUID of first instance in the list <br>Return list of up to `limit` instances from the instance specified as the `marker`, according to the sort order |
+| reservation_id | Query | String | - | Reservation ID for instance creation. <br>If a reservation ID is specified, returns only the list of instances created at the same time. |
+| changes-since | Query | Datetime | - | Returns the list of instances changed after the specified time. Format: `YYYY-MM-DDThh:mm:ss`. |
+| image | Query | UUID | - | Image ID<br>Returns the list of instances that use the specified image. |
+| flavor | Query | UUID | - | Instance type ID<br>Returns the list of instances that use the specified type. |
+| name | Query | String | - | Instance name<br>Returns the list of instances with the specified name. Supports regular expression queries. |
+| status | Query | Enum | - | Instance status<br>Returns the list of instances with the specified status. |
+| limit | Query | Integer | - | Number of instances in the list<br>Returns the list of instances up to the specified count. |
+| marker | Query | UUID | - | UUID of the first instance in the list<br>Returns the list of instances starting from the instance specified by `marker`, up to the `limit` count, according to the sort criteria. |
 
+<a id="list-instances-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
@@ -522,7 +543,7 @@ This API does not require a request body.
 ---
 
 <a id="list-instances-with-details"></a>
-### List Instances with Details
+### List Instances with Details { #list-instances-with-details }
 
 Return the list of instances created in the current tenant, same as List Instances. However, detailed instance information is returned.
 
@@ -531,49 +552,51 @@ GET /v2/{tenantId}/servers/detail
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-instances-with-details-request"></a>
 #### Request
 
 The request format is the same as List Instances.
 
+<a id="list-instances-with-details-response"></a>
 #### Response
 
 | Name | Type | Format | Description                                                                                                                                                                                                        |
 |---|---|---|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| servers | body | Object | Instance list object                                                                                                                                                                                                |
-| status | body | Enum | Instance Status                                                                                                                                                                                                   |
+| servers | Body | Object | Instance list object                                                                                                                                                                                                |
+| status | Body | Enum | Instance status                                                                                                                                                                                                   |
 | servers.id | Body | UUID | Instance ID                                                                                                                                                                                                   |
-| servers.name | Body | String | Instance name, max 255 characters                                                                                                                                                                                          |
-| servers.updated | Body | Datetime | Last updated time of instance in `YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                  |
-| servers.hostId | Body | String | ID of host running instance                                                                                                                                                                                        |
-| servers.addresses | Body | Object | Instance IP list object. <br>The size of the list is the number of ports attached to the instance.                                                                                                                                                             |
-| servers.addresses."Network Name" | Body | Object | Port information of each network associated with instance                                                                                                                                                                                  |
-| servers.addresses."Network Name".OS-EXT-IPS-MAC:mac_addr | Body | String | MAC address of port associated with instance                                                                                                                                                                                      |
-| servers.addresses."Network Name".version | Body | Integer | IP version of port associated with instance<br>NHN Cloud supports only IPv4                                                                                                                                                                |
-| servers.addresses."Network Name".addr | Body | String | IP address of port associated with instance                                                                                                                                                                                       |
-| servers.addresses."Network Name".OS-EXT-IPS:type | Body | Enum | IP address type of port<br>Either `fixed` or `floating`                                                                                                                                                                |
+| servers.name | Body | String | Instance name, up to 255 characters                                                                                                                                                                          |
+| servers.updated | Body | Datetime | Last updated time of instance in `YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                  |
+| servers.hostId | Body | String | ID of the host on which the instance is running                                                                                                                                                                        |
+| servers.addresses | Body | Object | Instance IP list object. <br>The list is created for each port connected to the instance.                                                                                                                                                             |
+| servers.addresses."Network name" | Body | Object | Port information for each network connected to the instance                                                                                                                                                                                  |
+| servers.addresses."Network name".OS-EXT-IPS-MAC:mac_addr | Body | String | MAC address of the port connected to the instance                                                                                                                                                                                      |
+| servers.addresses."Network name".version | Body | Integer | IP version of the port connected to the instance<br>NHN Cloud supports IPv4 only                                                                                                                                                                |
+| servers.addresses."Network name".addr | Body | String | IP address of the port connected to the instance                                                                                                                                                                                       |
+| servers.addresses."Network name".OS-EXT-IPS:type | Body | Enum | IP address type of the port<br>Either `fixed` or `floating`                                                                                                                                                                |
 | servers.links | Body | Object | Instance path object                                                                                                                                                                                                |
 | servers.key_name | Body | String | Instance key pair name                                                                                                                                                                                               |
 | servers.image | Body | Object | Instance image object                                                                                                                                                                                               |
 | servers.image.id | Body | UUID | Instance image ID                                                                                                                                                                                               |
 | servers.image.links | Body | Object | Instance image path object                                                                                                                                                                                            |
-| servers.OS-EXT-STS:task_state | Body | String | Instance task status<br>Shows the status of a task operating on an instance                                                                                                                                                               |
-| servers.OS-EXT-STS:vm_state | Body | String | Current instance status                                                                                                                                                                                                |
-| servers.OS-SRV-USG:launched_at | Body | Datetime | Last instance booted time<br>`YYYY-MM-DDThh:mm:ss.ssssss` format                                                                                                                                                         |
-| servers.OS-SRV-USG:terminated_at | Body | Datetime | Instance deleted time<br>`YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                   |
-| servers.flavor | Body | Object | Instance flavor information object                                                                                                                                                                                             |
-| servers.flavor.id | Body | UUID | Instance flavor ID                                                                                                                                                                                                |
-| servers.flavor.links | Body | Object | Instance flavor path object                                                                                                                                                                                             |
-| servers.security_groups | Body | Object | List object of security groups assigned to instance                                                                                                                                                                                     |
-| servers.security_groups.name | Body | String | Name of security group assigned to instance                                                                                                                                                                                        |
-| servers.user_id | Body | String | ID of user creating instance                                                                                                                                                                                          |
-| servers.created | Body | Datetime | Instance created time. `YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                     |
-| servers.tenant_id | Body | String | Tenant ID that instance belongs to                                                                                                                                                                                           |
-| servers.os-extended-volumes:volumes_attached | Body | Object | List object of additional block storage attached to the instance                                                                                                                                                                                |
-| servers.os-extended-volumes:volumes_attached.id | Body | UUID | ID of additional block storage attached to the instance                                                                                                                                                                                   |
-| servers.OS-EXT-STS:power_state | Body | Integer | Power state of instance<br>- `1`: On<br>- `4`: Off                                                                                                                                                                    |
+| servers.OS-EXT-STS:task_state | Body | String | Instance task state<br>Indicates the progress of an operation in progress on the instance                                                                                                                                                               |
+| servers.OS-EXT-STS:vm_state | Body | String | Current state of the instance                                                                                                                                                                                                |
+| servers.OS-SRV-USG:launched_at | Body | Datetime | Last boot time of the instance<br>`YYYY-MM-DDThh:mm:ss.ssssss` format                                                                                                                                                         |
+| servers.OS-SRV-USG:terminated_at | Body | Datetime | Instance deletion time<br>`YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                   |
+| servers.flavor | Body | Object | Instance type information object                                                                                                                                                                                             |
+| servers.flavor.id | Body | UUID | Instance type ID                                                                                                                                                                                                |
+| servers.flavor.links | Body | Object | Instance type path object                                                                                                                                                                                             |
+| servers.security_groups | Body | Object | List object of security groups assigned to the instance                                                                                                                                                                                     |
+| servers.security_groups.name | Body | String | Name of the security group assigned to the instance                                                                                                                                                                                        |
+| servers.user_id | Body | String | ID of the user who created the instance                                                                                                                                                                                          |
+| servers.created | Body | Datetime | Instance creation time in `YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                     |
+| servers.tenant_id | Body | String | ID of the tenant to which the instance belongs                                                                                                                                                                                           |
+| servers.os-extended-volumes:volumes_attached | Body | Object | List object of additional Block Storage volumes attached to the instance                                                                                                                                                                                |
+| servers.os-extended-volumes:volumes_attached.id | Body | UUID | ID of an additional Block Storage volume attached to the instance                                                                                                                                                                                   |
+| servers.OS-EXT-STS:power_state | Body | Integer | Power state of the instance<br>- `1`: On<br>- `4`: Off                                                                                                                                                                    |
 | servers.metadata | Body | Object | Instance metadata object<br>Stores instance metadata as key-value pairs                                                                                                                                                                   |
-| server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | Size of an additional local block storage attached to the instance                                                                                                                                                                   |
-| server.NHN-EXT-ATTR:protect | Body | Boolean | Whether to protect instance deletion                                                                                                                                                                   |
+| server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | Size of the additional local block storage attached to the instance                                                                                                                                                                   |
+| server.NHN-EXT-ATTR:protect | Body | Boolean | Whether deletion protection is enabled for the instance                                                                                                                                                                   |
 
 <details><summary>Example</summary>
 <p>
@@ -675,13 +698,15 @@ The request format is the same as List Instances.
 
 ---
 
-### Get Instance
+<a id="get-instance"></a>
+### Get Instance { #get-instance }
 
 ```
 GET /v2/{tenantId}/servers/{serverId}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="get-instance-request"></a>
 #### Request
 
 This API does not require a request body.
@@ -692,45 +717,46 @@ This API does not require a request body.
 | serverId | URL | UUID | O | Instance ID |
 | tokenId | Header | String | O | Token ID |
 
+<a id="get-instance-response"></a>
 #### Response
 
 | Name | Type | Format | Description                                                                                                                                                                                                       |
 |---|---|---|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | server | body | Object | Instance object                                                                                                                                                                                                  |
-| status | body | Enum | Instance Status                                                                                                                                                                                                  |
+| status | body | Enum | Instance status                                                                                                                                                                                                  |
 | server.id | Body | UUID | Instance ID                                                                                                                                                                                                  |
-| server.name | Body | String | Instance name, max 255 characters                                                                                                                                                                                         |
+| server.name | Body | String | Instance name, up to 255 characters                                                                                                                                                                                         |
 | server.updated | Body | Datetime | Last updated time of instance in `YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                 |
-| server.hostId | Body | String | ID of host running instance                                                                                                                                                                                       |
-| server.addresses | Body | Object | Instance IP list object. <br>The size of the list is the number of ports attached to the instance.                                                                                                                                                              |
-| server.addresses."Network Name" | Body | Object | Port information of each network associated with instance                                                                                                                                                                                 |
-| server.addresses."Network Name".OS-EXT-IPS-MAC:mac_addr | Body | String | MAC address of port associated with instance                                                                                                                                                                                     |
-| server.addresses."Network Name".version | Body | Integer | IP version of port associated with instance<br>NHN Cloud supports only IPv4                                                                                                                                                               |
-| server.addresses."Network Name".addr | Body | String | IP address of port associated with instance                                                                                                                                                                                      |
-| server.addresses."Network Name".OS-EXT-IPS:type | Body | Enum | IP address type of port<br>Either `fixed` or `floating`                                                                                                                                                               |
+| server.hostId | Body | String | ID of the host on which the instance is running                                                                                                                                                                                       |
+| server.addresses | Body | Object | Object containing the list of instance IP addresses <br>The list is created for each port connected to the instance                                                                                                                                                              |
+| server.addresses."Network name" | Body | Object | Port information for each network connected to the instance                                                                                                                                                                                 |
+| server.addresses."Network name".OS-EXT-IPS-MAC:mac_addr | Body | String | MAC address of the port connected to the instance                                                                                                                                                                                     |
+| server.addresses."Network name".version | Body | Integer | IP version of the port connected to the instance<br>NHN Cloud supports IPv4 only                                                                                                                                               |
+| server.addresses."Network name".addr | Body | String | IP address of the port connected to the instance                                                                                                                                                                                      |
+| server.addresses."Network name".OS-EXT-IPS:type | Body | Enum | IP address type of the port<br>Either `fixed` or `floating`                                                                                                                                               |
 | server.links | Body | Object | Instance path object                                                                                                                                                                                               |
 | server.key_name | Body | String | Instance key pair name                                                                                                                                                                                              |
 | server.image | Body | Object | Instance image object                                                                                                                                                                                              |
 | server.image.id | Body | UUID | Instance image ID                                                                                                                                                                                              |
 | server.image.links | Body | Object | Instance image path object                                                                                                                                                                                           |
-| server.OS-EXT-STS:task_state | Body | String | Instance task status<br>Shows the status of a task operating on an instance                                                                                                                                                               |
-| server.OS-EXT-STS:vm_state | Body | String | Current instance status                                                                                                                                                                                               |
-| server.OS-SRV-USG:launched_at | Body | Datetime | Last instance booted time<br>`YYYY-MM-DDThh:mm:ss.ssssss` format                                                                                                                                                        |
-| server.OS-SRV-USG:terminated_at | Body | Datetime | Instance deleted time<br>`YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                  |
-| server.flavor | Body | Object | Instance flavor information object                                                                                                                                                                                            |
-| server.flavor.id | Body | UUID | Instance flavor ID                                                                                                                                                                                               |
-| server.flavor.links | Body | Object | Instance flavor path object                                                                                                                                                                                            |
-| server.security_groups | Body | Object | List object of security groups assigned to instance                                                                                                                                                                                    |
-| server.security_groups.name | Body | String | Name of security group assigned to instance                                                                                                                                                                                       |
-| server.user_id | Body | String | ID of user creating instance                                                                                                                                                                                         |
-| server.created | Body | Datetime | Instance created time. `YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                    |
-| server.tenant_id | Body | String | Tenant ID that instance belongs to                                                                                                                                                                                          |
-| server.os-extended-volumes:volumes_attached | Body | Object | List object of additional block storage attached to the instance                                                                                                                                                                               |
-| server.os-extended-volumes:volumes_attached.id | Body | UUID | ID of additional block storage attached to the instance                                                                                                                                                                                  |
-| server.OS-EXT-STS:power_state | Body | Integer | Power state of instance<br>- `1`: On<br>- `4`: Off                                                                                                                                                                   |
+| server.OS-EXT-STS:task_state | Body | String | Instance task state<br>Indicates the progress of an operation when one is applied to the instance                                                                                                                                               |
+| server.OS-EXT-STS:vm_state | Body | String | Current state of the instance                                                                                                                                                                                               |
+| server.OS-SRV-USG:launched_at | Body | Datetime | Last boot time of the instance<br>In `YYYY-MM-DDThh:mm:ss.ssssss` format                                                                                                                                        |
+| server.OS-SRV-USG:terminated_at | Body | Datetime | Deletion time of the instance<br>In `YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                  |
+| server.flavor | Body | Object | Instance type information object                                                                                                                                                                                            |
+| server.flavor.id | Body | UUID | Instance type ID                                                                                                                                                                                               |
+| server.flavor.links | Body | Object | Instance type path object                                                                                                                                                                                            |
+| server.security_groups | Body | Object | Object containing the list of security groups assigned to the instance                                                                                                                                                                                    |
+| server.security_groups.name | Body | String | Name of the security group assigned to the instance                                                                                                                                                                                       |
+| server.user_id | Body | String | ID of the user who created the instance                                                                                                                                                                                         |
+| server.created | Body | Datetime | Instance creation time in `YYYY-MM-DDThh:mm:ssZ` format                                                                                                                                                                    |
+| server.tenant_id | Body | String | ID of the tenant that the instance belongs to                                                                                                                                                                                          |
+| server.os-extended-volumes:volumes_attached | Body | Object | Object containing the list of additional Block Storage attached to the instance                                                                                                                                                                               |
+| server.os-extended-volumes:volumes_attached.id | Body | UUID | ID of the additional Block Storage attached to the instance                                                                                                                                                                                  |
+| server.OS-EXT-STS:power_state | Body | Integer | Power state of the instance<br>- `1`: On<br>- `4`: Off                                                                                                                                                                   |
 | server.metadata | Body | Object | Instance metadata object<br>Stores instance metadata as key-value pairs                                                                                                                                                                  |
-| server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | Size of an additional local block storage attached to the instance                                                                                                                                                                  |
-| server.NHN-EXT-ATTR:protect | Body | Boolean | Whether to protect instance deletion                                                                                                                                                                  |
+| server.NHN-EXT-ATTR:ephemeral_disk_size | Body | Integer | Size of the additional local block storage attached to the instance                                                                                                                                                                  |
+| server.NHN-EXT-ATTR:protect | Body | Boolean | Whether instance deletion protection is enabled                                                                                                                                                                  |
 
 <details><summary>Example</summary>
 <p>
@@ -827,6 +853,3 @@ This API does not require a request body.
 
 </p>
 </details>
-
----
-
