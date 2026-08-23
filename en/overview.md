@@ -241,6 +241,7 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 $ sudo update-grub
 ```
 
+<a id="webhook-e2e-20260728-110207"></a>
 ## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
 This section is a temporary marker inserted by scripts/e2e-webhook.sh.
