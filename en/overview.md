@@ -241,7 +241,29 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## Additional section for testing { #test-added-section }
+## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
-This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying that the webhook routes this PR to the ko-review / translate job,
+the marker will be cleaned up by the scheduled restore-alpha-origin process.
+
+<a id="webhook-e2e-20260728-111509"></a>
+## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying that the webhook routes this PR to the ko-review / translate job,
+the marker is cleaned up by the scheduled restore-alpha-origin.
+
+<a id="webhook-e2e-20260728-113416"></a>
+## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying that the webhook routes this PR to the ko-review / translate job,
+the marker will be cleaned up by the regular restore-alpha-origin process.
+
+<a id="webhook-e2e-20260823-052535"></a>
+## webhook e2e marker (20260823-052535) { #webhook-e2e-20260823-052535 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying that the webhook routes this PR to the ko-review / translate job,
+the marker will be cleaned up by the regular restore-alpha-origin process.
