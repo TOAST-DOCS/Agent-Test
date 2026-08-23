@@ -241,6 +241,7 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 $ sudo update-grub
 ```
 
+<a id="test-added-section"></a>
 ## Additional Test Section { #test-added-section }
 
 This section has been newly added to test the translation pipeline. It verifies that the new section is translated and the same anchor ID is assigned to all language versions (en/en/ja).
