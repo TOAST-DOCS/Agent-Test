@@ -1,26 +1,24 @@
-<!-- pre-align:aligned sig=af6d5efd1d39 -->
-
 <a id="compute-instance-feature-matrix"></a>
-## Compute > Instance > Feature Matrix { #compute-instance-feature-matrix }
+## Compute > Instance > Feature Matrix
 
 This document summarizes the features provided by the Instance service by region and pricing plan. It includes tables, lists, code blocks, and nested headings for translation pipeline testing.
 
 <a id="feature-overview"></a>
-## Feature Overview { #feature-overview }
+## Feature Overview
 
 The main features of Instance are as follows.
 
-- **Create an Instance**: Create a virtual server by selecting an image and type. (list edit test)
-- **Instance Template**: Save frequently used settings as a template and reuse them.
-- **Scheduling**: Start or stop an instance at a specified time.
-- **Monitoring**: View CPU, memory, and disk usage on the dashboard.
+- **Create Instances**: Create a virtual server by selecting an image and a type.
+- **Instance Templates**: Save frequently used settings as a template and reuse them.
+- **Scheduling**: Start or stop instances at a specified time.
+- **Monitoring**: Check CPU, memory, and disk usage on the dashboard.
 
 <a id="feature-by-region"></a>
-## Feature Availability by Region { #feature-by-region }
+## Feature Availability by Region
 
 Available features vary by region. See the table below.
 
-| Feature Code | Feature Name | Pangyo | Pyeongchon | Japan (updated) |
+| Feature Code | Feature Name | Pangyo | Pyeongchon | Japan |
 |---|---|---|---|---|
 | INST-CREATE | Create Instances | Available | Available | Available |
 | INST-TPL | Instance Templates | Available | Available | Not available |
@@ -28,7 +26,7 @@ Available features vary by region. See the table below.
 | INST-MON | Instance Monitoring | Available | Available | Available |
 
 <a id="feature-by-plan"></a>
-### Limits by Pricing Plan { #feature-by-plan }
+### Limits by Pricing Plan
 
 The number of instances you can create differs by pricing plan.
 
@@ -36,13 +34,15 @@ The number of instances you can create differs by pricing plan.
 |---|---|---|
 | Basic | 10 | 1TB |
 | Standard | 50 | 10TB |
+| Enterprise | Unlimited | Unlimited |
+
 <a id="feature-api"></a>
-## Checking Features via API { #feature-api }
+## Checking Features via API
 
 Feature availability can also be queried via the API.
 
 <a id="feature-api-request"></a>
-### Query Request { #feature-api-request }
+### Query Request
 
 Call the API with a feature code as shown below.
 
@@ -61,6 +61,6 @@ The main fields of the response body are as follows.
 - `regions`: list of available regions
 
 <a id="feature-notes"></a>
-## Notes { #feature-notes }
+## Notes
 
 Feature availability is subject to change with prior notice. Check the console announcements for the latest information.
