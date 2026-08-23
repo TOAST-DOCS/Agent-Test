@@ -248,6 +248,7 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 $ sudo update-grub
 ```
 
+<a id="webhook-e2e-20260728-110207"></a>
 ## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
 このセクションは scripts/e2e-webhook.sh が挿入した一時的なマーカーです。
