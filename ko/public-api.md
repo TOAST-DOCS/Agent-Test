@@ -2,7 +2,7 @@
 
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 가이드 { #compute-instance-api-v2-guide }
-Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용에 대한 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token) 을 참고하세요. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
+Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용 방법은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token)을 참고하세요. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
 
 인스턴스 API는 `compute` 타입 엔드포인트를 이용합니다. 정확한 엔드포인트는 토큰 발급 응답의 `serviceCatalog`를 참조합니다.
 
@@ -446,7 +446,7 @@ X-Auth-Token: {tokenId}
 | `MIGRATING` | 인스턴스가 마이그레이션 중인 경우<br/> 이는 실시간 마이그레이션(활성 인스턴스 이동) 작업으로 인해 발생함 |
 | `PASSWORD` | 인스턴스에서 비밀번호를 재설정하는 중인 경우 |
 | `PAUSED` | 인스턴스가 일시 정지된 경우<br/>일시 정지된 인스턴스는 하이퍼바이저의 메모리에 저장됨 |
-| `REBOOT` | 인스턴스가 소프트 재부팅 상태인 경우<br/> 재부팅 명령이 가상머신 운영 체제에 전달됨 |
+| `REBOOT` | 인스턴스가 소프트 재부팅 상태인 경우<br/> 재부팅 명령이 가상 머신 운영 체제에 전달됨 |
 | `REBUILD` | 인스턴스를 생성 당시 이미지로부터 새롭게 만들어 내는 상태 |
 | `RESCUE` | 인스턴스를 복구 모드에서 실행 중인 경우 |
 | `RESIZE` | 인스턴스 타입을 변경하거나 인스턴스를 다른 호스트로 옮기는 경우<br/>인스턴스가 중지되었다가 다시 시작된 상태 |
@@ -478,8 +478,8 @@ X-Auth-Token: {tokenId}
 | flavor | Query | UUID | - | 인스턴스 타입 ID<br/>지정된 타입을 사용한 인스턴스 목록을 반환 |
 | name | Query | String | - | 인스턴스 이름<br/>지정된 이름을 가진 인스턴스 목록을 반환, 정규 표현식으로 질의 가능 |
 | status | Query | Enum | - | 인스턴스 상태<br/>지정된 상태를 가진 인스턴스 목록을 반환 |
-| limit | Query | Integer | - | 인스턴스 목록 개수<br/>지정된 개수 만큼의 인스턴스 목록을 반환 |
-| marker | Query | UUID | - | 목록의 첫번째 인스턴스 UUID<br/>정렬 기준에 따라 `marker`로 지정된 인스턴스부터 `limit` 개수 만큼의 인스턴스 목록을 반환 |
+| limit | Query | Integer | - | 인스턴스 목록 개수<br/>지정된 개수만큼의 인스턴스 목록을 반환 |
+| marker | Query | UUID | - | 목록의 첫 번째 인스턴스 UUID<br/>정렬 기준에 따라 `marker`로 지정된 인스턴스부터 `limit` 개수만큼의 인스턴스 목록을 반환 |
 
 <a id="list-instances-response"></a>
 #### 응답
@@ -542,7 +542,7 @@ X-Auth-Token: {tokenId}
 | servers.name | Body | String | 인스턴스 이름, 최대 255자                                                                                                                                                                                          |
 | servers.updated | Body | Datetime | 인스턴스 최종 수정 시각, `YYYY-MM-DDThh:mm:ssZ` 형식                                                                                                                                                                  |
 | servers.hostId | Body | String | 인스턴스가 구동 중인 호스트 ID                                                                                                                                                                                        |
-| servers.addresses | Body | Object | 인스턴스 IP 목록 객체. <br/>인스턴스에 연결된 포트 수 만큼 목록이 생성됨.                                                                                                                                                             |
+| servers.addresses | Body | Object | 인스턴스 IP 목록 객체. <br/>인스턴스에 연결된 포트 수만큼 목록이 생성됨.                                                                                                                                                             |
 | servers.addresses."Network 이름" | Body | Object | 인스턴스에 연결된 Network별 포트 정보                                                                                                                                                                                  |
 | servers.addresses."Network 이름".OS-EXT-IPS-MAC:mac_addr | Body | String | 인스턴스에 연결된 포트의 MAC 주소                                                                                                                                                                                      |
 | servers.addresses."Network 이름".version | Body | Integer | 인스턴스에 연결된 포트의 IP 버전<br/>NHN Cloud는 IPv4만 지원                                                                                                                                                                |
@@ -699,7 +699,7 @@ X-Auth-Token: {tokenId}
 | server.name | Body | String | 인스턴스 이름, 최대 255자                                                                                                                                                                                         |
 | server.updated | Body | Datetime | 인스턴스 최종 수정 시각, `YYYY-MM-DDThh:mm:ssZ` 형식                                                                                                                                                                 |
 | server.hostId | Body | String | 인스턴스가 구동 중인 호스트 ID                                                                                                                                                                                       |
-| server.addresses | Body | Object | 인스턴스 IP 목록 객체 <br/>인스턴스에 연결된 포트 수 만큼 목록이 생성됨                                                                                                                                                              |
+| server.addresses | Body | Object | 인스턴스 IP 목록 객체 <br/>인스턴스에 연결된 포트 수만큼 목록이 생성됨                                                                                                                                                              |
 | server.addresses."Network 이름" | Body | Object | 인스턴스에 연결된 Network별 포트 정보                                                                                                                                                                                 |
 | server.addresses."Network 이름".OS-EXT-IPS-MAC:mac_addr | Body | String | 인스턴스에 연결된 포트의 MAC 주소                                                                                                                                                                                     |
 | server.addresses."Network 이름".version | Body | Integer | 인스턴스에 연결된 포트의 IP 버전<br/>NHN Cloud는 IPv4만 지원                                                                                                                                                               |
@@ -860,10 +860,10 @@ X-Auth-Token: {tokenId}
 | tenantId | URL | String | O | 테넌트 ID |
 | tokenId | Header | String | O | 토큰 ID |
 | server | body | Object | O | 서버 객체 |
-| server.security_groups | body | Object | - | 보안 그룹 목록 객체<br/>생략할 경우 `default` 그룹이 추가됨 |
+| server.security_groups | Body | Object | - | 보안 그룹 목록 객체<br/>생략할 경우 `default` 그룹이 추가됨 |
 | server.security_groups.name | body | String | - | **(조건부 필수)** 인스턴스에 추가할 보안 그룹 이름 |
-| server.user_data | body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br/>base64 인코딩된 문자열로 65535 바이트까지 허용 |
-| server.availability_zone | body | String | - | 인스턴스를 생성할 가용성 영역<br/>지정하지 않을 경우 임의로 선택됨<br/>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 원본 블록 스토리지의 가용성 영역과 동일하게 설정 필요 |
+| server.user_data | Body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br/>base64 인코딩된 문자열로 65535 바이트까지 허용 |
+| server.availability_zone | Body | String | - | 인스턴스를 생성할 가용성 영역<br/>지정하지 않을 경우 임의로 선택됨<br/>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 원본 블록 스토리지의 가용성 영역과 동일하게 설정 필요 |
 | server.imageRef | Body | String | - | 인스턴스를 생성할 때 사용할 이미지 ID<br/>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요 |
 | server.flavorRef | Body | String | O | 인스턴스를 생성할 때 사용할 인스턴스 타입 ID |
 | server.networks | Body | Object | O | 인스턴스를 생성할 때 사용할 네트워크 정보 객체<br/>지정한 개수만큼 NIC가 추가되며, 네트워크 ID, 서브넷 ID, 포트 ID, 고정 IP 중 하나로 지정 |
@@ -876,7 +876,7 @@ X-Auth-Token: {tokenId}
 | server.block_device_mapping_v2 | Body | Object | O | 인스턴스의 블록 스토리지 정보 객체 |
 | server.block_device_mapping_v2.source_type | Body | Enum | O | 생성할 블록 스토리지 원본의 타입<br/>- `image`: 이미지를 이용해 블록 스토리지 생성<br/>- `blank`: 빈 블록 스토리지 생성(루트 블록 스토리지로 사용할 수 없음)<br/>- `volume`: 기존에 생성된 블록 스토리지를 사용<br/>- `snapshot`: 스냅숏을 이용해 블록 스토리지 생성 |
 | server.block_device_mapping_v2.uuid | Body | String | - | **(조건부 필수)** 블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br/>- 소스 타입이 `image`인 경우 이미지 ID를 설정<br/>- 소스 타입이 `volume`인 경우 기존에 생성된 블록 스토리지 ID를 설정<br/>- 소스 타입이 `snapshot`인 경우 스냅숏 ID를 설정<br/>- 소스 타입이 `blank`인 경우 설정 불필요<br/>루트 블록 스토리지인 경우 반드시 부팅 가능한 원본이어야 함 |
-| server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br/>-`0`이면 루트 블록 스토리지<br/>- 그 외는 추가 블록 스토리지<br/>크기가 클수록 부팅 순서는 낮아짐 |
+| server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br/>- `0`이면 루트 블록 스토리지<br/>- 그 외는 추가 블록 스토리지<br/>크기가 클수록 부팅 순서는 낮아짐 |
 | server.block_device_mapping_v2.destination_type | Body | Enum | O | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br/>- `local`: GPU 인스턴스, U2 인스턴스 타입을 이용하는 경우<br/>- `volume`: 그 외의 인스턴스 타입을 이용하는 경우 |
 | server.block_device_mapping_v2.volume_type | Body | Enum    | - | **(조건부 필수)** 생성할 블록 스토리지의 타입<br/>블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요<br/>`사용자 가이드 > Storage > Block Storage > API v2 가이드`에서 **블록 스토리지 타입 목록 보기** 응답의 `name` 참고 |
 | server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br/>`true`면 삭제, `false`면 유지 |
