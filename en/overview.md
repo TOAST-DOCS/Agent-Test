@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
@@ -37,6 +39,7 @@ NHN Cloud provides various instance flavors to support a wide range of use cases
 | t2 | A low-cost instance. Recommended for servers with low workloads.                                                                                                          |
 | u2 | The cheapest instance. Recommended for servers with low workloads.<br>This flavor utilizes local block storage, which makes it a less stable but more affordable option compared to other flavors.<br>Instances of this flavor do not guarantee I/O performance. |
 | x1 | A flavor that supports high-end CPU and memory. Recommended for services or applications that require high performance.                                                                                        |
+| x9c | This is a type added for concurrent PR testing. It does not exist in the actual service. |
 
 <a id="availability-zone"></a>
 ### Availability Zone
@@ -95,21 +98,21 @@ For more details on pricing, see [Pricing](https://www.toast.com/kr/service/comp
 
 You can access your Linux instances using an SSH client. An instance cannot be accessed if its security group does not have SSH ports (22 by default) allowed. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to allow SSH access. If a floating IP is not assigned to an instance, the instance cannot be accessed from outside NHN Cloud. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to assign floating IP.
 
-#### How to Access Linux Instances from Mac or Linux Using an SSH Client
+#### Connect to a Linux instance from an SSH client on Mac or Linux
 
 Generally, Mac and Linux have SSH clients installed by default. Use a key pair's private key to access an instance from an SSH client as shown below.
 
-Ubuntu instances
+Ubuntu instance
 
-	$ ssh -i my_private_key.pem ubuntu@<instance IP>
+	$ ssh -i my_private_key.pem ubuntu@<Instance IP>
 
-Debian instances
+Debian instance
 
-	$ ssh -i my_private_key.pem debian@<instance IP>
+	$ ssh -i my_private_key.pem debian@<Instance IP>
 
-Rocky instances
+Rocky instance
 
-	$ ssh -i my_private_key.pem rocky@<instance IP>
+	$ ssh -i my_private_key.pem rocky@<Instance IP>
 
 #### How to Access Linux Instances from Windows Using PuTTY SSH Client
 
@@ -198,37 +201,42 @@ Your key pair's private key that you input in **Confirm Password** is not sent t
 
 Click **Connect** next to **Confirm Password** to receive the rdp file configured for remote desktop access and run it to access your Windows server. Use `Administrator` for your Windows server ID, and use the password that you checked from the NHN Cloud console.
 
-### How to Connect Serial Console
+### Access serial console
 
-You can connect to your instance via the serial console in situations where the SSH client is unavailable, such as a boot failure or network configuration issue.
+You can connect to the serial console in situations where you cannot use an SSH client, such as when there is a boot failure or network configuration issues. This allows you to access your instance through the serial console.
 
 The serial console feature has the following limitations:
 
-* Only one serial console connection is allowed per instance, and multiple connection attempts may not connect properly.
-* Serial console access is not guaranteed for instances created with personally uploaded images or instances created with personal images.
-* Serial console connections last up to 10 minutes.
+* Only one serial console connection per instance is possible. Multiple connection attempts may fail to connect properly.
+* Instances created from user-uploaded images or private images do not guarantee serial console access.
+* Serial console connections are limited to a maximum of 10 minutes.
 * Windows instances do not support the serial console feature.
-* Instances created before the January 27, 2026 release require **Stop the instance** and **Start the instance**. **Reboot the instance** feature does not apply.
+* For instances created before the January 27, 2026 deployment, you must **stop the instance** and then **start the instance**. The **reboot instance** feature does not apply this change.
 
 > [Caution]
-> Changing the boot method while accessing an instance via the serial console may result in a boot failure, and users are responsible for any resulting consequences.
-> Under normal circumstances, we recommend using an SSH client connection.
+> When you access an instance through the serial console and change the boot method, it may fail to boot, and the user is responsible for the consequences.
+> In normal situations, we recommend that you use SSH client access.
 
-#### Change GRUB Bootloader Settings
+#### Change GRUB Bootloader Configuration
 
-GRUB configuration is required to manipulate the bootloader on instances created before the November 26, 2024 deployment.
+For instances created before November 26, 2024, GRUB configuration is required to manipulate the bootloader.
 
-Edit the GRUB configuration file.
+Modify the GRUB configuration file.
 
 ```
 $ sudo vi /etc/default/grub.d/50-cloudimg-settings.cfg
 GRUB_TIMEOUT=3
 GRUB_TERMINAL="console serial"
 GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
-```
+````
 
-Apply the changed setting. The command to apply GRUB settings may vary depending on the OS.
+Apply the changed configuration. The command to apply GRUB configuration may differ depending on the OS.
 
 ```
 $ sudo update-grub
 ```
+
+<a id="concurrent-b-added"></a>
+## Concurrent PR test addition section { #concurrent-b-added }
+
+This section is a section added by PR B for concurrent PR scenario validation. The translation of PR A must not delete the translation of this section.
