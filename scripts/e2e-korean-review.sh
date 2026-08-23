@@ -7,8 +7,9 @@
 #   3) create-translate-test-pr.sh --plan round1 로 ko 변형 PR 생성
 #      (base = 세션 브랜치) — 다양한 종류의 문장/heading/표 변형이 들어가므로
 #      한글 검수기가 잡을 만한 위반이 자연히 섞인다.
-#   4) POST /api/ko-review — 검수 잡 트리거
-#   5) 잡 상태 폴링 (최대 30분)
+#   4) 검수 실행 — dashboard /api/ko-review 트리거, 또는 --translate local 이면
+#      $CLOUD_TRANSLATE_DIR 의 korean-review/review_pr.py 직접 실행
+#   5) 잡 상태 폴링 (최대 30분; local 은 동기 실행이라 생략)
 #   6) PR reviews · review comments 를 gh api 로 조회
 #      → 구조 검증: format_summary() 규격 요약 리뷰 본문 · 인라인 코멘트
 #      존재 · `` `suggestion `` 블록 존재
@@ -27,6 +28,7 @@
 #   bash scripts/e2e-korean-review.sh --plan round2                     # 변형 plan 변경
 #   bash scripts/e2e-korean-review.sh --timeout 3600                    # 잡 완료 폴링 timeout(초)
 #   bash scripts/e2e-korean-review.sh --skip-fable                      # 구조 검증까지만 (fable check 생략)
+#   bash scripts/e2e-korean-review.sh --translate local                 # 검수를 로컬 review_pr.py 로 실행
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
 
@@ -42,6 +44,11 @@ BASE_SOURCE_BRANCH="alpha"
 PLAN_NAME="round1"
 JOB_TIMEOUT=1800    # 초. ko-review job 완료까지.
 SKIP_FABLE=0
+# api = dashboard /api/ko-review (배포된 Jenkins 잡) | local = $CLOUD_TRANSLATE_DIR 의
+# korean-review/review_pr.py 직접 실행 (미배포 브랜치의 검수 로직 검증).
+REVIEW_VIA="api"
+CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
+CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -50,10 +57,25 @@ while [[ $# -gt 0 ]]; do
     --plan)          PLAN_NAME="$2"; shift 2 ;;
     --timeout)       JOB_TIMEOUT="$2"; shift 2 ;;
     --skip-fable)    SKIP_FABLE=1; shift ;;
-    -h|--help)       sed -n '3,31p' "$0"; exit 0 ;;
+    --translate)
+      case "${2:-}" in
+        api|local) REVIEW_VIA="$2" ;;
+        *) echo "error: --translate 는 api|local 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
+    -h|--help)       sed -n '3,36p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
+
+LOCAL_MODE=0
+if [[ "$REVIEW_VIA" == "local" ]]; then
+  LOCAL_MODE=1
+  if [[ ! -f "$CLOUD_TRANSLATE_DIR/.env" ]]; then
+    echo "error: $CLOUD_TRANSLATE_DIR/.env 가 없습니다 (TRANSLATE_GITHUB_TOKEN / TRANSLATE_ANTHROPIC_API_KEY 필요)" >&2
+    exit 1
+  fi
+fi
 
 if [[ -z "$DASHBOARD_BASE_URL" || -z "$DASHBOARD_API_TOKEN" ]]; then
   echo "error: DASHBOARD_BASE_URL / DASHBOARD_API_TOKEN 이 필요합니다. load_env.sh 를 source 하세요." >&2
@@ -147,7 +169,24 @@ if [[ "$ko_pr_state" != "OPEN" ]]; then
 fi
 echo "  ko 변형 PR: $ko_pr_url (state=$ko_pr_state)"
 
-# ── 4) POST /api/ko-review ──────────────────────────────────────────
+# ── 4~5) ko-review 실행 ─────────────────────────────────────────────
+if (( LOCAL_MODE )); then
+  # korean-review/Jenkinsfile 의 PR 모드는 `python korean-review/review_pr.py
+  # <PR URL>` 한 줄이 전부다 (잡 파라미터가 default 면 옵션 미전송). 동기
+  # 실행이므로 5단계의 Jobs 폴링이 불필요.
+  echo
+  echo "[4/7] local review_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url)"
+  set +e
+  (cd "$CLOUD_TRANSLATE_DIR" && "$CLOUD_TRANSLATE_PY" korean-review/review_pr.py "$ko_pr_url") 2>&1 | sed 's/^/    /'
+  koreview_rc=${PIPESTATUS[0]}
+  set -e
+  if (( koreview_rc != 0 )); then
+    echo "  local review_pr.py 실패 (exit $koreview_rc)" >&2
+    exit 2
+  fi
+  echo
+  echo "[5/7] (local 실행이라 잡 완료 폴링 불필요)"
+else
 echo
 echo "[4/7] POST $DASHBOARD_BASE_URL/api/ko-review (PR=$ko_pr_url)"
 
@@ -197,6 +236,7 @@ if [[ "$koreview_status" != "success" ]]; then
   exit 2
 fi
 echo "  ko-review 완료 (status=success)"
+fi
 
 # ── 6) PR reviews · review comments 조회 → 구조 검증 ─────────────────
 echo

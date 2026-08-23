@@ -15,9 +15,11 @@
 #   1. alpha 브랜치로 switch
 #   2. scripts/restore-alpha-origin.sh 실행 (내부에서 commit+push)
 #      + public-api.md 40% 축소본 덮어쓰기 → commit+push
-#   3. dashboard /api/fix-heading-syntax 호출 (heading 문법 정정, base=alpha)
+#   3. fix-heading-syntax (heading 문법 정정, base=alpha) — dashboard API 또는
+#      local fix_fence.py + fix_heading_syntax.py
 #   4. fix-heading-syntax 잡이 생성하는 PR 감지 → merge → alpha 최신화
-#   5. dashboard /api/align 호출 (= fix_headings job, 권장 preset, base=alpha)
+#   5. align (= fix_headings, 권장 preset, base=alpha) — dashboard API 또는
+#      local fix_headings.py
 #   6. Jenkins align 잡이 새로 만든 PR 을 gh 로 감지 (base=alpha)
 #   7. dashboard /api/translate/file 호출 (ko/public-api.md 전체 재번역,
 #      pr_number=<align PR>) → 재번역 커밋이 align PR head 브랜치에 append,
@@ -56,6 +58,21 @@
 #   --verify py|fable            8·14 단계 구조 검증 방식. py(기본) =
 #                                scripts/check_docs_align.py (결정적·<1초),
 #                                fable = 예전 claude -p agentic 검증.
+#   --translate api|local        실행 방식. api(기본) = 배포된 dashboard/Jenkins
+#                                (/api/fix-heading-syntax, /api/align,
+#                                /api/translate/file, /api/translate). local =
+#                                **네 단계 전부** $CLOUD_TRANSLATE_DIR 의 스크립트를
+#                                직접 실행:
+#                                  3단계 → pre-align/fix_fence.py + fix_heading_syntax.py
+#                                  5단계 → pre-align/fix_headings.py
+#                                  7단계 → translate/translate_file.py
+#                                          (--commit-to-branch <align PR head>,
+#                                           TRANSLATE_DIFF_MODE=full)
+#                                  12단계 → translate/translate_pr.py
+#                                engine/model 은 이 스크립트의 --engine/--model 설정을
+#                                env (TRANSLATE_TRANSLATE_ENGINE / _ANTHROPIC_MODEL) 로
+#                                전달해 7·12단계가 같은 엔진을 태운다.
+#
 #   --align-v2 / --no-align-v2   PR#218 v2 모드 (기본 --align-v2)
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
@@ -82,6 +99,12 @@ TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199)
 TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
 TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
 VERIFY_MODE="py"                          # py = check_docs_align.py (기본) | fable = 예전 claude -p 검증
+# api = 배포된 dashboard/Jenkins 잡 (기본) | local = $CLOUD_TRANSLATE_DIR 의
+# 스크립트를 직접 실행 (fix-heading-syntax / align / translate-file / translate
+# 네 단계 전부). 미배포 브랜치를 배포 없이 검증할 때.
+TRANSLATE_VIA="api"
+CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
+CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
 TRANSLATE_PIPELINE_BRANCH=""              # translate/translate-file 잡의 multibranch child (빈 값=main)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 ALIGN_PIPELINE_BRANCH=""                  # cloud-translate 의 Jenkins multibranch child (기본: 미지정 → main)
@@ -138,6 +161,12 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --verify 는 py|fable 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
+    --translate)
+      case "${2:-}" in
+        api|local) TRANSLATE_VIA="$2" ;;
+        *) echo "error: --translate 는 api|local 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
     --align-v2)      ALIGN_V2=1; shift ;;
     --no-align-v2)   ALIGN_V2=0; shift ;;
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 세션 브랜치 재사용
@@ -146,7 +175,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_PIPELINE_BRANCH="$2"; shift 2 ;;   # /api/translate·/api/translate/file 을 이 브랜치로
     --pipeline-branch|--align-pipeline-branch)
       ALIGN_PIPELINE_BRANCH="$2"; shift 2 ;;            # /api/align 을 이 cloud-translate 브랜치로 실행
-    -h|--help) sed -n '3,61p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,78p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -155,6 +184,23 @@ if [[ -z "$DASHBOARD_BASE_URL" || -z "$DASHBOARD_API_TOKEN" ]]; then
   echo "error: DASHBOARD_BASE_URL 과 DASHBOARD_API_TOKEN 을 스크립트 상단(또는 env)으로 지정하세요." >&2
   exit 1
 fi
+
+LOCAL_MODE=0
+if [[ "$TRANSLATE_VIA" == "local" ]]; then
+  LOCAL_MODE=1
+  if [[ ! -f "$CLOUD_TRANSLATE_DIR/.env" ]]; then
+    echo "error: $CLOUD_TRANSLATE_DIR/.env 가 없습니다 (TRANSLATE_GITHUB_TOKEN / TRANSLATE_ANTHROPIC_API_KEY 필요)" >&2
+    exit 1
+  fi
+fi
+
+# local 단계 실행 헬퍼 — cloud-translate 체크아웃에서 python 스크립트를 돌린다.
+run_local_step() {
+  local script="$1"; shift
+  echo "    \$ $script $*"
+  (cd "$CLOUD_TRANSLATE_DIR" && "$CLOUD_TRANSLATE_PY" "$script" "$@") 2>&1 | sed 's/^/    /'
+  return "${PIPESTATUS[0]}"
+}
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
@@ -245,14 +291,29 @@ else
   git push origin "$BASE_BRANCH"
 fi
 
-# ── 3) dashboard /api/fix-heading-syntax (heading 문법 정정) ──────────
-echo
-echo "[3/14] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
-
+# ── 3) fix-heading-syntax (heading 문법 정정) ─────────────────────────
 # 트리거 직전 open PR 목록을 baseline 으로 저장 (step 4 의 신규 PR 감지용)
 tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
   --jq '.[].url' | sort -u > "$tmpdir/fix_before"
+
+if (( LOCAL_MODE )); then
+  # 배포 잡과 동일하게 두 pass 를 순서대로 (fix_fence.py → fix_heading_syntax.py).
+  echo
+  echo "[3/14] local fix_fence.py + fix_heading_syntax.py (dir=$CLOUD_TRANSLATE_DIR, base=$BASE_BRANCH)"
+  set +e
+  run_local_step pre-align/fix_fence.py "$TARGET_URL" --langs ko,en,ja --base "$BASE_BRANCH"
+  fence_rc=$?
+  run_local_step pre-align/fix_heading_syntax.py "$TARGET_URL" --langs ko,en,ja --base "$BASE_BRANCH"
+  fixsyn_rc=$?
+  set -e
+  if (( fence_rc != 0 || fixsyn_rc != 0 )); then
+    echo "  local fix-heading-syntax 실패 (fix_fence=$fence_rc fix_heading_syntax=$fixsyn_rc)" >&2
+    exit 2
+  fi
+else
+echo
+echo "[3/14] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
 
 fix_body=$(cat <<JSON
 {
@@ -275,12 +336,20 @@ fix_build_url=$(printf '%s' "$fix_resp" \
 if [[ -n "$fix_build_url" ]]; then
   echo "  fix-heading-syntax build: $fix_build_url"
 fi
+fi
 
 # ── 4) fix-heading-syntax PR 감지 대기 ────────────────────────────────
 echo
-echo "[4/14] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
+if (( LOCAL_MODE )); then
+  echo "[4/14] local fix_heading_syntax.py 가 만든 PR 감지 (최대 1분 — 이미 생성됨)"
+else
+  echo "[4/14] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
+fi
 
 poll_left=180  # 1800s 상당 (10s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+# local 모드는 위 단계가 동기 실행이라 반환 시점에 PR 이 이미 존재한다 —
+# GitHub API 반영 지연만 흡수하면 되므로 폴링을 1분으로 줄인다.
+if (( LOCAL_MODE )); then poll_left=6; fi
 fix_pr_url=""
 while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open \
@@ -307,13 +376,29 @@ gh pr merge "$fix_pr_url" --repo "$REPO" --merge --delete-branch
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated"
 
-# ── 5) dashboard /api/align 트리거 (권장 preset) ─────────────────────
-echo
-echo "[5/14] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
-
+# ── 5) align 트리거 (권장 preset) ────────────────────────────────────
 # 트리거 직전 시점 open PR 목록을 baseline 으로 저장 (step 6 신규 PR 감지용)
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
   --jq '.[].url' | sort -u > "$tmpdir/before"
+
+if (( LOCAL_MODE )); then
+  echo
+  echo "[5/14] local fix_headings.py (dir=$CLOUD_TRANSLATE_DIR, base=$BASE_BRANCH, align_v2=$( ((ALIGN_V2)) && echo true || echo false ))"
+  align_opts=(--source ko --langs en,ja --base "$BASE_BRANCH"
+              --aligned-marker --demote-extras --translate-headings
+              --reconcile-unmatched)
+  if (( ALIGN_V2 )); then align_opts+=(--align-v2); fi
+  set +e
+  run_local_step pre-align/fix_headings.py "$TARGET_URL" "${align_opts[@]}"
+  align_rc=$?
+  set -e
+  if (( align_rc != 0 )); then
+    echo "  local fix_headings.py 실패 (exit $align_rc)" >&2
+    exit 2
+  fi
+else
+echo
+echo "[5/14] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH)"
 
 # 권장 preset flags: --aligned-marker --demote-extras --translate-headings --reconcile-unmatched
 # PR#218 개선: --align-v2 (opinionated defaults + ancestor subtree 재번역).
@@ -356,12 +441,20 @@ align_build_url=$(printf '%s' "$align_resp" \
 if [[ -n "$align_build_url" ]]; then
   echo "  align build: $align_build_url"
 fi
+fi
 
 # ── 6) align PR 감지 (base=alpha 로 새로 open 된 PR) ─────────────────
 echo
-echo "[6/14] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
+if (( LOCAL_MODE )); then
+  echo "[6/14] local fix_headings.py 가 만든 PR 감지 (최대 1분 — 이미 생성됨)"
+else
+  echo "[6/14] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
+fi
 
 poll_left=180  # 1800s 상당 (10s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+# local 모드는 위 단계가 동기 실행이라 반환 시점에 PR 이 이미 존재한다 —
+# GitHub API 반영 지연만 흡수하면 되므로 폴링을 1분으로 줄인다.
+if (( LOCAL_MODE )); then poll_left=6; fi
 align_pr_url=""
 while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
@@ -384,7 +477,35 @@ fi
 align_pr_number="$(gh pr view "$align_pr_url" --repo "$REPO" --json number --jq .number)"
 head_ref="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 
-# ── 7) /api/translate/file 로 public-api.md 전체 재번역 → align PR 커밋 ──
+# ── 7) public-api.md 전체 재번역 → align PR head 브랜치에 커밋 ────────
+if (( LOCAL_MODE )); then
+  # /api/translate/file 핸들러가 하는 조립을 그대로: pr_number → head_ref 를
+  # commit_to_branch 로 쓰고 file_url = blob/<head_ref>/<source>/<path>,
+  # DIFF_MODE=full (전체 재번역). engine/model/tm_top_k/chunk_workers 는
+  # translate_file.py 에 CLI 플래그가 없어 Jenkinsfile 과 동일하게 env 로 준다.
+  retx_file_url="https://github.com/$REPO/blob/$head_ref/$RETRANSLATE_SOURCE/$RETRANSLATE_PATH"
+  echo
+  echo "[7/14] local translate_file.py (dir=$CLOUD_TRANSLATE_DIR, file=$retx_file_url, commit-to-branch=$head_ref, DIFF_MODE=full, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
+  retx_env=(TRANSLATE_DIFF_MODE=full)
+  [[ -n "$TRANSLATE_ENGINE" ]]         && retx_env+=("TRANSLATE_TRANSLATE_ENGINE=$TRANSLATE_ENGINE")
+  [[ -n "$TRANSLATE_MODEL" ]]          && retx_env+=("TRANSLATE_ANTHROPIC_MODEL=$TRANSLATE_MODEL")
+  [[ -n "$TRANSLATE_TM_TOP_K" ]]       && retx_env+=("TRANSLATE_TM_TOP_K=$TRANSLATE_TM_TOP_K")
+  [[ -n "$TRANSLATE_CHUNK_WORKERS" ]]  && retx_env+=("TRANSLATE_CHUNK_WORKERS=$TRANSLATE_CHUNK_WORKERS")
+  [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]] && retx_env+=("TRANSLATE_GUIDELINES_VARIANT_EN=$TRANSLATE_GUIDELINES_VARIANT_EN")
+  [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]] && retx_env+=("TRANSLATE_GUIDELINES_VARIANT_JA=$TRANSLATE_GUIDELINES_VARIANT_JA")
+  set +e
+  (cd "$CLOUD_TRANSLATE_DIR" && env "${retx_env[@]}" \
+     "$CLOUD_TRANSLATE_PY" translate/translate_file.py "$retx_file_url" \
+     --commit-to-branch "$head_ref") 2>&1 | sed 's/^/    /'
+  retx_rc=${PIPESTATUS[0]}
+  set -e
+  if (( retx_rc != 0 )); then
+    echo "  local translate_file.py 실패 (exit $retx_rc)" >&2
+    exit 2
+  fi
+  git fetch --quiet origin "$head_ref"
+  echo "  retranslate 완료 & align PR head branch ($head_ref) 최신화"
+else
 echo
 echo "[7/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, pr_number=$align_pr_number, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
 
@@ -491,6 +612,7 @@ fi
 # align PR head 브랜치를 fetch 해서 재번역 커밋을 로컬로 가져옴
 git fetch --quiet origin "$head_ref"
 echo "  retranslate 완료 & align PR head branch ($head_ref) 최신화"
+fi
 
 # ── 8) claude CLI(fable)로 align PR (재번역 포함) heading·anchor-id 정렬 검사 ─
 echo
@@ -556,7 +678,37 @@ if [[ "$ko_pr_state" != "OPEN" ]]; then
 fi
 echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
-# ── 12) ko 변경 PR 대상 dashboard /api/translate 트리거 (권장 preset) ─
+# ── 12) ko 변경 PR 번역 (권장 preset) ─────────────────────────────────
+if (( LOCAL_MODE )); then
+  # 로컬 translate_pr.py — 플래그는 아래 api body 의 권장 preset 과 동일하고,
+  # e2e-align-and-translate.sh 의 local 경로와도 같은 집합을 쓴다 (local run
+  # 끼리 번역 조건이 갈리지 않게). engine/model 은 이 plan 의 --engine/--model
+  # 설정을 env 로 전달 — step 7 의 translate_file.py 와 같은 엔진을 태워야
+  # 한 plan 안에서 조건이 어긋나지 않는다.
+  echo
+  echo "[12/14] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
+  tx_env=()
+  [[ -n "$TRANSLATE_ENGINE" ]]        && tx_env+=("TRANSLATE_TRANSLATE_ENGINE=$TRANSLATE_ENGINE")
+  [[ -n "$TRANSLATE_MODEL" ]]         && tx_env+=("TRANSLATE_ANTHROPIC_MODEL=$TRANSLATE_MODEL")
+  [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]] && tx_env+=("TRANSLATE_GUIDELINES_VARIANT_EN=$TRANSLATE_GUIDELINES_VARIANT_EN")
+  [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]] && tx_env+=("TRANSLATE_GUIDELINES_VARIANT_JA=$TRANSLATE_GUIDELINES_VARIANT_JA")
+  tx_opts=(--diff-granularity block --glossary-mode service --max-load-ratio 2
+           --workers 2 --table-rows --skip-full-table --skip-anchor-only
+           --assign-anchors --align-headings --llm-patch-fallback
+           --fix-korean-leftover)
+  [[ -n "$TRANSLATE_CHUNK_WORKERS" ]] && tx_opts+=(--chunk-workers "$TRANSLATE_CHUNK_WORKERS")
+  [[ -n "$TRANSLATE_TM_TOP_K" ]]      && tx_opts+=(--tm-top-k "$TRANSLATE_TM_TOP_K")
+  set +e
+  (cd "$CLOUD_TRANSLATE_DIR" && env "${tx_env[@]}" \
+     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" "${tx_opts[@]}") 2>&1 | sed 's/^/    /'
+  tx_rc=${PIPESTATUS[0]}
+  set -e
+  if (( tx_rc != 0 )); then
+    echo "  local translate_pr.py 실패 (exit $tx_rc)" >&2
+    exit 2
+  fi
+  # 번역 PR 은 이미 생성된 상태 — step 13 의 gh 폴링이 즉시 감지한다.
+else
 echo
 echo "[12/14] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
 
@@ -636,6 +788,7 @@ translate_resp="$(curl -sS -X POST \
   "$DASHBOARD_BASE_URL/api/translate")"
 
 echo "$translate_resp" | python3 -m json.tool
+fi
 
 # ── 13) 번역 PR 감지 대기 (base = ko PR head 브랜치) ──────────────────
 echo

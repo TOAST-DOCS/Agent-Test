@@ -64,10 +64,10 @@
 #                 en/ja 에 남아있으면 FAIL" 로 미러링 미동작을 직접 잡는다.
 #                 기본 plan 집합에 포함된다.
 #   retranslate — public-api.md 전체 재번역 변형 (e2e-retranslate-align-and-
-#                 translate.sh). dashboard /api/translate/file (DIFF_MODE=full)
-#                 경로 검증 — 다른 plan 이 커버하지 않는 유일한 API. dashboard
-#                 API 전용이라 --translate local 은 적용되지 않는다 (--engine/
-#                 --model 만 전달). 기대: exit 0.
+#                 translate.sh). /api/translate/file (DIFF_MODE=full) 경로 검증 —
+#                 다른 plan 이 커버하지 않는 유일한 API. --translate local 이면
+#                 그 단계도 로컬 translate_file.py (--commit-to-branch,
+#                 TRANSLATE_DIFF_MODE=full) 로 실행된다. 기대: exit 0.
 #   round2      — 전제 조건(직전 round1 의 ko/번역 PR 이 base 에 머지되어 있음)이
 #                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
 #
@@ -82,9 +82,25 @@
 # 같은 작업 트리를 쓰므로 반드시 순차 실행 (이 러너가 보장). 개별 실행 로그는
 # /tmp/e2e-suite-<ts>/<plan>.log 에 남는다.
 #
-# --translate local 이면 CLOUD_TRANSLATE_DIR (기본 ~/works/cloud-translate) 의
-# translate_pr.py 로 번역을 실행한다 — 미머지 브랜치 검증용. 사전 준비(.env,
-# 워크트리)는 e2e-align-and-translate.sh 헤더 및 /verify-translate-e2e 참고.
+# --translate local 이면 **모든 단계**를 CLOUD_TRANSLATE_DIR (기본
+# ~/works/cloud-translate) 의 스크립트로 실행한다 — 미머지 브랜치 검증용.
+# 단계별 로컬 대응물:
+#   fix-heading-syntax → pre-align/fix_fence.py + pre-align/fix_heading_syntax.py
+#   align              → pre-align/fix_headings.py
+#   ko-review          → korean-review/review_pr.py
+#   translate          → translate/translate_pr.py
+#   translate/file     → translate/translate_file.py (retranslate plan)
+# **webhook plan 만 예외** — GitHub webhook → 배포된 webhook pod → Jenkins 라는
+# 배포 경로 자체가 검증 대상이라 로컬 대응물이 없다. concurrent plan 은 원래부터
+# 항상 로컬 translate_pr.py 다.
+# 사전 준비(.env, 워크트리)는 e2e-align-and-translate.sh 헤더 및
+# /verify-translate-e2e 참고.
+#
+# **ko-review 는 table-suite / row-drop-repro / markup-churn 에서 생략된다**
+# (e2e-align-and-translate.sh 의 plan 별 기본값). 그 세 plan 의 판정 대상은 번역
+# 로직이고, 검수 suggestion 이 표·마크업 픽스처를 흔들면 17단계의 결정론적 판정이
+# 흐려진다. round1 은 종합 plan 이라 유지하고, korean-review plan 은 검수 자체가
+# 검증 대상이다. 개별 실행 시 --ko-review 로 되돌릴 수 있다.
 #
 # ── 실행 시간 ────────────────────────────────────────────────────────
 # align 프롤로그(2~9단계: restore → fix-heading-syntax → align → 검증 → merge)
@@ -111,7 +127,8 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 PASS_ARGS=()
-EM_ARGS=()   # --engine/--model 만 — retranslate 스크립트는 --translate 계열 미지원
+EM_ARGS=()   # retranslate 로 넘길 인자 (--engine/--model/--verify/--translate)
+KR_ARGS=()   # korean-review 로 넘길 인자 (--translate 만 의미 있음)
 PLANS=()
 SLEEP_BETWEEN=0
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
@@ -127,7 +144,11 @@ while [[ $# -gt 0 ]]; do
     --translate-pipeline-branch)
       # translate 잡만 특정 cloud-translate 브랜치에서 — align/retranslate 양쪽에 전달
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); shift 2 ;;
-    --translate|--tm-top-k|--chunk-workers)
+    --translate)
+      # local = 모든 단계를 로컬 실행 (webhook plan 만 예외 — 배포 경로 자체를
+      # 검증하는 plan 이라 로컬 대응물이 없다). 세 스크립트에 모두 전달.
+      PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2"); shift 2 ;;
+    --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
     webhook|korean-review|round1|round2|row-drop-repro|table-suite|markup-churn|retranslate|concurrent)
       PLANS+=("$1"); shift ;;
@@ -135,7 +156,7 @@ while [[ $# -gt 0 ]]; do
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
       # `scripts/e2e-suite.sh all round2` 처럼 뒤에 명시적으로 이어붙인다.
       PLANS+=(webhook korean-review round1 table-suite row-drop-repro markup-churn retranslate concurrent); shift ;;
-    -h|--help) sed -n '3,107p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,125p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
 done
@@ -195,7 +216,7 @@ for plan in "${PLANS[@]}"; do
     # korean-review plan 은 별도 스크립트 — /api/ko-review 잡을 태우고
     # 결과 리뷰 규격 + fable 의미 검증. --engine/--model 은 korean-review
     # 잡의 파라미터가 아니라 전달하지 않는다.
-    bash "$REPO_ROOT/scripts/e2e-korean-review.sh" > "$log" 2>&1
+    bash "$REPO_ROOT/scripts/e2e-korean-review.sh" "${KR_ARGS[@]}" > "$log" 2>&1
     ec=$?
     verdict="$(grep -oE '^KO_REVIEW: (OK|FAIL)' "$log" | tail -n1 || true)"
     ko_pr="$(grep -oE '  ko PR         : https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"

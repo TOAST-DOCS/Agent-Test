@@ -3,10 +3,12 @@
 # End-to-end 재현 스크립트 (Agent-Test alpha):
 #   1. alpha 브랜치로 switch
 #   2. scripts/restore-alpha-origin.sh 실행 (내부에서 commit+push)
-#   3. dashboard /api/fix-heading-syntax 호출 (heading 문법 정정, base=alpha)
+#   3. fix-heading-syntax (heading 문법 정정, base=alpha) — dashboard API 또는
+#      local fix_fence.py + fix_heading_syntax.py
 #   4. fix-heading-syntax 잡이 생성하는 PR 감지 → merge → alpha 최신화
 #   5. scripts/restore-aligned-public-api.sh 실행 후 commit+push
-#   6. dashboard /api/align 호출 (= fix_headings job, 권장 preset, base=alpha)
+#   6. align (= fix_headings, 권장 preset, base=alpha) — dashboard API 또는
+#      local fix_headings.py
 #   7. Jenkins align 잡이 새로 만든 PR 을 gh 로 감지
 #   8. align PR 브랜치의 ko/en/ja heading·anchor-id 정렬 검사
 #      (scripts/check_docs_align.py — 결정적, <1초. --verify fable 로 예전
@@ -14,10 +16,12 @@
 #   9. 검증 통과 시 align PR 을 alpha 로 merge (실패 시 PR 은 open 으로 남김)
 #  10. scripts/create-translate-test-pr.sh 실행 (ko 변형 → translate-test PR 생성)
 #  11. ko 변경 PR 생성 확인
-#  12. dashboard /api/ko-review 호출 (ko 변경 PR 대상 한글 검수 트리거)
-#  13. ko-review 잡 완료 대기 (Jobs 상태 polling)
+#  12. ko-review 트리거 (ko 변경 PR 대상 한글 검수) — dashboard /api/ko-review
+#      또는 local review_pr.py. table-suite/row-drop-repro/markup-churn 은 기본
+#      생략 (--ko-review 로 강제)
+#  13. ko-review 잡 완료 대기 (Jobs 상태 polling; local 은 동기라 불필요)
 #  14. ko 변경 PR 의 suggestion 검증 (1개 이상 존재해야 함) → 전체 accept 후
-#      ko 변경 PR head 브랜치로 commit + push
+#      ko 변경 PR head 브랜치로 commit + push (12 생략 시 함께 생략)
 #  15. ko 변경 PR (suggestion 반영본) 대상으로 dashboard /api/translate 호출
 #  16. translate 잡이 생성하는 번역 PR(base=ko PR head 브랜치) 감지 대기
 #  17. 번역 PR 검증 (heading·id·표 행 수·셀 수·한글 잔류·식별자 행) → 결과를
@@ -34,6 +38,7 @@
 #                                      [--align-v2|--no-align-v2]
 #                                      [--plan round1|round2|row-drop-repro|table-suite|markup-churn]
 #                                      [--translate api|local]
+#                                      [--ko-review|--no-ko-review]
 #                                      [--verify py|fable]
 #                                      [--from-aligned <branch>]
 #
@@ -92,12 +97,30 @@
 #                                  혼재, step 17 검사 6), 가드 배포 후 = PASS 기대.
 #                                - 그 외 파일의 FAIL 은 새로운 회귀를 의미한다.
 #
-#   --translate api|local        번역 실행 방식. api(기본) = dashboard /api/translate
-#                                (배포된 Jenkins 잡). local = $CLOUD_TRANSLATE_DIR 의
-#                                translate_pr.py 를 직접 실행 — 미배포 브랜치의 번역
-#                                로직(예: PR #290 table-row reconcile)을 배포 없이 검증.
-#                                engine/model 은 api+haiku 로 고정(기존 run 과 동일 조건),
-#                                나머지 preset 플래그도 dashboard 와 동일하게 전달.
+#   --translate api|local        실행 방식. api(기본) = 배포된 dashboard/Jenkins 잡
+#                                (/api/fix-heading-syntax, /api/align, /api/ko-review,
+#                                /api/translate). local = **네 단계 전부**
+#                                $CLOUD_TRANSLATE_DIR 의 스크립트를 직접 실행 —
+#                                미배포 브랜치의 로직을 배포 없이 검증한다:
+#                                  3단계 → pre-align/fix_fence.py + fix_heading_syntax.py
+#                                  6단계 → pre-align/fix_headings.py
+#                                  12단계 → korean-review/review_pr.py
+#                                  15단계 → translate/translate_pr.py
+#                                각 단계의 인자는 dashboard 핸들러 + Jenkinsfile 이
+#                                조립하는 것과 1:1 로 맞춰져 있다 (한쪽만 바뀌면 local
+#                                과 api 판정이 갈리므로 함께 고칠 것). 동기 실행이라
+#                                잡 완료 폴링이 없어지고 PR 감지 폴링은 1분으로 줄어든다.
+#                                번역의 engine/model 은 api+haiku 로 고정(기존 run 과
+#                                동일 조건), align/ko-review 는 api 모드에서도 잡
+#                                파라미터를 default 로 보내므로 여기서도 미전송
+#                                ($CLOUD_TRANSLATE_DIR/.env 기본값).
+#
+#   --ko-review / --no-ko-review 12~14단계(한글 검수 + suggestion accept) 실행 여부.
+#                                기본값은 plan 별로 갈린다 — table-suite /
+#                                row-drop-repro / markup-churn 은 **생략**, 그 외
+#                                (round1/round2) 는 실행. 그 세 plan 의 판정 대상은
+#                                번역 로직이고, 검수 suggestion 이 표·마크업 픽스처를
+#                                흔들면 17단계의 결정론적 판정이 흐려진다.
 #
 #   --verify py                  8·17 단계 구조 검증을 scripts/check_docs_align.py
 #                                (기본). 규칙은 예전 fable 프롬프트와 1:1 이고
@@ -152,7 +175,12 @@ TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified
 TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|table-suite|markup-churn
-TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기본) | local = 로컬 translate_pr.py
+TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기본) | local = 모든 단계를 로컬 실행
+# ko-review (12~14단계) 실행 여부. plan 별 기본값은 아래 arg 파싱 후 결정 —
+# table-suite/row-drop-repro/markup-churn 은 표·마크업 픽스처를 정확히 보존해야
+# 하고 (검수 suggestion 이 픽스처를 흔들면 판정이 흐려진다) 검증 대상도 번역
+# 로직이라 ko-review 를 태울 이유가 없다. round1 은 종합 plan 이라 유지.
+KO_REVIEW_MODE="auto"                     # auto = plan 기본값 | on | off
 VERIFY_MODE="py"                          # py = check_docs_align.py (기본, 결정적·<1초) | fable = 예전 claude -p 검증
 TRANSLATE_PIPELINE_BRANCH=""              # translate 잡을 돌릴 cloud-translate multibranch child (빈 값=main)
 FROM_ALIGNED=""                            # 이미 align 이 끝난 브랜치에서 세션을 갈라내고 2~9단계를 건너뛴다
@@ -230,17 +258,60 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --translate-pipeline-branch)
       TRANSLATE_PIPELINE_BRANCH="$2"; shift 2 ;;   # /api/translate 를 이 cloud-translate 브랜치로 실행
+    --ko-review)     KO_REVIEW_MODE="on"; shift ;;       # plan 기본값을 무시하고 ko-review 실행
+    --no-ko-review)  KO_REVIEW_MODE="off"; shift ;;      # plan 기본값을 무시하고 ko-review 생략
     --from-aligned)  FROM_ALIGNED="$2"; shift 2 ;;       # align 완료 스냅샷 브랜치 재사용 (2~9단계 skip)
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 e2e 세션 브랜치 재사용
     --base-source)   BASE_SOURCE_BRANCH="$2"; shift 2 ;; # 새 e2e 브랜치를 갈라낼 원본 (기본 alpha)
-    -h|--help) sed -n '3,132p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,155p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
 
+# ── ko-review 실행 여부 (plan 기본값) ────────────────────────────────
+if [[ "$KO_REVIEW_MODE" == "auto" ]]; then
+  case "$PLAN_NAME" in
+    table-suite|row-drop-repro|markup-churn) KO_REVIEW_MODE="off" ;;
+    *)                                       KO_REVIEW_MODE="on" ;;
+  esac
+fi
+
+# ── 로컬 실행 모드 (--translate local) ───────────────────────────────
+# local 이면 fix-heading-syntax / align / ko-review / translate 네 단계 모두
+# $CLOUD_TRANSLATE_DIR 의 스크립트를 직접 실행한다 (dashboard·Jenkins 미사용).
+# 각 단계의 인자는 dashboard 핸들러 + Jenkinsfile 이 조립하는 것과 1:1 로
+# 맞춰 두었다 — 한쪽만 바뀌면 local 과 api 판정이 갈리므로 함께 고칠 것.
+LOCAL_MODE=0
+if [[ "$TRANSLATE_VIA" == "local" ]]; then
+  LOCAL_MODE=1
+  if [[ ! -f "$CLOUD_TRANSLATE_DIR/.env" ]]; then
+    echo "error: $CLOUD_TRANSLATE_DIR/.env 가 없습니다 (TRANSLATE_GITHUB_TOKEN / TRANSLATE_ANTHROPIC_API_KEY 필요)" >&2
+    exit 1
+  fi
+  if [[ ! -x "$CLOUD_TRANSLATE_PY" ]]; then
+    echo "error: CLOUD_TRANSLATE_PY 가 실행 가능하지 않습니다: $CLOUD_TRANSLATE_PY" >&2
+    exit 1
+  fi
+fi
+
+# local 단계 실행 헬퍼 — cloud-translate 체크아웃에서 python 스크립트를 돌린다.
+# 로그는 stdout 으로 흘려 e2e 로그에 인라인으로 남는다 (api 모드의 Jenkins
+# 콘솔 대응물). 실패하면 호출자가 exit code 로 처리.
+run_local_step() {
+  local script="$1"; shift
+  echo "    \$ $script $*"
+  (cd "$CLOUD_TRANSLATE_DIR" && "$CLOUD_TRANSLATE_PY" "$script" "$@") 2>&1 | sed 's/^/    /'
+  return "${PIPESTATUS[0]}"
+}
+
 if [[ -z "$DASHBOARD_BASE_URL" || -z "$DASHBOARD_API_TOKEN" ]]; then
-  echo "error: DASHBOARD_BASE_URL 과 DASHBOARD_API_TOKEN 을 스크립트 상단(또는 env)으로 지정하세요." >&2
-  exit 1
+  if (( LOCAL_MODE )) && [[ "$KO_REVIEW_MODE" == "off" ]]; then
+    # local + ko-review 생략이면 dashboard 를 한 번도 호출하지 않는다.
+    : 
+  else
+    echo "error: DASHBOARD_BASE_URL 과 DASHBOARD_API_TOKEN 을 스크립트 상단(또는 env)으로 지정하세요." >&2
+    exit 1
+  fi
 fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -326,13 +397,32 @@ echo
 echo "[2/17] scripts/restore-alpha-origin.sh"
 bash "$REPO_ROOT/scripts/restore-alpha-origin.sh"
 
-# ── 3) dashboard /api/fix-heading-syntax (heading 문법 정정) ──────────
-echo
-echo "[3/17] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
-
+# ── 3) fix-heading-syntax (heading 문법 정정) ─────────────────────────
 # 트리거 직전 open PR 목록을 baseline 으로 저장 (step 4 의 신규 PR 감지용)
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
   --jq '.[].url' | sort -u > "$tmpdir/fix_before"
+
+if (( LOCAL_MODE )); then
+  # 배포된 fix-heading-syntax 잡은 한 빌드에서 두 pass 를 순서대로 돈다
+  # (fix_fence.py → fix_heading_syntax.py, 각각 자기 PR 을 연다). 인자는
+  # pre-align/Jenkinsfile-fix-heading-syntax 의 조립과 동일: --langs ko,en,ja
+  # + --base <세션 브랜치>. LLM 없는 결정론적 regex pass 라 로컬에서도 결과가
+  # 같다.
+  echo
+  echo "[3/17] local fix_fence.py + fix_heading_syntax.py (dir=$CLOUD_TRANSLATE_DIR, base=$BASE_BRANCH)"
+  set +e
+  run_local_step pre-align/fix_fence.py "$TARGET_URL" --langs ko,en,ja --base "$BASE_BRANCH"
+  fence_rc=$?
+  run_local_step pre-align/fix_heading_syntax.py "$TARGET_URL" --langs ko,en,ja --base "$BASE_BRANCH"
+  fixsyn_rc=$?
+  set -e
+  if (( fence_rc != 0 || fixsyn_rc != 0 )); then
+    echo "  local fix-heading-syntax 실패 (fix_fence=$fence_rc fix_heading_syntax=$fixsyn_rc)" >&2
+    exit 2
+  fi
+else
+echo
+echo "[3/17] POST $DASHBOARD_BASE_URL/api/fix-heading-syntax (base=$BASE_BRANCH)"
 
 fix_body=$(cat <<JSON
 {
@@ -355,12 +445,20 @@ fix_build_url=$(printf '%s' "$fix_resp" \
 if [[ -n "$fix_build_url" ]]; then
   echo "  fix-heading-syntax build: $fix_build_url"
 fi
+fi
 
 # ── 4) fix-heading-syntax PR 감지 대기 ────────────────────────────────
 echo
-echo "[4/17] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
+if (( LOCAL_MODE )); then
+  echo "[4/17] local fix_heading_syntax.py 가 만든 PR 감지 (최대 1분 — 이미 생성됨)"
+else
+  echo "[4/17] fix-heading-syntax 잡이 생성하는 PR 감지 대기 (최대 30분)"
+fi
 
 poll_left=180  # 1800s 상당 (10s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+# local 모드는 위 단계가 동기 실행이라 반환 시점에 PR 이 이미 존재한다 —
+# GitHub API 반영 지연만 흡수하면 되므로 폴링을 1분으로 줄인다.
+if (( LOCAL_MODE )); then poll_left=6; fi
 fix_pr_url=""
 while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open \
@@ -400,7 +498,34 @@ else
   git push origin "$BASE_BRANCH"
 fi
 
-# ── 6) dashboard /api/align 트리거 (권장 preset + PR#218 align_v2) ────
+# ── 6) align 트리거 (권장 preset + PR#218 align_v2) ──────────────────
+# 트리거 직전 시점 open PR 목록을 baseline 으로 저장 (step 7 의 신규 PR 감지용).
+# local 모드는 fix_headings.py 가 동기 실행이라 반환 시점에 PR 이 이미 있으므로
+# baseline 을 트리거 **전에** 떠 두어야 한다.
+gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
+  --jq '.[].url' | sort -u > "$tmpdir/before"
+
+if (( LOCAL_MODE )); then
+  # 인자는 /api/align 핸들러가 만드는 params + pre-align/Jenkinsfile 의 opts
+  # 조립과 1:1: source=ko, langs=en,ja, base=<세션 브랜치>, 권장 preset
+  # (--aligned-marker --demote-extras --translate-headings
+  #  --reconcile-unmatched) + --align-v2. engine 은 api 모드에서도 미전송이라
+  # (engine="default") 여기서도 넘기지 않는다 → fix_headings.py 기본 엔진.
+  echo
+  echo "[6/17] local fix_headings.py (dir=$CLOUD_TRANSLATE_DIR, base=$BASE_BRANCH, align_v2=$( ((ALIGN_V2)) && echo true || echo false ))"
+  align_opts=(--source ko --langs en,ja --base "$BASE_BRANCH"
+              --aligned-marker --demote-extras --translate-headings
+              --reconcile-unmatched)
+  if (( ALIGN_V2 )); then align_opts+=(--align-v2); fi
+  set +e
+  run_local_step pre-align/fix_headings.py "$TARGET_URL" "${align_opts[@]}"
+  align_rc=$?
+  set -e
+  if (( align_rc != 0 )); then
+    echo "  local fix_headings.py 실패 (exit $align_rc)" >&2
+    exit 2
+  fi
+else
 echo
 echo "[6/17] POST $DASHBOARD_BASE_URL/api/align (권장 preset, base=$BASE_BRANCH, align_v2=$( ((ALIGN_V2)) && echo true || echo false ))"
 
@@ -439,16 +564,20 @@ align_build_url=$(printf '%s' "$align_resp" \
 if [[ -n "$align_build_url" ]]; then
   echo "  align build: $align_build_url"
 fi
+fi
 
 # ── 7) align PR 감지 (base=alpha 로 새로 open 된 PR) ─────────────────
 echo
-echo "[7/17] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
-
-# 트리거 직전 시점 open PR 목록을 baseline 으로 저장
-gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
-  --jq '.[].url' | sort -u > "$tmpdir/before"
+if (( LOCAL_MODE )); then
+  echo "[7/17] local fix_headings.py 가 만든 PR 감지 (최대 1분 — 이미 생성됨)"
+else
+  echo "[7/17] Jenkins align 잡이 생성하는 PR 감지 대기 (최대 30분)"
+fi
 
 poll_left=180  # 1800s 상당 (10s x 180) — 반복 횟수 기반 폴링: suspend 로 wall clock 이 지나가도 타임아웃 오판하지 않는다 (2026-08-15~16 spurious exit-2 실측)
+# local 모드는 위 단계가 동기 실행이라 반환 시점에 PR 이 이미 존재한다 —
+# GitHub API 반영 지연만 흡수하면 되므로 폴링을 1분으로 줄인다.
+if (( LOCAL_MODE )); then poll_left=6; fi
 align_pr_url=""
 while (( poll_left-- > 0 )); do
   gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
@@ -542,7 +671,31 @@ if [[ "$ko_pr_state" != "OPEN" ]]; then
 fi
 echo "  ko 변경 PR 확인: $ko_pr_url (state=$ko_pr_state)"
 
-# ── 12) dashboard /api/ko-review 트리거 (ko 변경 PR 대상 한글 검수) ────
+# ── 12~14) ko-review (ko 변경 PR 대상 한글 검수 + suggestion accept) ──
+# plan 별 기본값: table-suite / row-drop-repro / markup-churn 은 생략.
+# 그 세 plan 의 판정 대상은 번역 로직이고, 검수 suggestion 이 표·마크업
+# 픽스처를 흔들면 step 17 의 결정론적 판정이 흐려진다. --ko-review 로 강제
+# 실행 가능.
+if [[ "$KO_REVIEW_MODE" == "off" ]]; then
+  echo
+  echo "[12-14/17] ko-review 생략 (plan=$PLAN_NAME, KO_REVIEW_MODE=off) — suggestion accept 도 함께 건너뜀"
+elif (( LOCAL_MODE )); then
+  # 로컬 review_pr.py 직접 실행 — korean-review/Jenkinsfile 의 PR 모드는
+  # `python korean-review/review_pr.py <PR URL>` 한 줄이 전부다 (옵션은 잡
+  # 파라미터가 default 일 때 미전송). 동기 실행이라 13단계 폴링이 불필요.
+  echo
+  echo "[12/17] local review_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url)"
+  set +e
+  run_local_step korean-review/review_pr.py "$ko_pr_url"
+  koreview_rc=$?
+  set -e
+  if (( koreview_rc != 0 )); then
+    echo "  local review_pr.py 실패 (exit $koreview_rc)" >&2
+    exit 2
+  fi
+  echo
+  echo "[13/17] (local 실행이라 잡 완료 폴링 불필요)"
+else
 echo
 echo "[12/17] POST $DASHBOARD_BASE_URL/api/ko-review (PR=$ko_pr_url)"
 
@@ -600,8 +753,10 @@ if [[ "$koreview_status" != "success" ]]; then
   exit 2
 fi
 echo "  ko-review 완료"
+fi
 
 # ── 14) ko 변경 PR suggestion 검증 및 전체 accept ─────────────────────
+if [[ "$KO_REVIEW_MODE" != "off" ]]; then
 echo
 echo "[14/17] ko 변경 PR suggestion 검증 및 accept (PR=$ko_pr_url)"
 
@@ -687,6 +842,7 @@ git worktree remove "$apply_wt" --force
 # 메인 워크트리도 suggestion 반영본으로 최신화 (step 15 translate 트리거 전)
 git fetch --quiet origin "$ko_head_ref_for_suggest"
 git reset --hard "origin/$ko_head_ref_for_suggest"
+fi
 
 # ── 15) ko 변경 PR (suggestion 반영본) 번역 실행 ─────────────────────
 trans_pr_url=""
