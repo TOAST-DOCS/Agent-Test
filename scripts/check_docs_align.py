@@ -29,6 +29,9 @@ Usage:
   python3 scripts/check_docs_align.py --mode translate   # 규칙 1~6
   python3 scripts/check_docs_align.py --mode translate --markup
   python3 scripts/check_docs_align.py --root <worktree> --files ko/overview.md
+
+ko/ 아래 .md 를 하위 폴더까지 재귀로 훑어 en/ja 에 같은 상대 경로가 있는 문서만
+비교한다 (include 로 조립되는 release-notes/<year>.md 같은 본문도 검사 대상).
 """
 from __future__ import annotations
 
@@ -239,6 +242,33 @@ def markup_counts(lines: list[str]) -> tuple[int, int, int]:
     return br, bare, fence_info
 
 
+def normalize_rel(spec: str) -> str:
+    """'ko/release-notes/2016.md' → 'release-notes/2016.md' (언어 디렉터리만 떼낸다)."""
+    parts = [p for p in spec.strip().replace("\\", "/").split("/") if p not in ("", ".")]
+    if parts and parts[0] in LANGS:
+        parts = parts[1:]
+    return "/".join(parts)
+
+
+def collect_docs(root: str) -> list[str]:
+    """ko/ 아래 .md 를 하위 폴더까지 재귀로 모아, en/ja 에도 있는 것만 rel 경로로 반환.
+
+    include 로 조립되는 문서(ko/release-notes.md → ko/release-notes/<year>.md)는
+    본문이 하위 폴더에 있으므로 최상위만 훑으면 구조 검사가 통째로 비어버린다.
+    """
+    ko_dir = os.path.join(root, SOURCE)
+    rels: list[str] = []
+    for dirpath, dirnames, filenames in os.walk(ko_dir):
+        dirnames[:] = [d for d in dirnames if not d.startswith(".")]
+        for name in filenames:
+            if not name.endswith(".md") or is_variant(name):
+                continue
+            rel = os.path.relpath(os.path.join(dirpath, name), ko_dir).replace(os.sep, "/")
+            if all(os.path.isfile(os.path.join(root, lang, rel)) for lang in TARGETS):
+                rels.append(rel)
+    return sorted(rels)
+
+
 def read(path: str) -> list[str]:
     with open(path, "r", encoding="utf-8") as f:
         return f.read().splitlines()
@@ -379,7 +409,7 @@ def main() -> int:
     ap.add_argument("--known-leftovers", default=None,
                     help="번역되지 않고 남는 것이 정상인 한글 리터럴 목록 파일 "
                          "(기본: scripts/known_korean_leftovers.txt)")
-    ap.add_argument("--files", default="", help="검사 대상 제한 (쉼표 구분, ko/foo.md 또는 foo.md)")
+    ap.add_argument("--files", default="", help="검사 대상 제한 (쉼표 구분, ko/foo.md · foo.md · release-notes/2016.md 모두 허용)")
     args = ap.parse_args()
 
     root = args.root
@@ -390,14 +420,9 @@ def main() -> int:
         return 2
 
     if args.files:
-        rels = [os.path.basename(f.strip()) for f in args.files.split(",") if f.strip()]
+        rels = [r for r in (normalize_rel(f) for f in args.files.split(",")) if r]
     else:
-        rels = sorted(
-            n for n in os.listdir(ko_dir)
-            if n.endswith(".md") and not is_variant(n)
-            and os.path.isfile(os.path.join(root, "en", n))
-            and os.path.isfile(os.path.join(root, "ja", n))
-        )
+        rels = collect_docs(root)
 
     if not rels:
         print("error: ko/en/ja 에 공통으로 존재하는 .md 문서가 없습니다", file=sys.stderr)
