@@ -73,9 +73,13 @@
 #                                          (--commit-to-branch <align PR head>,
 #                                           TRANSLATE_DIFF_MODE=full)
 #                                  12단계 → translate/translate_pr.py
-#                                engine/model 은 이 스크립트의 --engine/--model 설정을
-#                                env (TRANSLATE_TRANSLATE_ENGINE / _ANTHROPIC_MODEL) 로
-#                                전달해 7·12단계가 같은 엔진을 태운다.
+#                                local 모드의 7·12단계는 **engine=api 로 고정**된다 —
+#                                그 모드에서는 dashboard 라우트를 타지 않으므로 CLI
+#                                엔진의 라우트 커버리지가 0 이고, CLI 는 로컬 claude
+#                                OAuth 한도(세션·fable 검증과 공유)를 써서 자주
+#                                429 로 죽는다. 모델은 --model 값을 두 env
+#                                (ANTHROPIC_MODEL / CLAUDE_CODE_MODEL) 로 함께 넘긴다.
+#                                --engine 은 api 모드(배포 경로)에만 적용된다.
 #                                local 에서도 0단계 webhook 킬 스위치는 dashboard 를
 #                                호출하므로 DASHBOARD_BASE_URL/_TOKEN 은 여전히 필수.
 #
@@ -570,9 +574,18 @@ if (( LOCAL_MODE )); then
   # translate_file.py 에 CLI 플래그가 없어 Jenkinsfile 과 동일하게 env 로 준다.
   retx_file_url="https://github.com/$REPO/blob/$head_ref/$RETRANSLATE_SOURCE/$RETRANSLATE_PATH"
   echo
-  echo "[7/14] local translate_file.py (dir=$CLOUD_TRANSLATE_DIR, file=$retx_file_url, commit-to-branch=$head_ref, DIFF_MODE=full, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
-  retx_env=(TRANSLATE_DIFF_MODE=full)
-  [[ -n "$TRANSLATE_ENGINE" ]]         && retx_env+=("TRANSLATE_TRANSLATE_ENGINE=$TRANSLATE_ENGINE")
+  echo "[7/14] local translate_file.py (dir=$CLOUD_TRANSLATE_DIR, file=$retx_file_url, commit-to-branch=$head_ref, DIFF_MODE=full, engine=api(local 고정), model=${TRANSLATE_MODEL:-default})"
+  # local 모드는 engine 을 **api 로 고정**한다. 이유 두 가지:
+  #   (1) 커버리지가 없다 — 이 plan 의 검증 대상은 `/api/translate/file`
+  #       (DIFF_MODE=full) **경로**이고, local 모드에서는 그 라우트를 아예 타지
+  #       않고 translate_file.py 를 직접 부른다. 그러니 CLI 엔진을 태워서 얻는
+  #       라우트 커버리지가 0 이다 (배포 경로 검증은 --translate api 가 한다).
+  #   (2) CLI 엔진은 로컬 `claude` OAuth 한도를 쓰는데 그 한도는 이 세션·fable
+  #       검증과 같은 풀이라 자주 소진된다 — 2026-08-24 실측으로 이 plan 이 두 번
+  #       429 로 죽었다 (`Claude 사용량 한도 소진 (HTTP 429)`). api 엔진은 별도
+  #       한도라 영향이 없다.
+  # 다른 모든 plan 의 local 경로도 api+haiku 로 고정되어 있어 조건도 일치한다.
+  retx_env=(TRANSLATE_DIFF_MODE=full TRANSLATE_TRANSLATE_ENGINE=api)
   # 모델은 **두 env 모두** 세팅해야 한다. ClaudeCodeTranslator 는
   # settings.claude_code_model 을 쓰고 (translator.py:3918) anthropic_model 은
   # 보지 않으므로, engine=claude-code 에서 ANTHROPIC_MODEL 만 주면 조용히 무시되고
@@ -791,9 +804,9 @@ if (( LOCAL_MODE )); then
   # 설정을 env 로 전달 — step 7 의 translate_file.py 와 같은 엔진을 태워야
   # 한 plan 안에서 조건이 어긋나지 않는다.
   echo
-  echo "[12/14] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
-  tx_env=()
-  [[ -n "$TRANSLATE_ENGINE" ]]        && tx_env+=("TRANSLATE_TRANSLATE_ENGINE=$TRANSLATE_ENGINE")
+  echo "[12/14] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=api(local 고정), model=${TRANSLATE_MODEL:-default})"
+  # engine=api 고정 — 7단계 주석의 두 이유가 그대로 적용된다.
+  tx_env=(TRANSLATE_TRANSLATE_ENGINE=api)
   # ANTHROPIC_MODEL 단독으로는 CLI 엔진에 안 먹는다 — 위 7단계 주석 참고.
   [[ -n "$TRANSLATE_MODEL" ]]         && tx_env+=("TRANSLATE_ANTHROPIC_MODEL=$TRANSLATE_MODEL"
                                                   "TRANSLATE_CLAUDE_CODE_MODEL=$TRANSLATE_MODEL")
