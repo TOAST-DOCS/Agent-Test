@@ -163,7 +163,7 @@ Floating IP管理は、Instance > 管理ページまたはInstance > Floating IP
 #### Linux
 ユーザースクリプトの最初の行は必ず`#!`で始まる必要があります。
 ```
-#!/bin/bash
+# !/bin/bash
 ...
 ```
 
@@ -181,7 +181,7 @@ rem cmd
 
 * PowerShellスクリプト
 ```
-#ps1_sysnative
+# ps1_sysnative
 ...
 ```
 
