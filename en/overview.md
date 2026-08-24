@@ -69,10 +69,7 @@ When a key pair is newly generated, its private key is downloaded. As private ke
 <a id="security-groups"></a>
 ### Security Groups { #security-groups }
 
-A security group is a virtual firewall that determines network traffic delivered to an instance. For more details on security groups, see [VPC Overview](/Network/VPC/en/overview/).
-
-> [Note]
-The default security group is configured to ignore all inbound network traffic. Before accessing an instance using SSH, configure the instance's security group to allow access to the SSH port.
+<!-- TODO: translate body -->
 
 <a id="network"></a>
 ### Network { #network }
