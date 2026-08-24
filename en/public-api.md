@@ -1078,6 +1078,7 @@ This API does not return a response body.
 
 ---
 
+<a id="test-added-endpoint"></a>
 ### New Test Endpoint { #test-added-endpoint }
 
 ```
