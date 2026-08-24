@@ -47,7 +47,8 @@
 #       heading 레벨과 `<a id>` 는 보존
 #   (6) 채운 섹션 **밖**은 base 와 바이트 동일 (en/ja 각각)
 #   (7) id 없는 stub 은 그대로 남음 (억지로 채우지 않음)
-#   (8) PR 본문이 채운 id 를 나열하고, 건너뛴 stub 을 '건너뜀' 으로 보고
+#   (8) PR 본문이 채운 id 를 나열하고, 건너뛴 stub 을 '건너뜀' 으로 보고 ·
+#       채운 섹션마다 before/after Docs Preview 링크 (섹션 앵커 + 커밋 SHA)
 #
 # Usage:
 #   source ./load_env.sh
@@ -55,6 +56,11 @@
 #   bash scripts/e2e-fill-stubs.sh --translate api      # dashboard /api/fill-empty → Jenkins
 #   bash scripts/e2e-fill-stubs.sh --keep               # 브랜치/PR 보존 (디버깅)
 #   bash scripts/e2e-fill-stubs.sh --doc console-guide.md
+#   bash scripts/e2e-fill-stubs.sh --base-source e2e/my-branch   # alpha 대신 그 브랜치에서
+#
+# --base-source 는 **이 스크립트 자신이 아직 alpha 에 머지되기 전** 자기 자신을
+# 돌릴 때 필요하다: 세션 브랜치는 base-source 에서 갈라지는데, alpha 에 파일이
+# 없으면 checkout 이 워킹트리의 스크립트를 지우려 해서 실행이 중단된다.
 #
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
 #     bash scripts/e2e-fill-stubs.sh
@@ -86,6 +92,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --keep) KEEP=1; shift ;;
     --doc)  DOC="$2"; shift 2 ;;
+    --base-source) BASE_SOURCE="$2"; SESSION_BRANCH="e2e-fillstubs/$TS"; shift 2 ;;
     --translate) TRANSLATE_MODE="$2"; shift 2 ;;
     --engine) ENGINE="$2"; shift 2 ;;
     --model)
@@ -506,6 +513,31 @@ if "건너뜀" in pr_body and "id 없는 stub" in pr_body:
     ok("(8b) PR 본문이 id 없는 stub 을 '건너뜀' 으로 보고")
 else:
     bad("(8b) PR 본문에 건너뜀 보고가 없음 — 조용히 빠지면 아무도 모른다")
+
+# (8c) before/after 프리뷰 링크 — 섹션 앵커까지. 채우기 PR 의 리뷰는 raw diff
+# 가 아니라 렌더된 페이지에서 이뤄지므로 이 링크가 산출물의 일부다.
+# 링크가 브랜치 ref 를 가리키면 머지 후 before 가 after 와 같은 화면이 되어
+# 되짚을 수 없게 되므로, **커밋 SHA** 인지까지 본다.
+import re as _re
+links = {}
+for lang, anchor in (("en", body_id), ("ja", head_id)):
+    pat = (r"\[before\]\((?P<b>[^)]*?/view\?[^)]*?#" + _re.escape(anchor) + r")\)"
+           r"[^\n]*?\[after\]\((?P<a>[^)]*?/view\?[^)]*?#" + _re.escape(anchor) + r")\)")
+    m = _re.search(pat, pr_body)
+    links[anchor] = m
+    if not m:
+        bad(f"(8c) #{anchor} 의 before/after 프리뷰 링크가 PR 본문에 없음")
+if all(links.values()):
+    sha40 = _re.compile(r"tx_ref=[0-9a-f]{40}")
+    bad_ref = [a for a, m in links.items()
+               if not (sha40.search(m.group("b")) and sha40.search(m.group("a")))]
+    if bad_ref:
+        bad("(8c) 프리뷰 링크가 커밋 SHA 가 아님 (머지 후 before 가 after 로 재해석됨): "
+            + ", ".join(bad_ref))
+    elif any(m.group("b") == m.group("a") for m in links.values()):
+        bad("(8c) before 와 after 링크가 동일 — 두 상태를 가리키지 못한다")
+    else:
+        ok(f"(8c) 채운 섹션 {len(links)}개에 before/after 프리뷰 링크 (앵커 + 커밋 SHA)")
 
 raise SystemExit(rc)
 PY
