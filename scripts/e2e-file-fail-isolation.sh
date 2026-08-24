@@ -187,8 +187,16 @@ if [[ ! -f "$CLOUD_TRANSLATE_DIR/.env" ]]; then
 fi
 set +e
 (cd "$CLOUD_TRANSLATE_DIR" && \
-  TRANSLATE_TRANSLATE_ENGINE=api \
+  # e2e 는 CLI 엔진으로 돈다 — 배포 잡의 .env 가 claude-code 이므로 프로덕션과
+  # 같은 엔진을 태운다. 모델은 **두 env 모두** 필요하다: ClaudeCodeTranslator 는
+  # settings.claude_code_model 을 쓰고 (translator.py:3918) anthropic_model 은 보지
+  # 않으므로 CLI 에 ANTHROPIC_MODEL 만 주면 조용히 무시되고 .env 값(sonnet)이
+  # 쓰인다 (2026-08-24 실측: retranslate plan 이 그 함정으로 6.07M 토큰). 반대로
+  # CLI 엔진에서도 llm-patch judge·표 reconcile 등은 API translator 를 타고
+  # anthropic_model 을 읽으므로 둘을 함께 둔다.
+  TRANSLATE_TRANSLATE_ENGINE=claude-code \
   TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
+  TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
   TRANSLATE_FAULT_INJECT_PATHS="$fault_spec" \
   "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" \
     --diff-granularity block --glossary-mode service \

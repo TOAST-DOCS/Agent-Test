@@ -165,8 +165,20 @@ merge_pr() {  # $1: PR URL
 run_translate() {  # $1: PR URL  $2: 로그 이름  → 번역 PR URL 출력
   local log="$LOGDIR/$2.log"
   (cd "$CLOUD_TRANSLATE_DIR" && \
-    TRANSLATE_TRANSLATE_ENGINE=api \
+    # e2e 는 **CLI 엔진으로 돈다** — 배포 잡의 .env 가
+    # TRANSLATE_TRANSLATE_ENGINE=claude-code 이므로 프로덕션과 같은 엔진을 태우는
+    # 것이 e2e 의 목적에 맞다. 모델은 **두 env 모두** 세팅해야 한다:
+    # ClaudeCodeTranslator 는 settings.claude_code_model 을 쓰고
+    # (translator.py:3918) anthropic_model 은 보지 않으므로, CLI 엔진에
+    # ANTHROPIC_MODEL 만 주면 조용히 무시되고 .env 값(sonnet)이 쓰인다 —
+    # 2026-08-24 실측으로 retranslate plan 이 그 함정에 빠져 haiku 로 로그를
+    # 찍으며 sonnet-4-6 으로 돌아 번역 PR 하나가 6.07M 토큰을 먹었다.
+    # ANTHROPIC_MODEL 도 함께 두는 이유: CLI 엔진에서도 llm-patch judge·표
+    # reconcile 등 일부 경로는 API translator 를 타고 그쪽은 anthropic_model 을
+    # 읽는다. translate/Jenkinsfile 의 MODEL_ENV 가 둘을 함께 세팅하는 것과 같다.
+    TRANSLATE_TRANSLATE_ENGINE=claude-code \
     TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
+    TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$1" \
       --diff-granularity block --glossary-mode service --max-load-ratio 2 \
       --workers 2 --chunk-workers 2 --tm-top-k 1 \

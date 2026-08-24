@@ -120,8 +120,11 @@
 #                                동시에 처리하지 않게 막는 스위치라서, 끄지 않으면 local
 #                                번역과 배포본 번역이 섞인다. 그래서 local 모드도
 #                                DASHBOARD_BASE_URL/_TOKEN 이 필수다.
-#                                번역의 engine/model 은 api+haiku 로 고정(기존 run 과
-#                                동일 조건), align/ko-review 는 api 모드에서도 잡
+#                                번역의 engine/model 은 **claude-code(CLI)+haiku** 로
+#                                고정 — 배포 잡의 .env 가 claude-code 이므로 e2e 도
+#                                프로덕션과 같은 엔진을 태운다. 모델은 두 env
+#                                (ANTHROPIC_MODEL / CLAUDE_CODE_MODEL) 에 함께 준다.
+#                                align/ko-review 는 api 모드에서도 잡
 #                                파라미터를 default 로 보내므로 여기서도 미전송
 #                                ($CLOUD_TRANSLATE_DIR/.env 기본값).
 #
@@ -896,7 +899,7 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   # 플래그는 dashboard 권장 preset 과 동일; engine/model 은 CLI 플래그가
   # 없으므로 env 로 고정 (api + haiku = 기존 e2e run 과 동일 조건).
   echo
-  echo "[15/17] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=api, model=claude-haiku-4-5, table_reconcile=$( ((TABLE_RECONCILE)) && echo on || echo off ))"
+  echo "[15/17] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=claude-code, model=claude-haiku-4-5, table_reconcile=$( ((TABLE_RECONCILE)) && echo on || echo off ))"
   if [[ ! -f "$CLOUD_TRANSLATE_DIR/.env" ]]; then
     echo "error: $CLOUD_TRANSLATE_DIR/.env 가 없습니다 (TRANSLATE_GITHUB_TOKEN / TRANSLATE_ANTHROPIC_API_KEY 필요)" >&2
     exit 1
@@ -908,14 +911,19 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   reconcile_opt=()
   if (( ! TABLE_RECONCILE )); then reconcile_opt=(--no-table-reconcile); fi
   set +e
-  # 모델은 두 env 모두 세팅한다. 여기서는 engine=api 를 강제하므로
-  # ANTHROPIC_MODEL 만으로 충분하지만, ClaudeCodeTranslator 는
-  # settings.claude_code_model 을 쓰므로 (translator.py:3918) 엔진이 바뀌는 순간
-  # ANTHROPIC_MODEL 은 조용히 무시된다 — retranslate plan 이 그 함정에 빠져
-  # haiku 로 로그를 찍으며 sonnet-4-6 으로 돌았다 (2026-08-24 실측, 6.07M 토큰).
-  # translate/Jenkinsfile 의 MODEL_ENV 도 같은 이유로 둘을 함께 세팅한다.
-  (cd "$CLOUD_TRANSLATE_DIR" && \
-    TRANSLATE_TRANSLATE_ENGINE=api \
+  # e2e 는 **CLI 엔진으로 돈다** — 배포 잡의 .env 가
+    # TRANSLATE_TRANSLATE_ENGINE=claude-code 이므로 프로덕션과 같은 엔진을 태우는
+    # 것이 e2e 의 목적에 맞다. 모델은 **두 env 모두** 세팅해야 한다:
+    # ClaudeCodeTranslator 는 settings.claude_code_model 을 쓰고
+    # (translator.py:3918) anthropic_model 은 보지 않으므로, CLI 엔진에
+    # ANTHROPIC_MODEL 만 주면 조용히 무시되고 .env 값(sonnet)이 쓰인다 —
+    # 2026-08-24 실측으로 retranslate plan 이 그 함정에 빠져 haiku 로 로그를
+    # 찍으며 sonnet-4-6 으로 돌아 번역 PR 하나가 6.07M 토큰을 먹었다.
+    # ANTHROPIC_MODEL 도 함께 두는 이유: CLI 엔진에서도 llm-patch judge·표
+    # reconcile 등 일부 경로는 API translator 를 타고 그쪽은 anthropic_model 을
+    # 읽는다. translate/Jenkinsfile 의 MODEL_ENV 가 둘을 함께 세팅하는 것과 같다.
+    (cd "$CLOUD_TRANSLATE_DIR" && \
+    TRANSLATE_TRANSLATE_ENGINE=claude-code \
     TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
     TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" \
