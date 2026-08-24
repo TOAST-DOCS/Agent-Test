@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]]; do
     --base-branch) BASE_BRANCH="$2"; shift 2 ;;   # 기본 alpha, e2e 세션 브랜치로 override
     --title)  TITLE="$2";  shift 2 ;;
     --body)   BODY="$2";   shift 2 ;;
-    --plan)   PLAN_NAME="$2"; shift 2 ;;   # round1|round2|row-drop-repro|table-suite|markup-churn
+    --plan)   PLAN_NAME="$2"; shift 2 ;;   # round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn
     --dry-run|-n) DRY_RUN=1; shift ;;
     -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
@@ -763,6 +763,26 @@ declare -a PLAN_ROW_DROP_REPRO=(
   "edit_body|ko/version-guide.md"
   "add_paragraph|ko/overview.md"
 )
+# llm-patch: skip-full-table 가드 -> **LLM-patch fallback** 경로 검증.
+#   왜 별도 plan 인가 — row-drop-repro (와 그 reconcile-off 변형) 로는 이 경로에
+#   도달하지 못한다 (2026-08-24 실측, e2e-suite.sh 의 plan 설명 참고). 부하 가드는
+#   더 이상 파일을 제외하지 않고 (worker.py 의 skipped-load 는 legacy) 정보성
+#   `load signal:` 로만 알리므로, 지금 LLM-patch 를 호출하는 유일한 트리거는
+#   **skip-full-table** 이다.
+#   가드 발동 조건 (translator._splice_by_anchors 실측): (1) ko unit 에 표가 있고
+#   (2) 짝이 되는 기존 번역 unit 에는 표가 **없으며** (3) 그 표가 base ko 에도 있던
+#   기존 표일 때 `full_table_sections` 가 올라간다. 그리고 그 unit 이 실제로 재번역
+#   대상이어야 하므로 ko 변형은 **표 자신의 안**을 고쳐야 한다.
+#   그래서: en/ja 의 표를 **통째로** 제거 (아래 STALE_TABLES) + ko 는 그 표의 첫
+#   데이터 행을 수정 (change_table_row). measure 모드 무료 dry-run 으로 검증:
+#   en/ja 양쪽 full_table_sections=1, reconcile on/off 무관 (표 개수가 달라
+#   reconcile 이 bail 한다) — 대조로 stale 없이 같은 ko 변형만 주면 0 이다.
+#   따라서 이 plan 은 --translate api/local 양쪽에서 동작한다.
+#   비교군: overview.md 에 add_paragraph — 같은 잡에서 정상 경로도 함께 확인.
+declare -a PLAN_LLM_PATCH=(
+  "change_table_row|ko/version-guide.md"
+  "add_paragraph|ko/overview.md"
+)
 # table-suite: 표 번역 검증 종합 plan — 결함 재현 2케이스에 정상 경로 표 변형들을
 # 더해 한 번의 잡으로 "결함은 재현되고 정상 케이스는 깨지지 않는지" 를 함께 확인한다.
 #   ※ stale 상태(en/ja 의 특정 행 결여)는 archive 가 아니라 plan 실행 시
@@ -935,9 +955,10 @@ case "$PLAN_NAME" in
   round1) PLAN=("${PLAN_ROUND1[@]}") ;;
   round2) PLAN=("${PLAN_ROUND2[@]}") ;;
   row-drop-repro) PLAN=("${PLAN_ROW_DROP_REPRO[@]}") ;;
+  llm-patch) PLAN=("${PLAN_LLM_PATCH[@]}") ;;
   table-suite) PLAN=("${PLAN_TABLE_SUITE[@]}") ;;
   markup-churn) PLAN=("${PLAN_MARKUP_CHURN[@]}") ;;
-  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro|table-suite|markup-churn)" >&2; exit 1 ;;
+  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn)" >&2; exit 1 ;;
 esac
 
 if [[ -z "$BRANCH" ]]; then
@@ -981,6 +1002,7 @@ git pull
 # 실행될 때만, 번역 baseline 이 되는 base 브랜치에 커밋으로 만든다.
 declare -a STALE_ROWS=()
 declare -a STALE_DROP_COLS=()
+STALE_TABLES=()
 case "$PLAN_NAME" in
   table-suite)
     STALE_ROWS=(
@@ -1005,8 +1027,16 @@ case "$PLAN_NAME" in
       "en/version-guide.md|1.202602.1"
       "ja/version-guide.md|1.202602.1"
     ) ;;
+  llm-patch)        # skip-full-table 가드용: 표를 **통째로** 제거
+    # 행 하나만 빼면 기존 번역 unit 에 표가 여전히 남아 가드 조건 (2)(짝 unit 에
+    # 표가 없어야 함)를 만족하지 못한다 — 그래서 헤더+구분선+데이터행 전체를
+    # 지운다. heading/anchor 와 주변 산문은 보존되므로 구조 정렬은 유지된다.
+    STALE_TABLES=(
+      "en/version-guide.md"
+      "ja/version-guide.md"
+    ) ;;
 esac
-if (( ${#STALE_ROWS[@]} + ${#STALE_DROP_COLS[@]} )); then
+if (( ${#STALE_ROWS[@]} + ${#STALE_DROP_COLS[@]} + ${#STALE_TABLES[@]} )); then
   echo "$PLAN_NAME: base 브랜치($BASE_BRANCH)에 en/ja stale-ify 커밋 생성 (행 제거·컬럼 제거)"
   for s in "${STALE_ROWS[@]}"; do
     rel="${s%%|*}"; marker="${s#*|}"
@@ -1053,6 +1083,34 @@ else:
     open(path, "w", encoding="utf-8").write("".join(out))
     print(f"  [stale-ified] {path} (dropped column {col} from {dropped} table line(s))")
 PY
+    git add "$rel"
+  done
+  # 표 통째 제거 (skip-full-table 가드용): 헤더 + `|---|` 구분선 + 이어지는 모든
+  # 데이터 행을 지운다. 표가 사라져도 heading/anchor/산문은 남으므로 heading 정렬
+  # 검사는 통과하고, "ko 에는 표가 있는데 번역본엔 없다" 상태만 만들어진다.
+  for rel in "${STALE_TABLES[@]}"; do
+    [[ -f "$rel" ]] || { echo "  (skip, missing: $rel)"; continue; }
+    python3 - "$rel" <<'PYTBL'
+import re, sys
+path = sys.argv[1]
+lines = open(path, encoding="utf-8").read().splitlines(keepends=True)
+out, i, removed, tables = [], 0, 0, 0
+while i < len(lines):
+    nxt = lines[i + 1].strip() if i + 1 < len(lines) else ""
+    if lines[i].strip().startswith("|") and re.match(r"^\|[\s:|-]+\|$", nxt):
+        tables += 1
+        while i < len(lines) and lines[i].strip().startswith("|"):
+            i += 1
+            removed += 1
+        continue
+    out.append(lines[i])
+    i += 1
+if removed == 0:
+    print(f"  (noop, no table found: {path})")
+else:
+    open(path, "w", encoding="utf-8").write("".join(out))
+    print(f"  [stale-ified] {path} (removed {tables} whole table(s), {removed} line(s))")
+PYTBL
     git add "$rel"
   done
   if git diff --cached --quiet; then

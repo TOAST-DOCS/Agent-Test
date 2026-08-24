@@ -72,6 +72,23 @@
 #                 그 표 단위가 전량 재번역 대상이 되어야 한다 (그때 target 행 수가
 #                 달라 skip-full-table 이 걸리고 LLM-patch 가 호출된다) —
 #                 create-translate-test-pr.sh 에 그 변형을 추가하는 별도 작업.
+#   llm-patch   — **skip-full-table 가드 -> LLM-patch fallback** 경로 검증.
+#                 지금 LLM-patch 를 호출하는 트리거는 이 가드 **하나뿐**이다 —
+#                 부하 가드는 더 이상 파일을 제외하지 않고 (worker.py 의
+#                 skipped-load 는 legacy) 정보성 `load signal:` 로만 알린다.
+#                 픽스처: en/ja `version-guide.md` 의 표를 **통째로** 제거하고
+#                 ko 는 그 표의 첫 데이터 행을 수정 (change_table_row) — 그러면
+#                 "ko unit 에 표가 있는데 짝 unit 엔 없고, base ko 엔 있던 표"
+#                 조건이 성립해 `full_table_sections=1` 이 되고 그 파일이 skip
+#                 되면서 LLM-patch 가 호출된다. measure 모드 무료 dry-run 으로
+#                 확인: en/ja 양쪽 1, reconcile on/off 무관(표 개수가 달라
+#                 reconcile 이 bail), 대조군(stale 없음)은 0.
+#                 그래서 --translate api/local 양쪽에서 동작한다.
+#                 판정: exit 0/3 허용 (LLM-patch 가 declined 하면 파일이 제외되어
+#                 구조 검사가 FAIL 할 수 있고, 그 자체가 #585 류 결함의 신호다),
+#                 단 로그에 LLM-patch 호출이 0건이면 **suite 실패** — 경로를 안
+#                 태운 실행은 검증한 게 없다. verdict 에 llm-patch=/ok=/declined=
+#                 /skip-full-table= 를 붙여 fallback 이 무엇을 판단했는지 남긴다.
 #   concurrent  — 같은 ko 파일을 만지는 동시 PR 시나리오 (e2e-concurrent-prs.sh).
 #                 A 생성 → B 생성 → B 머지·번역·번역 머지 → A 머지 → A 번역
 #                 순서에서, A 번역이 B 의 신규 섹션·표 행을 지우지 않는지
@@ -111,7 +128,7 @@
 # 별칭:
 #   all         — round2 / row-drop-repro-noreconcile 을 제외한 plan 전체
 #                 = webhook korean-review round1 table-suite row-drop-repro
-#                   markup-churn retranslate concurrent
+#                   llm-patch markup-churn retranslate concurrent
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
@@ -191,7 +208,7 @@ while [[ $# -gt 0 ]]; do
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2"); shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|table-suite|markup-churn|retranslate|concurrent)
+    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -201,8 +218,8 @@ while [[ $# -gt 0 ]]; do
       # 이 plan 의 필수 조건(llm-patch>0)이 항상 실패한다. 픽스처가 갖춰지면
       # 여기에 다시 넣는다. 그때까지는 명시 지정으로만 실행.
       PLANS+=(webhook korean-review round1 table-suite row-drop-repro
-              markup-churn retranslate concurrent); shift ;;
-    -h|--help) sed -n '3,165p' "$0"; exit 0 ;;
+              llm-patch markup-churn retranslate concurrent); shift ;;
+    -h|--help) sed -n '3,182p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
 done
@@ -279,6 +296,16 @@ for plan in "${PLANS[@]}"; do
     # row-drop-repro 로 넘어간다.
     plan_arg="$plan"
     variant_args=()
+    if [[ "$plan" == "llm-patch" ]]; then
+      # 이 plan 의 존재 이유는 LLM-patch fallback 을 실제로 태우는 것이다 —
+      # exit code 만으로는 알 수 없으므로 로그에서 직접 센다. ok/declined 는
+      # fallback 이 무엇을 판단했는지 (#585 류 결함의 실질 신호).
+      lp_call="$(grep -c 'LLM-patch fallback: ' "$log" 2>/dev/null || true)"
+      lp_ok="$(grep -c 'LLM-patch fallback succeeded' "$log" 2>/dev/null || true)"
+      lp_dec="$(grep -c 'LLM-patch fallback declined' "$log" 2>/dev/null || true)"
+      lp_skip="$(grep -c 'skip-full-table: .*skipped —' "$log" 2>/dev/null || true)"
+      verdict="${verdict:-<no-verdict>} llm-patch=${lp_call:-0} ok=${lp_ok:-0} declined=${lp_dec:-0} skip-full-table=${lp_skip:-0}"
+    fi
     if [[ "$plan" == "row-drop-repro-noreconcile" ]]; then
       plan_arg="row-drop-repro"
       variant_args+=(--no-table-reconcile)
@@ -340,6 +367,11 @@ for plan in "${PLANS[@]}"; do
   # 구조 검사가 표 개수 불일치로 FAIL 을 낼 수 있고, 그건 회귀가 아니라 완전성
   # 검사가 유실을 가시화한 것). 대신 **LLM-patch fallback 이 0건이면 실패** —
   # 그 경로를 태우지 못한 실행은 이 변형이 검증하려던 것을 검증하지 않았다.
+  # llm-patch: 경로를 태우지 못한 실행은 검증한 게 없으므로 실패로 잡는다.
+  if [[ "$plan" == "llm-patch" ]] && [[ "$verdict" == *"llm-patch=0"* ]]; then
+    echo "    ! LLM-patch fallback 미호출 — 이 plan 은 그 경로 검증이 목적이므로 실패로 집계" >&2
+    overall=1
+  fi
   if [[ "$plan" == "row-drop-repro-noreconcile" ]] && [[ "$verdict" == *"llm-patch=0"* ]]; then
     echo "    ! LLM-patch fallback 미발동 — 이 변형은 그 경로 검증이 목적이므로 실패로 집계" >&2
     overall=1
@@ -357,5 +389,6 @@ echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
 echo "  (row-drop-repro-noreconcile: exit 0/3 허용, 단 llm-patch=0 이면 실패 — 그 경로를 안 태운 실행)"
+echo "  (llm-patch: exit 0/3 허용, 단 llm-patch=0 이면 실패. ok/declined 로 fallback 판단을 확인)"
 [[ -n "$ALIGNED_BRANCH" ]] && echo "  (align 스냅샷: $ALIGNED_BRANCH — 재현/디버그용, 정리는 수동)"
 exit $overall

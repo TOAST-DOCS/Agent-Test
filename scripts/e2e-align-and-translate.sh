@@ -36,7 +36,7 @@
 #                                      [--guidelines-variant-en aws|unified|unified-v2|default]
 #                                      [--guidelines-variant-ja aws|unified|default]
 #                                      [--align-v2|--no-align-v2]
-#                                      [--plan round1|round2|row-drop-repro|table-suite|markup-churn]
+#                                      [--plan round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn]
 #                                      [--translate api|local]
 #                                      [--ko-review|--no-ko-review]
 #                                      [--verify py|fable]
@@ -65,8 +65,12 @@
 #                                잔여 diff 1..5 인 (doc, lang) 은 자동 escalation 됨.
 #
 #   --plan <name>                create-translate-test-pr.sh 에 전달할 ko 변형 plan.
-#                                round1(기본) / round2 / row-drop-repro / table-suite /
-#                                markup-churn.
+#                                round1(기본) / round2 / row-drop-repro / llm-patch /
+#                                table-suite / markup-churn.
+#                                llm-patch: skip-full-table 가드 -> LLM-patch fallback
+#                                  경로 검증. en/ja 의 표를 통째로 stale 하고 ko 는 그
+#                                  표 안 첫 행을 수정한다 (create-translate-test-pr.sh
+#                                  의 PLAN_LLM_PATCH / STALE_TABLES 주석이 정본).
 #                                row-drop-repro: cloud-translate PR #283 회귀 재현용.
 #                                version-guide.md 의 en/ja stale(행 1개 결여) 상태는
 #                                create-translate-test-pr.sh 가 base 브랜치에 stale-ify
@@ -298,7 +302,7 @@ done
 # ── ko-review 실행 여부 (plan 기본값) ────────────────────────────────
 if [[ "$KO_REVIEW_MODE" == "auto" ]]; then
   case "$PLAN_NAME" in
-    table-suite|row-drop-repro|markup-churn) KO_REVIEW_MODE="off" ;;
+    table-suite|row-drop-repro|llm-patch|markup-churn) KO_REVIEW_MODE="off" ;;
     *)                                       KO_REVIEW_MODE="on" ;;
   esac
 fi
