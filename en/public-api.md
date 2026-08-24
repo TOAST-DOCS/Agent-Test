@@ -550,6 +550,7 @@ This API does not require a request body.
 </p>
 </details>
 
+<a id="test-added-endpoint"></a>
 ### Test-added endpoint { #test-added-endpoint }
 
 ```
