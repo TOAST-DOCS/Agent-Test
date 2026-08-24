@@ -197,36 +197,8 @@ PY
 # webhook e2e 는 시작 시 Agent-Test 를 webhook 대상으로 활성화하고, 종료 시
 # 비활성화한다 (번역 e2e 들은 자체적으로 시작 시 비활성화 — 평상시 off 가
 # 기본 상태). pipeline_branch 등 기존 설정은 보존.
-set_webhook_repo_enabled() {
-  local enabled="$1"   # true|false
-  python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$REPO" "$enabled" <<'PYEOF' || \
-    echo "  (webhook repo 토글 실패 — 계속 진행)" >&2
-import json, sys, urllib.request
-base_url, token, repo, enabled = sys.argv[1:5]
-hdr = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-req = urllib.request.Request(f"{base_url}/api/webhooks/repos", headers=hdr)
-with urllib.request.urlopen(req, timeout=15) as r:
-    data = json.load(r)
-rows = data.get("repos") or []
-row = next((x for x in rows if (x.get("repo") or "").lower() == repo.lower()), None)
-if row is None and enabled != "true":
-    print(f"  webhook repo 미등록 — 비활성화 불필요: {repo}")
-    raise SystemExit(0)
-on = enabled == "true"
-payload = {
-    "repo": repo,
-    "translate_enabled": on,
-    "ko_review_enabled": on,
-    "pipeline_branch": (row or {}).get("pipeline_branch") or "",
-}
-post = urllib.request.Request(
-    f"{base_url}/api/webhooks/repos", data=json.dumps(payload).encode("utf-8"),
-    method="POST", headers=hdr)
-with urllib.request.urlopen(post, timeout=15) as r2:
-    json.load(r2)
-print(f"  webhook repo {repo}: translate/ko-review enabled={enabled}")
-PYEOF
-}
+# webhook 대상 repo 토글 — 공용 헬퍼 (규약: webhook e2e 만 활성화)
+source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-toggle.sh"
 
 # 종료 상태 요약용
 OPENED_RESULT="-"

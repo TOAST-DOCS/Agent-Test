@@ -55,6 +55,16 @@ WORK="$(mktemp -d /tmp/e2e-concurrent-XXXXXX)"
 # e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
 source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
 
+# ── 0) webhook 비활성화 ───────────────────────────────────────────────
+# 이 e2e 는 실제 PR 을 만들고 머지한다. webhook 이 켜져 있으면 그 PR 들이 배포된
+# webhook pod -> Jenkins 의 translate/ko-review 를 중복 트리거하고, local 모드에선
+# 로컬 번역과 배포본 번역이 같은 PR 을 동시에 처리해 결과가 섞인다.
+# 예전에는 이 호출이 없어서 "앞서 돌린 다른 e2e 가 껐기를" 기대하고 있었다.
+source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-toggle.sh"
+echo "[0] webhook 비활성화 (이 e2e 는 webhook 경유 잡 중복 트리거 방지)"
+set_webhook_repo_enabled false
+
+
 LOGDIR="$WORK/logs"; mkdir -p "$LOGDIR"
 echo "workdir: $WORK"
 cleanup() {

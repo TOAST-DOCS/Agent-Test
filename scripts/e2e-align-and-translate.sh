@@ -377,36 +377,8 @@ tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
 # Agent-Test 의 webhook 을 비활성화한다 (webhook e2e 만 활성화 — CI Claude
 # 사용량/잡 큐 낭비 방지). repo 행이 없으면 비활성화는 no-op, 활성화는
 # 신규 등록(upsert). pipeline_branch 등 기존 설정은 보존한다.
-set_webhook_repo_enabled() {
-  local enabled="$1"   # true|false
-  python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$REPO" "$enabled" <<'PYEOF' || \
-    echo "  (webhook repo 토글 실패 — 계속 진행)" >&2
-import json, sys, urllib.request
-base_url, token, repo, enabled = sys.argv[1:5]
-hdr = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-req = urllib.request.Request(f"{base_url}/api/webhooks/repos", headers=hdr)
-with urllib.request.urlopen(req, timeout=15) as r:
-    data = json.load(r)
-rows = data.get("repos") or []
-row = next((x for x in rows if (x.get("repo") or "").lower() == repo.lower()), None)
-if row is None and enabled != "true":
-    print(f"  webhook repo 미등록 — 비활성화 불필요: {repo}")
-    raise SystemExit(0)
-on = enabled == "true"
-payload = {
-    "repo": repo,
-    "translate_enabled": on,
-    "ko_review_enabled": on,
-    "pipeline_branch": (row or {}).get("pipeline_branch") or "",
-}
-post = urllib.request.Request(
-    f"{base_url}/api/webhooks/repos", data=json.dumps(payload).encode("utf-8"),
-    method="POST", headers=hdr)
-with urllib.request.urlopen(post, timeout=15) as r2:
-    json.load(r2)
-print(f"  webhook repo {repo}: translate/ko-review enabled={enabled}")
-PYEOF
-}
+# webhook 대상 repo 토글 — 공용 헬퍼 (규약: webhook e2e 만 활성화)
+source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-toggle.sh"
 
 echo "[0/17] webhook 비활성화 (번역 e2e 는 webhook 경유 잡 중복 트리거 방지)"
 set_webhook_repo_enabled false
