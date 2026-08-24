@@ -89,6 +89,13 @@
 #                 단 로그에 LLM-patch 호출이 0건이면 **suite 실패** — 경로를 안
 #                 태운 실행은 검증한 게 없다. verdict 에 llm-patch=/ok=/declined=
 #                 /skip-full-table= 를 붙여 fallback 이 무엇을 판단했는지 남긴다.
+#                 llm-patch=0 의 원인은 두 가지고 두 카운터가 그걸 가른다:
+#                   skip-full-table=0 → 트리거가 사라짐 (코드 회귀 의심)
+#                   skip-full-table>0 → 그 환경에서 폴백이 꺼져 있음 (설정)
+#                 api 모드도 유효하다 — 오히려 local 모드는 --llm-patch-fallback 을
+#                 강제로 켜므로 "프로덕션에서 폴백이 꺼졌다" 를 감지할 수 없고,
+#                 api 모드만 그걸 잡을 수 있다 (dashboard 가 이 플래그를 보내지
+#                 않아 배포 잡 .env 값이 그대로 드러나기 때문).
 #   concurrent  — 같은 ko 파일을 만지는 동시 PR 시나리오 (e2e-concurrent-prs.sh).
 #                 A 생성 → B 생성 → B 머지·번역·번역 머지 → A 머지 → A 번역
 #                 순서에서, A 번역이 B 의 신규 섹션·표 행을 지우지 않는지
@@ -219,7 +226,7 @@ while [[ $# -gt 0 ]]; do
       # 여기에 다시 넣는다. 그때까지는 명시 지정으로만 실행.
       PLANS+=(webhook korean-review round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent); shift ;;
-    -h|--help) sed -n '3,182p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
 done
@@ -368,8 +375,26 @@ for plan in "${PLANS[@]}"; do
   # 검사가 유실을 가시화한 것). 대신 **LLM-patch fallback 이 0건이면 실패** —
   # 그 경로를 태우지 못한 실행은 이 변형이 검증하려던 것을 검증하지 않았다.
   # llm-patch: 경로를 태우지 못한 실행은 검증한 게 없으므로 실패로 잡는다.
+  # 원인은 두 가지고, verdict 의 두 카운터가 그걸 가른다 — 같은 실패로 묶어
+  # 버리면 설정 문제를 코드 회귀로 오귀속하게 된다 (그 반대도 마찬가지):
+  #   skip-full-table=0 → 트리거 자체가 사라졌다. 2026-08-20 (#585) 에 두 트리거
+  #                       중 load-guard 가 제거되고 skip-full-table 하나만 남았다.
+  #                       그 하나까지 사라지면 이 폴백은 도달 불가 코드가 된다.
+  #   skip-full-table>0 → 가드는 발동했는데 폴백이 호출되지 않았다. 즉 그 환경에서
+  #                       폴백이 꺼져 있다 — `_try_llm_patch_fallback` 은 플래그가
+  #                       꺼져 있으면 "LLM-patch fallback:" 로그를 찍기 전에 반환
+  #                       한다. api 모드는 dashboard 가 이 플래그를 보내지 않아
+  #                       배포 잡 .env 의 TRANSLATE_DIFF_LLM_PATCH_FALLBACK 에
+  #                       좌우되고, local 모드는 --llm-patch-fallback 을 직접
+  #                       넘기므로 이 분기가 나오면 하네스 쪽 회귀다.
   if [[ "$plan" == "llm-patch" ]] && [[ "$verdict" == *"llm-patch=0"* ]]; then
-    echo "    ! LLM-patch fallback 미호출 — 이 plan 은 그 경로 검증이 목적이므로 실패로 집계" >&2
+    if [[ "$verdict" == *"skip-full-table=0"* ]]; then
+      echo "    ! 트리거(skip-full-table) 미발동 — 경로가 사라졌는지 확인 (코드 회귀 의심)." >&2
+      echo "      LLM-patch 는 현재 이 가드 하나로만 호출된다 (#585 에서 load-guard 트리거 제거)." >&2
+    else
+      echo "    ! 가드는 발동했으나 LLM-patch 폴백 미호출 — 해당 환경의" >&2
+      echo "      TRANSLATE_DIFF_LLM_PATCH_FALLBACK(=--llm-patch-fallback) 이 꺼져 있는지 확인." >&2
+    fi
     overall=1
   fi
   if [[ "$plan" == "row-drop-repro-noreconcile" ]] && [[ "$verdict" == *"llm-patch=0"* ]]; then
