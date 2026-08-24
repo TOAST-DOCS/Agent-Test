@@ -197,7 +197,7 @@ TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199). "defa
 TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
 TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
-PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|table-suite|markup-churn
+PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn
 TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기본) | local = 모든 단계를 로컬 실행
 # ko-review (12~14단계) 실행 여부. plan 별 기본값은 아래 arg 파싱 후 결정 —
 # table-suite/row-drop-repro/markup-churn 은 표·마크업 픽스처를 정확히 보존해야
@@ -269,8 +269,8 @@ while [[ $# -gt 0 ]]; do
     --no-align-v2)   ALIGN_V2=0; shift ;;
     --plan)
       case "${2:-}" in
-        round1|round2|row-drop-repro|table-suite|markup-churn) PLAN_NAME="$2" ;;
-        *) echo "error: --plan 은 round1|round2|row-drop-repro|table-suite|markup-churn 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+        round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn) PLAN_NAME="$2" ;;
+        *) echo "error: --plan 은 round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --translate)
