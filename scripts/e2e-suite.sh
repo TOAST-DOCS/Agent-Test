@@ -296,16 +296,6 @@ for plan in "${PLANS[@]}"; do
     # row-drop-repro 로 넘어간다.
     plan_arg="$plan"
     variant_args=()
-    if [[ "$plan" == "llm-patch" ]]; then
-      # 이 plan 의 존재 이유는 LLM-patch fallback 을 실제로 태우는 것이다 —
-      # exit code 만으로는 알 수 없으므로 로그에서 직접 센다. ok/declined 는
-      # fallback 이 무엇을 판단했는지 (#585 류 결함의 실질 신호).
-      lp_call="$(grep -c 'LLM-patch fallback: ' "$log" 2>/dev/null || true)"
-      lp_ok="$(grep -c 'LLM-patch fallback succeeded' "$log" 2>/dev/null || true)"
-      lp_dec="$(grep -c 'LLM-patch fallback declined' "$log" 2>/dev/null || true)"
-      lp_skip="$(grep -c 'skip-full-table: .*skipped —' "$log" 2>/dev/null || true)"
-      verdict="${verdict:-<no-verdict>} llm-patch=${lp_call:-0} ok=${lp_ok:-0} declined=${lp_dec:-0} skip-full-table=${lp_skip:-0}"
-    fi
     if [[ "$plan" == "row-drop-repro-noreconcile" ]]; then
       plan_arg="row-drop-repro"
       variant_args+=(--no-table-reconcile)
@@ -320,6 +310,16 @@ for plan in "${PLANS[@]}"; do
     fi
     verdict="$(grep -oE '^ALIGNMENT: (OK|FAIL)' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    if [[ "$plan" == "llm-patch" ]]; then
+      # 이 plan 의 존재 이유는 LLM-patch fallback 을 실제로 태우는 것이다 —
+      # exit code 만으로는 알 수 없으므로 로그에서 직접 센다. ok/declined 는
+      # fallback 이 무엇을 판단했는지 (#585 류 결함의 실질 신호).
+      lp_call="$(grep -c 'LLM-patch fallback: ' "$log" 2>/dev/null || true)"
+      lp_ok="$(grep -c 'LLM-patch fallback succeeded' "$log" 2>/dev/null || true)"
+      lp_dec="$(grep -c 'LLM-patch fallback declined' "$log" 2>/dev/null || true)"
+      lp_skip="$(grep -c 'skip-full-table: .*skipped —' "$log" 2>/dev/null || true)"
+      verdict="${verdict:-<no-verdict>} llm-patch=${lp_call:-0} ok=${lp_ok:-0} declined=${lp_dec:-0} skip-full-table=${lp_skip:-0}"
+    fi
     if [[ "$plan" == "row-drop-repro-noreconcile" ]]; then
       # 이 변형의 존재 이유는 **LLM-patch fallback 경로를 실제로 태우는 것**이다.
       # exit code 만으로는 그걸 알 수 없다 — reconcile 이 어쩌다 켜져 있거나
