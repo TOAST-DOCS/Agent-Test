@@ -1078,6 +1078,7 @@ X-Auth-Token: {tokenId}
 
 ---
 
+<a id="test-added-endpoint"></a>
 ### 新しいテストエンドポイント { #test-added-endpoint }
 
 ```
