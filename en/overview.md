@@ -3,7 +3,7 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Concurrent PR Test A: This sentence is for concurrent-a-edit validation.)
 
 <a id="components"></a>
 ## Components
@@ -98,21 +98,21 @@ For more details on pricing, see [Pricing](https://www.toast.com/kr/service/comp
 
 You can access your Linux instances using an SSH client. An instance cannot be accessed if its security group does not have SSH ports (22 by default) allowed. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to allow SSH access. If a floating IP is not assigned to an instance, the instance cannot be accessed from outside NHN Cloud. See [VPC Overview](/Network/VPC/en/overview/) for more details on how to assign floating IP.
 
-#### Connect to a Linux instance from an SSH client on Mac or Linux
+#### Access a Linux instance using an SSH client from Mac or Linux
 
 Generally, Mac and Linux have SSH clients installed by default. Use a key pair's private key to access an instance from an SSH client as shown below.
 
 Ubuntu instance
 
-	$ ssh -i my_private_key.pem ubuntu@<instance IP>
+	$ ssh -i my_private_key.pem ubuntu@<instance-ip>
 
 Debian instance
 
-	$ ssh -i my_private_key.pem debian@<instance IP>
+	$ ssh -i my_private_key.pem debian@<instance-ip>
 
 Rocky instance
 
-	$ ssh -i my_private_key.pem rocky@<instance IP>
+	$ ssh -i my_private_key.pem rocky@<instance-ip>
 
 #### How to Access Linux Instances from Windows Using PuTTY SSH Client
 
@@ -201,21 +201,21 @@ Your key pair's private key that you input in **Confirm Password** is not sent t
 
 Click **Connect** next to **Confirm Password** to receive the rdp file configured for remote desktop access and run it to access your Windows server. Use `Administrator` for your Windows server ID, and use the password that you checked from the NHN Cloud console.
 
-### Serial console access
+### Access serial console
 
-You can connect to the serial console to access your instance when you cannot use an SSH client, such as during boot failures or network configuration issues.
+In situations where you cannot use an SSH client, such as during boot failures or network configuration issues, you can connect to the serial console to access an instance.
 
-Serial console has the following constraints:
+The serial console feature has the following limitations:
 
-* Only one serial console connection per instance is possible. Multiple connection attempts may not connect properly.
-* Instances created from user-uploaded images or personal images do not guarantee serial console access.
-* You can access the serial console for a maximum of 10 minutes.
-* Windows instances do not support serial console.
-* Instances created before the January 27, 2026 deployment require **Stop Instance** followed by **Start Instance**. The **Reboot Instance** function does not apply.
+* Only one serial console connection per instance is possible; multiple connection attempts may fail to connect properly.
+* Instances created from user-uploaded images or private images do not guarantee serial console access.
+* Serial console connections can be established for a maximum of 10 minutes.
+* Windows instances do not support the serial console feature.
+* For instances created before the January 27, 2026 deployment, you must use **Stop Instance** followed by **Start Instance**. Using **Reboot Instance** does not apply the changes.
 
 > [Caution]
-> Changing the boot method through the serial console may cause boot failure, and the user is responsible for the consequences.
-> We recommend that you use SSH client access in normal situations.
+> Changing the boot method via serial console may cause the instance to fail to boot, and the user is responsible for the consequences.
+> In normal situations, we recommend that you use SSH client connections.
 
 #### Change GRUB bootloader settings
 
