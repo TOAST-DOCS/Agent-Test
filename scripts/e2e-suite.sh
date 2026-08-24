@@ -258,10 +258,18 @@ for plan in "${PLANS[@]}"; do
   log="$outdir/$plan.log"
   echo "=== [$plan] 시작 → $log"
   if [[ "$plan" == "retranslate" ]]; then
-    # 전체 재번역 변형 — 자체 스크립트. dashboard API 전용이라 --translate
-    # 등은 전달하지 않고 --engine/--model 만 넘긴다.
+    # 전체 재번역 변형 — 자체 스크립트.
+    # align 프롤로그 재사용: 이 plan 도 --from-aligned 를 받는다. 예전에는 못
+    # 받아서 `all` 한 번에 align 프롤로그가 **두 번** 돌았다 (round1 + retranslate,
+    # Opus heading 분류 10+12회). 스냅샷 위에서 public-api.md 를 공통 앵커에서
+    # 자르는 것은 구조를 보존하므로 align 을 다시 돌 필요가 없다.
+    rt_reuse=()
+    if (( REUSE_ALIGN )) && [[ -n "$ALIGNED_BRANCH" ]]; then
+      rt_reuse+=(--from-aligned "$ALIGNED_BRANCH")
+      echo "    (align 프롤로그 재사용: --from-aligned $ALIGNED_BRANCH)"
+    fi
     bash "$REPO_ROOT/scripts/e2e-retranslate-align-and-translate.sh" \
-      "${EM_ARGS[@]}" > "$log" 2>&1
+      "${EM_ARGS[@]}" "${rt_reuse[@]}" > "$log" 2>&1
     ec=$?
     verdict="$(grep -oE '^ALIGNMENT: (OK|FAIL)' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"

@@ -6,11 +6,15 @@
 #   결과는 alpha 에 직접 커밋하지 않고 **align PR 의 head 브랜치에 append**
 #   되도록 pr_number 를 사용 → align + 재번역이 한 PR 로 리뷰됨.
 #
-#   재번역 소요 시간을 줄이기 위해 step 2 뒤에 public-api.md 를 40% 축소본
-#   (archive/alpha-origin-40pct/{ko,en,ja}/public-api.md) 으로 덮어쓰는 단계
-#   포함. 축소본은 원본에서 `<a id="create-instance"></a>` 앵커부터 파일 끝
-#   까지 잘라낸 버전(각 언어별 ~42% 분량, 세 언어 공통 앵커 위치에서 잘라
-#   구조 정합성 유지).
+#   재번역 비용을 줄이기 위해 public-api.md 를 **런타임에** 공통 anchor 에서
+#   잘라낸다 (`--cut-anchor`, 기본 `list-instances-with-details`). 세 언어를 같은
+#   anchor 에서 자르므로 heading/anchor 정렬이 보존된다 — 그래서 이미 align 된
+#   스냅샷(--from-aligned) 위에서도 안전하다. 기본 앵커 기준 ko 47,822 -> 14,262자
+#   (29%), 표 17개·코드펜스 16개가 남아 전체 재번역 경로(2 chunk 이상)를 그대로
+#   태운다.
+#   이전에는 체크인된 `archive/alpha-origin-40pct/` 를 덮어썼는데, 이름과 달리
+#   원본의 **81%** 를 남기는 파일이었고 (create-instance 앵커에서 절단) 아카이브가
+#   갱신되면 조용히 더 커질 수 있었다. 그 의존을 없앴다.
 #
 #   1. alpha 브랜치로 switch
 #   2. scripts/restore-alpha-origin.sh 실행 (내부에서 commit+push)
@@ -75,6 +79,23 @@
 #                                local 에서도 0단계 webhook 킬 스위치는 dashboard 를
 #                                호출하므로 DASHBOARD_BASE_URL/_TOKEN 은 여전히 필수.
 #
+#   --cut-anchor <id>            public-api.md 를 자를 공통 anchor id
+#                                (기본 list-instances-with-details). ko/en/ja 모두에
+#                                있어야 하며, 없으면 하드 실패한다 — 조용히 축소를
+#                                건너뛰면 재번역 비용이 몇 배로 튀는데 로그만
+#                                보고는 알 수 없다.
+#
+#   --from-aligned <branch>      이미 align 이 끝난 스냅샷에서 세션을 갈라내고
+#                                2~9단계(restore·fix-heading-syntax·align·검증·
+#                                merge)를 건너뛴다. 그 단계들은 픽스처가 고정이라
+#                                plan 마다 같은 결과가 나오고, e2e-suite.sh 는 첫
+#                                align 기반 plan 에서 한 번만 돌린다 — 이 plan 만
+#                                재사용에서 빠져 있어 `all` 한 번에 align 프롤로그가
+#                                **두 번** 돌았다 (Opus heading 분류 10+12회).
+#                                이 모드에서는 align PR 이 없으므로 재번역 결과가
+#                                세션 브랜치에 직접 커밋되고 (api 모드는 pr_number
+#                                대신 branch 를 넘긴다) 9단계 merge 도 생략된다.
+#
 #   --align-v2 / --no-align-v2   PR#218 v2 모드 (기본 --align-v2)
 #
 # 의존성: git, gh (로그인), curl, python3, claude (Claude Code CLI)
@@ -104,6 +125,14 @@ VERIFY_MODE="py"                          # py = check_docs_align.py (기본) | 
 # api = 배포된 dashboard/Jenkins 잡 (기본) | local = $CLOUD_TRANSLATE_DIR 의
 # 스크립트를 직접 실행 (fix-heading-syntax / align / translate-file / translate
 # 네 단계 전부). 미배포 브랜치를 배포 없이 검증할 때.
+# public-api.md 를 자를 공통 anchor id. ko/en/ja 모두에 존재해야 한다.
+# 기본값 list-instances-with-details = ko 문자수의 ~29% 를 남긴다 (표 17개,
+# 코드펜스 16개, 2 chunk 이상 → 전체 재번역 경로를 그대로 태운다). 이전
+# 절단점(create-instance)은 81% 를 남겨 재번역 비용이 4배였다.
+CUT_ANCHOR="list-instances-with-details"
+# align 프롤로그(2~9단계)를 이미 끝난 스냅샷에서 이어받아 건너뛴다.
+# 절단은 구조를 보존하므로 이미 align 된 스냅샷 위에서도 안전하다.
+FROM_ALIGNED=""
 TRANSLATE_VIA="api"
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
@@ -169,6 +198,8 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --translate 는 api|local 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
+    --cut-anchor)    CUT_ANCHOR="$2"; shift 2 ;;    # public-api.md 절단 앵커
+    --from-aligned)  FROM_ALIGNED="$2"; shift 2 ;;   # align 스냅샷 재사용 (2~9단계 skip)
     --align-v2)      ALIGN_V2=1; shift ;;
     --no-align-v2)   ALIGN_V2=0; shift ;;
     --base-branch)   BASE_BRANCH="$2"; shift 2 ;;        # 기존 세션 브랜치 재사용
@@ -177,7 +208,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_PIPELINE_BRANCH="$2"; shift 2 ;;   # /api/translate·/api/translate/file 을 이 브랜치로
     --pipeline-branch|--align-pipeline-branch)
       ALIGN_PIPELINE_BRANCH="$2"; shift 2 ;;            # /api/align 을 이 cloud-translate 브랜치로 실행
-    -h|--help) sed -n '3,78p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,102p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -252,6 +283,9 @@ PYEOF
 echo "[0/14] webhook 비활성화 (번역 e2e 는 webhook 경유 잡 중복 트리거 방지)"
 set_webhook_repo_enabled false
 
+# --from-aligned 가 주어지면 세션 브랜치를 그 스냅샷에서 갈라낸다.
+if [[ -n "$FROM_ALIGNED" ]]; then BASE_SOURCE_BRANCH="$FROM_ALIGNED"; fi
+
 if [[ -z "$BASE_BRANCH" ]]; then
   BASE_BRANCH="e2e-retranslate/$(date -u +%Y%m%d-%H%M%S)"
   echo "[1/14] Creating fresh e2e session branch: $BASE_BRANCH (from origin/$BASE_SOURCE_BRANCH)"
@@ -266,30 +300,78 @@ else
   git pull --ff-only origin "$BASE_BRANCH"
 fi
 
+# ── public-api.md 축소 (재번역 비용 절감) ─────────────────────────────
+# 전에는 체크인된 `archive/alpha-origin-40pct/` 를 덮어썼는데, 그 이름이 실제와
+# 어긋나 있었다 — 원본 ko 문자수의 **81%** 를 남기는 파일이어서 "40% 축소" 가
+# 아니었고, 아카이브가 갱신될 때 조용히 더 커질 수 있는 구조였다. 이제 공통
+# 앵커에서 **런타임에 잘라낸다**: ko/en/ja 를 같은 anchor id 에서 자르므로
+# heading/anchor 정렬이 그대로 유지되고 (그래서 이미 align 된 스냅샷에서도 안전),
+# 분량이 코드로 못박힌다.
+truncate_public_api() {
+  local anchor="$1"
+  python3 - "$REPO_ROOT" "$anchor" <<'PYCUT'
+import pathlib, re, sys
+root, anchor = pathlib.Path(sys.argv[1]), sys.argv[2]
+pat = re.compile(r'<a id="%s"></a>' % re.escape(anchor))
+targets = []
+for lang in ("ko", "en", "ja"):
+    path = root / lang / "public-api.md"
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    idx = next((i for i, l in enumerate(lines) if pat.search(l)), None)
+    if idx is None:
+        # 조용히 축소를 건너뛰면 비용이 4배로 튀는데 로그만 보고는 모른다.
+        raise SystemExit(f"  error: {lang}/public-api.md 에 <a id=\"{anchor}\"> 가 없습니다 "
+                         f"— 절단 앵커를 다시 고르세요 (--cut-anchor)")
+    targets.append((path, lines, idx))
+for path, lines, idx in targets:
+    before = sum(len(l) for l in lines)
+    kept = "".join(lines[:idx])
+    path.write_text(kept, encoding="utf-8")
+    print(f"  truncated: {path.name} in {path.parent.name}/ — "
+          f"{len(lines)} -> {idx} lines, {before} -> {len(kept)} chars "
+          f"({len(kept) * 100 // before}%)")
+PYCUT
+}
+
+SKIP_PROLOGUE=0
+if [[ -n "$FROM_ALIGNED" ]]; then
+  # 이미 align 이 끝난 스냅샷에서 출발하므로 restore·fix-heading-syntax·align·
+  # 검증·merge(2~9단계)를 건너뛴다. 그 단계들은 픽스처가 고정이라 plan 마다 같은
+  # 결과가 나오고, suite 는 첫 align 기반 plan 에서 한 번만 돌린다 — 이 plan 만
+  # 그 재사용에서 빠져 있어 `all` 한 번에 align 프롤로그가 **두 번** 돌았다
+  # (Opus heading 분류 12회 포함).
+  SKIP_PROLOGUE=1
+fi
+
+if (( SKIP_PROLOGUE )); then
+  echo
+  echo "[2-9/14] skip — 이미 align 된 스냅샷에서 시작 ($FROM_ALIGNED)"
+  # 스냅샷은 원본 크기의 public-api.md 를 담고 있으므로 절단은 여기서 한다.
+  # 같은 앵커에서 세 언어를 자르므로 스냅샷의 정렬 상태가 유지된다.
+  truncate_public_api "$CUT_ANCHOR"
+  if git diff --quiet -- ko/public-api.md en/public-api.md ja/public-api.md; then
+    echo "  (public-api.md 변경 없음 — 이미 절단됨)"
+  else
+    git add ko/public-api.md en/public-api.md ja/public-api.md
+    git commit -m "test: truncate public-api.md at <a id=$CUT_ANCHOR> for retranslate e2e"
+    git push origin "$BASE_BRANCH"
+  fi
+  # 재번역 결과를 붙일 브랜치 = 세션 브랜치 자체 (align PR 이 없다).
+  head_ref="$BASE_BRANCH"
+  align_pr_url=""
+else
 # ── 2) restore-alpha-origin (내부에서 commit+push) ────────────────────
 echo
-echo "[2/14] scripts/restore-alpha-origin.sh + public-api.md 40% 축소본 적용"
+echo "[2/14] scripts/restore-alpha-origin.sh + public-api.md 절단 (@$CUT_ANCHOR)"
 bash "$REPO_ROOT/scripts/restore-alpha-origin.sh"
-
-# public-api.md 를 40% 축소본으로 덮어쓰기 (retranslate 소요 시간 단축용)
-reduced_root="$REPO_ROOT/archive/alpha-origin-40pct"
-for lang in ko en ja; do
-  src="$reduced_root/$lang/public-api.md"
-  dst="$REPO_ROOT/$lang/public-api.md"
-  if [[ ! -f "$src" ]]; then
-    echo "  error: 40% 축소본 없음: $src" >&2
-    exit 1
-  fi
-  cp -f "$src" "$dst"
-  echo "  reduced: $lang/public-api.md ($(wc -l < "$src") lines)"
-done
+truncate_public_api "$CUT_ANCHOR"
 
 if git diff --quiet -- ko/public-api.md en/public-api.md ja/public-api.md \
    && git diff --cached --quiet -- ko/public-api.md en/public-api.md ja/public-api.md; then
   echo "  (public-api.md 변경 없음, commit/push 건너뜀)"
 else
   git add ko/public-api.md en/public-api.md ja/public-api.md
-  git commit -m "test: apply 40% reduced public-api.md for retranslate e2e"
+  git commit -m "test: truncate public-api.md at <a id=$CUT_ANCHOR> for retranslate e2e"
   git push origin "$BASE_BRANCH"
 fi
 
@@ -478,6 +560,7 @@ fi
 # align PR 의 head 브랜치 (재번역 커밋을 이 브랜치에 append)
 align_pr_number="$(gh pr view "$align_pr_url" --repo "$REPO" --json number --jq .number)"
 head_ref="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
+fi   # ← SKIP_PROLOGUE (2~6단계). 7·8단계는 두 경로 모두 실행한다.
 
 # ── 7) public-api.md 전체 재번역 → align PR head 브랜치에 커밋 ────────
 if (( LOCAL_MODE )); then
@@ -490,7 +573,15 @@ if (( LOCAL_MODE )); then
   echo "[7/14] local translate_file.py (dir=$CLOUD_TRANSLATE_DIR, file=$retx_file_url, commit-to-branch=$head_ref, DIFF_MODE=full, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
   retx_env=(TRANSLATE_DIFF_MODE=full)
   [[ -n "$TRANSLATE_ENGINE" ]]         && retx_env+=("TRANSLATE_TRANSLATE_ENGINE=$TRANSLATE_ENGINE")
-  [[ -n "$TRANSLATE_MODEL" ]]          && retx_env+=("TRANSLATE_ANTHROPIC_MODEL=$TRANSLATE_MODEL")
+  # 모델은 **두 env 모두** 세팅해야 한다. ClaudeCodeTranslator 는
+  # settings.claude_code_model 을 쓰고 (translator.py:3918) anthropic_model 은
+  # 보지 않으므로, engine=claude-code 에서 ANTHROPIC_MODEL 만 주면 조용히 무시되고
+  # .env 의 TRANSLATE_CLAUDE_CODE_MODEL 이 그대로 쓰인다 (2026-08-24 실측: 이
+  # plan 이 haiku 로 로그를 찍으면서 실제로는 sonnet-4-6 으로 돌아 번역 PR 하나가
+  # 6.07M 토큰 = suite 전체의 80% 를 먹었다). translate/Jenkinsfile 의 MODEL_ENV 가
+  # 두 env 를 함께 세팅하는 것과 같은 이유다 ("takes effect regardless of ENGINE").
+  [[ -n "$TRANSLATE_MODEL" ]]          && retx_env+=("TRANSLATE_ANTHROPIC_MODEL=$TRANSLATE_MODEL"
+                                                     "TRANSLATE_CLAUDE_CODE_MODEL=$TRANSLATE_MODEL")
   [[ -n "$TRANSLATE_TM_TOP_K" ]]       && retx_env+=("TRANSLATE_TM_TOP_K=$TRANSLATE_TM_TOP_K")
   [[ -n "$TRANSLATE_CHUNK_WORKERS" ]]  && retx_env+=("TRANSLATE_CHUNK_WORKERS=$TRANSLATE_CHUNK_WORKERS")
   [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]] && retx_env+=("TRANSLATE_GUIDELINES_VARIANT_EN=$TRANSLATE_GUIDELINES_VARIANT_EN")
@@ -547,11 +638,19 @@ if [[ -n "$TRANSLATE_PIPELINE_BRANCH" ]]; then
   echo "  translate/file pipeline_branch: $TRANSLATE_PIPELINE_BRANCH"
 fi
 
+# 대상 지정: align PR 이 있으면 pr_number (서버가 head.ref 를 조회), 스냅샷
+# 재사용 모드에서는 align PR 이 없으므로 세션 브랜치를 직접 준다.
+if [[ -n "$align_pr_url" ]]; then
+  retx_target_json="\"pr_number\": $align_pr_number,"
+else
+  retx_target_json="\"branch\": \"$head_ref\","
+fi
+
 retx_body=$(cat <<JSON
 {
   "repo": "$REPO",
   $retx_pipeline_branch_json
-  "pr_number": $align_pr_number,
+  $retx_target_json
   "source": "$RETRANSLATE_SOURCE",
   "path": "$RETRANSLATE_PATH",
   $retx_engine_json
@@ -650,10 +749,14 @@ fi
 
 # ── 9) 검증 통과 → align PR 을 alpha 로 merge ─────────────────────────
 echo
-echo "[9/14] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
-gh pr merge "$align_pr_url" --repo "$REPO" --merge --delete-branch
-git pull --ff-only origin "$BASE_BRANCH"
-echo "  merged & local $BASE_BRANCH updated: $align_pr_url"
+if [[ -z "$align_pr_url" ]]; then
+  echo "[9/14] skip — align PR 이 없다 (스냅샷 재사용 모드: 재번역이 세션 브랜치에 직접 커밋됨)"
+else
+  echo "[9/14] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
+  gh pr merge "$align_pr_url" --repo "$REPO" --merge --delete-branch
+  git pull --ff-only origin "$BASE_BRANCH"
+  echo "  merged & local $BASE_BRANCH updated: $align_pr_url"
+fi
 
 # ── 10) create-translate-test-pr (ko 변형 → translate-test PR 생성) ───
 echo
@@ -691,7 +794,9 @@ if (( LOCAL_MODE )); then
   echo "[12/14] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
   tx_env=()
   [[ -n "$TRANSLATE_ENGINE" ]]        && tx_env+=("TRANSLATE_TRANSLATE_ENGINE=$TRANSLATE_ENGINE")
-  [[ -n "$TRANSLATE_MODEL" ]]         && tx_env+=("TRANSLATE_ANTHROPIC_MODEL=$TRANSLATE_MODEL")
+  # ANTHROPIC_MODEL 단독으로는 CLI 엔진에 안 먹는다 — 위 7단계 주석 참고.
+  [[ -n "$TRANSLATE_MODEL" ]]         && tx_env+=("TRANSLATE_ANTHROPIC_MODEL=$TRANSLATE_MODEL"
+                                                  "TRANSLATE_CLAUDE_CODE_MODEL=$TRANSLATE_MODEL")
   [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]] && tx_env+=("TRANSLATE_GUIDELINES_VARIANT_EN=$TRANSLATE_GUIDELINES_VARIANT_EN")
   [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]] && tx_env+=("TRANSLATE_GUIDELINES_VARIANT_JA=$TRANSLATE_GUIDELINES_VARIANT_JA")
   tx_opts=(--diff-granularity block --glossary-mode service --max-load-ratio 2

@@ -908,9 +908,16 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   reconcile_opt=()
   if (( ! TABLE_RECONCILE )); then reconcile_opt=(--no-table-reconcile); fi
   set +e
+  # 모델은 두 env 모두 세팅한다. 여기서는 engine=api 를 강제하므로
+  # ANTHROPIC_MODEL 만으로 충분하지만, ClaudeCodeTranslator 는
+  # settings.claude_code_model 을 쓰므로 (translator.py:3918) 엔진이 바뀌는 순간
+  # ANTHROPIC_MODEL 은 조용히 무시된다 — retranslate plan 이 그 함정에 빠져
+  # haiku 로 로그를 찍으며 sonnet-4-6 으로 돌았다 (2026-08-24 실측, 6.07M 토큰).
+  # translate/Jenkinsfile 의 MODEL_ENV 도 같은 이유로 둘을 함께 세팅한다.
   (cd "$CLOUD_TRANSLATE_DIR" && \
     TRANSLATE_TRANSLATE_ENGINE=api \
     TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
+    TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" \
       --diff-granularity block --glossary-mode service --max-load-ratio 2 \
       --workers 2 --chunk-workers 2 --tm-top-k 1 \
