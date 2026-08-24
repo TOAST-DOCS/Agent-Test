@@ -337,6 +337,11 @@ for path, lines, idx in targets:
 PYCUT
 }
 
+# tmpdir 은 두 경로 모두에서 쓴다 (8단계 검증 워크트리, 12단계 등) — 예전에는
+# 3단계 안에서 만들어서 --from-aligned 로 2~9단계를 건너뛰면 `set -u` 아래
+# `tmpdir: unbound variable` 로 8단계에서 죽었다 (2026-08-24 실측).
+tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
+
 SKIP_PROLOGUE=0
 if [[ -n "$FROM_ALIGNED" ]]; then
   # 이미 align 이 끝난 스냅샷에서 출발하므로 restore·fix-heading-syntax·align·
@@ -381,7 +386,6 @@ fi
 
 # ── 3) fix-heading-syntax (heading 문법 정정) ─────────────────────────
 # 트리거 직전 open PR 목록을 baseline 으로 저장 (step 4 의 신규 PR 감지용)
-tmpdir="$(mktemp -d)"; trap 'rm -rf "$tmpdir"' EXIT
 gh pr list --repo "$REPO" --base "$BASE_BRANCH" --state open --json url \
   --jq '.[].url' | sort -u > "$tmpdir/fix_before"
 
