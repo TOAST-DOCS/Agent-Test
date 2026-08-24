@@ -5,7 +5,7 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview { #compute-instance-overview }
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Text modification test: This sentence should be reflected when retranslating.)
+<!-- TODO: translate body -->
 
 <a id="components"></a>
 ## Components { #components }
@@ -245,3 +245,7 @@ $ sudo update-grub
 ## Additional section for testing { #test-added-section }
 
 This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+
+## E2E no-id stub (20260824-094620)
+
+<!-- TODO: translate body -->
