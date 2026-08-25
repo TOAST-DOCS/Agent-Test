@@ -51,6 +51,8 @@ Common flags for both e2e scripts: `--engine api|cli`, `--model haiku|sonnet|opu
 
 `scripts/e2e-suite.sh` is the runner for all of the above (`all` = every plan except `round2`, which needs a manual merge first). `scripts/e2e-concurrent-prs.sh` (`concurrent` plan) is the one e2e that never touches the dashboard — it reproduces the concurrent-ko-PR scenario (A opened, B opened+merged+translated, then A merged and translated) with the **local** `translate_pr.py` and checks that A's translation preserves B's new section / table row.
 
+`scripts/e2e-fill-stubs.sh` (`fill-stubs` plan) verifies the **fill-stubs** path — `translate_fill_stubs.py`, which scans a whole branch for pre-align's `<!-- TODO: translate* -->` markers and fills each from the ko section sharing its `<a id>`. It seeds three fixtures (a body stub, a heading stub whose heading is still Korean, and an **id-less stub as a negative control**) and judges by byte comparison only — the filled section must lose the marker and carry no Hangul, everything outside it must be byte-identical to the base, and the id-less stub must be left alone and reported as skipped in the PR body. No LLM verifier: this tool breaks structurally (wrong ko section, rewritten anchors, whole-file EOL churn), not semantically. Default `--translate local` costs two model calls; `--translate api` drives the dashboard `/api/fill-empty` → Jenkins path instead.
+
 `scripts/e2e-retranslate-align-and-translate.sh` is a variant of round1 that appends a full re-translation of `public-api.md` to the align PR (using `/api/translate/file` and a 40%-reduced fixture for speed).
 
 ## Design points to preserve

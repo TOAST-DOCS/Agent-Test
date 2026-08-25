@@ -96,6 +96,17 @@
 #                 강제로 켜므로 "프로덕션에서 폴백이 꺼졌다" 를 감지할 수 없고,
 #                 api 모드만 그걸 잡을 수 있다 (dashboard 가 이 플래그를 보내지
 #                 않아 배포 잡 .env 값이 그대로 드러나기 때문).
+#   fill-stubs  — 빈 번역 채우기(translate_fill_stubs.py) 검증
+#                 (e2e-fill-stubs.sh). pre-align 이 남긴
+#                 `<!-- TODO: translate* -->` stub 을 ko 의 같은 <a id> 섹션으로
+#                 채우는 경로 — PR 의 ko diff 가 아니라 브랜치 전수 스캔에서
+#                 출발하고 diff 스플라이스를 전혀 타지 않아 다른 plan 이
+#                 커버하지 못한다. 픽스처로 body stub · heading stub · **id 없는
+#                 stub(음성 대조군)** 을 심고, 채운 섹션 밖이 바이트 동일한지와
+#                 id 없는 stub 이 건너뛰어졌는지를 바이트 비교로 판정 (LLM 판정
+#                 없음). 기본 --translate local (모델 호출 2회, ~2분);
+#                 --translate api 는 dashboard /api/fill-empty → Jenkins 경로를
+#                 태운다 (그 모드에선 dry-run 규칙 1건이 SKIP). 기대: exit 0.
 #   concurrent  — 같은 ko 파일을 만지는 동시 PR 시나리오 (e2e-concurrent-prs.sh).
 #                 A 생성 → B 생성 → B 머지·번역·번역 머지 → A 머지 → A 번역
 #                 순서에서, A 번역이 B 의 신규 섹션·표 행을 지우지 않는지
@@ -135,7 +146,7 @@
 # 별칭:
 #   all         — round2 / row-drop-repro-noreconcile 을 제외한 plan 전체
 #                 = webhook korean-review round1 table-suite row-drop-repro
-#                   llm-patch markup-churn retranslate concurrent
+#                   llm-patch markup-churn retranslate concurrent fill-stubs
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
@@ -194,6 +205,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PASS_ARGS=()
 EM_ARGS=()   # retranslate 로 넘길 인자 (--engine/--model/--verify/--translate)
 KR_ARGS=()   # korean-review 로 넘길 인자 (--translate 만 의미 있음)
+FS_ARGS=()   # fill-stubs 로 넘길 인자 (--translate/--engine/--model)
 PLANS=()
 SLEEP_BETWEEN=0
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
@@ -203,7 +215,11 @@ while [[ $# -gt 0 ]]; do
     --sleep-between)
       SLEEP_BETWEEN="$2"; shift 2 ;;
     --engine|--model|--verify)
-      PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); shift 2 ;;
+      PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2")
+      # --verify 는 fable/py 판정 스위치라 fill-stubs 에 없다 (그 plan 은
+      # 전부 바이트 비교라 의미 자체가 없음) — engine/model 만 전달.
+      [[ "$1" != "--verify" ]] && FS_ARGS+=("$1" "$2")
+      shift 2 ;;
     --no-reuse-align)
       REUSE_ALIGN=0; shift ;;
     --translate-pipeline-branch)
@@ -212,10 +228,11 @@ while [[ $# -gt 0 ]]; do
     --translate)
       # local = 모든 단계를 로컬 실행 (webhook plan 만 예외 — 배포 경로 자체를
       # 검증하는 plan 이라 로컬 대응물이 없다). 세 스크립트에 모두 전달.
-      PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2"); shift 2 ;;
+      PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2")
+      FS_ARGS+=("$1" "$2"); shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent)
+    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -225,7 +242,7 @@ while [[ $# -gt 0 ]]; do
       # 이 plan 의 필수 조건(llm-patch>0)이 항상 실패한다. 픽스처가 갖춰지면
       # 여기에 다시 넣는다. 그때까지는 명시 지정으로만 실행.
       PLANS+=(webhook korean-review round1 table-suite row-drop-repro
-              llm-patch markup-churn retranslate concurrent); shift ;;
+              llm-patch markup-churn retranslate concurrent fill-stubs); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -290,6 +307,14 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE '^  A 번역 PR:\s+https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "fill-stubs" ]]; then
+    # 빈 번역 채우기 — 자체 스크립트. align 프롤로그가 필요 없다 (픽스처를
+    # 직접 심으므로) 라서 --from-aligned 계열 인자는 전달하지 않는다.
+    bash "$REPO_ROOT/scripts/e2e-fill-stubs.sh" "${FS_ARGS[@]}" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^FILL_STUBS: (OK|FAIL)' "$log" | tail -n1 || true)"
+    fill_pr="$(grep -oE 'Fill PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fill_pr:-<no-pr>}")
   elif [[ "$plan" == "korean-review" ]]; then
     # korean-review plan 은 별도 스크립트 — /api/ko-review 잡을 태우고
     # 결과 리뷰 규격 + fable 의미 검증. --engine/--model 은 korean-review
@@ -374,8 +399,12 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" == "korean-review" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "round1" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "concurrent" && $ec -ne 0 ]]; then overall=1; fi
+  # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
+  # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
+  if [[ "$plan" == "fill-stubs" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
-        && "$plan" != "concurrent" && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
+        && "$plan" != "concurrent" && "$plan" != "fill-stubs" \
+        && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
   # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
   # 마크업 미러링이 동작하지 않은 것이므로 suite 실패로 잡는다.
   # row-drop-repro-noreconcile: exit 0/3 은 둘 다 허용 (todo-stub 으로 해소되면
@@ -421,6 +450,7 @@ for r in "${RESULTS[@]}"; do echo "  $r"; done
 echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포함이면 exit 3 이 정상)"
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
+echo "  (fill-stubs: exit 0 = FILL_STUBS: OK. stub 섹션만 채우고 그 밖은 바이트 보존 · id 없는 stub 은 건너뜀)"
 echo "  (row-drop-repro-noreconcile: exit 0/3 허용, 단 llm-patch=0 이면 실패 — 그 경로를 안 태운 실행)"
 echo "  (llm-patch: exit 0/3 허용, 단 llm-patch=0 이면 실패. ok/declined 로 fallback 판단을 확인)"
 [[ -n "$ALIGNED_BRANCH" ]] && echo "  (align 스냅샷: $ALIGNED_BRANCH — 재현/디버그용, 정리는 수동)"
