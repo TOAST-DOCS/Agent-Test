@@ -10,6 +10,7 @@ Not a product codebase — a **test fixture** for the NHN Cloud translation pipe
 - `archive/{alpha-origin,aligned,alpha-origin-40pct}/{ko,en,ja}/` — frozen seed states that the restore scripts copy back into `ko/en/ja/` before each e2e run. `alpha-origin` is the canonical seed; `aligned/` is a pre-aligned `public-api.md`; `alpha-origin-40pct/` is a size-reduced variant used by the re-translate flow.
 - `scripts/` — the real "code": bash scripts that drive an external dashboard/Jenkins pipeline (fix-heading-syntax → align → ko-review → translate) and verify results with `scripts/check_docs_align.py` (structure) plus the `claude` CLI (semantics, ko-review only).
 - Documentation in `scripts/dashboard-api.md` describes the dashboard endpoints these scripts hit.
+- `.claude/skills/split-docs-by-year/` — project skill (`/split-docs-by-year`) that splits a date-accumulating doc such as `release-notes.md` into `<lang>/<stem>/<year>.md` reassembled with `include-markdown`. Its `scripts/split_by_year.py` carries the guards that make the split safe (anchor pull-back, year-contiguity, round-trip equality, `--check <rev>`); copy the directory into another docs repo to reuse it there.
 
 There is **no build, no test framework, no lint**. The e2e scripts are the tests.
 
