@@ -31,7 +31,8 @@ Usage:
   python3 scripts/check_docs_align.py --root <worktree> --files ko/overview.md
 
 ko/ 아래 .md 를 하위 폴더까지 재귀로 훑어 en/ja 에 같은 상대 경로가 있는 문서만
-비교한다 (include 로 조립되는 release-notes/<year>.md 같은 본문도 검사 대상).
+비교한다 (include 로 조립되는 하위 폴더 본문도 검사 대상). EXCLUDED_STEMS 에
+적힌 문서는 자동 열거에서 빠지며, 무엇이 빠졌는지 실행 시 출력한다.
 """
 from __future__ import annotations
 
@@ -71,6 +72,19 @@ def is_variant(name: str) -> bool:
     stem = name[:-3] if name.endswith(".md") else name
     parts = stem.split("-")
     return len(parts) > 1 and any(p in VARIANT_SUFFIXES for p in parts[1:])
+
+
+# 자동 열거에서 뺄 문서 — 픽스처의 en/ja 가 애초에 ko 와 정렬돼 있지 않아
+# (release-notes 는 stale fixture 로 들어왔다) 게이트에 신호 대신 상시 FAIL 만
+# 준다. stem 하나가 같은 이름의 하위 폴더까지 덮는다:
+#   'release-notes' → release-notes.md + release-notes/<year>.md 전부
+# --files 로 직접 지목하면 그대로 검사한다 (드리프트를 손볼 때 쓰라고 남겨둔다).
+EXCLUDED_STEMS = ("release-notes",)
+
+
+def is_excluded(rel: str) -> bool:
+    head = rel.split("/", 1)[0]
+    return (head[:-3] if head.endswith(".md") else head) in EXCLUDED_STEMS
 
 
 def outside_fences(lines: list[str]):
@@ -250,23 +264,26 @@ def normalize_rel(spec: str) -> str:
     return "/".join(parts)
 
 
-def collect_docs(root: str) -> list[str]:
-    """ko/ 아래 .md 를 하위 폴더까지 재귀로 모아, en/ja 에도 있는 것만 rel 경로로 반환.
+def collect_docs(root: str) -> tuple[list[str], list[str]]:
+    """ko/ 아래 .md 를 하위 폴더까지 재귀로 모아 (검사 대상, 제외된 것) 을 반환.
 
     include 로 조립되는 문서(ko/release-notes.md → ko/release-notes/<year>.md)는
     본문이 하위 폴더에 있으므로 최상위만 훑으면 구조 검사가 통째로 비어버린다.
+    en/ja 에 같은 상대 경로가 없는 문서와 EXCLUDED_STEMS 는 대상에서 뺀다.
     """
     ko_dir = os.path.join(root, SOURCE)
     rels: list[str] = []
+    skipped: list[str] = []
     for dirpath, dirnames, filenames in os.walk(ko_dir):
         dirnames[:] = [d for d in dirnames if not d.startswith(".")]
         for name in filenames:
             if not name.endswith(".md") or is_variant(name):
                 continue
             rel = os.path.relpath(os.path.join(dirpath, name), ko_dir).replace(os.sep, "/")
-            if all(os.path.isfile(os.path.join(root, lang, rel)) for lang in TARGETS):
-                rels.append(rel)
-    return sorted(rels)
+            if not all(os.path.isfile(os.path.join(root, lang, rel)) for lang in TARGETS):
+                continue
+            (skipped if is_excluded(rel) else rels).append(rel)
+    return sorted(rels), sorted(skipped)
 
 
 def read(path: str) -> list[str]:
@@ -421,8 +438,9 @@ def main() -> int:
 
     if args.files:
         rels = [r for r in (normalize_rel(f) for f in args.files.split(",")) if r]
+        skipped: list[str] = []
     else:
-        rels = collect_docs(root)
+        rels, skipped = collect_docs(root)
 
     if not rels:
         print("error: ko/en/ja 에 공통으로 존재하는 .md 문서가 없습니다", file=sys.stderr)
@@ -434,6 +452,9 @@ def main() -> int:
     if args.markup:
         rules += ",7"
     print(f"검사 대상 {len(rels)} 파일, 규칙 {rules} (mode={args.mode}, root={root})")
+    if skipped:
+        print(f"제외 {len(skipped)} 파일 (EXCLUDED_STEMS={list(EXCLUDED_STEMS)}): "
+              f"{', '.join(skipped[:4])}{' ...' if len(skipped) > 4 else ''}")
     if known:
         print(f"알려진 한글 리터럴 {len(known)}개는 규칙 (5) 판정에서 제외: {list(known)[:6]}")
     print()

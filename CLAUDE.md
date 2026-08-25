@@ -79,7 +79,7 @@ The gate is **`scripts/check_docs_align.py`** (default, `--verify py`), a determ
 6. every row of a table has the header's cell count (a wider row silently loses cells when rendered)
 7. `--markup` (markup-churn only): if ko has no bare `<br>` left, neither may en/ja — i.e. cosmetic markup mirroring actually ran
 
-It enumerates targets by walking `ko/` **recursively** and keeping every `.md` (non-variant) that exists at the same relative path in `en/` and `ja/` — so include-assembled bodies like `ko/release-notes/<year>.md` are checked, not just the top-level page that includes them. `--files` accepts `ko/foo.md`, `foo.md`, or `release-notes/2016.md`.
+It enumerates targets by walking `ko/` **recursively** and keeping every `.md` (non-variant) that exists at the same relative path in `en/` and `ja/` — so include-assembled bodies in a subfolder are checked, not just the top-level page that includes them. `EXCLUDED_STEMS` drops a stem *and* its same-named subfolder from that enumeration (currently `release-notes`, whose en/ja fixture was never aligned with ko and so only ever produced noise); the run prints what it skipped. `--files` accepts `ko/foo.md`, `foo.md`, or `release-notes/2016.md`, and overrides the exclusion — that's the way to check a `release-notes/<year>.md` while fixing its drift.
 
 It replaced a `claude -p --model fable` agentic check that spent 15–25 min per stage reading the same 11 documents; the Python version takes ~0.05 s and cannot drift between runs. `--verify fable` still runs the old prompt (kept in the scripts) when a semantic check is wanted. `e2e-korean-review.sh` is unchanged — its check *is* semantic (does the review make sense?) and still uses fable, with the `KO_REVIEW: OK|FAIL` contract.
 
