@@ -261,7 +261,7 @@ This section is a temporary marker inserted by scripts/e2e-webhook.sh.
 After verifying whether the webhook routes this PR to the ko-review / translate jobs, the marker is cleaned up by the regular restore-alpha-origin.
 
 <a id="e2e-table-malformed"></a>
-### Table selection guard fixture
+### Table selection guard fixture { #e2e-table-malformed }
 
 The tables below are e2e fixtures. These are for selection guard validation (20260826-112107).
 
