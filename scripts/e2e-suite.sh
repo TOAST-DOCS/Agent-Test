@@ -140,6 +140,19 @@
 #                 다른 plan 이 커버하지 않는 유일한 API. --translate local 이면
 #                 그 단계도 로컬 translate_file.py (--commit-to-branch,
 #                 TRANSLATE_DIFF_MODE=full) 로 실행된다. 기대: exit 0.
+#   split-docs  — 릴리스 노트 연도별 분리 (e2e-split-docs.sh). alpha 의
+#                 release-notes.md (91개 날짜 섹션 × 11개 연도) 를 그대로 잘라
+#                 include-markdown 부모 + 연도 파일로 만들고, **왕복 검증**
+#                 (include 펼침 == 원본) 과 anchor 순서 보존을 바이트로 판정.
+#                 모델을 전혀 쓰지 않는 리팩터라 --engine/--model 은 무의미.
+#                 기대: exit 0 / SPLIT_DOCS: OK.
+#   fix-links   — 링크 정정 (e2e-fix-links.sh). alpha 상주 픽스처
+#                 {ko,en,ja}/fix-links.md 의 규칙 6종을 정정하고 대조군·펜스·
+#                 확인 불가 링크는 보존/보고하는지 바이트로 판정.
+#                 /link-check 의 ⭐ 권장 옵션(문서 전체 · DRY-RUN 해제 ·
+#                 engine=env · lang-parity+cross-context)으로 돌린다 — 이 잡의
+#                 유일한 위험 지점이 DRY-RUN 해제라, e2e 가 반드시 그 경로를
+#                 지나가야 한다. 기대: exit 0 / FIX_LINKS: OK.
 #   round2      — 전제 조건(직전 round1 의 ko/번역 PR 이 base 에 머지되어 있음)이
 #                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
 #
@@ -147,6 +160,7 @@
 #   all         — round2 / row-drop-repro-noreconcile 을 제외한 plan 전체
 #                 = webhook korean-review round1 table-suite row-drop-repro
 #                   llm-patch markup-churn retranslate concurrent fill-stubs
+#                   split-docs fix-links
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
@@ -206,6 +220,8 @@ PASS_ARGS=()
 EM_ARGS=()   # retranslate 로 넘길 인자 (--engine/--model/--verify/--translate)
 KR_ARGS=()   # korean-review 로 넘길 인자 (--translate 만 의미 있음)
 FS_ARGS=()   # fill-stubs 로 넘길 인자 (--translate/--engine/--model)
+SD_ARGS=()   # split-docs 로 넘길 인자 (--translate 만 의미 있음 — 모델을 안 쓴다)
+FL_ARGS=()   # fix-links 로 넘길 인자 (--translate 만; 옵션은 ⭐ 권장 옵션 고정)
 PLANS=()
 SLEEP_BETWEEN=0
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
@@ -229,10 +245,10 @@ while [[ $# -gt 0 ]]; do
       # local = 모든 단계를 로컬 실행 (webhook plan 만 예외 — 배포 경로 자체를
       # 검증하는 plan 이라 로컬 대응물이 없다). 세 스크립트에 모두 전달.
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2")
-      FS_ARGS+=("$1" "$2"); shift 2 ;;
+      FS_ARGS+=("$1" "$2"); SD_ARGS+=("$1" "$2"); FL_ARGS+=("$1" "$2"); shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs)
+    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -242,7 +258,8 @@ while [[ $# -gt 0 ]]; do
       # 이 plan 의 필수 조건(llm-patch>0)이 항상 실패한다. 픽스처가 갖춰지면
       # 여기에 다시 넣는다. 그때까지는 명시 지정으로만 실행.
       PLANS+=(webhook korean-review round1 table-suite row-drop-repro
-              llm-patch markup-churn retranslate concurrent fill-stubs); shift ;;
+              llm-patch markup-churn retranslate concurrent fill-stubs
+              split-docs fix-links); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -315,6 +332,25 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^FILL_STUBS: (OK|FAIL)' "$log" | tail -n1 || true)"
     fill_pr="$(grep -oE 'Fill PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fill_pr:-<no-pr>}")
+  elif [[ "$plan" == "split-docs" ]]; then
+    # 릴리스 노트 연도별 분리 — 자체 스크립트. 모델을 전혀 쓰지 않는 리팩터라
+    # --engine/--model 은 의미가 없고, align 프롤로그도 필요 없다 (alpha 의
+    # release-notes.md 를 그대로 자르는 것이 이 plan 의 요점이다).
+    bash "$REPO_ROOT/scripts/e2e-split-docs.sh" "${SD_ARGS[@]}" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^SPLIT_DOCS: (OK|FAIL)' "$log" | tail -n1 || true)"
+    split_pr="$(grep -oE 'Split PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${split_pr:-<no-pr>}")
+  elif [[ "$plan" == "fix-links" ]]; then
+    # 링크 정정 — 자체 스크립트. ⭐ 권장 옵션(문서 전체 · 실제 PR · engine=env ·
+    # 검증 두 축)이 스크립트 기본값이라 여기서 옵션을 넘기지 않는다. --engine 을
+    # 전달하지 않는 것은 의도된 것: 이 plan 의 engine 은 번역 엔진이 아니라
+    # 링크 잔여 처리 LLM 이고, 권장 옵션은 그 선택을 잡의 .env 에 맡긴다.
+    bash "$REPO_ROOT/scripts/e2e-fix-links.sh" "${FL_ARGS[@]}" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^FIX_LINKS: (OK|FAIL)' "$log" | tail -n1 || true)"
+    fix_pr="$(grep -oE 'Fix PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fix_pr:-<no-pr>}")
   elif [[ "$plan" == "korean-review" ]]; then
     # korean-review plan 은 별도 스크립트 — /api/ko-review 잡을 태우고
     # 결과 리뷰 규격 + fable 의미 검증. --engine/--model 은 korean-review

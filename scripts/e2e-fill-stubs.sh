@@ -13,38 +13,54 @@
 # 실제로 이 도구가 깨지는 방식은 번역 품질이 아니라 **구조**다:
 #   - anchor id 매칭이 어긋나 엉뚱한 ko 섹션이 들어감
 #   - 채우면서 heading·anchor 줄을 다시 써서 pre-align 이 맞춰 둔 id 가 흔들림
+#   - heading stub 의 레벨이 ko 와 달라짐 (`###` 가 `##` 로 승격)
 #   - 섹션 밖 EOL/공백이 재작성돼 diff 가 문서 전체로 번짐 (CRLF 파일 사고)
 #   - id 없는 stub 을 억지로 채워 ko 와 대응되지 않는 문장이 들어감
 # 전부 바이트 비교로 판정 가능하므로 이 e2e 는 LLM 판정을 쓰지 않는다.
 #
-# ── 왜 결함 주입이 아니라 픽스처 시드인가 ─────────────────────────────────
-# stub 은 pre-align 이 "ko 에는 있고 target 에는 없는 섹션" 을 만났을 때만
-# 생긴다. Agent-Test 의 ko/en/ja 는 이미 정렬돼 있어 자연 발생을 기다릴 수
-# 없으므로, pre-align 이 만드는 것과 **같은 모양**을 직접 심는다
-# (align_headings._make_stub / align_apply 참고):
-#     body stub  : <a id>/heading 은 그대로 두고 본문만 `<!-- TODO: translate body -->`
-#     heading stub: <a id> + **ko heading 줄 그대로** + `<!-- TODO: translate -->`
-# 여기에 **음성 대조군**으로 id 없는 stub 하나를 더 심는다 — 이건 반드시
-# 건너뛰어야 하고, 건너뛴 사실이 PR 본문에 남아야 한다. (자동 채우기는 anchor
-# id 로 ko 섹션을 찾으므로 id 가 없으면 원리적으로 대응 ko 를 알 수 없다.)
+# ── 픽스처 ────────────────────────────────────────────────────────────────
+# `{ko,en,ja}/fill-stub-sample.md` (alpha 에 상주, `archive/fill-stub/` 에 원본).
+# 언어당 채워야 할 stub 5개 + 부정 대조군 1개:
+#
+#   body stub    #fill-stub-body           평문 문단
+#   body stub    #fill-stub-table          표 (열 수·행 수가 보존되어야 한다)
+#   body stub    #fill-stub-code           코드 펜스 (내용이 바이트 동일해야 한다)
+#   heading stub #fill-stub-heading        `##`  — heading 이 아직 한국어
+#   heading stub #fill-stub-heading-child  `###` — 레벨이 승격되면 안 된다
+#   (대조군)     `## 앵커가 없는 섹션`     `<a id>` 없음 → 반드시 건너뛰고 보고
+#
+# 그 앞뒤를 이미 번역된 섹션(#fill-stub-untouched / #fill-stub-tail)이 감싸므로,
+# 채우기가 stub 바깥을 건드리면 바이트 비교로 바로 드러난다.
+#
+# 예전에는 이 e2e 가 `overview.md` 에 stub 을 **직접 심었다**. 픽스처를 alpha 에
+# 두는 쪽으로 바꾼 이유는 두 가지다: (a) 심는 코드가 pre-align 의 stub 모양을
+# 흉내내야 해서, 그 흉내가 틀리면 e2e 가 조용히 다른 것을 검증한다. (b) 표·코드
+# 펜스·중첩 heading 처럼 **실제로 깨지는 모양**은 자동 선별 조건("펜스·표 없는
+# 섹션")에 걸려 애초에 심을 수 없었다. 픽스처가 커밋되어 있으면 그 모양을
+# 사람이 고정할 수 있고, 리뷰도 diff 로 된다.
+#
+# 채우기가 성공하면 stub 이 소진되므로, 세션 브랜치에서만 돌리고 브랜치를
+# 폐기한다 — alpha 의 픽스처는 그대로 남는다.
 #
 # ── 흐름 ──────────────────────────────────────────────────────────────────
-#   1) alpha 에서 세션 브랜치 생성
-#   2) 픽스처 시드 — en=body stub, ja=heading stub, en=id 없는 stub → 커밋/푸시
+#   1) alpha 에서 세션 브랜치 생성 (픽스처는 이미 alpha 에 있다 — 시드 없음)
+#   2) 픽스처 인벤토리 — 어떤 stub 이 몇 개인지 파일에서 직접 읽는다
 #   3) dry-run 탐지 (모델 호출 0 · PR 생성 없음)        [--translate local 전용]
 #   4) 실제 채우기 → Fill PR
-#   5) 판정 (아래 8개 규칙, 전부 바이트/구조 비교)
+#   5) 판정 (아래 규칙, 전부 바이트/구조 비교)
 #   6) 결과 (FILL_STUBS: OK|FAIL)
 #   7) cleanup
 #
 # ── 판정 규칙 ─────────────────────────────────────────────────────────────
-#   (1) dry-run 이 body/heading stub 을 fillable 로 탐지하고 id 없는 stub 은
-#       skip 사유와 함께 보고 · 브랜치/PR 을 만들지 않음      [local 전용, api=SKIP]
+#   (1) dry-run 이 fillable stub 5개를 전부 탐지하고 id 없는 stub 은 skip 사유와
+#       함께 보고 · 브랜치/PR 을 만들지 않음                 [local 전용, api=SKIP]
 #   (2) 실제 실행이 Fill PR 을 생성 (`Fill PR:` / head=fill-stubs/…)
 #   (3) body stub 이 채워짐 — 마커 제거 · 한글 잔류 0 · 본문 비어있지 않음
-#   (4) body stub 의 heading/anchor 줄이 **바이트 동일** (id 가 흔들리지 않음)
-#   (5) heading stub 이 채워짐 — 마커 제거 · heading 에 한글 잔류 0 ·
-#       heading 레벨과 `<a id>` 는 보존
+#   (3t) 표 stub 의 열 수·데이터 행 수가 ko 와 같음 (번역이 표를 접지 않았는지)
+#   (3c) 코드 stub 의 펜스 내용이 ko 와 **바이트 동일** (코드는 번역 대상이 아니다)
+#   (4) body stub 의 heading/anchor 줄이 **바이트 동일** (id 가 흔들리지 않는다)
+#   (5) heading stub 이 채워짐 — 마커 제거 · heading 한글 잔류 0 ·
+#       heading 레벨과 `<a id>` 가 ko 와 동일 (`###` 가 `##` 로 승격되지 않음)
 #   (6) 채운 섹션 **밖**은 base 와 바이트 동일 (en/ja 각각)
 #   (7) id 없는 stub 은 그대로 남음 (억지로 채우지 않음)
 #   (8) PR 본문이 채운 id 를 나열하고, 건너뛴 stub 을 '건너뜀' 으로 보고 ·
@@ -55,12 +71,8 @@
 #   bash scripts/e2e-fill-stubs.sh                      # 로컬 translate_fill_stubs.py
 #   bash scripts/e2e-fill-stubs.sh --translate api      # dashboard /api/fill-empty → Jenkins
 #   bash scripts/e2e-fill-stubs.sh --keep               # 브랜치/PR 보존 (디버깅)
-#   bash scripts/e2e-fill-stubs.sh --doc console-guide.md
+#   bash scripts/e2e-fill-stubs.sh --doc fill-stub-sample.md
 #   bash scripts/e2e-fill-stubs.sh --base-source e2e/my-branch   # alpha 대신 그 브랜치에서
-#
-# --base-source 는 **이 스크립트 자신이 아직 alpha 에 머지되기 전** 자기 자신을
-# 돌릴 때 필요하다: 세션 브랜치는 base-source 에서 갈라지는데, alpha 에 파일이
-# 없으면 checkout 이 워킹트리의 스크립트를 지우려 해서 실행이 중단된다.
 #
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
 #     bash scripts/e2e-fill-stubs.sh
@@ -74,7 +86,7 @@ REPO="TOAST-DOCS/Agent-Test"
 BASE_SOURCE="alpha"
 TS="$(date -u +%Y%m%d-%H%M%S)"
 SESSION_BRANCH="e2e-fillstubs/$TS"
-DOC="overview.md"          # ko/en/ja 세 벌이 다 있는 작은 문서
+DOC="fill-stub-sample.md"  # alpha 상주 픽스처 (archive/fill-stub/ 에 원본)
 KEEP=0
 TRANSLATE_MODE="local"     # local | api
 ENGINE="api"               # local 모드에서만 의미 (api|cli)
@@ -105,7 +117,7 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --model 은 haiku|sonnet|opus|default (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
-    -h|--help) sed -n '1,62p' "$0"; exit 0 ;;
+    -h|--help) sed -n '1,85p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -136,7 +148,7 @@ cleanup() {
   local b
   while read -r b; do
     [[ -n "$b" ]] && git push origin ":$b" >/dev/null 2>&1 || true
-  done < <(git ls-remote --heads origin "refs/heads/fill-stubs/*$TS*" 2>/dev/null | sed 's|.*refs/heads/||')
+  done < <(git ls-remote --heads origin "refs/heads/fill-stubs/*" 2>/dev/null | sed 's|.*refs/heads/||')
   git push origin ":$SESSION_BRANCH" >/dev/null 2>&1 || true
   git checkout -q "$BASE_SOURCE" 2>/dev/null || true
   return $rc
@@ -145,136 +157,96 @@ trap cleanup EXIT
 
 echo "repo    : $REPO"
 echo "session : $SESSION_BRANCH"
-echo "doc     : $DOC"
+echo "doc     : $DOC (alpha 상주 픽스처)"
 echo "mode    : --translate $TRANSLATE_MODE"
 echo
 
 # ── 1) 세션 브랜치 ────────────────────────────────────────────────────────
-echo "[1/7] 세션 브랜치 생성"
+echo "[1/7] 세션 브랜치 생성 (픽스처는 alpha 상주 — 시드 없음)"
 git fetch -q origin "$BASE_SOURCE"
 git checkout -q -B "$SESSION_BRANCH" "origin/$BASE_SOURCE"
+for f in "ko/$DOC" "en/$DOC" "ja/$DOC"; do
+  [[ -f "$f" ]] || { echo "error: 픽스처 없음: $f (alpha 에 있어야 합니다)" >&2; exit 2; }
+done
+git push -q -f origin "$SESSION_BRANCH"
+base_sha="$(git rev-parse HEAD)"
+echo "  세션 base: $base_sha"
 
-# ── 2) 픽스처 시드 ────────────────────────────────────────────────────────
-# 섹션은 하드코딩하지 않는다 — ko/en/ja 가 공유하는 anchor id 중에서 조건
-# (한글 본문 있음 · 코드펜스/표/이미지 없음 · 적당한 길이) 을 만족하는 것을
-# 고른다. 픽스처가 restore 스크립트로 갈아끼워져도 이 e2e 는 계속 동작한다.
-echo "[2/7] 픽스처 시드 — en=body stub · ja=heading stub · en=id 없는 stub"
-fixture_out="$(python3 - "$DOC" "$TS" <<'PY'
+# ── 2) 픽스처 인벤토리 ────────────────────────────────────────────────────
+# 무엇을 채워야 하는지는 픽스처 파일이 정본이다 — 스크립트에 id 를 박아 두면
+# 픽스처를 고쳤을 때 e2e 가 조용히 다른 것을 검사한다.
+echo
+echo "[2/7] 픽스처 인벤토리"
+inv="$(python3 - "$DOC" <<'PY'
 import io, re, sys
 
-doc, ts = sys.argv[1], sys.argv[2]
+doc = sys.argv[1]
 BODY_MARK = "<!-- TODO: translate body -->"
 HEAD_MARK = "<!-- TODO: translate -->"
-HANGUL = re.compile(r"[가-힣]")
 ANCHOR = re.compile(r'^<a id="([^"]+)"></a>\s*$')
+HEADING = re.compile(r"^(#{2,6})\s+(.*)$")
 
 
 def read(p):
     return io.open(p, encoding="utf-8", newline="").read()
 
 
-def split_sections(text):
-    """[(anchor_id|None, raw)] — <a id> 줄에서 자른다. 첫 앵커 앞은 (None, …)."""
+def sections(text):
+    """[(anchor_id|None, heading_text, raw)] — <a id> 또는 heading 에서 자른다."""
     lines = text.splitlines(keepends=True)
-    out, cur_id, buf = [], None, []
+    out, cur_id, cur_h, buf, pending = [], None, "", [], None
     for ln in lines:
-        m = ANCHOR.match(ln.rstrip("\r\n"))
+        s = ln.rstrip("\r\n")
+        m = ANCHOR.match(s)
         if m:
-            out.append((cur_id, "".join(buf)))
-            cur_id, buf = m.group(1), [ln]
-        else:
-            buf.append(ln)
-    out.append((cur_id, "".join(buf)))
-    return [(i, r) for i, r in out if r]
+            out.append((cur_id, cur_h, "".join(buf)))
+            cur_id, cur_h, buf, pending = m.group(1), "", [ln], m.group(1)
+            continue
+        h = HEADING.match(s)
+        if h:
+            if pending is None:                # 앵커 없는 heading = 새 섹션
+                out.append((cur_id, cur_h, "".join(buf)))
+                cur_id, cur_h, buf = None, h.group(2).strip(), [ln]
+                continue
+            cur_h = h.group(2).strip()
+            pending = None
+        buf.append(ln)
+    out.append((cur_id, cur_h, "".join(buf)))
+    return [t for t in out if t[2]]
 
 
-def heading_and_body(raw):
-    """(heading 줄, 본문) — raw 는 <a id> 줄로 시작한다고 가정."""
-    lines = raw.splitlines(keepends=True)
-    for i, ln in enumerate(lines[1:], start=1):
-        if ln.lstrip().startswith("#"):
-            return ln.rstrip("\r\n"), "".join(lines[i + 1:])
-    return None, ""
-
-
-def suitable(ko_raw):
-    """모델 호출을 짧고 결정적으로 유지하기 위한 섹션 조건."""
-    h, body = heading_and_body(ko_raw)
-    if h is None:
-        return False
-    if any(t in ko_raw for t in ("```", "|", "![", "<img")):
-        return False
-    if not HANGUL.search(body):
-        return False
-    return 60 <= len(body.strip()) <= 900
-
-
-ko = read(f"ko/{doc}")
-ko_secs = split_sections(ko)
-ko_by_id = {i: r for i, r in ko_secs if i}
-
-picks = {}
+body_ids, head_ids, noid = [], [], []
 for lang in ("en", "ja"):
-    secs = split_sections(read(f"{lang}/{doc}"))
-    ids = [i for i, r in secs
-           if i and i in ko_by_id and suitable(ko_by_id[i])
-           and BODY_MARK not in r and HEAD_MARK not in r
-           and i not in picks.values()]
-    if not ids:
-        raise SystemExit(f"error: {lang}/{doc} 에 조건을 만족하는 섹션이 없음")
-    picks[lang] = ids[0]
+    for aid, htext, raw in sections(read(f"{lang}/{doc}")):
+        if BODY_MARK not in raw and HEAD_MARK not in raw:
+            continue
+        if aid is None:
+            noid.append(re.sub(r"\s*\{\s*#.*?\}\s*$", "", htext))
+        elif BODY_MARK in raw:
+            body_ids.append(aid)
+        else:
+            head_ids.append(aid)
 
-eol_of = lambda t: "\r\n" if "\r\n" in t else "\n"
+# 언어 간 동일해야 한다 — 다르면 픽스처가 깨진 것이므로 여기서 멈춘다.
+half = len(body_ids) // 2
+if body_ids[:half] != body_ids[half:] or not body_ids:
+    raise SystemExit(f"error: en/ja 의 body stub 이 다르다: {body_ids}")
+half_h = len(head_ids) // 2
+if head_ids[:half_h] != head_ids[half_h:] or not head_ids:
+    raise SystemExit(f"error: en/ja 의 heading stub 이 다르다: {head_ids}")
 
-# (a) en — body stub: <a id>/heading 은 그대로 두고 본문만 마커로.
-en_text = read(f"en/{doc}")
-eol = eol_of(en_text)
-out = []
-for i, raw in split_sections(en_text):
-    if i == picks["en"]:
-        h, _ = heading_and_body(raw)
-        lines = raw.splitlines(keepends=True)
-        anchor_line = lines[0]
-        raw = anchor_line + h + eol + eol + BODY_MARK + eol + eol
-    out.append(raw)
-en_new = "".join(out)
-
-# (c) en — 음성 대조군: <a id> 없는 stub. 반드시 건너뛰어야 한다.
-noid_heading = f"E2E no-id stub ({ts})"
-en_new += (f"{eol}## {noid_heading}{eol}{eol}{BODY_MARK}{eol}")
-io.open(f"en/{doc}", "w", encoding="utf-8", newline="").write(en_new)
-
-# (b) ja — heading stub: <a id> + **ko heading 줄 그대로** + 마커.
-#     pre-align 의 _make_stub 이 만드는 모양과 동일 (heading 도 아직 한국어).
-ja_text = read(f"ja/{doc}")
-eol = eol_of(ja_text)
-out = []
-for i, raw in split_sections(ja_text):
-    if i == picks["ja"]:
-        ko_h, _ = heading_and_body(ko_by_id[i])
-        lines = raw.splitlines(keepends=True)
-        raw = lines[0] + ko_h + eol + eol + HEAD_MARK + eol + eol
-    out.append(raw)
-io.open(f"ja/{doc}", "w", encoding="utf-8", newline="").write("".join(out))
-
-print(f"BODY_ID={picks['en']}")
-print(f"HEAD_ID={picks['ja']}")
-print(f"NOID_HEADING={noid_heading}")
+print("BODY_IDS=" + ",".join(body_ids[:half]))
+print("HEAD_IDS=" + ",".join(head_ids[:half_h]))
+print("NOID_HEADING=" + (noid[0] if noid else ""))
 PY
-)"
-echo "$fixture_out" | sed 's/^/  /'
-BODY_ID="$(sed -n 's/^BODY_ID=//p' <<<"$fixture_out")"
-HEAD_ID="$(sed -n 's/^HEAD_ID=//p' <<<"$fixture_out")"
-NOID_HEADING="$(sed -n 's/^NOID_HEADING=//p' <<<"$fixture_out")"
-[[ -n "$BODY_ID" && -n "$HEAD_ID" ]] || { echo "error: 픽스처 시드 실패" >&2; exit 2; }
-
-git add -- "en/$DOC" "ja/$DOC"
-staged="$(git diff --cached --name-only | sort | tr '\n' ' ')"
-[[ "$staged" == "en/$DOC ja/$DOC " ]] || { echo "error: 예상 외 파일 스테이지됨: $staged" >&2; exit 2; }
-git commit -q -m "e2e(fill-stubs): en=body stub($BODY_ID) · ja=heading stub($HEAD_ID) · id 없는 stub 시드 ($TS)"
-git push -q origin "$SESSION_BRANCH"
-base_sha="$(git rev-parse HEAD)"
-echo "  세션 base: $base_sha"
+)" || { echo "error: 픽스처 인벤토리 실패" >&2; exit 2; }
+echo "$inv" | sed 's/^/  /'
+BODY_IDS="$(sed -n 's/^BODY_IDS=//p' <<<"$inv")"
+HEAD_IDS="$(sed -n 's/^HEAD_IDS=//p' <<<"$inv")"
+NOID_HEADING="$(sed -n 's/^NOID_HEADING=//p' <<<"$inv")"
+[[ -n "$BODY_IDS" && -n "$HEAD_IDS" && -n "$NOID_HEADING" ]] \
+  || { echo "error: 픽스처에서 stub 을 찾지 못함" >&2; exit 2; }
+n_fillable=$(( $(awk -F, '{print NF}' <<<"$BODY_IDS") + $(awk -F, '{print NF}' <<<"$HEAD_IDS") ))
 
 # ── 3) dry-run 탐지 ──────────────────────────────────────────────────────
 # 모델을 부르지 않고 "무엇이 비어 있는지" 만 세는 경로. 대시보드의 '미리보기'
@@ -317,12 +289,14 @@ if [[ "$TRANSLATE_MODE" == "local" ]]; then
   fill_pr_url="$(grep -oE 'Fill PR: https://[^ ]+' "$LOG" | tail -1 | awk '{print $NF}')"
 else
   # dashboard 경로 — 대시보드 TODO 현황 탭의 '빈 번역 채우기' 와 동일한 API.
-  # --only 가 없으므로 세션 브랜치의 다른 stub 도 함께 채워질 수 있다
-  # (판정은 이 e2e 가 심은 두 섹션만 보므로 무방).
+  # ONLY 로 픽스처만 스코프한다 — 세션 브랜치에는 다른 문서의 stub 도 있을 수
+  # 있고(ja/component-guide.md), 그것까지 채우면 잡이 느려질 뿐 판정에는
+  # 보탬이 없다.
   resp="$(curl -sS -X POST \
     -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
     -H "Content-Type: application/json" \
-    -d "{\"target\": \"https://github.com/$REPO\", \"branch\": \"$SESSION_BRANCH\", \"langs\": \"en,ja\"}" \
+    -d "{\"target\": \"https://github.com/$REPO\", \"branch\": \"$SESSION_BRANCH\",
+         \"langs\": \"en,ja\", \"only\": \"en/$DOC,ja/$DOC\"}" \
     "$DASHBOARD_BASE_URL/api/fill-empty")"
   echo "$resp" | python3 -m json.tool | sed 's/^/  /'
   job_id="$(printf '%s' "$resp" | python3 -c 'import json,sys; print((json.load(sys.stdin) or {}).get("job_id") or "")')"
@@ -362,12 +336,13 @@ if (( dry_skipped )); then
   skip "(1) dry-run 탐지 — api 모드"
 else
   d_ok=1
-  grep -q "#$BODY_ID" "$DRYLOG" || { d_ok=0; echo "        dry-run 에 #$BODY_ID 없음"; }
-  grep -q "#$HEAD_ID" "$DRYLOG" || { d_ok=0; echo "        dry-run 에 #$HEAD_ID 없음"; }
+  for id in ${BODY_IDS//,/ } ${HEAD_IDS//,/ }; do
+    grep -q "#$id" "$DRYLOG" || { d_ok=0; echo "        dry-run 에 #$id 없음"; }
+  done
   grep -q "skip (id 없음)" "$DRYLOG" || { d_ok=0; echo "        id 없는 stub 의 skip 보고 없음"; }
   grep -q "탐지만 수행" "$DRYLOG" || { d_ok=0; echo "        dry-run 종료 문구 없음"; }
   if grep -q "Fill PR:" "$DRYLOG"; then d_ok=0; echo "        dry-run 이 PR 을 만들었다"; fi
-  (( d_ok )) && ok "(1) dry-run 이 stub 2개 탐지 · id 없는 stub skip · PR 미생성" \
+  (( d_ok )) && ok "(1) dry-run 이 stub ${n_fillable}개 탐지 · id 없는 stub skip · PR 미생성" \
               || bad "(1) dry-run 결과가 기대와 다름 (로그: $DRYLOG)"
 fi
 
@@ -390,15 +365,20 @@ done
 git show "$base_sha:ko/$DOC" > "$tmpdir/ko.md"
 gh pr view "$fill_pr_url" --repo "$REPO" --json body --jq .body > "$tmpdir/pr_body.md"
 
-# (3)~(7) 구조/바이트 검사 — LLM 판정 없음.
-python3 - "$tmpdir" "$BODY_ID" "$HEAD_ID" "$NOID_HEADING" <<'PY' || fails=$((fails + 1))
+# (3)~(8) 구조/바이트 검사 — LLM 판정 없음.
+python3 - "$tmpdir" "$BODY_IDS" "$HEAD_IDS" "$NOID_HEADING" <<'PY' || fails=$((fails + 1))
 import io, re, sys
 
-tmp, body_id, head_id, noid_heading = sys.argv[1:5]
+tmp, body_csv, head_csv, noid_heading = sys.argv[1:5]
+body_ids = [s for s in body_csv.split(",") if s]
+head_ids = [s for s in head_csv.split(",") if s]
+filled_ids = body_ids + head_ids
+
 HANGUL = re.compile(r"[가-힣]")
 ANCHOR = re.compile(r'^<a id="([^"]+)"></a>\s*$')
 BODY_MARK = "<!-- TODO: translate body -->"
 HEAD_MARK = "<!-- TODO: translate -->"
+FENCE = re.compile(r"^\s*(```+|~~~+)")
 rc = 0
 
 
@@ -406,15 +386,34 @@ def read(p):
     return io.open(p, encoding="utf-8", newline="").read()
 
 
+HEADING = re.compile(r"^(#{2,6})\s+(.*)$")
+
+
 def sections(text):
-    lines, out, cur, buf = text.splitlines(keepends=True), {}, "__pre__", []
+    """{key: raw} — `<a id>` 로도, 앵커 없는 heading 으로도 자른다.
+
+    앵커에서만 자르면 **앵커 없는 섹션이 바로 앞 섹션에 흡수된다**. 이 픽스처의
+    부정 대조군이 정확히 그 모양(`## 앵커가 없는 섹션`, 한국어 stub)이라,
+    흡수되면 앞 섹션의 "한글 잔류 0" 검사가 대조군 때문에 실패한다 — 도구는
+    멀쩡한데 e2e 가 빨개진다. 앵커 없는 섹션은 등장 순서로 키를 붙여 별도
+    구간으로 둔다 (순서가 같으면 base ↔ new 비교도 성립한다).
+    """
+    lines, out, cur, buf, pending, n = text.splitlines(keepends=True), {}, "__pre__", [], None, 0
     for ln in lines:
-        m = ANCHOR.match(ln.rstrip("\r\n"))
+        s = ln.rstrip("\r\n")
+        m = ANCHOR.match(s)
         if m:
             out[cur] = out.get(cur, "") + "".join(buf)
-            cur, buf = m.group(1), [ln]
-        else:
-            buf.append(ln)
+            cur, buf, pending = m.group(1), [ln], m.group(1)
+            continue
+        if HEADING.match(s):
+            if pending is None:                # 앵커 없는 heading = 새 구간
+                out[cur] = out.get(cur, "") + "".join(buf)
+                cur, buf = f"__noid_{n}__", [ln]
+                n += 1
+                continue
+            pending = None
+        buf.append(ln)
     out[cur] = out.get(cur, "") + "".join(buf)
     return out
 
@@ -424,6 +423,37 @@ def heading_line(raw):
         if ln.lstrip().startswith("#"):
             return ln
     return None
+
+
+def body_of(raw):
+    h = heading_line(raw)
+    return raw.split(h, 1)[1] if h else raw
+
+
+def table_shape(raw):
+    """(열 수, 데이터 행 수) — 표가 없으면 None."""
+    rows = [ln.strip() for ln in raw.splitlines()
+            if ln.strip().startswith("|") and ln.strip().endswith("|")]
+    if len(rows) < 3:
+        return None
+    sep = next((i for i, r in enumerate(rows)
+                if re.fullmatch(r"\|[\s:\-|]+\|", r)), None)
+    if sep is None:
+        return None
+    ncol = rows[sep].count("|") - 1
+    return ncol, len(rows) - sep - 1
+
+
+def fence_body(raw):
+    """펜스 안 줄들 — 코드는 번역 대상이 아니므로 ko 와 바이트 동일해야 한다."""
+    out, inside = [], False
+    for ln in raw.splitlines():
+        if FENCE.match(ln):
+            inside = not inside
+            continue
+        if inside:
+            out.append(ln)
+    return out
 
 
 def ok(msg):
@@ -439,78 +469,115 @@ def bad(msg, *extra):
 
 
 ko = sections(read(f"{tmp}/ko.md"))
-en_base, en_new = sections(read(f"{tmp}/en.base.md")), sections(read(f"{tmp}/en.filled.md"))
-ja_base, ja_new = sections(read(f"{tmp}/ja.base.md")), sections(read(f"{tmp}/ja.filled.md"))
+langs = {}
+for lang in ("en", "ja"):
+    langs[lang] = (sections(read(f"{tmp}/{lang}.base.md")),
+                   sections(read(f"{tmp}/{lang}.filled.md")))
 
-# (3) body stub 이 채워졌는가
-sec = en_new.get(body_id, "")
-if BODY_MARK in sec:
-    bad(f"(3) en #{body_id} 에 stub 마커가 남아 있음")
-elif HANGUL.search(sec):
-    bad(f"(3) en #{body_id} 에 한글 잔류 — 번역되지 않은 채 ko 가 복사됨",
-        *[l for l in sec.splitlines() if HANGUL.search(l)][:3])
-else:
-    h = heading_line(sec)
-    body = sec.split(h, 1)[1].strip() if h else ""
-    if len(body) < 20:
-        bad(f"(3) en #{body_id} 본문이 비어 있음 ({len(body)}자)")
-    else:
-        ok(f"(3) en #{body_id} 본문이 번역되어 채워짐 ({len(body)}자)")
+# (3) body stub 이 채워졌는가 (+ 표/코드 보존)
+for lang, (base, new) in langs.items():
+    for bid in body_ids:
+        sec = new.get(bid, "")
+        if BODY_MARK in sec:
+            bad(f"(3) {lang} #{bid} 에 stub 마커가 남아 있음")
+            continue
+        if HANGUL.search(sec):
+            bad(f"(3) {lang} #{bid} 에 한글 잔류 — 번역되지 않은 채 ko 가 복사됨",
+                *[l for l in sec.splitlines() if HANGUL.search(l)][:3])
+            continue
+        if len(body_of(sec).strip()) < 20:
+            bad(f"(3) {lang} #{bid} 본문이 비어 있음 ({len(body_of(sec).strip())}자)")
+            continue
+        ok(f"(3) {lang} #{bid} 본문이 번역되어 채워짐 ({len(body_of(sec).strip())}자)")
+
+        # (3t) 표 모양 보존
+        ko_tbl = table_shape(ko.get(bid, ""))
+        if ko_tbl:
+            new_tbl = table_shape(sec)
+            if new_tbl == ko_tbl:
+                ok(f"(3t) {lang} #{bid} 표가 ko 와 같은 모양 ({ko_tbl[0]}열 × {ko_tbl[1]}행)")
+            else:
+                bad(f"(3t) {lang} #{bid} 표 모양이 ko({ko_tbl}) 와 다름({new_tbl})",
+                    "열이 줄면 렌더러가 셀을 조용히 버린다 — 배포 페이지에서 설명이 사라진다")
+
+        # (3c) 코드 펜스 내용 보존
+        ko_code = fence_body(ko.get(bid, ""))
+        if ko_code:
+            new_code = fence_body(sec)
+            if new_code == ko_code:
+                ok(f"(3c) {lang} #{bid} 코드 펜스 {len(ko_code)}줄이 ko 와 바이트 동일")
+            else:
+                bad(f"(3c) {lang} #{bid} 코드 펜스가 변경됨 "
+                    f"(ko {len(ko_code)}줄 / 결과 {len(new_code)}줄)",
+                    *[f"ko : {a!r}" for a in ko_code[:2]],
+                    *[f"new: {a!r}" for a in new_code[:2]])
 
 # (4) body stub 의 heading/anchor 는 바이트 동일 (id 가 흔들리지 않는다)
-base_head, new_head = heading_line(en_base.get(body_id, "")), heading_line(sec)
-if base_head is not None and base_head == new_head:
-    ok(f"(4) en #{body_id} heading/anchor 바이트 보존")
-else:
-    bad(f"(4) en #{body_id} heading 이 변경됨", f"base: {base_head!r}", f"new : {new_head!r}")
+for lang, (base, new) in langs.items():
+    drift = [bid for bid in body_ids
+             if heading_line(base.get(bid, "")) != heading_line(new.get(bid, ""))]
+    if drift:
+        bad(f"(4) {lang} 의 body stub heading 이 변경됨: {', '.join(drift)}",
+            *[f"{bid}: {heading_line(base.get(bid,''))!r} → "
+              f"{heading_line(new.get(bid,''))!r}" for bid in drift[:2]])
+    else:
+        ok(f"(4) {lang} body stub {len(body_ids)}개의 heading/anchor 바이트 보존")
 
 # (5) heading stub — 마커 제거 + heading 번역 + 레벨/anchor 보존
-sec = ja_new.get(head_id, "")
-ko_head = heading_line(ko.get(head_id, "")) or ""
-new_head = heading_line(sec) or ""
-if HEAD_MARK in sec:
-    bad(f"(5) ja #{head_id} 에 stub 마커가 남아 있음")
-elif HANGUL.search(new_head):
-    bad(f"(5) ja #{head_id} heading 에 한글 잔류 — 번역되지 않음", f"heading: {new_head!r}")
-elif not sec.startswith(f'<a id="{head_id}"></a>'):
-    bad(f"(5) ja #{head_id} 의 <a id> 줄이 유실/이동됨", f"head: {sec.splitlines()[:1]}")
-else:
-    lvl_ko = len(ko_head) - len(ko_head.lstrip("#"))
-    lvl_new = len(new_head) - len(new_head.lstrip("#"))
-    if lvl_ko != lvl_new:
-        bad(f"(5) ja #{head_id} heading 레벨이 ko({lvl_ko}) 와 다름({lvl_new})")
-    elif HANGUL.search(sec):
-        bad(f"(5) ja #{head_id} 본문에 한글 잔류",
-            *[l for l in sec.splitlines() if HANGUL.search(l)][:3])
-    else:
-        ok(f"(5) ja #{head_id} heading+본문이 번역되고 anchor/레벨 보존")
+for lang, (base, new) in langs.items():
+    for hid in head_ids:
+        sec = new.get(hid, "")
+        ko_head = heading_line(ko.get(hid, "")) or ""
+        new_head = heading_line(sec) or ""
+        if HEAD_MARK in sec:
+            bad(f"(5) {lang} #{hid} 에 stub 마커가 남아 있음")
+        elif HANGUL.search(new_head):
+            bad(f"(5) {lang} #{hid} heading 에 한글 잔류 — 번역되지 않음",
+                f"heading: {new_head!r}")
+        elif not sec.startswith(f'<a id="{hid}"></a>'):
+            bad(f"(5) {lang} #{hid} 의 <a id> 줄이 유실/이동됨",
+                f"head: {sec.splitlines()[:1]}")
+        else:
+            lvl_ko = len(ko_head) - len(ko_head.lstrip("#"))
+            lvl_new = len(new_head) - len(new_head.lstrip("#"))
+            if lvl_ko != lvl_new:
+                bad(f"(5) {lang} #{hid} heading 레벨이 ko({lvl_ko}) 와 다름({lvl_new})",
+                    "레벨은 ko 가 정본이다 — 승격되면 문서 구조가 달라진다")
+            elif HANGUL.search(sec):
+                bad(f"(5) {lang} #{hid} 본문에 한글 잔류",
+                    *[l for l in sec.splitlines() if HANGUL.search(l)][:3])
+            else:
+                ok(f"(5) {lang} #{hid} heading+본문 번역 · anchor/레벨(h{lvl_ko}) 보존")
 
 # (6) 채운 섹션 밖은 바이트 동일
-for lang, base, new, filled_id in (("en", en_base, en_new, body_id),
-                                   ("ja", ja_base, ja_new, head_id)):
+for lang, (base, new) in langs.items():
     diffs = [k for k in set(base) | set(new)
-             if k != filled_id and base.get(k) != new.get(k)]
+             if k not in filled_ids and base.get(k) != new.get(k)]
     if diffs:
-        bad(f"(6) {lang} 의 다른 섹션이 변경됨: {', '.join(sorted(map(str, diffs))[:5])}")
+        bad(f"(6) {lang} 의 다른 섹션이 변경됨: {', '.join(sorted(map(str, diffs))[:5])}",
+            "채우기는 stub 섹션 밖을 한 바이트도 건드리면 안 된다")
     else:
         ok(f"(6) {lang} 는 채운 섹션 밖이 base 와 바이트 동일 ({len(base)}개 구간)")
 
 # (7) id 없는 stub 은 건드리지 않는다
-whole = read(f"{tmp}/en.filled.md")
-if noid_heading in whole and BODY_MARK in whole:
-    ok("(7) id 없는 stub 은 채우지 않고 그대로 남김")
-else:
-    bad("(7) id 없는 stub 이 사라짐/채워짐 — anchor 없이 ko 를 추정한 것",
-        f"heading 존재={noid_heading in whole}, 마커 존재={BODY_MARK in whole}")
+for lang, (base, new) in langs.items():
+    whole = read(f"{tmp}/{lang}.filled.md")
+    if noid_heading in whole and (BODY_MARK in whole or HEAD_MARK in whole):
+        ok(f"(7) {lang} 의 id 없는 stub 은 채우지 않고 그대로 남김")
+    else:
+        bad(f"(7) {lang} 의 id 없는 stub 이 사라짐/채워짐 — anchor 없이 ko 를 추정한 것",
+            f"heading 존재={noid_heading in whole}, "
+            f"마커 존재={BODY_MARK in whole or HEAD_MARK in whole}")
 
 # (8) PR 본문 보고
 pr_body = read(f"{tmp}/pr_body.md")
-if f"#{body_id}" in pr_body and f"#{head_id}" in pr_body:
-    ok("(8a) PR 본문이 채운 섹션 id 를 나열")
+missing = [i for i in filled_ids if f"#{i}" not in pr_body]
+if missing:
+    bad(f"(8a) PR 본문에 채운 id 가 없음: {', '.join(missing)}")
 else:
-    bad("(8a) PR 본문에 채운 id 가 없음")
-if "건너뜀" in pr_body and "id 없는 stub" in pr_body:
-    ok("(8b) PR 본문이 id 없는 stub 을 '건너뜀' 으로 보고")
+    ok(f"(8a) PR 본문이 채운 섹션 id {len(filled_ids)}개를 나열")
+if "건너뜀" in pr_body:
+    ok("(8b) PR 본문이 건너뛴 stub 을 '건너뜀' 으로 보고")
 else:
     bad("(8b) PR 본문에 건너뜀 보고가 없음 — 조용히 빠지면 아무도 모른다")
 
@@ -518,17 +585,16 @@ else:
 # 가 아니라 렌더된 페이지에서 이뤄지므로 이 링크가 산출물의 일부다.
 # 링크가 브랜치 ref 를 가리키면 머지 후 before 가 after 와 같은 화면이 되어
 # 되짚을 수 없게 되므로, **커밋 SHA** 인지까지 본다.
-import re as _re
 links = {}
-for lang, anchor in (("en", body_id), ("ja", head_id)):
-    pat = (r"\[before\]\((?P<b>[^)]*?/view\?[^)]*?#" + _re.escape(anchor) + r")\)"
-           r"[^\n]*?\[after\]\((?P<a>[^)]*?/view\?[^)]*?#" + _re.escape(anchor) + r")\)")
-    m = _re.search(pat, pr_body)
+for anchor in filled_ids:
+    pat = (r"\[before\]\((?P<b>[^)]*?/view\?[^)]*?#" + re.escape(anchor) + r")\)"
+           r"[^\n]*?\[after\]\((?P<a>[^)]*?/view\?[^)]*?#" + re.escape(anchor) + r")\)")
+    m = re.search(pat, pr_body)
     links[anchor] = m
     if not m:
         bad(f"(8c) #{anchor} 의 before/after 프리뷰 링크가 PR 본문에 없음")
 if all(links.values()):
-    sha40 = _re.compile(r"tx_ref=[0-9a-f]{40}")
+    sha40 = re.compile(r"tx_ref=[0-9a-f]{40}")
     bad_ref = [a for a, m in links.items()
                if not (sha40.search(m.group("b")) and sha40.search(m.group("a")))]
     if bad_ref:
