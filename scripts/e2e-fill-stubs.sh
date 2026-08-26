@@ -89,7 +89,11 @@ SESSION_BRANCH="e2e-fillstubs/$TS"
 DOC="fill-stub-sample.md"  # alpha 상주 픽스처 (archive/fill-stub/ 에 원본)
 KEEP=0
 TRANSLATE_MODE="local"     # local | api
-ENGINE="api"               # local 모드에서만 의미 (api|cli)
+# 기본값 cli — 배포된 translate 잡의 .env 가 claude-code 이고, 대시보드
+# /api/fill-empty 는 ENGINE 을 보내지 않아 그 .env 값이 이긴다. e2e 가 api 로
+# 돌면 운영이 실제로 타는 엔진을 검증하지 않는다 (align/retranslate e2e 도 같은
+# 이유로 claude-code 가 기본값이다). --engine 으로만 낮춘다.
+ENGINE="claude-code"       # local 모드에서만 의미 (api|cli|default)
 TRANSLATE_MODEL="claude-haiku-4-5"   # local 모드에서만 의미 (--model 로 override)
 JOB_TIMEOUT="${JOB_TIMEOUT:-1800}"
 
@@ -106,7 +110,18 @@ while [[ $# -gt 0 ]]; do
     --doc)  DOC="$2"; shift 2 ;;
     --base-source) BASE_SOURCE="$2"; SESSION_BRANCH="e2e-fillstubs/$TS"; shift 2 ;;
     --translate) TRANSLATE_MODE="$2"; shift 2 ;;
-    --engine) ENGINE="$2"; shift 2 ;;
+    --engine)
+      # 별칭은 다른 e2e 와 같은 집합. 예전에는 값을 그대로
+      # TRANSLATE_TRANSLATE_ENGINE 에 넣어서 `--engine cli` 가 조용히 깨졌다 —
+      # create_translator 는 api|claude-code 만 알고 'cli' 는 ValueError 다.
+      case "${2:-}" in
+        api)         ENGINE="api" ;;
+        cli)         ENGINE="claude-code" ;;
+        claude-code) ENGINE="claude-code" ;;
+        default)     ENGINE="" ;;
+        *) echo "error: --engine 은 api|cli|default (got: ${2:-})" >&2; exit 1 ;;
+      esac
+      shift 2 ;;
     --model)
       # 다른 e2e 스크립트와 같은 별칭 집합 — default 는 .env 값을 그대로 쓴다.
       case "${2:-}" in
@@ -276,11 +291,12 @@ echo "[4/7] 빈 번역 채우기 실행"
 if [[ "$TRANSLATE_MODE" == "local" ]]; then
   # env 로 전달 — `${VAR:+NAME=v} cmd` 는 셸이 대입으로 인식하지 않는다 (대입
   # 판정이 확장보다 먼저라 그냥 명령어 워드가 된다). env 는 확장 결과를 받는다.
-  echo "  engine=$ENGINE model=${TRANSLATE_MODEL:-<.env 기본>}"
+  echo "  engine=${ENGINE:-<.env 기본>} model=${TRANSLATE_MODEL:-<.env 기본>}"
   set +e
   (cd "$CLOUD_TRANSLATE_DIR" && \
-    env TRANSLATE_TRANSLATE_ENGINE="$ENGINE" \
+    env ${ENGINE:+TRANSLATE_TRANSLATE_ENGINE="$ENGINE"} \
         ${TRANSLATE_MODEL:+TRANSLATE_ANTHROPIC_MODEL="$TRANSLATE_MODEL"} \
+        ${TRANSLATE_MODEL:+TRANSLATE_CLAUDE_CODE_MODEL="$TRANSLATE_MODEL"} \
       "$CLOUD_TRANSLATE_PY" translate/translate_fill_stubs.py "$REPO" "$SESSION_BRANCH" \
         --only "en/$DOC,ja/$DOC" \
   ) 2>&1 | tee "$LOG"
