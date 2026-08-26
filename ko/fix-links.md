@@ -64,6 +64,7 @@ PR 본문의 "사람이 직접 확인해야 하는 부분" 표에 사유와 함�
 * [이 문서 첫 섹션](#fix-links-overview)
 * [개요 문서](./overview.md)
 * [개요 문서의 과금](./overview.md#pricing)
+* [개요 문서의 과금 (배포 URL 모양 — 코퍼스의 지배적 관행)](./overview/#pricing)
 * [NHN Cloud](https://www.nhncloud.com/)
 
 코드 펜스 안의 링크는 링크로 취급하지 않으므로 역시 그대로 남아야 합니다.

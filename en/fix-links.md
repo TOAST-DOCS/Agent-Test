@@ -64,6 +64,7 @@ after a fix run. If even one changed, the fixer touched a healthy link.
 * [First section of this document](#fix-links-overview)
 * [Overview document](./overview.md)
 * [Pricing in the overview document](./overview.md#pricing)
+* [Pricing in the overview document (deployed-URL shape — the corpus's dominant practice)](./overview/#pricing)
 * [NHN Cloud](https://www.nhncloud.com/)
 
 Links inside a code fence are not links, so they must survive untouched as well.

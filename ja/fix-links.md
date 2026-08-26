@@ -64,6 +64,7 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 * [この文書の最初のセクション](#fix-links-overview)
 * [概要文書](./overview.md)
 * [概要文書の料金](./overview.md#pricing)
+* [概要文書の料金 (デプロイ URL 形式 — コーパスの支配的な慣行)](./overview/#pricing)
 * [NHN Cloud](https://www.nhncloud.com/)
 
 コードフェンス内のリンクはリンクとして扱われないので、こちらもそのまま残るべきです。
