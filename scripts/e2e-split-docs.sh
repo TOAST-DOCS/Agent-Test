@@ -105,6 +105,15 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 tmpdir="$(mktemp -d)"; LOG="$tmpdir/split.log"; DRYLOG="$tmpdir/dryrun.log"
 
+# 판정 heredoc 은 marker 검증에 pre-align 의 alignment_signature 를 **그대로**
+# 쓴다 — 서명 알고리즘(fence 인식 · 앵커가 heading 위로 붙는 규칙 · h1 제외)을
+# 여기서 다시 구현하면 원본이 바뀔 때 조용히 어긋나 오탐/누락이 된다. 그런데
+# align_headings 는 httpx 를 import 하므로 **시스템 python3 로는 import 가
+# 실패**하고, 그러면 그 규칙이 SKIP 으로 사라진다 (실측: 첫 실행에서 (7)이
+# 세 언어 모두 SKIP). 그래서 판정도 도구와 같은 venv 인터프리터로 돌린다.
+JUDGE_PY="$CLOUD_TRANSLATE_PY"
+[[ -x "$JUDGE_PY" ]] || JUDGE_PY="python3"
+
 split_pr_url=""
 cleanup() {
   local rc=$?
@@ -262,7 +271,7 @@ for lang in ${LANGS//,/ }; do
   done < <(git ls-tree -r --name-only "origin/$split_branch" "$lang/$stem/" 2>/dev/null)
 done
 
-python3 - "$tmpdir" "$LANGS" "$stem" "$CLOUD_TRANSLATE_DIR" <<'PY' || fails=$((fails + 1))
+"$JUDGE_PY" - "$tmpdir" "$LANGS" "$stem" "$CLOUD_TRANSLATE_DIR" <<'PY' || fails=$((fails + 1))
 import io, os, re, sys
 
 tmp, langs_csv, stem, ct_dir = sys.argv[1:5]
@@ -274,7 +283,9 @@ try:
     from align_apply import aligned_marker_status
 except Exception as exc:                                   # pragma: no cover
     aligned_marker_status = None
-    print(f"        (marker 검사 불가 — pre-align import 실패: {exc})")
+    print(f"  WARN  (7) marker 검사를 건너뜁니다 — pre-align import 실패: {exc}")
+    print(f"        CLOUD_TRANSLATE_PY 를 venv 인터프리터로 지정하면 검사됩니다 "
+          f"(현재: {sys.executable})")
 
 INCLUDE_RE = re.compile(r"\{%-?\s*include-markdown\s+'([^']+)'\s*-?%\}")
 DATE_HEAD_RE = re.compile(r"^#{2,4}\s+\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.")

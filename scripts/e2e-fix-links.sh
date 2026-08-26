@@ -59,7 +59,8 @@
 #   (5) PR 본문의 매핑 표가 규칙 이름과 이전→이후를 싣는다
 #   (6) 고칠 수 없는 링크 2건이 '사람이 직접 확인' 표에 사유와 함께 오른다
 #   (7) LLM 2차 처리 상태가 PR 본문에 항상 명시된다 (off 여도)
-#   (8) 검증 댓글(`<!-- fix-links:verify -->`)이 달리고 두 검증 축이 모두 보고됨
+#   (8) 검증 댓글(`<!-- fix-links:verify -->`)이 달리고, 요청한 검증 축이 각자의
+#       섹션으로 보고되며, 담당자 인계 블록이 함께 실림
 #
 # Usage:
 #   source ./load_env.sh
@@ -301,10 +302,10 @@ gh pr view "$fix_pr_url" --repo "$REPO" --json body --jq .body > "$tmpdir/pr_bod
 gh pr view "$fix_pr_url" --repo "$REPO" --json comments \
   --jq '[.comments[].body] | join("\n\n---\n\n")' > "$tmpdir/pr_comments.md" 2>/dev/null || : > "$tmpdir/pr_comments.md"
 
-python3 - "$tmpdir" "$LANGS" <<'PY' || fails=$((fails + 1))
+python3 - "$tmpdir" "$LANGS" "$VERIFY" <<'PY' || fails=$((fails + 1))
 import io, re, sys
 
-tmp, langs_csv = sys.argv[1:3]
+tmp, langs_csv, verify_csv = sys.argv[1:4]
 langs = [s for s in langs_csv.split(",") if s]
 rc = 0
 FENCE = re.compile(r"^\s*(```+|~~~+)")
@@ -439,16 +440,35 @@ else:
     bad("(7) PR 본문에 LLM 2차 처리 상태가 없음",
         "'물어봤는데 못 골랐다' 와 '아예 안 돌았다' 는 리뷰어에게 다른 사실이다")
 
-# (8) 검증 댓글 — 두 축이 모두 보고되어야 한다.
+# (8) 검증 댓글 — 요청한 축이 모두 보고되어야 한다.
+# 댓글은 축 id 가 아니라 **사람이 읽는 한국어 섹션 제목**으로 축을 구분한다
+# (`### 1. ko/en/ja 링크 일치` / `### 2. cross-repo 링크가 문맥에 맞는가`).
+# 처음엔 여기서 "lang-parity"/"cross-context" 문자열을 찾다가 오탐으로 실패했다 —
+# 판정은 도구의 출력 규격을 따라야지, 요청 파라미터의 철자를 따라선 안 된다.
+AXIS_HEADING = {
+    "lang-parity": "ko/en/ja 링크 일치",
+    "cross-context": "cross-repo 링크가 문맥에 맞는가",
+}
 comments = read(f"{tmp}/pr_comments.md")
+wanted_axes = [a for a in verify_csv.split(",") if a.strip()]
 if "<!-- fix-links:verify -->" not in comments:
-    bad("(8) 검증 댓글(fix-links:verify)이 PR 에 없음")
+    bad("(8a) 검증 댓글(fix-links:verify)이 PR 에 없음")
 else:
-    axes = [a for a in ("lang-parity", "cross-context") if a not in comments]
-    if axes:
-        bad(f"(8) 검증 댓글에 빠진 축: {', '.join(axes)}")
+    missing_axes = [a for a in wanted_axes
+                    if AXIS_HEADING.get(a, a) not in comments]
+    if missing_axes:
+        bad(f"(8a) 검증 댓글에 빠진 축: {', '.join(missing_axes)}",
+            *[f"기대한 섹션 제목: {AXIS_HEADING.get(a, a)!r}" for a in missing_axes])
     else:
-        ok("(8) 검증 댓글이 lang-parity + cross-context 를 모두 보고")
+        ok(f"(8a) 검증 댓글이 요청한 축 {len(wanted_axes)}개를 모두 보고 "
+           f"({', '.join(wanted_axes)})")
+    # 이 두 검증은 아무것도 고치지 않으므로, 담당자가 다음 걸음을 뗄 수 있게
+    # 하는 인계 블록이 산출물의 일부다 (없으면 발견 목록만 남는다).
+    if "담당자용" in comments:
+        ok("(8b) 검증 댓글이 담당자 인계 블록을 싣는다")
+    else:
+        bad("(8b) 검증 댓글에 담당자 인계 블록이 없음",
+            "이 검증은 고치지 않는 검증이라, 목록만 남기면 다음 걸음이 없다")
 
 raise SystemExit(rc)
 PY
