@@ -46,6 +46,11 @@
 #       부모도 재스탬프 (분리로 outline 이 title 하나로 줄었으므로)
 #   (8) PR 본문이 include-markdown 선례 건수를 보고 (플러그인은 mkdocs 부모
 #       repo 설정이라, 선례 0 이면 지시자가 raw text 로 배포된다)
+#   (9) 분리 후 **렌더 검증** 댓글(`<!-- split-docs:verify -->`)이 달리고,
+#       비교한 부모 문서마다 '동일' 판정이 실린다. 이 검증은 왕복 검증이
+#       볼 수 없는 축이다 — 왕복은 잘라낸 본문이 원본과 같은지를 보고,
+#       렌더 검증은 include 가 그 본문을 도로 조립해 같은 페이지를
+#       만들어 내는지를 본다. PR 본문의 '렌더 비교' 딥링크도 함께 확인한다.
 #
 # Usage:
 #   source ./load_env.sh
@@ -257,6 +262,8 @@ fi
 split_branch="$(gh pr view "$split_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch -q origin "$split_branch"
 gh pr view "$split_pr_url" --repo "$REPO" --json body --jq .body > "$tmpdir/pr_body.md"
+gh pr view "$split_pr_url" --repo "$REPO" --json comments \
+  --jq '[.comments[].body] | join("\n\n---\n\n")' > "$tmpdir/pr_comments.md" 2>/dev/null || : > "$tmpdir/pr_comments.md"
 
 # base(원본) 와 분리 결과를 파일로 떨군다 — 판정은 전부 파이썬에서 바이트 비교.
 stem="${DOC%.md}"
@@ -419,6 +426,32 @@ if "include-markdown" in body and re.search(r"선례", body):
 else:
     bad("(8) PR 본문에 include-markdown 선례 보고가 없음",
         "플러그인은 mkdocs 부모 repo 설정이라, 선례 0 이면 지시자가 raw text 로 배포된다")
+
+# (9) 렌더 검증 댓글 — 왕복 검증이 볼 수 없는 축.
+comments = read(f"{tmp}/pr_comments.md")
+if "<!-- split-docs:verify -->" not in comments:
+    bad("(9a) 렌더 검증 댓글(split-docs:verify)이 PR 에 없음",
+        "include 가 실제로 본문을 조립하는지는 소스 왕복 검증이 볼 수 없다")
+elif "렌더 결과가 분리 전과 동일합니다" not in comments:
+    # '차이' 나 '확인 실패' 로 끝난 경우 — 어느 쪽이든 사람이 봐야 한다.
+    bad("(9a) 렌더 검증이 '동일' 로 끝나지 않음",
+        *[l for l in comments.splitlines()
+          if l.startswith("⚠️") or l.startswith("❌") or "| ❌" in l or "| ⚠️" in l][:4])
+else:
+    # 비교한 페이지가 언어 수만큼 있어야 한다 — 0개를 비교하고 초록으로
+    # 끝나는 것이 이 검증의 유일한 조용한 실패 모드다.
+    n_ok = len(re.findall(r"\| ✅ 동일 \|", comments))
+    if n_ok >= len(langs):
+        ok(f"(9a) 렌더 검증 댓글: 부모 문서 {n_ok}개가 분리 전과 동일")
+    else:
+        bad(f"(9a) 렌더 검증이 {n_ok}개만 비교함 (언어 {len(langs)}개 기대)",
+            "0개를 비교하고 초록으로 끝나는 것이 이 검증의 유일한 조용한 실패 모드다")
+
+if "/pr-validation/new?" in body and "site_a=" in body and "site_b=" in body:
+    ok("(9b) PR 본문에 렌더 비교(PR 검증) 딥링크 — base↔head 프리필")
+else:
+    bad("(9b) PR 본문에 렌더 비교 딥링크가 없음",
+        "링크가 없으면 리뷰어가 두 URL 을 직접 타이핑해야 한다")
 
 raise SystemExit(rc)
 PY
