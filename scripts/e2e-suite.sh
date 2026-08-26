@@ -153,6 +153,18 @@
 #                 engine=env · lang-parity+cross-context)으로 돌린다 — 이 잡의
 #                 유일한 위험 지점이 DRY-RUN 해제라, e2e 가 반드시 그 경로를
 #                 지나가야 한다. 기대: exit 0 / FIX_LINKS: OK.
+#   table-malformed — 표 reconcile 의 **선정** 가드 (e2e-table-malformed.sh).
+#                 세션 base 에 표 3개를 시드한다: (A) ko 셀에 실제 줄바꿈이
+#                 들어가 표가 끊긴 것, (B) 세 언어가 같은 스키마인데 대상 행
+#                 하나만 파이프가 빠진 것, (C) 대조군 — 진짜로 행이 결여된
+#                 정상 keyed 표. ko 는 **표를 건드리지 않는 산문 1줄** 만
+#                 바꾼다 (reconcile 이 splice 상류에서 문서 전체 표를 훑는다는
+#                 게 결함 성립 조건이므로). 기대: A 는 skip 되고 세 행이 전부
+#                 남고, B 는 바이트 그대로, C 는 여전히 backfill.
+#                 재현하는 사고: DDoS-Guard l7-ddos-settings-guide (A — en 19행
+#                 · ja 16행이 결정적으로 삭제될 상태) / OCR#177 빌드 #370
+#                 (B — 최소값 비교가 열 동기화를 오선정, 호출 4회 낭비).
+#                 기대: exit 0 / RESULT: OK.
 #   round2      — 전제 조건(직전 round1 의 ko/번역 PR 이 base 에 머지되어 있음)이
 #                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
 #
@@ -160,7 +172,7 @@
 #   all         — round2 / row-drop-repro-noreconcile 을 제외한 plan 전체
 #                 = webhook korean-review round1 table-suite row-drop-repro
 #                   llm-patch markup-churn retranslate concurrent fill-stubs
-#                   split-docs fix-links
+#                   split-docs fix-links table-malformed
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
@@ -248,7 +260,7 @@ while [[ $# -gt 0 ]]; do
       FS_ARGS+=("$1" "$2"); SD_ARGS+=("$1" "$2"); FL_ARGS+=("$1" "$2"); shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links)
+    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|table-malformed)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -259,7 +271,7 @@ while [[ $# -gt 0 ]]; do
       # 여기에 다시 넣는다. 그때까지는 명시 지정으로만 실행.
       PLANS+=(webhook korean-review round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent fill-stubs
-              split-docs fix-links); shift ;;
+              split-docs fix-links table-malformed); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -351,6 +363,17 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^FIX_LINKS: (OK|FAIL)' "$log" | tail -n1 || true)"
     fix_pr="$(grep -oE 'Fix PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fix_pr:-<no-pr>}")
+  elif [[ "$plan" == "table-malformed" ]]; then
+    # 표 선정 가드 — 자체 스크립트. 픽스처가 **의도적으로 malformed 한 원문**
+    # 이라 table-suite 에 얹을 수 없다: check_docs_align.py 는 세 언어가 모두
+    # well-formed 라는 전제로 만들어져서, 끊긴 표는 규칙(3) 고아 행으로,
+    # 이상치 행은 규칙(6) 컬럼 혼재로 걸린다 — 수정 전·후가 구별되지 않고
+    # 규칙(6)은 판정이 아예 거꾸로다 (올바른 동작 = 원문 보존 = FAIL).
+    bash "$REPO_ROOT/scripts/e2e-table-malformed.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^RESULT: (OK|FAIL)' "$log" | tail -n1 || true)"
+    rules="$(grep -oE '^TABLE-MALFORMED: [0-9]+/[0-9]+ rules passed' "$log" | tail -n1 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${rules:-<no-rules>}")
   elif [[ "$plan" == "korean-review" ]]; then
     # korean-review plan 은 별도 스크립트 — /api/ko-review 잡을 태우고
     # 결과 리뷰 규격 + fable 의미 검증. --engine/--model 은 korean-review
