@@ -14,29 +14,29 @@
 
 같은 파일을 배포 URL 모양의 경로로 가리키는 링크입니다. 순수 in-file `#slug` 만 남아야 합니다.
 
-* [정상 링크 모음](./fix-links/#fix-links-controls)
+* [정상 링크 모음](#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
 
 같은 repo 안 파일을 절대 URL · repo-rooted 경로로 가리키는 링크입니다. 둘 다 `./overview.md#pricing` 이 되어야 합니다.
 
-* [과금 (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ko/overview.md#pricing)
-* [과금 (repo-rooted 경로)](/ko/overview.md#pricing)
+* [과금 (github blob URL)](./overview.md#pricing)
+* [과금 (repo-rooted 경로)](./overview.md#pricing)
 
 <a id="fix-links-langdir"></a>
 ## lang-dir { #fix-links-langdir }
 
 다른 언어 폴더를 가리키는 in-repo 링크입니다. 이 문서의 언어 짝이 실재하므로 같은 언어로 바뀌어야 합니다.
 
-* [과금 (다른 언어 폴더)](../en/overview.md#pricing)
+* [과금 (다른 언어 폴더)](./overview.md#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
 
 배포 URL 조각이 fragment 안으로 끌려 들어가 `#a/#b` 로 겹친 링크입니다. 마지막 `/#` 뒤만 남아야 합니다.
 
-* [과금 (겹친 fragment)](./overview.md#overview/#pricing)
+* [과금 (겹친 fragment)](./overview.md#pricing)
 
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
@@ -44,7 +44,7 @@
 fragment 은 죽었지만 링크 텍스트가 대상 문서의 heading 과 정확히 일치하는 링크입니다.
 heading 의 canonical id 로 바뀌어야 합니다.
 
-* [키페어(Key-pair)](./overview.md#keypair-legacy-slug)
+* [키페어(Key-pair)](./overview.md#key-pair)
 
 <a id="fix-links-report"></a>
 ## 고치지 말고 보고만 해야 하는 링크 { #fix-links-report }
