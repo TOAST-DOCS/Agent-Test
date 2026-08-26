@@ -14,29 +14,29 @@ This document is not registered in the user guide menu (`ko/nav.yml`). It is a p
 
 A link to this very file written as a deployed-URL-shaped path. Only the in-file `#slug` should survive.
 
-* [Valid links](./fix-links/#fix-links-controls)
+* [Valid links](#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
 
 Links to a file in this repo written as an absolute URL / repo-rooted path. Both should become `./overview.md#pricing`.
 
-* [Pricing (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/en/overview.md#pricing)
-* [Pricing (repo-rooted path)](/en/overview.md#pricing)
+* [Pricing (github blob URL)](./overview.md#pricing)
+* [Pricing (repo-rooted path)](./overview.md#pricing)
 
 <a id="fix-links-langdir"></a>
 ## lang-dir { #fix-links-langdir }
 
 An in-repo link pointing at another language folder. The same-language twin exists, so it should be swapped.
 
-* [Pricing (other language folder)](../ko/overview.md#pricing)
+* [Pricing (other language folder)](./overview.md#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
 
 A link whose fragment swallowed a deployed-URL fragment, leaving `#a/#b`. Only the part after the last `/#` should survive.
 
-* [Pricing (nested fragment)](./overview.md#overview/#pricing)
+* [Pricing (nested fragment)](./overview.md#pricing)
 
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
@@ -44,7 +44,7 @@ A link whose fragment swallowed a deployed-URL fragment, leaving `#a/#b`. Only t
 The fragment is dead, but the link text matches a heading in the target document exactly.
 It should become that heading's canonical id.
 
-* [Key Pair](./overview.md#keypair-legacy-slug)
+* [Key Pair](./overview.md#key-pair)
 
 <a id="fix-links-report"></a>
 ## Links That Must Be Reported, Not Fixed { #fix-links-report }
