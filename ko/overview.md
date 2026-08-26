@@ -265,3 +265,33 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
 webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
 마커는 정기 restore-alpha-origin 으로 정리됩니다.
+
+<a id="e2e-table-malformed"></a>
+### 표 선정 가드 픽스처
+
+아래 표들은 e2e 픽스처입니다.
+
+| 번호 | 항목 | 예시 |
+|---|---|---|
+| 1 | 요청 속도 제한 | http {
+   limit_req_zone $binary_remote_addr zone=z:10m;
+}
+| 2 | 동시 연결 제한 | limit_conn z 10; |
+| 3 | 본문 크기 제한 | client_max_body_size 1m; |
+
+두 번째 표입니다.
+
+| 이름 | 타입 | 필수 | 설명 |
+|---|---|---|---|
+| fileType | String | Y | 파일 확장자입니다. |
+| resolution | String | N | 권장 해상도입니다. |
+| idType | String | Y | 신분증 종류입니다. |
+
+세 번째 표입니다.
+
+| 코드 | 이름 | 설명 |
+|---|---|---|
+| SVC-101 | 기본 | 기본 서비스입니다. |
+| SVC-102 | 표준 | 표준 서비스입니다. |
+| SVC-103 | 고급 | 고급 서비스입니다. |
+| SVC-104 | 전용 | 전용 서비스입니다. |

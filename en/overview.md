@@ -245,3 +245,30 @@ $ sudo update-grub
 ## Additional section for testing { #test-added-section }
 
 This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+
+<a id="e2e-table-malformed"></a>
+### Table selection guard fixture
+
+The tables below are e2e fixtures.
+
+| Number | Item | Example |
+|---|---|---|
+| 1 | Request rate limit | http {<BR>   limit_req_zone $binary_remote_addr zone=z:10m;<BR>} |
+| 2 | Connection limit | limit_conn z 10; |
+| 3 | Request body size limit | client_max_body_size 1m; |
+
+The second table.
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| fileType | String | Y | File extension. |
+| resolution | String | N  Recommended resolution. |
+| idType | String | Y | ID type. |
+
+The third table.
+
+| Code | Name | Description |
+|---|---|---|
+| SVC-101 | Basic | Basic service. |
+| SVC-102 | Standard | Standard service. |
+| SVC-103 | Advanced | Advanced service. |
