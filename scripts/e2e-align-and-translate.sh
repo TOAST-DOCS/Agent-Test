@@ -1068,6 +1068,18 @@ if [[ "$VERIFY_MODE" == "py" ]]; then
   # 결정적 검사 (규칙 1~6, markup-churn 은 +7) — 위 fable 프롬프트와 1:1.
   py_verify_args=(--root "$trans_wt" --mode translate)
   [[ "$PLAN_NAME" == "markup-churn" ]] && py_verify_args+=(--markup)
+  # 검사 대상은 이 plan 이 다루는 ko/ 파일로 고정한다. ko/ 에는 plan 마다 다른
+  # e2e 픽스처가 섞여 살아서 (fill-stub-sample 은 채워지기 전이 정상 상태) 전수
+  # 검사는 이 실행과 무관한 문서에서 상시 FAIL 을 낸다. 목록의 정본은
+  # create-translate-test-pr.sh 의 PLAN_* 배열 하나 — 여기서 파생시켜 쓴다.
+  plan_files="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh" \
+                  --plan "$PLAN_NAME" --list-files 2>/dev/null | paste -sd, -)"
+  if [[ -n "$plan_files" ]]; then
+    py_verify_args+=(--files "$plan_files" --apply-exclusions)
+  else
+    # 목록을 못 뽑으면 전수 검사로 되돌린다 — 아무것도 안 보는 것보다 낫다.
+    echo "  warn: plan 파일 목록을 얻지 못해 트리 전수로 검사합니다 (plan=$PLAN_NAME)"
+  fi
   set +e
   trans_check_out="$(python3 "$REPO_ROOT/scripts/check_docs_align.py" "${py_verify_args[@]}")"
   set -e

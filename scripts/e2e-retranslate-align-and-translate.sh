@@ -917,8 +917,19 @@ fenced code block(```)을 제외하고 다음 세 가지가 세 언어에서 완
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 
 if [[ "$VERIFY_MODE" == "py" ]]; then
+  # 검사 대상은 이 plan(=round1 변형)이 다루는 ko/ 파일로 고정 — 이유는
+  # e2e-align-and-translate.sh 의 같은 자리 주석 참고. public-api.md 전문
+  # 재번역도 그 목록 안에 있다.
+  py_verify_args=(--root "$trans_wt" --mode translate)
+  plan_files="$(bash "$REPO_ROOT/scripts/create-translate-test-pr.sh" \
+                  --plan round1 --list-files 2>/dev/null | paste -sd, -)"
+  if [[ -n "$plan_files" ]]; then
+    py_verify_args+=(--files "$plan_files" --apply-exclusions)
+  else
+    echo "  warn: plan 파일 목록을 얻지 못해 트리 전수로 검사합니다"
+  fi
   set +e
-  trans_check_out="$(python3 "$REPO_ROOT/scripts/check_docs_align.py" --root "$trans_wt" --mode translate)"
+  trans_check_out="$(python3 "$REPO_ROOT/scripts/check_docs_align.py" "${py_verify_args[@]}")"
   set -e
 else
   trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \

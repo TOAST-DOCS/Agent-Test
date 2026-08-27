@@ -40,7 +40,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BASE_BRANCH="alpha"
 
-BRANCH=""; TITLE=""; BODY=""; DRY_RUN=0; PLAN_NAME="round1"
+BRANCH=""; TITLE=""; BODY=""; DRY_RUN=0; LIST_FILES=0; PLAN_NAME="round1"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --branch) BRANCH="$2"; shift 2 ;;
@@ -49,6 +49,7 @@ while [[ $# -gt 0 ]]; do
     --body)   BODY="$2";   shift 2 ;;
     --plan)   PLAN_NAME="$2"; shift 2 ;;   # round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn
     --dry-run|-n) DRY_RUN=1; shift ;;
+    --list-files) LIST_FILES=1; shift ;;   # 이 plan 이 다루는 ko/ 파일만 출력하고 종료
     -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
@@ -961,40 +962,6 @@ case "$PLAN_NAME" in
   *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn)" >&2; exit 1 ;;
 esac
 
-if [[ -z "$BRANCH" ]]; then
-  BRANCH="translate-test/$(date +%Y%m%d-%H%M%S)"
-fi
-echo "base branch : $BASE_BRANCH"
-echo "new branch  : $BRANCH"
-echo "변형 계획:"
-for p in "${PLAN[@]}"; do echo "  ${p%%|*}  →  ${p#*|}"; done
-echo
-
-if (( DRY_RUN )); then
-  # 임시로 alpha 원본을 받아 변형 diff 만 보여줌 (작업 트리 건드리지 않음)
-  tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-  git fetch -q origin "$BASE_BRANCH"
-  for p in "${PLAN[@]}"; do
-    mut="${p%%|*}"; rel="${p#*|}"
-    git show "origin/$BASE_BRANCH:$rel" > "$tmp/orig" 2>/dev/null || { echo "  (skip, not on alpha: $rel)"; continue; }
-    cp "$tmp/orig" "$tmp/new"
-    mutate_ko "$mut" "$tmp/new" >/dev/null
-    echo "===== $rel ($mut) ====="
-    diff -u "$tmp/orig" "$tmp/new" | sed -n '1,40p' || true
-  done
-  echo; echo "(dry-run) 종료."
-  exit 0
-fi
-
-# tracked 변경 있으면 중단
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "error: tracked 파일에 커밋되지 않은 변경사항이 있습니다." >&2
-  git status --short >&2; exit 1
-fi
-
-git switch "$BASE_BRANCH"
-git pull
-
 # ── table-suite 전용: en/ja stale 상태를 BASE 브랜치에 조성 ────────────────
 # archive/alpha-origin 은 ko/en/ja 가 일관된 상태를 유지한다 — round1/round2
 # 등 다른 plan 의 step 17 전-파일 검사가 픽스처 때문에 깨지지 않도록.
@@ -1036,6 +1003,59 @@ case "$PLAN_NAME" in
       "ja/version-guide.md"
     ) ;;
 esac
+
+# ── --list-files: 이 plan 의 검사 대상 ko/ 파일 목록 ───────────────────────
+# e2e 의 17단계 구조 검증(check_docs_align.py --files)이 이 목록을 그대로 쓴다.
+# ko/ 에는 plan 마다 다른 픽스처가 섞여 살기 때문에 (fill-stub-sample 처럼
+# 의도적으로 미번역인 것도 있다) 트리 전수 검사는 그 plan 과 무관한 파일에서
+# 상시 FAIL 을 낸다. 목록의 정본은 위 PLAN_* 배열 하나이며 — 여기서 파생시켜
+# 두 곳이 따로 드리프트하지 않게 한다.
+#   대상 = PLAN 의 ko/ 경로 ∪ STALE_* 가 조성하는 en/ja 파일의 ko/ 짝
+#   (stale-ify 된 문서는 ko 를 안 건드려도 reconcile 이 고쳐야 할 대상이라
+#    반드시 검사에 포함되어야 한다)
+if (( LIST_FILES )); then
+  {
+    for p in "${PLAN[@]}"; do echo "${p#*|}"; done
+    for s in "${STALE_ROWS[@]}" "${STALE_DROP_COLS[@]}"; do rel="${s%%|*}"; echo "ko/${rel#*/}"; done
+    for rel in "${STALE_TABLES[@]}"; do echo "ko/${rel#*/}"; done
+  } | sort -u
+  exit 0
+fi
+
+if [[ -z "$BRANCH" ]]; then
+  BRANCH="translate-test/$(date +%Y%m%d-%H%M%S)"
+fi
+echo "base branch : $BASE_BRANCH"
+echo "new branch  : $BRANCH"
+echo "변형 계획:"
+for p in "${PLAN[@]}"; do echo "  ${p%%|*}  →  ${p#*|}"; done
+echo
+
+if (( DRY_RUN )); then
+  # 임시로 alpha 원본을 받아 변형 diff 만 보여줌 (작업 트리 건드리지 않음)
+  tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+  git fetch -q origin "$BASE_BRANCH"
+  for p in "${PLAN[@]}"; do
+    mut="${p%%|*}"; rel="${p#*|}"
+    git show "origin/$BASE_BRANCH:$rel" > "$tmp/orig" 2>/dev/null || { echo "  (skip, not on alpha: $rel)"; continue; }
+    cp "$tmp/orig" "$tmp/new"
+    mutate_ko "$mut" "$tmp/new" >/dev/null
+    echo "===== $rel ($mut) ====="
+    diff -u "$tmp/orig" "$tmp/new" | sed -n '1,40p' || true
+  done
+  echo; echo "(dry-run) 종료."
+  exit 0
+fi
+
+# tracked 변경 있으면 중단
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "error: tracked 파일에 커밋되지 않은 변경사항이 있습니다." >&2
+  git status --short >&2; exit 1
+fi
+
+git switch "$BASE_BRANCH"
+git pull
+
 if (( ${#STALE_ROWS[@]} + ${#STALE_DROP_COLS[@]} + ${#STALE_TABLES[@]} )); then
   echo "$PLAN_NAME: base 브랜치($BASE_BRANCH)에 en/ja stale-ify 커밋 생성 (행 제거·컬럼 제거)"
   for s in "${STALE_ROWS[@]}"; do

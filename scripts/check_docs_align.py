@@ -29,10 +29,22 @@ Usage:
   python3 scripts/check_docs_align.py --mode translate   # 규칙 1~6
   python3 scripts/check_docs_align.py --mode translate --markup
   python3 scripts/check_docs_align.py --root <worktree> --files ko/overview.md
+  python3 scripts/check_docs_align.py --root <wt> --mode translate \
+      --files "$(bash scripts/create-translate-test-pr.sh --plan round1 --list-files | paste -sd,)"
 
 ko/ 아래 .md 를 하위 폴더까지 재귀로 훑어 en/ja 에 같은 상대 경로가 있는 문서만
-비교한다 (include 로 조립되는 하위 폴더 본문도 검사 대상). EXCLUDED_STEMS 에
-적힌 문서는 자동 열거에서 빠지며, 무엇이 빠졌는지 실행 시 출력한다.
+비교한다 (include 로 조립되는 하위 폴더 본문도 검사 대상).
+
+--files 로 검사 대상을 명시하면 그 목록만 본다. ko/ 에는 plan 마다 다른 e2e
+픽스처가 섞여 살기 때문에 (fill-stub-sample 처럼 채워지기 전이 정상 상태인
+문서도 있다) 전수 검사는 그 실행과 무관한 문서에서 상시 FAIL 을 낸다 —
+e2e 의 17단계는 plan 이 다루는 파일만 넘긴다
+(create-translate-test-pr.sh --plan <name> --list-files 가 그 목록의 정본).
+
+EXCLUDED_STEMS 에 적힌 문서는 자동 열거에서 빠지며, 무엇이 빠졌는지 실행 시
+출력한다. --files 는 그 제외를 override 한다 (release-notes/<year>.md 의 드리프트를
+고치면서 확인하는 길) — plan 목록을 기계적으로 넘기는 e2e 호출만
+--apply-exclusions 로 override 를 끈다.
 """
 from __future__ import annotations
 
@@ -426,7 +438,9 @@ def main() -> int:
     ap.add_argument("--known-leftovers", default=None,
                     help="번역되지 않고 남는 것이 정상인 한글 리터럴 목록 파일 "
                          "(기본: scripts/known_korean_leftovers.txt)")
-    ap.add_argument("--files", default="", help="검사 대상 제한 (쉼표 구분, ko/foo.md · foo.md · release-notes/2016.md 모두 허용)")
+    ap.add_argument("--files", default="", help="검사 대상 제한 (쉼표 구분, ko/foo.md · foo.md · release-notes/2016.md 모두 허용). 기본적으로 EXCLUDED_STEMS 를 override 한다")
+    ap.add_argument("--apply-exclusions", action="store_true",
+                    help="--files 로 넘어온 목록에도 EXCLUDED_STEMS 를 적용 (e2e 자동 호출용)")
     args = ap.parse_args()
 
     root = args.root
@@ -437,8 +451,17 @@ def main() -> int:
         return 2
 
     if args.files:
-        rels = [r for r in (normalize_rel(f) for f in args.files.split(",")) if r]
-        skipped: list[str] = []
+        # --files 는 기본적으로 EXCLUDED_STEMS 를 override 한다 (release-notes/<year>.md
+        # 의 드리프트를 고치면서 확인하는 길). e2e 처럼 plan 파일 목록을 기계적으로
+        # 넘기는 호출은 --apply-exclusions 로 그 override 를 끈다 — 그 목록에는
+        # 제외 대상이 섞여 들어올 수 있고, 자동 게이트에 상시 FAIL 을 넣는 건
+        # 목록을 좁힌 목적과 정반대이기 때문.
+        asked = [r for r in (normalize_rel(f) for f in args.files.split(",")) if r]
+        if args.apply_exclusions:
+            rels = [r for r in asked if not is_excluded(r)]
+            skipped = [r for r in asked if is_excluded(r)]
+        else:
+            rels, skipped = asked, []
     else:
         rels, skipped = collect_docs(root)
 
