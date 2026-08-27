@@ -14,29 +14,29 @@
 
 同じファイルをデプロイ URL 形式のパスで指すリンクです。純粋な in-file `#slug` だけが残るべきです。
 
-* [正常なリンク集](./fix-links/#fix-links-controls)
+* [正常なリンク集](#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
 
 同じ repo 内のファイルを絶対 URL・repo-rooted パスで指すリンクです。どちらも `./overview.md#pricing` になるべきです。
 
-* [料金 (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ja/overview.md#pricing)
-* [料金 (repo-rooted パス)](/ja/overview.md#pricing)
+* [料金 (github blob URL)](./overview.md#pricing)
+* [料金 (repo-rooted パス)](./overview.md#pricing)
 
 <a id="fix-links-langdir"></a>
 ## lang-dir { #fix-links-langdir }
 
 別の言語フォルダーを指す in-repo リンクです。同じ言語の対応ファイルが実在するので入れ替わるべきです。
 
-* [料金 (別の言語フォルダー)](../ko/overview.md#pricing)
+* [料金 (別の言語フォルダー)](./overview.md#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
 
 デプロイ URL の断片が fragment に入り込み `#a/#b` と重なったリンクです。最後の `/#` 以降だけが残るべきです。
 
-* [料金 (重なった fragment)](./overview.md#overview/#pricing)
+* [料金 (重なった fragment)](./overview.md#pricing)
 
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
@@ -44,7 +44,7 @@
 fragment は死んでいますが、リンクテキストが対象文書の heading と完全に一致するリンクです。
 その heading の canonical id になるべきです。
 
-* [キーペア(Key-pair)](./overview.md#keypair-legacy-slug)
+* [キーペア(Key-pair)](./overview.md#key-pair)
 
 <a id="fix-links-report"></a>
 ## 訂正せず報告だけすべきリンク { #fix-links-report }
