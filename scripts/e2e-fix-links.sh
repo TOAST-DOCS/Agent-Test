@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# 링크 정정(fix-links) e2e — dashboard/viewer/link_fix.py 검증.
+# 링크 정정(fix-links) e2e — dashboard/links/fix.py 검증.
 #
 # 검증 대상: `/link-check` 가 NotOK 로 매긴 링크 중 **결과가 실제로 resolve 되는
 # 것만** 고쳐 PR 을 열고, 확인할 수 없는 것은 고치지 않고 PR 본문에 보고한다.
@@ -64,7 +64,7 @@
 #
 # Usage:
 #   source ./load_env.sh
-#   bash scripts/e2e-fix-links.sh                    # 로컬 viewer/links_cli.py
+#   bash scripts/e2e-fix-links.sh                    # 로컬 links/cli.py
 #   bash scripts/e2e-fix-links.sh --translate api    # dashboard /api/fix-links → Jenkins
 #   bash scripts/e2e-fix-links.sh --keep             # 브랜치/PR 보존 (디버깅)
 #   bash scripts/e2e-fix-links.sh --engine none      # 권장 옵션 대신 결정적 규칙만
@@ -96,6 +96,15 @@ JOB_TIMEOUT="${JOB_TIMEOUT:-2400}"
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
+# fix-links CLI 의 모듈 경로. 링크 도메인이 `dashboard/viewer/links_cli.py` 에서
+# `dashboard/links/cli.py` 로 옮겨졌는데(cloud-translate 리팩터), 이 하네스는
+# 임의 브랜치의 체크아웃을 상대로 돈다 — 머지 전 워크트리도, 아직 옛 레이아웃인
+# main 도. 그래서 이름을 박지 않고 그 체크아웃에서 찾는다.
+if [[ -f "$CLOUD_TRANSLATE_DIR/dashboard/links/cli.py" ]]; then
+  LINKS_CLI_MODULE="links.cli"
+else
+  LINKS_CLI_MODULE="viewer.links_cli"
+fi
 DASHBOARD_BASE_URL="${DASHBOARD_BASE_URL:-}"
 DASHBOARD_API_TOKEN="${DASHBOARD_API_TOKEN:-}"
 
@@ -186,7 +195,7 @@ if [[ "$TRANSLATE_MODE" == "local" ]]; then
   [[ -f "$CLOUD_TRANSLATE_DIR/.env" ]] || { echo "error: $CLOUD_TRANSLATE_DIR/.env 없음" >&2; exit 2; }
   set +e
   (cd "$CLOUD_TRANSLATE_DIR" && PYTHONPATH=".:dashboard" \
-    "$CLOUD_TRANSLATE_PY" -m viewer.links_cli fix-links \
+    "$CLOUD_TRANSLATE_PY" -m "$LINKS_CLI_MODULE" fix-links \
       --repo "$REPO" --ref "$SESSION_BRANCH" --langs "$LANGS" \
       --paths "$fixture_paths" --dry-run --out "$tmpdir/dryout" \
   ) > "$DRYLOG" 2>&1
@@ -206,7 +215,7 @@ paths_arg=""
 if [[ "$TRANSLATE_MODE" == "local" ]]; then
   set +e
   (cd "$CLOUD_TRANSLATE_DIR" && PYTHONPATH=".:dashboard" \
-    "$CLOUD_TRANSLATE_PY" -m viewer.links_cli fix-links \
+    "$CLOUD_TRANSLATE_PY" -m "$LINKS_CLI_MODULE" fix-links \
       --repo "$REPO" --ref "$SESSION_BRANCH" --langs "$LANGS" \
       --paths "$paths_arg" --engine "$ENGINE" --verify "$VERIFY" \
       --out "$tmpdir/fixout" \
