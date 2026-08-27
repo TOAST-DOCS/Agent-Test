@@ -89,6 +89,12 @@ The four above are skipped for different reasons. The last two are, respectively
 **no same-language twin in the repo** (swapping the language alone would turn a live link into a
 404) and a snippet holding the target slot **twice** (an image pointing at itself), where which
 occurrence to rewrite cannot be determined.
+The first of the two only works if it points at a document that exists in ONE language (otherwise
+the "swapping the language would 404" judgement never runs), so its target differs per language.
+That means this fixture carries a **deliberate** ko/en/ja link divergence, which always shows up as
+two findings in the `lang-parity` report. Judge rule (8c) pins those two as expected: if they are
+missing, the comparison did not run.
+
 
 <a id="fix-links-controls"></a>
 ## Valid Links { #fix-links-controls }

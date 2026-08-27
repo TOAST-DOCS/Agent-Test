@@ -61,7 +61,9 @@
 #       (대상 없음 · anchor 불확정 · 같은 언어 짝 없음 · 스니펫 슬롯 2회)
 #   (7) LLM 2차 처리 상태가 PR 본문에 항상 명시된다 (off 여도)
 #   (8) 검증 댓글(`<!-- fix-links:verify -->`)이 달리고, 요청한 검증 축이 각자의
-#       섹션으로 보고되며, 담당자 인계 블록이 함께 실림
+#       섹션으로 보고되며, 담당자 인계 블록이 함께 실림. 그리고 lang-parity 는
+#       픽스처가 일부러 만든 ko/en/ja 링크 불일치 2건을 실제로 잡아낸다 —
+#       섹션 제목만 보는 검사는 "아무것도 못 잡는" 상태를 통과시키므로
 #
 # Usage:
 #   source ./load_env.sh
@@ -511,6 +513,26 @@ else:
     else:
         bad("(8b) 검증 댓글에 담당자 인계 블록이 없음",
             "이 검증은 고치지 않는 검증이라, 목록만 남기면 다음 걸음이 없다")
+    # (8c) lang-parity 가 픽스처의 **의도된** 언어 불일치를 실제로 잡는가.
+    #
+    # '같은 언어 짝 없음' 케이스는 한 언어에만 존재하는 문서를 가리켜야 성립하고
+    # (그래야 언어 교체가 404 를 만든다는 판단이 실제로 돌아간다), 그런 문서는
+    # 언어마다 다르므로 ko 는 `heading-lint-demo.md`, en·ja 는 `mermaid-sample.md`
+    # 를 가리킨다 — 즉 픽스처에 **구조적으로** ko/en/ja 링크 불일치가 있다.
+    #
+    # 그러면 parity 축의 리포트에 이 2건이 늘 올라온다. 그것을 노이즈로 두는 대신
+    # 기대값으로 못박는다: 이 2건이 없다면 parity 비교가 동작하지 않는 것이다
+    # (축 제목만 확인하는 8a 는 "섹션은 있는데 아무것도 못 잡는" 상태를 통과시킨다).
+    if "lang-parity" in wanted_axes:
+        undetected = [n for n in ("heading-lint-demo", "mermaid-sample")
+                      if n not in comments]
+        if undetected:
+            bad(f"(8c) parity 축이 픽스처의 의도된 언어 불일치를 못 잡음: "
+                f"{', '.join(undetected)}",
+                "픽스처는 ko 만 heading-lint-demo, en·ja 만 mermaid-sample 을 가리킨다",
+                "이 2건이 안 보이면 비교 자체가 돌지 않은 것이다")
+        else:
+            ok("(8c) parity 축이 픽스처의 의도된 언어 불일치 2건을 보고")
 
 raise SystemExit(rc)
 PY
