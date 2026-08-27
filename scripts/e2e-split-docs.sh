@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# 릴리스 노트 연도별 분리(split-docs) e2e — pre-align/split_docs_by_year.py 검증.
+# 릴리스 노트 연도별 분리(split-docs) e2e — split_docs_by_year.py 검증.
 #
 # 검증 대상: 날짜가 쌓이는 `<lang>/release-notes.md` 를 `<lang>/release-notes/
 # <year>.md` 로 자르고, 원래 경로에는 header + mkdocs `include-markdown` 지시자만
@@ -80,6 +80,21 @@ JOB_TIMEOUT="${JOB_TIMEOUT:-1800}"
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
+
+# 도구 경로는 두 레이아웃을 모두 받아들인다. 2026-08 에
+# `pre-align/split_docs_by_year.py` → `pre-align/tools/splice/split_docs_by_year.py`
+# 로 옮겼는데, 이 e2e 는 **아직 그 이동이 없는 체크아웃**(main, 다른 워크트리)
+# 에도 그대로 걸려야 한다 — 하드코딩하면 검증하려는 브랜치가 아니라 스크립트가
+# 먼저 깨진다.
+_split_tool() {
+  local d
+  for d in "pre-align/tools/splice" "pre-align"; do
+    [[ -f "$CLOUD_TRANSLATE_DIR/$d/split_docs_by_year.py" ]] && {
+      printf '%s/split_docs_by_year.py' "$d"; return 0; }
+  done
+  echo "error: split_docs_by_year.py 를 $CLOUD_TRANSLATE_DIR 에서 찾지 못함" >&2
+  return 1
+}
 DASHBOARD_BASE_URL="${DASHBOARD_BASE_URL:-}"
 DASHBOARD_API_TOKEN="${DASHBOARD_API_TOKEN:-}"
 
@@ -108,6 +123,13 @@ fi
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
+# api 모드는 Jenkins 안에서 도구를 돌리므로 로컬 체크아웃이 없어도 된다 —
+# 그 경우까지 여기서 죽이면 안 된다.
+SPLIT_TOOL=""
+if [[ "$TRANSLATE_MODE" == "local" ]]; then
+  SPLIT_TOOL="$(_split_tool)" || exit 2
+  echo "  도구: $CLOUD_TRANSLATE_DIR/$SPLIT_TOOL"
+fi
 tmpdir="$(mktemp -d)"; LOG="$tmpdir/split.log"; DRYLOG="$tmpdir/dryrun.log"
 
 # 판정 heredoc 은 marker 검증에 pre-align 의 alignment_signature 를 **그대로**
@@ -163,7 +185,7 @@ if [[ "$TRANSLATE_MODE" == "local" ]]; then
   [[ -f "$CLOUD_TRANSLATE_DIR/.env" ]] || { echo "error: $CLOUD_TRANSLATE_DIR/.env 없음" >&2; exit 2; }
   set +e
   (cd "$CLOUD_TRANSLATE_DIR" && \
-    "$CLOUD_TRANSLATE_PY" pre-align/split_docs_by_year.py "$REPO" \
+    "$CLOUD_TRANSLATE_PY" "$SPLIT_TOOL" "$REPO" \
       --base "$SESSION_BRANCH" --doc "$DOC" --langs "$LANGS" --dry-run \
       --out "$tmpdir/dryout" \
   ) > "$DRYLOG" 2>&1
@@ -181,7 +203,7 @@ echo "[3/6] 연도별 분리 실행"
 if [[ "$TRANSLATE_MODE" == "local" ]]; then
   set +e
   (cd "$CLOUD_TRANSLATE_DIR" && \
-    "$CLOUD_TRANSLATE_PY" pre-align/split_docs_by_year.py "$REPO" \
+    "$CLOUD_TRANSLATE_PY" "$SPLIT_TOOL" "$REPO" \
       --base "$SESSION_BRANCH" --doc "$DOC" --langs "$LANGS" \
   ) 2>&1 | tee "$LOG"
   split_rc=${PIPESTATUS[0]}
