@@ -1,14 +1,10 @@
-<!-- machine_translated: true -->
-<!-- pre-align:aligned sig=74b0e7f9672e -->
-
-
 <a id="compute-instance-overview"></a>
-## Compute > Instance > 概要 { #compute-instance-overview }
+## Compute > Instance > 概要
 
-インスタンスは仮想の CPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールし、NHN Cloud が提供するさまざまなサービスを組み合わせて使用します。(本文修正テスト: この文は再翻訳時に反映される必要があります。)
+インスタンスは仮想のCPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールしてNHN Cloudが提供する様々なサービスを組み合わせて使用します。
 
 <a id="components"></a>
-## インスタンス構成要素 { #components }
+## インスタンス構成要素
 
 インスタンスを構成する要素は次のとおりです。
 
@@ -22,14 +18,14 @@
 この情報に基づいてインスタンスの属性と使用方式が変わります。この情報のうち、イメージとアベイラビリティゾーンを除く設定はインスタンス生成後も変更できますが、一部のインスタンスの仕様(flavor)はインスタンス生成後に変更できません。インスタンス仕様変更については[コンソール使用ガイドのインスタンスタイプ変更](./console-guide/#modify-flavor)を参照してください。
 
 <a id="image"></a>
-### イメージ { #image }
+### イメージ
 
 イメージはオペレーションシステムを含む仮想ディスクです。NHN Cloudは現在Debian、Ubuntu、Rocky、Windowsをサポートしています。
 
 全てのイメージは、インスタンスの仮想ハードウェアで最適に実行されるよう設定されており、NHN Cloudのセキュリティ検証を経ているため、安全に使用できます。イメージの詳細な説明は[イメージ概要](/Compute/Image/ja/overview/)を参照してください。
 
 <a id="flavor"></a>
-### インスタンスタイプ(Instance flavor) { #flavor }
+### インスタンスタイプ(Instance flavor)
 
 NHN Cloudは顧客の使用用途に合った様々なタイプのインスタンスタイプを提供します。運営するサービスまたはアプリケーションの特性に応じて適切な仕様のインスタンスを生成できます。すでに生成されたインスタンスタイプはウェブコンソールから簡単に変更できます。
 
@@ -44,7 +40,7 @@ NHN Cloudは顧客の使用用途に合った様々なタイプのインスタ�
 
 
 <a id="availability-zone"></a>
-### アベイラビリティゾーン(Availability zone) { #availability-zone }
+### アベイラビリティゾーン(Availability zone)
 
 NHN Cloudは物理ハードウェアの問題で発生する障害に備えるため、システム全体を複数のアベイラビリティゾーンに分けました。このアベイラビリティゾーンごとにストレージ、ネットワークスイッチ、ラック、電源装置が別々に構成されています。1つのアベイラビリティゾーン内で発生する障害は他のアベイラビリティゾーンに影響を与えないので、サービス全体の可用性が高くなります。インスタンスを複数のアベイラビリティゾーンに分けて構築すれば、サービスの可用性をさらに高めることができます。
 
@@ -56,7 +52,7 @@ NHN Cloudは物理ハードウェアの問題で発生する障害に備える�
 
 
 <a id="key-pair"></a>
-### キーペア(Key-pair) { #key-pair }
+### キーペア(Key-pair)
 
 キーペアは公開鍵基盤構造([PKI](https://ja.wikipedia.org/wiki/%E5%85%AC%E9%96%8B%E9%8D%B5%E5%9F%BA%E7%9B%A4)、public key infrastructure)をベースにしたSSH公開鍵、秘密鍵のペアです。NHN Cloudで生成されたインスタンスに接続するにはセキュリティが脆弱なキーボード入力方式のID/パスワード認証の代わりにキーペアを利用する必要があります。ユーザーはキーペアの秘密鍵を利用してログイン情報をエンコードしてインスタンスに転送して接続認証を受けた後、安全にインスタンスに接続できます。キーペアを利用したインスタンス接続方法は[インスタンス接続方法](#how-to-access-instances)を参照してください。
 
@@ -69,7 +65,7 @@ NHN Cloudは物理ハードウェアの問題で発生する障害に備える�
 > キーペアはユーザーアカウントに割り当てられたリソースなので、プロジェクトを削除しても削除されずに維持されます。
 
 <a id="security-groups"></a>
-### セキュリティグループ(Security groups) { #security-groups }
+### セキュリティグループ(Security groups)
 
 セキュリティグループはインスタンスに伝達されるネットワークトラフィックを決定する仮想のファイアウォールです。セキュリティグループの詳細は[VPC概要](/Network/VPC/ja/overview/)を参照してください。
 
@@ -77,12 +73,12 @@ NHN Cloudは物理ハードウェアの問題で発生する障害に備える�
 > 基本セキュリティグループは外部からのインバウンド(in-bound)ネットワークトラフィックを全て無視するようになっています。SSHでインスタンスに接続する時、インスタンスが属するセキュリティグループにSSHポートを開くように設定した後、インスタンスに接続します。
 
 <a id="network"></a>
-### ネットワーク { #network }
+### ネットワーク
 
 インスタンスが外部と通信するには、VPCで定義されたネットワークのうち少なくとも1つ以上に接続されている必要があります。ネットワークに接続されていないインスタンスにはアクセスできません。ネットワークを新たに作成したり変更したりするには[VPC概要](/Network/VPC/ja/overview/)を参照してください。
 
 <a id="pricing"></a>
-## 課金 { #pricing }
+## 課金
 
 インスタンス課金方式は次の通りです。
 
@@ -94,14 +90,13 @@ NHN Cloudは物理ハードウェアの問題で発生する障害に備える�
 課金の詳細については、サービス別[料金ページ](https://www.toast.com/kr/service/compute/instance#price)を参照してください。
 
 <a id="how-to-access-instances"></a>
-## インスタンス接続方法 { #how-to-access-instances }
+## インスタンス接続方法
 
 <a id="how-to-access-linux-instances"></a>
-### Linuxインスタンス接続方法 { #how-to-access-linux-instances }
+### Linuxインスタンス接続方法
 
 Linuxインスタンスに接続する時はSSHクライアントを利用します。インスタンスのセキュリティグループにSSHアクセスポート(デフォルト値22)が開いていない場合は接続できません。SSHアクセスを許可する方法は[VPC概要](/Network/VPC/ja/overview/)を参照してください。インスタンスにFloating IPが割り当てられていない場合は、NHN Cloud外部からアクセスできません。Floating IPを割り当てる方法については[VPC概要](/Network/VPC/ja/overview/)を参照してください。
 
-<a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
 #### MacまたはLinuxのSSHクライアントでLinuxインスタンスに接続する方法
 
 MacやLinuxには通常、SSHクライアントがデフォルトでインストールされています。SSHクライアントで下記のようにキーペアの秘密鍵を利用して接続します。
@@ -118,7 +113,6 @@ Rockyインスタンス
 
 	$ ssh -i my_private_key.pem rocky@<インスタンスのIP>
 
-<a id="how-to-access-linux-instances-from-windows-using-putty-ssh-client"></a>
 #### WindowsでPuTTY SSHクライアントでLinuxインスタンスに接続する方法
 
 PuTTY SSHクライアントはWindowsで多く使用されるSSHクライアントプログラムです。[PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html)をインストールします。
@@ -203,7 +197,7 @@ Rocky
 
 
 <a id="how-to-access-windows-instances"></a>
-### Windowsインスタンス接続方法 { #how-to-access-windows-instances }
+### Windowsインスタンス接続方法
 
 Windowsインスタンスに接続するには、NHN Cloudコンソールから接続するWindowsインスタンスを選択します。インスタンス詳細画面の**接続情報**タブで**パスワード確認**ボタンを押して、Windowsサーバーに設定されたパスワードを確認します。
 
@@ -211,8 +205,7 @@ Windowsインスタンスに接続するには、NHN Cloudコンソールから�
 
 **パスワード確認**横の**接続**ボタンをクリックしてリモートデスクトップ接続設定が保存された.rdpファイルをダウンロードして実行するとWindowsインスタンスに接続します。WindowsサーバーのIDは「Administrator」で、パスワードはNHN Cloudコンソールで確認したパスワードを利用します。
 
-<a id="how-to-connect-serial-console"></a>
-### シリアルコンソール接続方法 { #how-to-connect-serial-console }
+### シリアルコンソール接続方法
 
 ブート失敗、ネットワーク構成の問題など、SSHクライアントを使用できない状況で、シリアルコンソールに接続してインスタンスにアクセスできます。
 
@@ -228,7 +221,6 @@ Windowsインスタンスに接続するには、NHN Cloudコンソールから�
 > シリアルコンソールでインスタンスにアクセスし、ブート方法を変更した場合、ブートに失敗することがあり、それに伴う結果についての責任はユーザーにあります。
 > 通常の状況では、SSHクライアント接続の使用を推奨します。
 
-<a id="how-to-connect-serial-console-change-grub-bootloader-settings"></a>
 #### GRUBブートローダーの設定変更
 
 2024年11月26日のデプロイ以前に作成したインスタンスでブートローダーを操作するには、GRUBの設定が必要です。
@@ -247,8 +239,3 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
-
-<a id="test-added-section"></a>
-## テスト用の追加セクション { #test-added-section }
-
-このセクションは翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じアンカー ID が割り当てられているか確認します。
