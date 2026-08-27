@@ -1,9 +1,9 @@
-<!-- pre-align:aligned sig=7e09fc5b0570 -->
+<!-- pre-align:aligned sig=bd7c613fa6f9 -->
 
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
 
-This document is an e2e fixture for **link fix** (`dashboard/viewer/link_fix.py`, Jenkins `fix-links`).
+This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`).
 Each section below targets one deterministic rule with a **deliberately malformed link**, and
 `scripts/e2e-fix-links.sh` judges the repair rule by rule.
 
@@ -46,6 +46,34 @@ It should become that heading's canonical id.
 
 * [Key Pair](./overview.md#keypair-legacy-slug)
 
+<a id="fix-links-langsite"></a>
+## lang-site { #fix-links-langsite }
+
+A site-root link naming **another language**. It looks like it carries the locale once, but the
+deployed site fills the unwritten first position with this document's language, so it resolves to
+`/en/…/ko/…` and dies. It should be swapped to the same-language twin.
+
+* [Pricing (site-root, other language)](/Open%20Source/agent-test/ko/overview/#pricing)
+
+<a id="fix-links-absdocs"></a>
+## abs-docs · abs-docs-env { #fix-links-absdocs }
+
+Links to a file in this repo written as a **fully-qualified deploy URL**. One source file is
+deployed to alpha/beta/master alike, so hardcoding a host is wrong in at least two environments.
+Both should become relative paths; a non-production host gets its own notation code
+(`abs-docs-env`).
+
+* [Pricing (production host)](https://docs.nhncloud.com/en/Open%20Source/agent-test/en/overview/#pricing)
+* [Pricing (alpha host)](https://docs.alpha-nhncloud.com/en/Open%20Source/agent-test/en/overview/#pricing)
+
+<a id="fix-links-legacyjp"></a>
+## legacy-jp { #fix-links-legacyjp }
+
+A link still carrying the pre-2026-08 Japanese segment `jp`. That locale is dead at both
+positions, so it should be swapped to this document's language.
+
+* [Pricing (legacy jp)](/Open%20Source/agent-test/jp/overview/#pricing)
+
 <a id="fix-links-report"></a>
 ## Links That Must Be Reported, Not Fixed { #fix-links-report }
 
@@ -54,6 +82,13 @@ they belong in the PR body's "needs a human" table with a reason.
 
 * [A document that does not exist](./no-such-doc-e2e.md#nowhere)
 * [No way to tell which anchor](./overview.md#anchor-that-does-not-exist-e2e)
+* [A document that exists only in another language](../ko/mermaid-sample.md)
+* [![Figure](/en/overview.md#key-pair)](/en/overview.md#key-pair)
+
+The four above are skipped for different reasons. The last two are, respectively, a link with
+**no same-language twin in the repo** (swapping the language alone would turn a live link into a
+404) and a snippet holding the target slot **twice** (an image pointing at itself), where which
+occurrence to rewrite cannot be determined.
 
 <a id="fix-links-controls"></a>
 ## Valid Links { #fix-links-controls }
@@ -65,6 +100,7 @@ after a fix run. If even one changed, the fixer touched a healthy link.
 * [Overview document](./overview.md)
 * [Pricing in the overview document](./overview.md#pricing)
 * [Pricing in the overview document (deployed-URL shape — the corpus's dominant practice)](./overview/#pricing)
+* [Another repo's guide (site-root — the correct cross-repo form)](/Compute/Instance/en/overview/)
 * [NHN Cloud](https://www.nhncloud.com/)
 
 Links inside a code fence are not links, so they must survive untouched as well.

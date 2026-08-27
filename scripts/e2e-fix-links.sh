@@ -50,14 +50,15 @@
 #   6) cleanup
 #
 # ── 판정 규칙 ─────────────────────────────────────────────────────────────
-#   (1) dry-run 이 언어당 6건 정정 · 2건 manual · PR 미생성  [local 전용, api=SKIP]
+#   (1) dry-run 이 언어당 10건 정정 · 4건 manual · PR 미생성 [local 전용, api=SKIP]
 #   (2) Fix PR 생성 (head=fix-links/… · content-agent + fix-link 라벨)
-#   (3) 픽스처 세 파일이 **기대 결과와 바이트 동일** — 정정 6건이 정확히
+#   (3) 픽스처 세 파일이 **기대 결과와 바이트 동일** — 정정 10건이 정확히
 #       적용되고, 대조군·펜스·보고 대상·링크 밖 바이트는 그대로
-#   (4) 규칙별 진단 — 6개 규칙이 각각 적용되었는지 개별 확인 (3 이 실패했을 때
-#       무엇이 어긋났는지 바로 보이도록)
+#   (4) 규칙별 진단 — 10건의 정정이 각각 적용되었는지 개별 확인 (3 이 실패했을
+#       때 무엇이 어긋났는지 바로 보이도록)
 #   (5) PR 본문의 매핑 표가 규칙 이름과 이전→이후를 싣는다
-#   (6) 고칠 수 없는 링크 2건이 '사람이 직접 확인' 표에 사유와 함께 오른다
+#   (6) 고칠 수 없는 링크 4건이 '사람이 직접 확인' 표에 사유와 함께 오른다
+#       (대상 없음 · anchor 불확정 · 같은 언어 짝 없음 · 스니펫 슬롯 2회)
 #   (7) LLM 2차 처리 상태가 PR 본문에 항상 명시된다 (off 여도)
 #   (8) 검증 댓글(`<!-- fix-links:verify -->`)이 달리고, 요청한 검증 축이 각자의
 #       섹션으로 보고되며, 담당자 인계 블록이 함께 실림
@@ -268,12 +269,12 @@ bad()  { echo "  FAIL  $1"; fails=$((fails + 1)); }
 skip() { echo "  SKIP  $1"; }
 
 nlang="$(awk -F, '{print NF}' <<<"$LANGS")"
-# (1) dry-run — 언어당 정정 6건 · manual 2건.
+# (1) dry-run — 언어당 정정 10건 · manual 4건.
 if (( dry_skipped )); then
   skip "(1) dry-run — api 모드"
 else
   d_ok=1
-  want_rep=$(( nlang * 6 )); want_manual=$(( nlang * 2 ))
+  want_rep=$(( nlang * 10 )); want_manual=$(( nlang * 4 ))
   grep -qE "^repaired  : $want_rep in $nlang file\(s\)" "$DRYLOG" \
     || { d_ok=0; echo "        dry-run 정정 건수가 $want_rep 이 아님"; }
   grep -qE "^left      : $want_manual for manual review" "$DRYLOG" \
@@ -337,8 +338,15 @@ def bad(msg, *extra):
 
 
 def expected_repairs(lang):
-    """(규칙, 이전 target, 이후 target) — 픽스처가 심은 6건."""
+    """(규칙, 이전 target, 이후 target) — 픽스처가 심은 10건.
+
+    뒤의 4건은 로케일·표기 판정이 바뀐 뒤 추가됐다 (cloud-translate #692·#722):
+    site-root 축약형의 타언어 링크는 배포 시 앞자리가 이 문서의 언어로 채워져
+    죽으므로 `doc-lang` 이 아니라 `pair` 이고, 배포 절대 URL 은 host 를 박은 것
+    자체가 오류이며 비운영 host 는 별도 표기 코드(`abs-docs-env`)를 받는다.
+    """
     other = "en" if lang == "ko" else "ko"
+    slug = "/Open%20Source/agent-test"
     return [
         ("self-link",
          "./fix-links/#fix-links-controls", "#fix-links-controls"),
@@ -353,6 +361,17 @@ def expected_repairs(lang):
          "./overview.md#overview/#pricing", "./overview.md#pricing"),
         ("heading-frag",
          "./overview.md#keypair-legacy-slug", "./overview.md#key-pair"),
+        # ── 아래 4건: 로케일·표기 판정 변경 이후 ──────────────────────────
+        ("lang-site(site-root 타언어)",
+         f"{slug}/{other}/overview/#pricing", "./overview.md#pricing"),
+        ("abs-docs(운영 host)",
+         f"https://docs.nhncloud.com/{lang}{slug}/{lang}/overview/#pricing",
+         "./overview.md#pricing"),
+        ("abs-docs-env(alpha host)",
+         f"https://docs.alpha-nhncloud.com/{lang}{slug}/{lang}/overview/#pricing",
+         "./overview.md#pricing"),
+        ("legacy-jp(site-root)",
+         f"{slug}/jp/overview/#pricing", "./overview.md#pricing"),
     ]
 
 
@@ -385,7 +404,7 @@ for lang in langs:
     want, applied = apply_expected(base, lang)
     per_lang_missing[lang] = applied
     if new == want:
-        ok(f"(3) {lang}/fix-links.md 가 기대 결과와 바이트 동일 (정정 6건 · 그 외 보존)")
+        ok(f"(3) {lang}/fix-links.md 가 기대 결과와 바이트 동일 (정정 10건 · 그 외 보존)")
         continue
     wl, nl = want.splitlines(), new.splitlines()
     diffs = [(i + 1, w, n) for i, (w, n) in enumerate(zip(wl, nl)) if w != n]
@@ -410,7 +429,7 @@ for lang in langs:
         bad(f"(4) {lang} 에서 적용되지 않은 규칙: {', '.join(missed)}",
             "정정되지 않은 채 남았다 = /link-check 는 계속 NotOK 로 보고한다")
     else:
-        ok(f"(4) {lang} 6개 규칙이 모두 적용됨")
+        ok(f"(4) {lang} 10건의 정정이 모두 적용됨")
 
 pr_body = read(f"{tmp}/pr_body.md")
 
@@ -425,22 +444,36 @@ else:
     ok("(5) PR 본문 매핑 표가 규칙 이름을 싣는다")
 
 # (6) 고칠 수 없는 링크는 고치지 말고 보고 — 파일에 그대로 남고 PR 본문에 사유.
+def manual_targets(lang):
+    """고치지 말고 보고만 해야 하는 링크 — 사유가 네 가지로 다르다."""
+    notwin = "../en/heading-lint-demo.md" if lang == "ko" else "../ko/mermaid-sample.md"
+    return [
+        "./no-such-doc-e2e.md#nowhere",                    # 대상 파일 없음
+        "./overview.md#anchor-that-does-not-exist-e2e",    # anchor 확정 불가
+        notwin,                                            # 같은 언어 짝 없음
+        f"/{lang}/overview.md#key-pair",                   # 스니펫에 슬롯이 두 번
+    ]
+
+
 kept_all, reported_all = True, True
 for lang in langs:
     new = read(f"{tmp}/new/{lang}.md")
-    for target in ("./no-such-doc-e2e.md#nowhere",
-                   "./overview.md#anchor-that-does-not-exist-e2e"):
+    for target in manual_targets(lang):
         if f"]({target})" not in new:
             kept_all = False
             bad(f"(6) {lang} 에서 확인 불가 링크가 사라짐/바뀜: {target}",
                 "resolve 되는지 확인할 수 없는 재작성은 살아있는 링크를 404 로 만든다")
-for target in ("no-such-doc-e2e", "anchor-that-does-not-exist-e2e"):
-    if target not in pr_body:
+# PR 본문 보고 — 사유가 다른 네 가지가 각각 올라와야 한다. 앞의 둘은 target 이
+# 고유해 이름으로 찾고, 뒤의 둘은 target 이 다른 정정과 겹치므로(`key-pair` 는
+# heading-frag 의 결과이기도 하다) **사유 문구**로 찾는다.
+for needle in ("no-such-doc-e2e", "anchor-that-does-not-exist-e2e",
+               "같은 언어", "링크 target 위치를 특정할 수 없습니다"):
+    if needle not in pr_body:
         reported_all = False
-        bad(f"(6) PR 본문에 '{target}' 보고가 없음",
+        bad(f"(6) PR 본문에 '{needle}' 보고가 없음",
             "조용히 건너뛴 링크는 리뷰어에게 '승인된 링크' 로 읽힌다")
 if kept_all and reported_all:
-    ok("(6) 확인 불가 링크 2건 × 언어를 고치지 않고 PR 본문에 보고")
+    ok("(6) 확인 불가 링크 4건 × 언어를 고치지 않고 사유와 함께 PR 본문에 보고")
 
 # (7) LLM 2차 처리 상태는 항상 명시 — 'off' 도 사실이다.
 if "LLM 2차 처리" in pr_body:
@@ -487,7 +520,7 @@ echo
 echo "[5/6] 결과"
 if (( fails == 0 )); then
   echo "FIX_LINKS: OK"
-  echo "  링크 정정이 확인 가능한 6개 규칙만 적용하고 나머지는 보존/보고 (PR: $fix_pr_url)"
+  echo "  링크 정정이 확인 가능한 10건만 적용하고 나머지는 보존/보고 (PR: $fix_pr_url)"
   echo
   echo "[6/6] cleanup"
   exit 0

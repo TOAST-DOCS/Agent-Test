@@ -1,9 +1,9 @@
-<!-- pre-align:aligned sig=7e09fc5b0570 -->
+<!-- pre-align:aligned sig=bd7c613fa6f9 -->
 
 <a id="fix-links-overview"></a>
 ## 링크 정정 테스트 { #fix-links-overview }
 
-이 문서는 **링크 정정**(`dashboard/viewer/link_fix.py`, Jenkins `fix-links`) e2e 픽스처입니다.
+이 문서는 **링크 정정**(`dashboard/links/fix.py`, Jenkins `fix-links`) e2e 픽스처입니다.
 아래 섹션들은 결정적 규칙 하나씩을 겨냥해 **일부러 잘못 쓴 링크**를 담고 있고,
 `scripts/e2e-fix-links.sh` 가 정정 결과를 규칙별로 판정합니다.
 
@@ -46,6 +46,33 @@ heading 의 canonical id 로 바뀌어야 합니다.
 
 * [키페어(Key-pair)](./overview.md#keypair-legacy-slug)
 
+<a id="fix-links-langsite"></a>
+## lang-site { #fix-links-langsite }
+
+site-root 축약형이 **다른 언어**를 가리키는 링크입니다. 로케일 자리가 하나만 쓰여 있어 보이지만
+배포 시 앞자리가 이 문서의 언어로 채워져 `/ko/…/en/…` 가 되므로 죽은 링크입니다.
+같은 언어 짝으로 바뀌어야 합니다.
+
+* [과금 (site-root 타언어)](/Open%20Source/agent-test/en/overview/#pricing)
+
+<a id="fix-links-absdocs"></a>
+## abs-docs · abs-docs-env { #fix-links-absdocs }
+
+자기 repo 문서를 **배포 절대 URL** 로 가리키는 링크입니다. 같은 소스 파일이 alpha/beta/master
+셋 다에 배포되므로 어떤 host 를 박아도 최소 두 환경에서 틀립니다. 둘 다 상대 경로가 되어야
+하고, 비운영 host 는 별도 표기 코드(`abs-docs-env`)로 판정됩니다.
+
+* [과금 (운영 host)](https://docs.nhncloud.com/ko/Open%20Source/agent-test/ko/overview/#pricing)
+* [과금 (alpha host)](https://docs.alpha-nhncloud.com/ko/Open%20Source/agent-test/ko/overview/#pricing)
+
+<a id="fix-links-legacyjp"></a>
+## legacy-jp { #fix-links-legacyjp }
+
+2026-08 이전 일본어 세그먼트 `jp` 가 남은 링크입니다. `jp` 는 두 자리 모두 죽은 로케일이므로
+이 문서의 언어로 바뀌어야 합니다.
+
+* [과금 (레거시 jp)](/Open%20Source/agent-test/jp/overview/#pricing)
+
 <a id="fix-links-report"></a>
 ## 고치지 말고 보고만 해야 하는 링크 { #fix-links-report }
 
@@ -54,6 +81,12 @@ PR 본문의 "사람이 직접 확인해야 하는 부분" 표에 사유와 함�
 
 * [존재하지 않는 문서](./no-such-doc-e2e.md#nowhere)
 * [어느 anchor 인지 알 수 없음](./overview.md#anchor-that-does-not-exist-e2e)
+* [다른 언어에만 있는 문서](../en/heading-lint-demo.md)
+* [![그림](/ko/overview.md#key-pair)](/ko/overview.md#key-pair)
+
+위 네 건은 사유가 서로 다릅니다. 뒤의 두 건은 각각 **같은 언어 짝이 repo 에 없어** 언어만
+바꾸면 살아있는 링크가 404 가 되는 경우, 그리고 한 스니펫에 target 슬롯이 **두 번** 있어
+(이미지가 자기 자신을 가리키는 모양) 어느 쪽을 고쳐야 하는지 특정할 수 없는 경우입니다.
 
 <a id="fix-links-controls"></a>
 ## 정상 링크 모음 { #fix-links-controls }
@@ -65,6 +98,7 @@ PR 본문의 "사람이 직접 확인해야 하는 부분" 표에 사유와 함�
 * [개요 문서](./overview.md)
 * [개요 문서의 과금](./overview.md#pricing)
 * [개요 문서의 과금 (배포 URL 모양 — 코퍼스의 지배적 관행)](./overview/#pricing)
+* [다른 repo 가이드 (site-root — cross-repo 의 올바른 표기)](/Compute/Instance/ko/overview/)
 * [NHN Cloud](https://www.nhncloud.com/)
 
 코드 펜스 안의 링크는 링크로 취급하지 않으므로 역시 그대로 남아야 합니다.
