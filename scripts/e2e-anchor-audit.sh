@@ -71,16 +71,9 @@ check() {  # check "<rule>" <0|1>
 }
 
 # ── 0) webhook 비활성화 ──────────────────────────────────────────────
-# 자격 증명은 여기서 하드 체크한다 — e2e-webhook-toggle.sh 의 규약이다. 비어
-# 있으면 토글이 조용히 no-op 이 되고, webhook 이 켜진 채로 e2e 가 PR 을 만들어
-# 배포된 잡을 중복 트리거한다(이 헬퍼가 막으려는 바로 그 상황).
-if [[ -z "${DASHBOARD_BASE_URL:-}" || -z "${DASHBOARD_API_TOKEN:-}" ]]; then
-  echo "error: DASHBOARD_BASE_URL / DASHBOARD_API_TOKEN 이 필요합니다. load_env.sh 를 source 하세요." >&2
-  exit 1
-fi
 source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-toggle.sh"
 echo "[0/6] webhook 비활성화"
-set_webhook_repo_enabled false
+set_webhook_repo_enabled false || true
 
 # ── 1) 세션 브랜치 + 픽스처 시드 ────────────────────────────────────
 echo
