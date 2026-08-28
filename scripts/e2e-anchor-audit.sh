@@ -12,7 +12,9 @@
 #   4) korean-review 실행 — 기본은 로컬 review_pr.py (이 검사는 아직 배포 전이라
 #      로컬이 기본. --review api 로 배포 잡 경유도 가능)
 #   5) PR 의 마커 코멘트(`<!-- korean-review:anchor-audit -->`)를 읽어 규칙 판정
-#   6) upsert 재실행 — 코멘트가 쌓이지 않는지 확인
+#   5b) 인라인 코멘트 판정 — 지적이 해당 줄에 달렸는지, diff 밖 지적이
+#      가장 가까운 변경 줄로 옮겨 달렸는지
+#   6) upsert 재실행 — 요약·인라인 어느 쪽도 쌓이지 않는지 확인
 #
 # 픽스처를 alpha 에 commit 하지 않고 **세션 브랜치에 시드**하는 이유: 여기서
 # 필요한 것은 pre-align 산출물의 정교한 모양이 아니라 "정본 형태의 문서를 이렇게
@@ -313,6 +315,54 @@ ORDERPY
   check "(14) 한글 검수 리뷰가 후속 검증 코멘트보다 먼저 게시됨" $rc
 fi
 
+# ── 5b) 인라인 코멘트 판정 ──────────────────────────────────────────
+echo
+echo "[5b/6] 인라인 코멘트 판정"
+inline_json="$(gh api "repos/$REPO/pulls/$pr_number/comments" --paginate)"
+IN_F="$(mktemp)"; printf '%s' "$inline_json" > "$IN_F"
+INLINE_PY="$(mktemp)"
+cat > "$INLINE_PY" <<'INLINEPY'
+import json, sys
+mode, path = sys.argv[1], sys.argv[2]
+cs = [c for c in json.load(open(path, encoding="utf-8"))
+      if "korean-review:anchor-audit:" in (c.get("body") or "")]
+if mode == "count":
+    print(len(cs)); sys.exit(0)
+if mode == "has":            # has <file> <code>
+    f, code = sys.argv[3], sys.argv[4]
+    sys.exit(0 if any(c["path"].endswith(f) and f":{code}:" in c["body"]
+                      for c in cs) else 1)
+if mode == "line":           # line <file> <code> <expected diff line>
+    f, code, want = sys.argv[3], sys.argv[4], int(sys.argv[5])
+    sys.exit(0 if any(c["path"].endswith(f) and f":{code}:" in c["body"]
+                      and c.get("line") == want for c in cs) else 1)
+if mode == "nosuggestion":
+    sys.exit(1 if any("```suggestion" in c["body"] for c in cs) else 0)
+sys.exit(2)
+INLINEPY
+# mode 다음이 데이터 파일, 그 뒤가 mode 별 인자.
+inl() { local m="$1"; shift; python3 "$INLINE_PY" "$m" "$IN_F" "$@"; }
+
+n_inline="$(inl count)"
+echo "  anchor-audit 인라인 코멘트: ${n_inline}건"
+rc=0; [[ "${n_inline:-0}" -ge 10 ]] || rc=1
+check "(15) 지적이 인라인 코멘트로도 달림 (${n_inline}건)" $rc
+
+rc=0; inl has "anchor-audit-r3.md" "unmanaged-anchor-form" || rc=$?
+check "(16) 인라인 ← ko/…-r3.md unmanaged-anchor-form" $rc
+rc=0; inl has "anchor-audit-r5.md" "target-lang-anchor-edit" || rc=$?
+check "(17) 인라인 ← en/…-r5.md (번역본에도 달린다)" $rc
+
+# 핵심: diff 밖 지적의 재배치. r1 의 mismatch 는 heading(L5) 이야기지만 이 PR 이
+# 바꾼 줄은 앵커(L4) 뿐이라, L5 에 그대로 달면 GitHub 이 422 로 거절한다.
+rc=0; inl line "anchor-audit-r1.md" "attr-anchor-mismatch" 4 || rc=$?
+check "(18) diff 밖 지적(r1 L5)이 가장 가까운 변경 줄 L4 로 옮겨 달림" $rc
+
+rc=0; inl nosuggestion || rc=$?
+check "(19) 인라인에 클릭형 suggestion 블록이 없다" $rc
+
+rm -f "$IN_F" "$INLINE_PY"
+
 # ── 6) upsert — 다시 돌려도 코멘트가 쌓이지 않는다 ──────────────────
 echo
 echo "[6/6] 후속 검증 재실행 (upsert 확인)"
@@ -336,8 +386,16 @@ again="$(gh api "repos/$REPO/issues/$pr_number/comments" --paginate | python3 -c
 import json,sys
 print(sum(1 for c in json.load(sys.stdin) if '<!-- korean-review:anchor-audit -->' in (c.get('body') or '')))
 ")"
-check "(15) 재실행 후에도 마커 코멘트는 1개 (있다: $again)" \
+check "(20) 재실행 후에도 요약 코멘트는 1개 (있다: $again)" \
       "$([[ "$again" == "1" ]] && echo 0 || echo 1)"
+
+# 인라인에는 upsert 가 없다 — 마커 dedup 이 안 먹으면 재실행마다 사본이 쌓인다.
+again_inline="$(gh api "repos/$REPO/pulls/$pr_number/comments" --paginate | python3 -c "
+import json,sys
+print(sum(1 for c in json.load(sys.stdin) if 'korean-review:anchor-audit:' in (c.get('body') or '')))
+")"
+check "(21) 재실행 후에도 인라인은 ${n_inline}건 그대로 (있다: $again_inline)" \
+      "$([[ "$again_inline" == "$n_inline" ]] && echo 0 || echo 1)"
 
 echo
 echo "===================================================================="
