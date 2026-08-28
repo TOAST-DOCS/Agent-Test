@@ -28,6 +28,13 @@
 #                 세션 브랜치에서 ko 변형 PR 하나만 만들고 검수 잡을 태워
 #                 결과 리뷰의 구조 + fable 의미 품질을 확인 (align/translate
 #                 단계는 건너뜀). 기대: exit 0. ~15~30분.
+#   anchor-audit  — 한글 검수 **다음에** 도는 anchor id 후속 검증
+#                 (korean-review/app/anchor_audit.py). 금지 목록 6종을 세션
+#                 브랜치 픽스처로 재현한 PR 을 만들고, 마커 코멘트가 각 항목을
+#                 제 섹션에 잡는지 · 대조군/권장 경로를 조용히 지나가는지 ·
+#                 검수 리뷰가 먼저 게시되는지 · 재실행에 코멘트가 쌓이지 않는지
+#                 를 15개 규칙으로 판정. 결정적 점검이라 기대값은 하나 —
+#                 exit 0 + 15/15. ~3분(검수 LLM 포함).
 #   row-drop-repro — cloud-translate PR #283 회귀 최소 재현. version-guide.md 의
 #                 en/ja 가 `1.202602.1` 행을 결여한 stale 상태를 base 브랜치에
 #                 stale-ify 커밋으로 조성한 뒤, 이웃 문단만 짧게 수정해
@@ -170,9 +177,9 @@
 #
 # 별칭:
 #   all         — round2 / row-drop-repro-noreconcile 을 제외한 plan 전체
-#                 = webhook korean-review round1 table-suite row-drop-repro
-#                   llm-patch markup-churn retranslate concurrent fill-stubs
-#                   split-docs fix-links table-malformed
+#                 = webhook korean-review anchor-audit round1 table-suite
+#                   row-drop-repro llm-patch markup-churn retranslate concurrent
+#                   fill-stubs split-docs fix-links table-malformed
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #
@@ -260,7 +267,7 @@ while [[ $# -gt 0 ]]; do
       FS_ARGS+=("$1" "$2"); SD_ARGS+=("$1" "$2"); FL_ARGS+=("$1" "$2"); shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|table-malformed)
+    webhook|korean-review|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|table-malformed)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -269,7 +276,7 @@ while [[ $# -gt 0 ]]; do
       # "2026-08-24 실측" 참고. 현재 픽스처로는 LLM-patch 경로에 도달하지 못해
       # 이 plan 의 필수 조건(llm-patch>0)이 항상 실패한다. 픽스처가 갖춰지면
       # 여기에 다시 넣는다. 그때까지는 명시 지정으로만 실행.
-      PLANS+=(webhook korean-review round1 table-suite row-drop-repro
+      PLANS+=(webhook korean-review anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent fill-stubs
               split-docs fix-links table-malformed); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
@@ -374,6 +381,15 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^RESULT: (OK|FAIL)' "$log" | tail -n1 || true)"
     rules="$(grep -oE '^TABLE-MALFORMED: [0-9]+/[0-9]+ rules passed' "$log" | tail -n1 || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${rules:-<no-rules>}")
+  elif [[ "$plan" == "anchor-audit" ]]; then
+    # anchor id 후속 검증 — 금지 목록을 실제 PR 로 재현하고 마커 코멘트를 판정.
+    # 기대값이 하나뿐이다(15 rules 전부 PASS): 결정적 점검이라 "코드에 따라 exit 3
+    # 도 정상" 같은 여지가 없다.
+    bash "$REPO_ROOT/scripts/e2e-anchor-audit.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^ANCHOR_AUDIT: (OK|FAIL)' "$log" | tail -n1 || true)"
+    aa_pr="$(grep -oE '  PR:   https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${aa_pr:-<no-pr>}")
   elif [[ "$plan" == "korean-review" ]]; then
     # korean-review plan 은 별도 스크립트 — /api/ko-review 잡을 태우고
     # 결과 리뷰 규격 + fable 의미 검증. --engine/--model 은 korean-review
@@ -456,12 +472,14 @@ for plan in "${PLANS[@]}"; do
   # table-suite 는 번역 로직에 따라 기대값이 다르므로 exit 3 도 정상 허용
   if [[ "$plan" == "webhook" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "korean-review" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "anchor-audit" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "round1" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "concurrent" && $ec -ne 0 ]]; then overall=1; fi
   # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
   # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
   if [[ "$plan" == "fill-stubs" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
+        && "$plan" != "anchor-audit" \
         && "$plan" != "concurrent" && "$plan" != "fill-stubs" \
         && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
   # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
