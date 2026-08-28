@@ -56,6 +56,12 @@
 #       함께 보고 · 브랜치/PR 을 만들지 않음                 [local 전용, api=SKIP]
 #   (2) 실제 실행이 Fill PR 을 생성 (`Fill PR:` / head=fill-stubs/…)
 #   (3) body stub 이 채워짐 — 마커 제거 · 한글 잔류 0 · 본문 비어있지 않음
+#   (3b) 채운 본문의 **블록 구조가 ko 와 같음** — 문단·표(행 수)·코드 펜스·
+#        리스트(항목 수)의 종류와 개수. 이 축이 없으면 문단 하나가 통째로
+#        사라져도 (3)(마커 제거·한글 0·비어있지 않음)은 전부 통과한다:
+#        Agent-Test#728 에서 en 이 ko 두 문단 중 첫 문단을 잃은 채 커밋됐고
+#        ja 는 같은 입력에서 둘 다 냈다. 길이로는 못 잡는다 — ko→en 은
+#        부풀어서, 내용을 절반 버린 결과가 원문보다 길었다 (206자 → 244자).
 #   (3t) 표 stub 의 열 수·데이터 행 수가 ko 와 같음 (번역이 표를 접지 않았는지)
 #   (3c) 코드 stub 의 펜스 내용이 ko 와 **바이트 동일** (코드는 번역 대상이 아니다)
 #   (4) body stub 의 heading/anchor 줄이 **바이트 동일** (id 가 흔들리지 않는다)
@@ -460,6 +466,79 @@ def table_shape(raw):
     return ncol, len(rows) - sep - 1
 
 
+LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
+TBL_SEP = re.compile(r"^\s*\|[\s:\-|]+\|\s*$")
+
+
+def block_shape(text):
+    """블록의 종류와 개수 — ``["text", "table(3)", "fence", "list(2)"]``.
+
+    구조는 **빈 줄이 아니라 자기 문법으로** 찾는다. 빈 줄로 블록을 자르면
+    ko 의 관행(구조 앞 빈 줄 생략)과 번역본의 서식 차이만으로 어긋난다 —
+    실측: `component-guide.md#…-1-set-the-password` 는 같은 내용인데 ko 가
+    펜스를 문단에 붙여 써 `[text, text, list(2)]`, ja 는 띄워서
+    `[text, fence, text, list(2)]` 로 읽혔다.
+
+    줄 수는 세지 않는다 (ko 는 한 문장 한 줄, 번역은 다시 감싼다). 표의 행과
+    리스트의 항목은 번역이 바꿔서는 안 되는 개수라 태그에 싣는다.
+
+    도구(`translate_fill_stubs._block_shape`)와 **같은 원리로 따로 구현**한다 —
+    판정이 판정 대상을 import 하면 아무것도 검증하지 못한다.
+    """
+    lines = text.splitlines()
+    out, prose = [], False
+
+    def flush():
+        nonlocal prose
+        if prose:
+            out.append("text")
+            prose = False
+
+    i, n = 0, len(lines)
+    while i < n:
+        stripped = lines[i].strip()
+        if not stripped:
+            flush(); i += 1; continue
+        m = FENCE.match(lines[i])
+        if m:
+            flush()
+            close = m.group(1)[0] * 3
+            i += 1
+            while i < n and not lines[i].strip().startswith(close):
+                i += 1
+            i += 1
+            out.append("fence"); continue
+        if stripped.startswith("|") and i + 1 < n and TBL_SEP.match(lines[i + 1]):
+            flush()
+            i += 2
+            rows = 0
+            while i < n and lines[i].strip().startswith("|"):
+                rows += 1; i += 1
+            out.append(f"table({rows})"); continue
+        if LIST_ITEM.match(lines[i]):
+            flush()
+            items = 0
+            while i < n:
+                cur = lines[i]
+                if LIST_ITEM.match(cur):
+                    items += 1; i += 1; continue
+                if cur.strip() and cur[:1] in (" ", "\t"):
+                    i += 1; continue            # 감싼 항목의 이어지는 줄
+                if not cur.strip():             # 느슨한 리스트
+                    j = i + 1
+                    while j < n and not lines[j].strip():
+                        j += 1
+                    if j < n and (LIST_ITEM.match(lines[j])
+                                  or lines[j][:1] in (" ", "\t")):
+                        i = j; continue
+                break
+            out.append(f"list({items})"); continue
+        prose = True
+        i += 1
+    flush()
+    return out
+
+
 def fence_body(raw):
     """펜스 안 줄들 — 코드는 번역 대상이 아니므로 ko 와 바이트 동일해야 한다."""
     out, inside = [], False
@@ -495,7 +574,14 @@ for lang, (base, new) in langs.items():
     for bid in body_ids:
         sec = new.get(bid, "")
         if BODY_MARK in sec:
-            bad(f"(3) {lang} #{bid} 에 stub 마커가 남아 있음")
+            # 도구가 검증에 걸려 **보류**한 것일 수 있다 (블록 구조/heading
+            # 형식). 그래도 이 e2e 의 계약은 "이 stub 들은 채워진다" 이므로
+            # 실패는 실패인데, 원인이 "조용히 안 됨" 과 "거절함" 은 다르다.
+            held = [l for l in read(f"{tmp}/pr_body.md").splitlines()
+                    if "보류" in l and bid in l]
+            bad(f"(3) {lang} #{bid} 에 stub 마커가 남아 있음",
+                *(["도구가 보류로 보고함: " + held[0].strip()[:160]] if held else
+                  ["PR 본문에 보류 보고도 없음 — 조용히 빠졌다"]))
             continue
         if HANGUL.search(sec):
             bad(f"(3) {lang} #{bid} 에 한글 잔류 — 번역되지 않은 채 ko 가 복사됨",
@@ -505,6 +591,21 @@ for lang, (base, new) in langs.items():
             bad(f"(3) {lang} #{bid} 본문이 비어 있음 ({len(body_of(sec).strip())}자)")
             continue
         ok(f"(3) {lang} #{bid} 본문이 번역되어 채워짐 ({len(body_of(sec).strip())}자)")
+
+        # (3b) 블록 구조 보존 — 이 축이 없으면 문단 유실이 (3) 을 통과한다
+        ko_shape = block_shape(body_of(ko.get(bid, "")))
+        new_shape = block_shape(body_of(sec))
+        if ko_shape == new_shape:
+            ok(f"(3b) {lang} #{bid} 블록 구조가 ko 와 동일 {ko_shape}")
+        else:
+            first = next((i for i in range(max(len(ko_shape), len(new_shape)))
+                          if ko_shape[i:i + 1] != new_shape[i:i + 1]), 0)
+            bad(f"(3b) {lang} #{bid} 블록 구조가 ko 와 다름",
+                f"ko : {ko_shape}", f"new: {new_shape}",
+                f"{first + 1}번째: ko {ko_shape[first:first + 1] or ['없음']} ↔ "
+                f"new {new_shape[first:first + 1] or ['없음']}",
+                "문단·표 행·펜스·리스트 항목이 사라지면 길이로는 안 보인다 "
+                "— ko→en 은 부풀어서 절반을 버려도 결과가 더 길다")
 
         # (3t) 표 모양 보존
         ko_tbl = table_shape(ko.get(bid, ""))
@@ -564,6 +665,13 @@ for lang, (base, new) in langs.items():
                     *[l for l in sec.splitlines() if HANGUL.search(l)][:3])
             else:
                 ok(f"(5) {lang} #{hid} heading+본문 번역 · anchor/레벨(h{lvl_ko}) 보존")
+                ko_shape = block_shape(body_of(ko.get(hid, "")))
+                new_shape = block_shape(body_of(sec))
+                if ko_shape == new_shape:
+                    ok(f"(3b) {lang} #{hid} 블록 구조가 ko 와 동일 {ko_shape}")
+                else:
+                    bad(f"(3b) {lang} #{hid} 블록 구조가 ko 와 다름",
+                        f"ko : {ko_shape}", f"new: {new_shape}")
 
 # (6) 채운 섹션 밖은 바이트 동일
 for lang, (base, new) in langs.items():
