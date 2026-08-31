@@ -25,11 +25,17 @@
 #
 #   self-link    ./fix-links/#fix-links-controls          → #fix-links-controls
 #   relativize   https://github.com/…/blob/alpha/<L>/overview.md#pricing
-#                                                          → ./overview.md#pricing
-#   relativize   /<L>/overview.md#pricing                  → ./overview.md#pricing
-#   lang-dir     ../<다른 언어>/overview.md#pricing        → ./overview.md#pricing
+#                                                          → ./overview/#pricing
+#   relativize   /<L>/overview.md#pricing                  → ./overview/#pricing
+#   lang-dir     ../<다른 언어>/overview.md#pricing        → ./overview/#pricing
 #   nested-frag  ./overview.md#overview/#pricing           → ./overview.md#pricing
 #   heading-frag ./overview.md#keypair-legacy-slug         → ./overview.md#key-pair
+#
+# 경로를 새로 쓰는 규칙(relativize·lang-dir·lang-site·abs-docs·legacy-jp)의
+# 결과는 코퍼스의 지배적 표기인 `./overview/` 다 (`links/fix.py ::
+# _relative_path`). fragment 만 고치는 규칙(nested-frag·heading-frag)은 저자가
+# 쓴 경로 표기를 그대로 두므로 `./overview.md` 가 남는 것이 맞다 — 섹션을 고르는
+# 일이지 경로를 다시 쓰는 일이 아니다.
 #
 # ── 실행 옵션은 '⭐ 권장 옵션' ────────────────────────────────────────────
 # `/link-check` 페이지의 권장 옵션 버튼과 **같은 조합**으로 돌린다:
@@ -354,26 +360,26 @@ def expected_repairs(lang):
          "./fix-links/#fix-links-controls", "#fix-links-controls"),
         ("relativize(abs-github)",
          f"https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/{lang}/overview.md#pricing",
-         "./overview.md#pricing"),
+         "./overview/#pricing"),
         ("relativize(repo-rooted)",
-         f"/{lang}/overview.md#pricing", "./overview.md#pricing"),
+         f"/{lang}/overview.md#pricing", "./overview/#pricing"),
         ("lang-dir",
-         f"../{other}/overview.md#pricing", "./overview.md#pricing"),
+         f"../{other}/overview.md#pricing", "./overview/#pricing"),
         ("nested-frag",
          "./overview.md#overview/#pricing", "./overview.md#pricing"),
         ("heading-frag",
          "./overview.md#keypair-legacy-slug", "./overview.md#key-pair"),
         # ── 아래 4건: 로케일·표기 판정 변경 이후 ──────────────────────────
         ("lang-site(site-root 타언어)",
-         f"{slug}/{other}/overview/#pricing", "./overview.md#pricing"),
+         f"{slug}/{other}/overview/#pricing", "./overview/#pricing"),
         ("abs-docs(운영 host)",
          f"https://docs.nhncloud.com/{lang}{slug}/{lang}/overview/#pricing",
-         "./overview.md#pricing"),
+         "./overview/#pricing"),
         ("abs-docs-env(alpha host)",
          f"https://docs.alpha-nhncloud.com/{lang}{slug}/{lang}/overview/#pricing",
-         "./overview.md#pricing"),
+         "./overview/#pricing"),
         ("legacy-jp(site-root)",
-         f"{slug}/jp/overview/#pricing", "./overview.md#pricing"),
+         f"{slug}/jp/overview/#pricing", "./overview/#pricing"),
     ]
 
 
