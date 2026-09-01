@@ -35,14 +35,24 @@
 #      (B) 가 그것을 되돌리는지 보려면 정답에서 출발해야 한다)
 #   3) head 브랜치에서 **ko 의 fragment 만** 변경 (+ 한글 대조군 한 문장) → PR
 #   4) 로컬 translate_pr.py 실행
-#   5) 판정 (아래 8개 규칙)
+#   5) 판정 (아래 10개 규칙)
 #   6) cleanup
 #
-# ── 시드하는 링크 4종 ─────────────────────────────────────────────────────
+# ── 시드하는 링크 6종 ─────────────────────────────────────────────────────
 #   1. 절대 public docs URL   → 두 자리 모두 대상 언어로 (수정 대상)
 #   2. 절대 **gov** docs URL  → ko 그대로 (공공 가이드는 ko 전용 — 옮기면 404)
 #   3. site-root 축약형        → 언어 자리 치환 (기존 동작, 회귀 감시)
 #   4. 진짜 외부 URL           → 손대지 않음 (기존 동작, 회귀 감시)
+#   5. **외부 URL 이 공백 없이 바로 앞에 붙은** 가이드 URL
+#      (`[https://external…/docs](https://docs…/ko/…/ko/…/)`) → 가이드 URL 만 이동
+#   6. **URL 안의 URL** (리디렉터 `?u=<가이드 URL>`) → 어느 쪽도 손대지 않음
+#
+# 5·6 은 규칙끼리 서로의 토큰을 침범하지 않는지 보는 모양이다. "외부 URL 복원"
+# 을 호스트 negative lookahead 로만 막으면 매치 **시작 위치** 만 검사하게 되어,
+# 5 는 greedy prefix 가 `](` 를 건너 뒷자리를 ko 로 되돌리고 (`/en/…/ko/…`),
+# 6 은 바깥 호스트가 외부라 같은 일이 안쪽 URL 에 일어난다 — 둘 다 (B) 와 **같은
+# 죽은 링크**이고, 규칙을 URL 토큰 단위 배타 분기로 돌려야 닫힌다. 코퍼스 실측
+# 0건이라 사고는 아니지만, 계약이 그것을 금지한다고 적혀 있다.
 #
 # ── 판정 규칙 ─────────────────────────────────────────────────────────────
 #   (1) 번역 성공 (exit 0, PARTIAL 없음)
@@ -53,6 +63,8 @@
 #   (6) site-root 축약형은 대상 언어로 치환
 #   (7) 외부 URL(yaml.org)은 그대로
 #   (8) 같은 유닛의 한글 대조군이 실제로 번역됨 (수정이 번역을 삼키지 않는지)
+#   (9) 인접 외부 URL 뒤의 가이드 URL 이 두 자리 모두 자기 언어
+#  (10) URL 안의 URL 이 짝 불일치가 아니다
 #
 # Usage:
 #   source ./load_env.sh
@@ -111,6 +123,13 @@ trap cleanup EXIT
 SLUG="Security/Secure%20Key%20Manager"
 GOV_URL="https://docs.gov-nhncloud.com/ko/${SLUG}/ko/getting-started-gov/"
 EXT_URL="https://yaml.org/"
+# 인접/포함 모양 — 규칙끼리 서로의 토큰을 침범하지 않는지 본다. `console-guide`
+# stem 을 쓰는 이유는 (2) 의 `getting-started` 판정과 섞이지 않게 하기 위해서다.
+EXT_LABEL_URL="https://external.example.com/docs"
+# 리디렉터 URL 의 **안쪽** 은 ko 그대로가 정답이다 — URL 안의 URL 은 어느 쪽
+# 기준으로도 안전하게 판정할 수 없어 후처리가 손대지 않는다. 그래서 en/ja
+# 시드도 ko 를 품은 채로 심는다 (이것이 "이미 올바른 상태" 다).
+RED_URL="https://link.example.com/r?u=https://docs.nhncloud.com/ko/${SLUG}/ko/console-guide/"
 OLD_FRAG="#e2e-old-anchor"
 NEW_FRAG="#create-a-key-store"
 
@@ -122,7 +141,7 @@ fixture_ko() {  # $1: fragment
 <a id="e2e-docs-url-locale"></a>
 ### 암호화 키 저장소 설정
 
-암호화 볼륨을 만들려면 미리 [키 저장소를 생성](https://docs.nhncloud.com/ko/${SLUG}/ko/getting-started/$1)해야 합니다. 공공 환경은 [공공 가이드](${GOV_URL})를 참고합니다. 오브젝트 스토리지 인증은 [인증 및 권한](/Storage/Object%20Storage/ko/api-guide/#auth)을, YAML 형식은 [Yaml 홈페이지](${EXT_URL})를 참고합니다.
+암호화 볼륨을 만들려면 미리 [키 저장소를 생성](https://docs.nhncloud.com/ko/${SLUG}/ko/getting-started/$1)해야 합니다. 공공 환경은 [공공 가이드](${GOV_URL})를 참고합니다. 오브젝트 스토리지 인증은 [인증 및 권한](/Storage/Object%20Storage/ko/api-guide/#auth)을, YAML 형식은 [Yaml 홈페이지](${EXT_URL})를 참고합니다. 콘솔 사용법은 [${EXT_LABEL_URL}](https://docs.nhncloud.com/ko/${SLUG}/ko/console-guide/)에서, 리디렉터를 거치는 주소는 ${RED_URL} 에서 확인합니다.
 EOF
 }
 
@@ -132,7 +151,7 @@ fixture_en() {  # $1: fragment
 <a id="e2e-docs-url-locale"></a>
 ### Encryption Key Store Settings
 
-To create an encrypted volume, you must first [create a key store](https://docs.nhncloud.com/en/${SLUG}/en/getting-started/$1). For the public sector environment, see the [public sector guide](${GOV_URL}). For Object Storage authentication, see [Authentication and Authorization](/Storage/Object%20Storage/en/api-guide/#auth), and for the YAML format, see the [Yaml homepage](${EXT_URL}).
+To create an encrypted volume, you must first [create a key store](https://docs.nhncloud.com/en/${SLUG}/en/getting-started/$1). For the public sector environment, see the [public sector guide](${GOV_URL}). For Object Storage authentication, see [Authentication and Authorization](/Storage/Object%20Storage/en/api-guide/#auth), and for the YAML format, see the [Yaml homepage](${EXT_URL}). For console usage, see [${EXT_LABEL_URL}](https://docs.nhncloud.com/en/${SLUG}/en/console-guide/), and see ${RED_URL} for the redirector form.
 EOF
 }
 
@@ -142,7 +161,7 @@ fixture_ja() {  # $1: fragment
 <a id="e2e-docs-url-locale"></a>
 ### 暗号化キーストア設定
 
-暗号化ボリュームを作成するには、あらかじめ[キーストアを作成](https://docs.nhncloud.com/ja/${SLUG}/ja/getting-started/$1)する必要があります。公共環境は[公共ガイド](${GOV_URL})を参照してください。オブジェクトストレージの認証は[認証および権限](/Storage/Object%20Storage/ja/api-guide/#auth)を、YAML 形式は [Yaml ホームページ](${EXT_URL})を参照してください。
+暗号化ボリュームを作成するには、あらかじめ[キーストアを作成](https://docs.nhncloud.com/ja/${SLUG}/ja/getting-started/$1)する必要があります。公共環境は[公共ガイド](${GOV_URL})を参照してください。オブジェクトストレージの認証は[認証および権限](/Storage/Object%20Storage/ja/api-guide/#auth)を、YAML 形式は [Yaml ホームページ](${EXT_URL})を参照してください。コンソールの使い方は [${EXT_LABEL_URL}](https://docs.nhncloud.com/ja/${SLUG}/ja/console-guide/) を、リダイレクタ経由のアドレスは ${RED_URL} を参照してください。
 EOF
 }
 
@@ -162,7 +181,7 @@ echo "[1/6] 세션 브랜치 생성"
 git fetch -q origin "$BASE_SOURCE"
 git checkout -q -B "$SESSION_BRANCH" "origin/$BASE_SOURCE"
 
-echo "[2/6] 시드 — ko/en/ja 에 링크 4종 (en/ja 는 이미 올바른 상태)"
+echo "[2/6] 시드 — ko/en/ja 에 링크 6종 (en/ja 는 이미 올바른 상태)"
 for lang in ko en ja; do
   [[ -f "$lang/$DOC" ]] || { echo "error: $lang/$DOC 없음" >&2; exit 1; }
 done
@@ -244,9 +263,9 @@ for lang in en ja; do
     || bad "(2) $lang/$DOC 를 번역 브랜치에서 못 읽음"
 done
 
-python3 - "$tmpdir" "$SLUG" "$NEW_FRAG" "$GOV_URL" "$EXT_URL" <<'PY' || fails=$((fails + 1))
+python3 - "$tmpdir" "$SLUG" "$NEW_FRAG" "$GOV_URL" "$EXT_URL" "$EXT_LABEL_URL" <<'PY' || fails=$((fails + 1))
 import io, re, sys, pathlib
-tmp, slug, frag, gov_url, ext_url = sys.argv[1:6]
+tmp, slug, frag, gov_url, ext_url, ext_label_url = sys.argv[1:7]
 DOCS = re.compile(r'https?://docs\.[a-z0-9.-]*nhncloud\.com/[^\s)"\'<>\]]*')
 rc = 0
 for lang in ("en", "ja"):
@@ -309,6 +328,36 @@ for lang in ("en", "ja"):
         print(f"  PASS  (7) {lang} 외부 URL({ext_url}) 보존")
     else:
         print(f"  FAIL  (7) {lang} 외부 URL 이 바뀜"); rc = 1
+
+    # (9) 외부 URL 이 **공백 없이 바로 앞에 붙은** 가이드 URL.
+    #     "외부 URL 복원" 을 호스트 lookahead 로만 막으면 매치 시작 위치만
+    #     검사하게 되어, greedy prefix 가 `](` 를 건너 뒤 가이드 URL 의 뒷자리를
+    #     ko 로 되돌린다. 규칙을 URL 토큰 단위 배타 분기로 돌린 뒤에야 닫힌다.
+    adj = f"[{ext_label_url}](https://docs.nhncloud.com/{lang}/{slug}/{lang}/console-guide/)"
+    if adj in t:
+        print(f"  PASS  (9) {lang} 인접 외부 URL 뒤의 가이드 URL 두 자리 모두 /{lang}/")
+    else:
+        print(f"  FAIL  (9) {lang} 인접 외부 URL 뒤의 가이드 URL 이 어긋남")
+        for m in DOCS.finditer(t):
+            if "console-guide" in m.group(0):
+                print("        실제:", m.group(0))
+        rc = 1
+
+    # (10) URL 안의 URL (리디렉터). 후처리는 어느 쪽도 손대지 않는 것이 정답이라
+    #      안쪽은 ko 그대로여야 하고, 무엇보다 **한 자리만** 밀려 짝이 어긋나면
+    #      안 된다 — 수정 전에는 바깥 호스트가 외부라 복원 패스가 뒷자리를 ko 로
+    #      되돌려 `/en/…/ko/…` 를 만들었다.
+    red = re.search(r'https?://link\.example\.com/r\?u=(https?://docs\.[^\s)"\'<>\]]*)', t)
+    if red is None:
+        print(f"  FAIL  (10) {lang} 리디렉터 URL 이 사라짐"); rc = 1
+    else:
+        inner = red.group(1)
+        path = inner.split(".com", 1)[1].split("#")[0].split("?")[0]
+        slots = [s for s in path.split("/") if s in ("ko", "en", "ja")]
+        if len(set(slots)) <= 1:
+            print(f"  PASS  (10) {lang} URL 안의 URL 이 짝 불일치가 아님")
+        else:
+            print(f"  FAIL  (10) {lang} URL 안의 URL 이 짝 불일치 — {inner}"); rc = 1
 raise SystemExit(rc)
 PY
 
