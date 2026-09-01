@@ -269,6 +269,6 @@ webhook がこの PR を ko-review / translate ジョブにルーティングす
 webhook がこの PR を ko-review / translate ジョブにルーティングするかどうかを検証した後、マーカーは定期的に restore-alpha-origin で整理されます。
 
 <a id="e2e-docs-url-locale"></a>
-### 暗号化キーストア設定
+### 暗号化キーストア設定 { #e2e-docs-url-locale }
 
 暗号化されたボリュームを作成するには、事前に[キーストアを作成](https://docs.nhncloud.com/ja/Security/Secure%20Key%20Manager/ja/getting-started/#create-a-key-store)する必要があります。公開環境では[公開ガイド](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/)を参照してください。オブジェクトストレージ認証は[認証と権限](/Storage/Object%20Storage/ja/api-guide/#auth)を、YAML 形式は[YAML ホームページ](https://yaml.org/)を参照してください。この文は翻訳対照群です(20260901-034437)。
