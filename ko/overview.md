@@ -267,6 +267,6 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 마커는 정기 restore-alpha-origin 으로 정리됩니다.
 
 <a id="e2e-docs-url-locale"></a>
-### 암호화 키 저장소 설정
+### 암호화 키 저장소 설정 { #e2e-docs-url-locale }
 
 암호화 볼륨을 만들려면 미리 [키 저장소를 생성](https://docs.nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started/#create-a-key-store)해야 합니다. 공공 환경은 [공공 가이드](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/)를 참고합니다. 오브젝트 스토리지 인증은 [인증 및 권한](/Storage/Object%20Storage/ko/api-guide/#auth)을, YAML 형식은 [Yaml 홈페이지](https://yaml.org/)를 참고합니다. 이 문장은 번역 대조군입니다 (20260901-005909).
