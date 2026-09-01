@@ -241,12 +241,26 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## Additional section for testing { #test-added-section }
+<a id="webhook-e2e-20260728-110207"></a>
+## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
-This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying whether the webhook routes this PR to ko-review / translate jobs,
+the marker is cleaned up by the regular restore-alpha-origin.
+
+<a id="webhook-e2e-20260728-111509"></a>
+## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying whether the webhook routes this PR to the ko-review / translate job, the marker is cleaned up by the regular restore-alpha-origin.
+
+<a id="webhook-e2e-20260728-113416"></a>
+## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying whether webhook routes this PR to ko-review / translate jobs, the marker is cleaned up by the regular restore-alpha-origin.
 
 <a id="e2e-docs-url-locale"></a>
 ### Encryption Key Store Settings
 
-To create an encrypted volume, you must first [create a key store](https://docs.nhncloud.com/en/Security/Secure%20Key%20Manager/en/getting-started/#e2e-old-anchor). For the public sector environment, see the [public sector guide](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/). For Object Storage authentication, see [Authentication and Authorization](/Storage/Object%20Storage/en/api-guide/#auth), and for the YAML format, see the [Yaml homepage](https://yaml.org/).
+To create an encrypted volume, you must first [create a key store](https://docs.nhncloud.com/en/Security/Secure%20Key%20Manager/en/getting-started/#create-a-key-store). For public environments, see [Public Guide](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/). For Object Storage authentication, see [Authentication and Authorization](/Storage/Object%20Storage/en/api-guide/#auth), and for YAML format, see [YAML Homepage](https://yaml.org/). This sentence is a translation control sample (20260901-034437).
