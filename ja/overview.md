@@ -252,3 +252,8 @@ $ sudo update-grub
 ## テスト用の追加セクション { #test-added-section }
 
 このセクションは翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じアンカー ID が割り当てられているか確認します。
+
+<a id="e2e-docs-url-locale"></a>
+### 暗号化キーストア設定
+
+暗号化ボリュームを作成するには、あらかじめ[キーストアを作成](https://docs.nhncloud.com/ja/Security/Secure%20Key%20Manager/ja/getting-started/#e2e-old-anchor)する必要があります。公共環境は[公共ガイド](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/)を参照してください。オブジェクトストレージの認証は[認証および権限](/Storage/Object%20Storage/ja/api-guide/#auth)を、YAML 形式は [Yaml ホームページ](https://yaml.org/)を参照してください。コンソールの使い方は [https://external.example.com/docs](https://docs.nhncloud.com/ja/Security/Secure%20Key%20Manager/ja/console-guide/) を、リダイレクタ経由のアドレスは https://link.example.com/r?u=https://docs.nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/console-guide/ を参照してください。

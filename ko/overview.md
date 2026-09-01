@@ -265,3 +265,8 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
 webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
 마커는 정기 restore-alpha-origin 으로 정리됩니다.
+
+<a id="e2e-docs-url-locale"></a>
+### 암호화 키 저장소 설정
+
+암호화 볼륨을 만들려면 미리 [키 저장소를 생성](https://docs.nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started/#e2e-old-anchor)해야 합니다. 공공 환경은 [공공 가이드](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/)를 참고합니다. 오브젝트 스토리지 인증은 [인증 및 권한](/Storage/Object%20Storage/ko/api-guide/#auth)을, YAML 형식은 [Yaml 홈페이지](https://yaml.org/)를 참고합니다. 콘솔 사용법은 [https://external.example.com/docs](https://docs.nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/console-guide/)에서, 리디렉터를 거치는 주소는 https://link.example.com/r?u=https://docs.nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/console-guide/ 에서 확인합니다.
