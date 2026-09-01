@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=74b0e7f9672e -->
+<!-- pre-align:aligned sig=52b73c2b66cd -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 개요 { #compute-instance-overview }
