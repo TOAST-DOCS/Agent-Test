@@ -248,10 +248,25 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## テスト用の追加セクション { #test-added-section }
+<a id="webhook-e2e-20260728-110207"></a>
+## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
-このセクションは翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じアンカー ID が割り当てられているか確認します。
+このセクションは、scripts/e2e-webhook.sh が挿入した一時的なマーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングするかを検証した後、
+マーカーは定期的な restore-alpha-origin によってクリーンアップされます。
+
+<a id="webhook-e2e-20260728-111509"></a>
+## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
+
+このセクションは scripts/e2e-webhook.sh で挿入された一時マーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングするかどうかを検証した後、マーカーは定期的な restore-alpha-origin で整理されます。
+
+<a id="webhook-e2e-20260728-113416"></a>
+## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
+
+このセクションは scripts/e2e-webhook.sh が挿入した一時的なマーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングするかどうかを検証した後、
+マーカーは定期 restore-alpha-origin で整理されます。
 
 <a id="e2e-mirror-reuse"></a>
 ### ミラーケースA 再利用
@@ -261,14 +276,15 @@ $ sudo update-grub
 <a id="e2e-mirror-substitute"></a>
 ### ミラーケースB 置換
 
-コンソールの使い方は[コンソールガイド](/Security/Secure%20Key%20Manager/ja/console-guide/#e2e-mirror-old-b)を参照してください。
+コンソールの使い方は[コンソールガイド](/Security/Secure%20Key%20Manager/ja/console-guide/#e2e-mirror-new-b)を参照してください。
 
 <a id="e2e-mirror-giveup"></a>
 ### ミラーケースC 特定失敗
 
-APIは[APIガイド](https://docs.nhncloud.com/ja/Security/Secure%20Key%20Manager/ja/api-guide/#e2e-mirror-old-c)を参照してください。
+API については [API ガイド](/Security/Secure%20Key%20Manager/ja/api-guide/#e2e-mirror-new-c) を参照してください。
 
 <a id="e2e-mirror-control"></a>
 ### ミラー対照群
 
 このセクションはリンクのない散文の対照群です。
+この文は翻訳対照群です (20260901-063809)。
