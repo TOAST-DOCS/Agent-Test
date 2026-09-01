@@ -267,21 +267,23 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 마커는 정기 restore-alpha-origin 으로 정리됩니다.
 
 <a id="e2e-mirror-reuse"></a>
-### 미러 케이스 A 재사용
+### 미러 케이스 A 재사용 { #e2e-mirror-reuse }
 
-암호화 볼륨을 만들려면 먼저 콘솔에서 [키 저장소를 생성](/Security/Secure%20Key%20Manager/ko/getting-started/#e2e-mirror-old-a)합니다.
+암호화 볼륨을 만들려면 먼저 콘솔에서 [키 저장소를 생성](/Security/Secure%20Key%20Manager/ko/getting-started/#e2e-mirror-new-a)합니다.
 
 <a id="e2e-mirror-substitute"></a>
-### 미러 케이스 B 치환
+### 미러 케이스 B 치환 { #e2e-mirror-substitute }
 
-콘솔 사용법은 [콘솔 가이드](/Security/Secure%20Key%20Manager/ko/console-guide/#e2e-mirror-old-b)를 참고합니다.
+콘솔 사용법은 [콘솔 가이드](/Security/Secure%20Key%20Manager/ko/console-guide/#e2e-mirror-new-b)를 참고합니다.
 
 <a id="e2e-mirror-giveup"></a>
-### 미러 케이스 C 특정 실패
+### 미러 케이스 C 특정 실패 { #e2e-mirror-giveup }
 
-API는 [API 가이드](/Security/Secure%20Key%20Manager/ko/api-guide/#e2e-mirror-old-c)를 참고합니다.
+API는 [API 가이드](/Security/Secure%20Key%20Manager/ko/api-guide/#e2e-mirror-new-c)를 참고합니다.
 
 <a id="e2e-mirror-control"></a>
-### 미러 대조군
+### 미러 대조군 { #e2e-mirror-control }
 
 이 섹션은 링크가 없는 산문 대조군입니다.
+
+이 문장은 번역 대조군입니다 (20260901-063809).
