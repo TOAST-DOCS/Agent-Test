@@ -268,22 +268,22 @@ webhook がこの PR を ko-review / translate ジョブにルーティングす
 マーカーは定期的に restore-alpha-origin で整理されます。
 
 <a id="e2e-mirror-reuse"></a>
-### ミラーケースA 再利用
+### ミラーケースA 再利用 { #e2e-mirror-reuse }
 
 暗号化ボリュームを作成するには、まずコンソールで[キーストアを作成](/Security/Secure%20Key%20Manager/ja/getting-started/#e2e-mirror-new-a)します。
 
 <a id="e2e-mirror-substitute"></a>
-### ミラーケースB 置換
+### ミラーケースB 置換 { #e2e-mirror-substitute }
 
 コンソールの使い方は[コンソールガイド](/Security/Secure%20Key%20Manager/ja/console-guide/#e2e-mirror-new-b)を参照してください。
 
 <a id="e2e-mirror-giveup"></a>
-### ミラーケースC 特定失敗
+### ミラーケースC 特定失敗 { #e2e-mirror-giveup }
 
 APIは[APIガイド](/Security/Secure%20Key%20Manager/ja/api-guide/#e2e-mirror-new-c)を参照します。
 
 <a id="e2e-mirror-control"></a>
-### ミラー対照群
+### ミラー対照群 { #e2e-mirror-control }
 
 このセクションはリンクのない散文の対照群です。
 この文は翻訳対照群です (20260901-062914)。
