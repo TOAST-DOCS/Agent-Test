@@ -252,3 +252,23 @@ $ sudo update-grub
 ## テスト用の追加セクション { #test-added-section }
 
 このセクションは翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じアンカー ID が割り当てられているか確認します。
+
+<a id="e2e-mirror-reuse"></a>
+### ミラーケースA 再利用
+
+暗号化ボリュームを作成するには、まずコンソールで[キーストアを作成](/Security/Secure%20Key%20Manager/ja/getting-started/#e2e-mirror-new-a)します。
+
+<a id="e2e-mirror-substitute"></a>
+### ミラーケースB 置換
+
+コンソールの使い方は[コンソールガイド](/Security/Secure%20Key%20Manager/ja/console-guide/#e2e-mirror-old-b)を参照してください。
+
+<a id="e2e-mirror-giveup"></a>
+### ミラーケースC 特定失敗
+
+APIは[APIガイド](https://docs.nhncloud.com/ja/Security/Secure%20Key%20Manager/ja/api-guide/#e2e-mirror-old-c)を参照してください。
+
+<a id="e2e-mirror-control"></a>
+### ミラー対照群
+
+このセクションはリンクのない散文の対照群です。
