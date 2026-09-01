@@ -261,6 +261,6 @@ This section is a temporary marker inserted by scripts/e2e-webhook.sh.
 After verifying whether webhook routes this PR to ko-review / translate jobs, the marker is cleaned up by the regular restore-alpha-origin.
 
 <a id="e2e-docs-url-locale"></a>
-### Encryption Key Store Settings
+### Encryption Key Store Settings { #e2e-docs-url-locale }
 
 To create an encrypted volume, you must first [create a key store](https://docs.nhncloud.com/en/Security/Secure%20Key%20Manager/en/getting-started/#create-a-key-store). For public environments, see [Public Guide](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/). For Object Storage authentication, see [Authentication and Authorization](/Storage/Object%20Storage/en/api-guide/#auth), and for YAML format, see [YAML Homepage](https://yaml.org/). This sentence is a translation control sample (20260901-034437).
