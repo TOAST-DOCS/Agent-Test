@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
@@ -252,16 +254,16 @@ shell> mysql -uroot -P[changed port number]
 
 The default path of my.cnf is `/etc/my.cnf`, and NHN Cloud recommended variables are set as below:
 
-| Name | Description |
-| --- | --- |
-| default\_storage\_engine | Specify a default storage engine: Default is InnoDB with Online-DDL and transactions available. |
-| expire\_logs\_days | Set log expiration period for logs provided by binlog settings. Default is three days. |
-| innodb\_log\_file\_size | Specify the size of log files which save redo logs of transactions. <br>Recommended size is 256MB or higher in actual environment, and it is set as 512MB by default. In order for the changes to take effect, please restart the database. |
-| innodb\_file\_per\_table | When a table is deleted or truncated, the table space is immediately returned to the OS. |
-| innodb\_log\_files\_in\_group | Set the number of innodb\_log\_file files and use them in circular fashion: requires at least two. |
-| log_timestamps | Default log time of MySQL 5.7 is displayed in UTC time format; therefore, change log time to system local time. |
-| slow\_query\_log | Enable the slow\_query log option. Queries taking more than 10 seconds in accordance with long\_query\_time will be logged to the slow\_query\_log. |
-| sysdate-is-now | For sysdate, SQL with sysdate() used for replication results in discrepant time between Master and Slave, so sysdate() and now() functions will behave the same. |
+| Name | Description | Availability |
+| --- | --- | --- |
+| default\_storage\_engine | Specify a default storage engine: Default is InnoDB with Online-DDL and transactions available. | O |
+| expire\_logs\_days | Set log expiration period for logs provided by binlog settings. Default is three days. | Partial support |
+| innodb\_log\_file\_size | Specify the size of log files which save redo logs of transactions. <br>Recommended size is 256MB or higher in actual environment, and it is set as 512MB by default. In order for the changes to take effect, please restart the database. | O |
+| innodb\_file\_per\_table | When a table is deleted or truncated, the table space is immediately returned to the OS. | Partial support |
+| innodb\_log\_files\_in\_group | Set the number of innodb\_log\_file files and use them in circular fashion: requires at least two. | O |
+| log_timestamps | Default log time of MySQL 5.7 is displayed in UTC time format; therefore, change log time to system local time. | Partial support |
+| slow\_query\_log | Enable the slow\_query log option. Queries taking more than 10 seconds in accordance with long\_query\_time will be logged to the slow\_query\_log. | O |
+| sysdate-is-now | For sysdate, SQL with sysdate() used for replication results in discrepant time between Master and Slave, so sysdate() and now() functions will behave the same. | Partial support |
 
 <a id="description-of-mysql-directory"></a>
 ### Description of MySQL Directory { #description-of-mysql-directory }

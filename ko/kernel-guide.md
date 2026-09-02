@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=73ceeadcb5ee -->
+<!-- pre-align:aligned sig=780643946d52 -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > 커널 버전업 가이드 { #compute-instance-kernel-version-upgrade-guide }
@@ -11,6 +11,11 @@
 
 <a id="check-the-kernel-version"></a>
 ### 커널 버전 확인 { #check-the-kernel-version }
+
+| 설정 항목 | 설명 | 기본값 |
+|---|---|---|
+| 재시도 횟수 | 실패한 요청을 다시 시도하는 횟수입니다. | 3 |
+| 대기 시간 | 재시도 사이에 기다리는 시간(초)입니다. | 5 |
 
 현재 설치된 커널 버전을 확인합니다.
 
@@ -630,3 +635,15 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+
+<a id="test-added-table"></a>
+## 테스트용 신규 표 섹션 { #test-added-table }
+
+이 섹션은 표 번역 검증을 위해 새로 추가됐습니다. 아래 표의 머리글과 셀 텍스트가 모두 번역되어야 합니다.
+
+| 항목 | 설명 | 기본값 |
+|---|---|---|
+| 최대 노드 수 | 하나의 노드 풀에 생성할 수 있는 노드의 최대 개수입니다. | 10 |
+| 자동 확장 | 부하에 따라 노드 수를 자동으로 조정합니다. | 사용 안 함 |
+| 점검 주기 | 노드 상태를 점검하는 주기입니다. | 5분 |
