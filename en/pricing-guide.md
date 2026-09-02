@@ -1,5 +1,7 @@
+<!-- pre-align:aligned sig=28a7da0909f0 -->
+
 <a id="compute-instance-pricing-guide"></a>
-## Compute > Instance > Pricing guide
+## Compute > Instance > Pricing guide { #compute-instance-pricing-guide }
 
 This document summarizes the instance pricing plans and the limits each plan provides. Prices may vary by region and payment method; see the pricing calculator in the console for details.
 
