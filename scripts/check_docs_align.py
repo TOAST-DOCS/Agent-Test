@@ -20,6 +20,12 @@ e2e 파이프라인의 8단계(align PR)·17단계(번역 PR) 검증은 원래 `
   (6) 한 표 안 모든 행의 셀 개수가 헤더 셀 개수와 동일      [translate]
   (7) <br>/<br/> 개수와 info string 붙은 여는 펜스 개수가   [--markup]
       ko 와 일치 (markup-churn plan 의 미러링 판정)
+  (8) 표 앞/뒤의 빈 줄이 ko 와 일치                        [translate]
+      표 바로 뒤 줄이 비어있지 않으면 그 줄이 표의 행으로 흡수되고
+      (`<td>다음 문단</td>`), 표 바로 앞 줄이 비어있지 않으면 표가
+      아예 렌더되지 않는다. 둘 다 `|` 로 시작하는 줄만 세는 규칙 (3)·(6)
+      으로는 보이지 않는다 — ko 에 없는데 en/ja 에만 있으면 번역이
+      만든 것이다 (cloud-translate #793).
 
 마지막 줄은 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" — e2e 스크립트가
 `grep -q '^ALIGNMENT: OK'` 로 읽는 계약이므로 바꾸지 말 것.
@@ -147,11 +153,15 @@ def split_cells(line: str) -> list[str]:
 
 
 class Table:
-    def __init__(self, header: str, sep: str, rows: list[str], line_no: int):
+    def __init__(self, header: str, sep: str, rows: list[str], line_no: int,
+                 end_line: int = 0):
         self.header = header
         self.sep = sep
         self.rows = rows
         self.line_no = line_no
+        # 표의 마지막 줄(구분선만 있으면 그 줄)의 1-based line 번호. 규칙 (8) 이
+        # 표 바로 앞/뒤 줄을 보는 데 쓴다.
+        self.end_line = end_line or line_no
 
     @property
     def ncols(self) -> int:
@@ -173,9 +183,11 @@ def parse_tables(lines: list[str]) -> tuple[list[Table], list[int]]:
         if not run:
             return
         if len(run) >= 3 and SEP_RE.match(run[1][1]):
-            tables.append(Table(run[0][1], run[1][1], [l for _, l in run[2:]], run[0][0] + 1))
+            tables.append(Table(run[0][1], run[1][1], [l for _, l in run[2:]],
+                                run[0][0] + 1, run[-1][0] + 1))
         elif len(run) == 2 and SEP_RE.match(run[1][1]):
-            tables.append(Table(run[0][1], run[1][1], [], run[0][0] + 1))
+            tables.append(Table(run[0][1], run[1][1], [],
+                                run[0][0] + 1, run[-1][0] + 1))
         else:
             orphans.extend(i + 1 for i, _ in run)
 
@@ -398,6 +410,52 @@ def check_doc(root: str, rel: str, mode: str, markup: bool,
                 fails.append(f"(6) {lang}: 표#{n}(line {t.line_no}, 헤더 {ncols}셀) "
                              f"셀 수 불일치 {bad[:4]}")
 
+    # (8) 표 앞/뒤의 빈 줄 — ko 와 대조
+    #
+    # 규칙 (3)·(6) 은 `|` 로 시작하는 줄만 표로 본다. 그래서 표 바로 뒤에
+    # 빈 줄 없이 문단이 오는 상태를 "표 밖의 문단" 으로 읽고 통과시킨다 —
+    # 그러나 mkdocs(python-markdown tables) 는 그 줄을 표의 데이터 행으로
+    # 흡수한다(`<td>다음 문단</td>`). 반대로 표 바로 '앞' 줄이 비어있지
+    # 않으면(heading 은 예외) 표가 통째로 렌더되지 않고 파이프가 그대로
+    # 보인다. 둘 다 배포 화면에서만 드러나는 조용한 손상이다.
+    #
+    # ko 원문에도 같은 모양이 흔히 있으므로(작성 관례) 개수를 절대값으로
+    # 보지 않고 **같은 순번의 ko 표와 대조**해, ko 에 없는데 번역본에만
+    # 생긴 경우만 FAIL 로 잡는다 (cloud-translate #793).
+    def _boundary(lines_: list[str], t: Table) -> tuple[bool, bool]:
+        """(앞줄이 표를 막는가, 뒷줄이 표에 흡수되는가)."""
+        before_i, after_i = t.line_no - 2, t.end_line        # 0-based
+        def blocking(i: int) -> bool:
+            if i < 0 or i >= len(lines_):
+                return False
+            ln = lines_[i]
+            if not ln.strip() or TABLE_LINE_RE.match(ln):
+                return False
+            return True
+        prev_blocks = blocking(before_i) and not lines_[before_i].lstrip().startswith("#")
+        return prev_blocks, blocking(after_i)
+
+    if len(base_tables) == len(parsed[SOURCE][0]):
+        for lang in LANGS:
+            if lang == SOURCE:
+                continue
+            tables, _ = parsed[lang]
+            if len(tables) != len(base_tables):
+                continue                      # (3) 이 이미 FAIL 로 잡는다
+            for n, (bt, tt) in enumerate(zip(base_tables, tables), 1):
+                ko_pre, ko_post = _boundary(docs[SOURCE], bt)
+                pre, post = _boundary(docs[lang], tt)
+                if post and not ko_post:
+                    fails.append(
+                        f"(8) {lang}: 표#{n}(line {tt.line_no}) 바로 뒤 줄에 빈 줄이 없다 "
+                        f"— 렌더 시 표의 행으로 흡수됨 (line {tt.end_line + 1}: "
+                        f"{docs[lang][tt.end_line].strip()[:40]!r}), ko 는 정상")
+                if pre and not ko_pre:
+                    fails.append(
+                        f"(8) {lang}: 표#{n}(line {tt.line_no}) 바로 앞 줄에 빈 줄이 없다 "
+                        f"— 표가 렌더되지 않음 (line {tt.line_no - 1}: "
+                        f"{docs[lang][tt.line_no - 2].strip()[:40]!r}), ko 는 정상")
+
     # (7) 마크업 미러링 (--markup)
     #
     # 개수 '일치' 를 요구하지 않는다 — 픽스처 baseline 자체가 언어별로 조금
@@ -471,7 +529,7 @@ def main() -> int:
         return 2
 
     known = load_known_leftovers(args.known_leftovers)
-    rules = "1,2" if (args.mode == "align" and not args.markup) else "1-6"
+    rules = "1,2" if (args.mode == "align" and not args.markup) else "1-6,8"
     if args.markup:
         rules += ",7"
     print(f"검사 대상 {len(rels)} 파일, 규칙 {rules} (mode={args.mode}, root={root})")

@@ -640,6 +640,68 @@ elif mutation == "add_new_table":
     lines += block
     out = join(lines)
 
+elif mutation == "add_new_table_before_text":
+    # 문서 '중간' 의 기존 문단 바로 앞에 신규 표를 끼워 넣는다 — 표 바로 뒤에
+    # 내용이 오는 배치. cloud-translate #793 shape A 재현용:
+    # 삽입된 표의 trailing 빈 줄이 유실되면 그 다음 문단이 표의 데이터 행으로
+    # 흡수된다 (`<td>다음 문단</td>`). 규칙 (3)·(6) 은 `|` 로 시작하는 줄만
+    # 표로 보므로 못 잡고, 규칙 (8) 만이 잡는다.
+    block = [
+        "| 설정 항목 | 설명 | 기본값 |",
+        "|---|---|---|",
+        "| 재시도 횟수 | 실패한 요청을 다시 시도하는 횟수입니다. | 3 |",
+        "| 대기 시간 | 재시도 사이에 기다리는 시간(초)입니다. | 5 |",
+        "",
+    ]
+    at, fence = None, False
+    for i, l in enumerate(lines):
+        if re.match(r'^\s*(```|~~~)', l):
+            fence = not fence
+            continue
+        if fence or i == 0:
+            continue
+        # 앞이 빈 줄인 산문 줄 (heading·anchor·표·목록·인용 아님)
+        if (lines[i-1].strip() == "" and l.strip()
+                and not HEAD.match(l) and not is_anchor(l) and not is_table_row(l)
+                and not re.match(r'^\s*([-*+>]|\d+\.)\s', l)):
+            at = i
+            break
+    if at is None:
+        raise SystemExit(f"add_new_table_before_text: no plain paragraph in {path}")
+    lines[at:at] = block
+    out = join(lines)
+
+elif mutation == "add_new_table_after_table":
+    # 기존 표 '바로 뒤' 에 (빈 줄 하나를 두고) 또 다른 신규 표를 넣는다.
+    # 삽입 표가 앞 표에 붙으면 두 표가 하나로 병합되고 새 표의 `|---|`
+    # 구분선이 데이터 행(`<td>---</td>`)으로 보인다 — 규칙 (3) 의 표 개수
+    # 검사가 잡는다. 그 뒤에 원래 오던 내용까지 함께 검증되므로 규칙 (8) 도 탄다.
+    block = [
+        "",
+        "| 코드 | 의미 |",
+        "|---|---|",
+        "| RETRY | 재시도 가능한 일시적 오류입니다. |",
+        "| FATAL | 재시도해도 실패하는 오류입니다. |",
+    ]
+    end, fence = None, False
+    for i, l in enumerate(lines):
+        if re.match(r'^\s*(```|~~~)', l):
+            fence = not fence
+            continue
+        if fence:
+            continue
+        if (is_table_row(l) and i + 1 < len(lines)
+                and re.match(r'^\s*\|[\s\-:|]+\|\s*$', lines[i+1])):
+            j = i + 2
+            while j < len(lines) and is_table_row(lines[j]):
+                j += 1
+            end = j            # 표 다음 줄 (보통 빈 줄)
+            break
+    if end is None:
+        raise SystemExit(f"add_new_table_after_table: no table in {path}")
+    lines[end:end] = block
+    out = join(lines)
+
 elif mutation == "edit_row_desc_cell":
     # 첫 표의 '두 번째' 데이터 행 마지막 셀(설명) 안에 문장 추가 — 셀 개수 불변.
     # spec-guide.md 픽스처(결함 D): en/ja 는 stale-ify 로 'Not Null' 컬럼이 제거된
@@ -862,7 +924,16 @@ declare -a PLAN_LLM_PATCH=(
 #   feature-matrix.md : 표 중간 행 삽입 + 헤더 셀 수정 + 마지막 두 행 순서 교환
 #                       + (둘째 표) 마지막 행 삭제
 #   public-api.md     : 기존 행 셀 수정 + 행 추가 (round1 과 동일한 정상 케이스)
-#   kernel-guide.md   : 표가 없던 문서에 신규 섹션+표 추가 (표 0→1)
+#   kernel-guide.md   : 표가 없던 문서에 신규 섹션+표 추가 (표 0→1) + 문서
+#                       중간 문단 '앞' 에 신규 표 삽입 (add_new_table_before_text).
+#                       후자는 cloud-translate #793 shape A — 삽입 표의 trailing
+#                       빈 줄이 유실되면 다음 문단이 표의 행으로 흡수된다.
+#                       규칙 (3)·(6) 은 `|` 로 시작하는 줄만 표로 보므로 통과시키고
+#                       규칙 (8) 만이 잡는다.
+#   public-api.md 2   : 기존 표 바로 뒤에 또 다른 신규 표 삽입
+#                       (add_new_table_after_table). 새 표가 앞 표에 붙으면 두
+#                       표가 하나로 병합되고 `|---|` 구분선이 데이터 행으로
+#                       보인다 — 규칙 (3) 의 표 개수 검사가 잡는다.
 #   troubleshooting   : 대조군 (변경 없음 — en/ja 무변경이어야 정상)
 declare -a PLAN_TABLE_SUITE=(
   "edit_body|ko/version-guide.md"
@@ -879,6 +950,8 @@ declare -a PLAN_TABLE_SUITE=(
   "change_table_row|ko/public-api.md"
   "add_table_row|ko/public-api.md"
   "add_new_table|ko/kernel-guide.md"
+  "add_new_table_before_text|ko/kernel-guide.md"
+  "add_new_table_after_table|ko/public-api.md"
   "noop|ko/troubleshooting-guide.md"
 )
 # --plan markup-churn : 코스메틱 마크업 churn + 소수의 실제 내용 변경.
