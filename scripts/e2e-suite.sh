@@ -161,6 +161,14 @@
 #                 engine=env · lang-parity+cross-context)으로 돌린다 — 이 잡의
 #                 유일한 위험 지점이 DRY-RUN 해제라, e2e 가 반드시 그 경로를
 #                 지나가야 한다. 기대: exit 0 / FIX_LINKS: OK.
+#   preserve    — preserve-existing 반영 검증 (e2e-preserve-existing.sh).
+#                 full 재번역 + --preserve-existing 이 실제로 걸렸는지를 로그가
+#                 아니라 **산출물**로 본다: 한 섹션의 ko 산문만 바꾼 뒤 나머지
+#                 섹션의 en/ja 가 바이트 동일하게 남는지. 픽스처는 실행 시점에
+#                 생성되며 CLI 의 @file 한도(25,000 토큰)를 반드시 넘는다 —
+#                 넘지 않으면 수정 전 코드도 통과해 회귀를 못 잡는다. 대조군
+#                 (--no-preserve-existing) 런과 churn 을 비교해 바이트 동일이
+#                 preserve 때문임을 확정한다. 기대: exit 0 / PRESERVE: OK.
 #   table-malformed — 표 reconcile 의 **선정** 가드 (e2e-table-malformed.sh).
 #                 세션 base 에 표 3개를 시드한다: (A) ko 셀에 실제 줄바꿈이
 #                 들어가 표가 끊긴 것, (B) 세 언어가 같은 스키마인데 대상 행
@@ -268,7 +276,7 @@ while [[ $# -gt 0 ]]; do
       FS_ARGS+=("$1" "$2"); SD_ARGS+=("$1" "$2"); FL_ARGS+=("$1" "$2"); shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|table-malformed)
+    webhook|korean-review|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|table-malformed|preserve)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -279,7 +287,7 @@ while [[ $# -gt 0 ]]; do
       # 여기에 다시 넣는다. 그때까지는 명시 지정으로만 실행.
       PLANS+=(webhook korean-review anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent fill-stubs
-              split-docs fix-links table-malformed); shift ;;
+              split-docs fix-links table-malformed preserve); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -371,6 +379,15 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^FIX_LINKS: (OK|FAIL)' "$log" | tail -n1 || true)"
     fix_pr="$(grep -oE 'Fix PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fix_pr:-<no-pr>}")
+  elif [[ "$plan" == "preserve" ]]; then
+    # preserve-existing 반영 — 자체 스크립트. --engine/--model 은 넘기지 않는다:
+    # 이 plan 이 검증하는 결함은 CLI 엔진의 @file 한도라서 엔진이 고정이어야
+    # 의미가 있다 (api 엔진은 시스템 프롬프트 인라인이라 애초에 이 결함이 없다).
+    bash "$REPO_ROOT/scripts/e2e-preserve-existing.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^PRESERVE: (OK|FAIL)' "$log" | tail -n1 || true)"
+    kept="$(grep -oE '안 바뀐 섹션 바이트 동일 [0-9]+/[0-9]+ \([0-9]+%\)' "$log" | tail -n1 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${kept:-<no-ratio>}")
   elif [[ "$plan" == "table-malformed" ]]; then
     # 표 선정 가드 — 자체 스크립트. 픽스처가 **의도적으로 malformed 한 원문**
     # 이라 table-suite 에 얹을 수 없다: check_docs_align.py 는 세 언어가 모두
@@ -479,9 +496,12 @@ for plan in "${PLANS[@]}"; do
   # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
   # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
   if [[ "$plan" == "fill-stubs" && $ec -ne 0 ]]; then overall=1; fi
+  # preserve 도 기대값이 하나다 — 반영됐거나 안 됐거나이고, exit 3 여지가 없다.
+  if [[ "$plan" == "preserve" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
         && "$plan" != "anchor-audit" \
         && "$plan" != "concurrent" && "$plan" != "fill-stubs" \
+        && "$plan" != "preserve" \
         && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
   # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
   # 마크업 미러링이 동작하지 않은 것이므로 suite 실패로 잡는다.
