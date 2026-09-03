@@ -76,7 +76,7 @@ SESSION_BRANCH="e2e-preserve/$TS"
 HEAD_BRANCH="translate-test-preserve/$TS"
 CONTROL_BRANCH="translate-test-preserve-control/$TS"
 DOC="preserve-sample.md"
-SECTIONS=200        # en 이 ~118,000자 = ~30,000 토큰이 되도록 (한도 25,000 초과가 이 e2e 의 전제)
+SECTIONS=240        # en 이 ~128,000자 = ~33,000 토큰이 되도록 (한도 25,000 초과가 이 e2e 의 전제)
 KEEP=0
 CONTROL=1
 
@@ -155,14 +155,7 @@ KO_BODY = """
 | body.field{i}Name | String | {i}번 필드의 이름 |
 | body.field{i}Count | Integer | {i}번 필드의 개수 |
 
-```json
-{{
-  "field{i}Id": "id-{i}",
-  "field{i}Name": "name-{i}"
-}}
-```
-
-{i}번 섹션의 마지막 설명 문장입니다. 이 문장은 재번역 여부를 줄 단위로 판정할 때
+{code}{i}번 섹션의 마지막 설명 문장입니다. 이 문장은 재번역 여부를 줄 단위로 판정할 때
 쓰입니다.
 """
 
@@ -179,14 +172,7 @@ sample below differ per section, so they can be told apart.
 | body.field{i}Name | String | Name of field {i} |
 | body.field{i}Count | Integer | Count of field {i} |
 
-```json
-{{
-  "field{i}Id": "id-{i}",
-  "field{i}Name": "name-{i}"
-}}
-```
-
-The closing sentence of section {i}. This sentence is what the line-level
+{code}The closing sentence of section {i}. This sentence is what the line-level
 verdict is measured on.
 """
 
@@ -203,14 +189,7 @@ JA_BODY = """
 | body.field{i}Name | String | フィールド {i} の名前 |
 | body.field{i}Count | Integer | フィールド {i} の個数 |
 
-```json
-{{
-  "field{i}Id": "id-{i}",
-  "field{i}Name": "name-{i}"
-}}
-```
-
-セクション {i} の最後の説明文です。この文は再翻訳の有無を行単位で判定するために
+{code}セクション {i} の最後の説明文です。この文は再翻訳の有無を行単位で判定するために
 使われます。
 """
 
@@ -227,11 +206,18 @@ HEADS = {
 }
 BODIES = {"ko": KO_BODY, "en": EN_BODY, "ja": JA_BODY}
 
+# 코드블록은 5섹션마다 하나. 전 섹션에 넣었더니 청크당 코드블록이 23개가 되어
+# (max_chunk_chars 10,000 안에 섹션 22개) haiku 의 펜스 세기 자체가 판정 대상이
+# 돼 버렸다. 블록은 남겨야 fence-protected skeleton × preserve baseline 상호작용을
+# 계속 잡을 수 있으므로 (그 결함을 이 e2e 가 처음 잡았다) 밀도만 낮춘다.
+CODE = ('```json\n{{\n  "field{i}Id": "id-{i}",\n  "field{i}Name": "name-{i}"\n}}\n```\n\n')
+
 sizes = {}
 for lang in ("ko", "en", "ja"):
     parts = [HEADS[lang]]
     for i in range(1, n_sections + 1):
-        parts.append(BODIES[lang].format(i=i))
+        code = CODE.format(i=i) if i % 5 == 0 else ""
+        parts.append(BODIES[lang].format(i=i, code=code))
     text = "".join(parts)
     path = os.path.join(lang, doc)
     io.open(path, "w", encoding="utf-8", newline="").write(text)
@@ -324,13 +310,31 @@ else
   bad "(1) 번역 실패/부분 (exit $tx_rc)"
 fi
 
-# 번역 결과를 세션에서 받아온다 (번역 잡은 head 브랜치에 커밋한다).
-git fetch -q origin "$HEAD_BRANCH"
-git checkout -q "$HEAD_BRANCH"
-git reset -q --hard "origin/$HEAD_BRANCH"
+# 번역 결과는 head 브랜치가 아니라 **번역 잡이 만든 별도 브랜치**에 있다
+# (worker 가 base 에서 `translate/<...>` 를 떠서 그 위에 커밋하고 PR 을 연다).
+fetch_translated() {   # $1: 로그, $2: 받을 디렉터리 → 성공 시 0
+  local log="$1" dest="$2" url br
+  url="$(grep -oE 'Translation PR: https://[^ ]+' "$log" | tail -1 | awk '{print $NF}')"
+  if [[ -z "$url" ]]; then echo "  (번역 PR 미생성)"; return 1; fi
+  echo "  번역 PR: $url"
+  e2e_label_pr "$REPO" "$url"
+  br="$(gh pr view "$url" --repo "$REPO" --json headRefName --jq .headRefName)"
+  git fetch -q origin "$br" || return 1
+  mkdir -p "$dest"
+  local lang
+  for lang in en ja; do
+    git show "origin/$br:$lang/$DOC" > "$dest/$lang.md" 2>/dev/null || return 1
+  done
+  return 0
+}
 
-changed_sections() {   # $1: lang → 시드와 다른 섹션 번호를 줄바꿈으로
-  python3 - "$tmpdir/seed/$1.md" "$1/$DOC" <<'PY'
+if ! fetch_translated "$LOG" "$tmpdir/out"; then
+  bad "(2-5) 번역 산출물을 읽지 못했다 — 이후 검사 불가"
+  echo; echo "판정: FAIL ($fails) — 로그: $LOG"; KEEP=1; exit 1
+fi
+
+changed_sections() {   # $1: lang, $2: 산출 디렉터리 → 시드와 다른 섹션 번호
+  python3 - "$tmpdir/seed/$1.md" "$2/$1.md" <<'PY'
 import io, re, sys
 seed = io.open(sys.argv[1], encoding="utf-8", newline="").read()
 now = io.open(sys.argv[2], encoding="utf-8", newline="").read()
@@ -355,7 +359,7 @@ PY
 }
 
 for lang in en ja; do
-  mapfile -t changed < <(changed_sections "$lang")
+  mapfile -t changed < <(changed_sections "$lang" "$tmpdir/out")
   printf '        %s: 바뀐 섹션 %d개 %s\n' "$lang" "${#changed[@]}" "${changed[*]:-}"
   if [[ " ${changed[*]-} " == *" $TARGET_SEC "* ]]; then
     ok "(2) $lang: 섹션 $TARGET_SEC 이 재번역됐다"
@@ -414,11 +418,11 @@ if (( CONTROL )); then
   run_translate "$CTRL_LOG" --no-preserve-existing "$SESSION_BRANCH" "$ctrl_pr_url"
   ctrl_rc=$?
   set -e
-  git fetch -q origin "$CONTROL_BRANCH"
-  git checkout -q "$CONTROL_BRANCH"
-  git reset -q --hard "origin/$CONTROL_BRANCH"
+  if ! fetch_translated "$CTRL_LOG" "$tmpdir/ctrl"; then
+    bad "(6) 대조군 산출물을 읽지 못했다"
+  fi
   for lang in en ja; do
-    mapfile -t cchanged < <(changed_sections "$lang")
+    mapfile -t cchanged < <(changed_sections "$lang" "$tmpdir/ctrl")
     eval "have=\${PRESERVE_CHANGED_$lang}"
     printf '        %s: preserve ON %s개 vs OFF %d개\n' "$lang" "$have" "${#cchanged[@]}"
     if (( ${#cchanged[@]} > have )); then
