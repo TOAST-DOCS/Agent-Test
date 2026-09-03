@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=17d7019d2237 -->
+
 <!-- pre-align:aligned sig=e2epreserve -->
 
 <a id="preserve-e2e"></a>
@@ -114,8 +116,8 @@
 | body.field7Name | String | 7번 필드의 이름 |
 | body.field7Count | Integer | 7번 필드의 개수 |
 
-7번 섹션의 마지막 설명 문장입니다. 이 문장은 재번역 여부를 줄 단위로 판정할 때
-쓰입니다.
+7번 섹션의 마지막 설명 문장을 20260903-114126 에 고쳤습니다. 이 섹션만 재번역되어야 하고
+나머지 섹션은 기존 번역이 그대로 남아야 합니다.
 
 <a id="preserve-sec-8"></a>
 ### 보존 섹션 8 { #preserve-sec-8 }
