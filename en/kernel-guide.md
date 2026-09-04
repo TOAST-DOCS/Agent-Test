@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=73ceeadcb5ee -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=780643946d52 -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > Kernel Version Upgrade Guide { #compute-instance-kernel-version-upgrade-guide }
@@ -11,6 +13,11 @@
 
 <a id="check-the-kernel-version"></a>
 ### Check the Kernel Version { #check-the-kernel-version }
+
+| Setting | Description | Default Value |
+|---|---|---|
+| Number of retries | Number of times a failed request is retried | 3 |
+| Wait time | Time (in seconds) to wait between retries | 5 |
 
 Check the currently installed kernel version.
 
@@ -98,6 +105,7 @@ kernelshark.x86_64
 
 <a id="install-the-kernel-without-specifying-a-version"></a>
 #### Install the kernel without specifying a version
+
 If you don't specify a version, the package is searched based on the latest version of the major version.
 
 ```
@@ -131,6 +139,7 @@ kernelshark.x86_64
 
 <a id="install-the-kernel-install-the-latest-kernel"></a>
 #### Install the latest kernel
+
 If you don't specify a version, the latest version is installed. 
 
 When you install the kernel, you also install the dependency packages **kernel-core and** **kernel-modules**.
@@ -189,6 +198,7 @@ Reboot the OS to apply the kernel update.
 
 <a id="select-create-a-configuration-file-for-the-grub2-bootloader"></a>
 ### <span style="color:#e11d21;">**[Select].**</span> Create a configuration file for the GRUB2 bootloader { #select-create-a-configuration-file-for-the-grub2-bootloader }
+
 Update the system's boot menu to reflect the newly installed kernel or other boot items.
 
 dnf, yum will automatically update the GRUB2 configuration file.
@@ -429,6 +439,7 @@ kernelshark.x86_64                                                         1:1.2
 
 <a id="rocky-linux-9-install-the-kernel-install-the-kernel-without-specifying-a-version"></a>
 #### Install the kernel without specifying a version
+
 If you don't specify a version, the package is searched based on the latest version of the major version.
 
 ```
@@ -478,6 +489,7 @@ kernelshark.x86_64                                                         1:1.2
 
 <a id="rocky-linux-9-install-the-kernel-install-the-latest-kernel"></a>
 #### Install the latest kernel
+
 If you don't specify a version, the latest version is installed. 
 
 When you install the kernel, you also install the dependency packages **kernel-core and** **kernel-modules**.
@@ -562,6 +574,7 @@ Reboot the OS to apply the kernel update.
 
 <a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader"></a>
 ### <span style="color:#e11d21;">**[Select].**</span> Create a configuration file for the GRUB2 bootloader { #rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader }
+
 Update the system's boot menu to reflect the newly installed kernel or other boot items.
 
 dnf, yum will automatically update the GRUB2 configuration file.
@@ -623,3 +636,14 @@ Reboot the OS for the boot order change to take effect.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+<a id="test-added-table"></a>
+## New test table section { #test-added-table }
+
+This section has been added to verify table translation. All headers and cell text in the table below must be translated.
+
+| Item | Description | Default Value |
+|---|---|---|
+| Maximum number of nodes | The maximum number of nodes that can be created in a single node pool. | 10 |
+| Auto Scaling | Automatically adjusts the number of nodes based on load. | Disabled |
+| Health check interval | The interval for checking node status. | 5 minutes |

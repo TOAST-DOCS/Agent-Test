@@ -1,9 +1,11 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=28a7da0909f0 -->
 
 <a id="compute-instance-pricing-guide"></a>
 ## Compute > Instance > Pricing guide { #compute-instance-pricing-guide }
 
-This document summarizes the instance pricing plans and the limits each plan provides. Prices may vary by region and payment method; see the pricing calculator in the console for details.
+This document outlines instance pricing plans and the limits provided for each plan. Pricing may vary depending on the region and billing method. For detailed pricing, you can check the billing calculator in the console. (Body modification test: This sentence should be reflected when the translation is re-executed.)
 
 <a id="plan-limits"></a>
 ### Limits by plan { #plan-limits }
@@ -12,6 +14,7 @@ This document summarizes the instance pricing plans and the limits each plan pro
 |---|---|---|---|
 | Basic plan | 10 | 1TB | Email support |
 | Standard plan | 50 | 10TB | Email and phone support |
+| Premium plan | 200 | 50TB | Dedicated engineer support |
 
 <a id="billing-notes"></a>
 ### Billing notes { #billing-notes }
@@ -25,3 +28,4 @@ Billing is calculated hourly, and storage charges continue to accrue even when a
 |---|---|
 | Backup cycle | A snapshot is taken automatically once per day. |
 | Retention period | Snapshots that have been created are kept for 30 days. |
+| Restore method | You can restore directly from the console. |
