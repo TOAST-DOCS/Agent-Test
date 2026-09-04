@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=73ceeadcb5ee -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
@@ -11,6 +13,11 @@
 
 <a id="check-the-kernel-version"></a>
 ### カーネルバージョン確認 { #check-the-kernel-version }
+
+| 設定項目 | 説明 | デフォルト値 |
+|---|---|---|
+| 再試行回数 | 失敗したリクエストを再度試行する回数です。 | 3 |
+| 待機時間 | 再試行の間に待つ時間(秒)です。 | 5 |
 
 現在インストールされているカーネルバージョンを確認します。
 
@@ -98,6 +105,7 @@ kernelshark.x86_64
 
 <a id="install-the-kernel-without-specifying-a-version"></a>
 #### バージョンを指定せずにカーネルをインストール
+
 バージョンを指定しない場合、majorバージョンの最新バージョンを基準にパッケージを検索します。
 
 ```
@@ -132,6 +140,7 @@ kernelshark.x86_64
 
 <a id="install-the-kernel-install-the-latest-kernel"></a>
 #### 最新カーネルインストール
+
 バージョンを指定しない場合、最新バージョンでインストールします。
 
 カーネルをインストールすると依存関係パッケージである**kernel-core**と **kernel-modules**も一緒にインストールします。
@@ -191,6 +200,7 @@ kernel-modules.x86_64                 4.18.0-553.16.1.el8_10                    
 
 <a id="select-create-a-configuration-file-for-the-grub2-bootloader"></a>
 ### <span style="color:#e11d21;">**[選択]**</span> GRUB2ブートローダの設定ファイル作成 { #select-create-a-configuration-file-for-the-grub2-bootloader }
+
 システムのブートメニューをアップデートして、新しくインストールされたカーネルやその他のブート項目を反映します。
 
 dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
@@ -433,6 +443,7 @@ kernelshark.x86_64                                                         1:1.2
 
 <a id="rocky-linux-9-install-the-kernel-install-the-kernel-without-specifying-a-version"></a>
 #### バージョンを指定せずにカーネルをインストール
+
 バージョンを指定しない場合、majorバージョンの最新バージョンを基準にパッケージを検索します。
 
 ```
@@ -482,6 +493,7 @@ kernelshark.x86_64                                                         1:1.2
 
 <a id="rocky-linux-9-install-the-kernel-install-the-latest-kernel"></a>
 #### 最新カーネルインストール
+
 バージョンを指定しない場合、最新バージョンでインストールします。
 
 カーネルをインストールすると依存関係パッケージである**kernel-core**と **kernel-modules**も一緒にインストールします。
@@ -568,6 +580,7 @@ kernel-modules-core.x86_64             5.14.0-503.23.2.el9_5          @baseos
 
 <a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader"></a>
 ### <span style="color:#e11d21;">**[選択]**</span> GRUB2ブートローダの設定ファイル作成 { #rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader }
+
 システムのブートメニューをアップデートして、新しくインストールされたカーネルやその他のブート項目を反映します。
 
 dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
@@ -630,3 +643,14 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+<a id="test-added-table"></a>
+## テスト用の新規テーブルセクション { #test-added-table }
+
+このセクションはテーブル翻訳検証のために新たに追加されました。以下のテーブルのヘッダーとセルテキストがすべて翻訳される必要があります。
+
+| 項目 | 説明 | デフォルト値 |
+|---|---|---|
+| 最大ノード数 | 1 つのノードプールで作成できるノードの最大数です。 | 10 |
+| 自動スケーリング | 負荷に応じてノード数を自動的に調整します。 | 無効 |
+| チェック間隔 | ノードの状態を確認する間隔です。 | 5 分 |
