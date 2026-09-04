@@ -154,6 +154,16 @@
 #                 (include 펼침 == 원본) 과 anchor 순서 보존을 바이트로 판정.
 #                 모델을 전혀 쓰지 않는 리팩터라 --engine/--model 은 무의미.
 #                 기대: exit 0 / SPLIT_DOCS: OK.
+#   fix-tables  — 깨진 표 정비 (e2e-fix-tables.sh). alpha 상주 픽스처
+#                 {ko,en,ja}/fix-tables-sample.md 에서 **ko 와 표가 어긋난
+#                 section** 세 모양(표가 사라짐 · 첫 열이 덮임 · 행 누락)을 ko 로
+#                 다시 만들고, 대조군 셋(정상 표 · 식별자 없는 표 · 앵커 없는
+#                 하위 heading)은 손대지 않는지 바이트/구조 비교로 판정.
+#                 fill-stubs 의 형제 plan 이지만 판정이 반대다 — 그쪽은 비어 있는
+#                 section 을 채우고 이쪽은 있는데 깨진 section 을 다시 만든다.
+#                 기본 --translate local; --translate api 는 dashboard
+#                 /api/fix-tables → Jenkins 경로를 태운다 (그 모드에선 dry-run
+#                 규칙 1건이 SKIP). 기대: exit 0 / FIX_TABLES: OK.
 #   fix-links   — 링크 정정 (e2e-fix-links.sh). alpha 상주 픽스처
 #                 {ko,en,ja}/fix-links.md 의 규칙 6종을 정정하고 대조군·펜스·
 #                 확인 불가 링크는 보존/보고하는지 바이트로 판정.
@@ -193,7 +203,7 @@
 #   all         — round2 / row-drop-repro-noreconcile / preserve 를 제외한 plan 전체
 #                 = webhook korean-review anchor-audit round1 table-suite
 #                   row-drop-repro llm-patch markup-churn retranslate concurrent
-#                   fill-stubs split-docs fix-links table-malformed
+#                   fill-stubs split-docs fix-links fix-tables table-malformed
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #                 preserve 는 전제(CLI 섹션 슬라이스)가 폐기되어 제외 — 위 plan 설명 참고.
@@ -256,6 +266,7 @@ KR_ARGS=()   # korean-review 로 넘길 인자 (--translate 만 의미 있음)
 FS_ARGS=()   # fill-stubs 로 넘길 인자 (--translate/--engine/--model)
 SD_ARGS=()   # split-docs 로 넘길 인자 (--translate 만 의미 있음 — 모델을 안 쓴다)
 FL_ARGS=()   # fix-links 로 넘길 인자 (--translate 만; 옵션은 ⭐ 권장 옵션 고정)
+FT_ARGS=()   # fix-tables 로 넘길 인자 (--translate/--engine/--model)
 PLANS=()
 SLEEP_BETWEEN=0
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
@@ -269,6 +280,7 @@ while [[ $# -gt 0 ]]; do
       # --verify 는 fable/py 판정 스위치라 fill-stubs 에 없다 (그 plan 은
       # 전부 바이트 비교라 의미 자체가 없음) — engine/model 만 전달.
       [[ "$1" != "--verify" ]] && FS_ARGS+=("$1" "$2")
+      [[ "$1" != "--verify" ]] && FT_ARGS+=("$1" "$2")
       shift 2 ;;
     --no-reuse-align)
       REUSE_ALIGN=0; shift ;;
@@ -279,10 +291,11 @@ while [[ $# -gt 0 ]]; do
       # local = 모든 단계를 로컬 실행 (webhook plan 만 예외 — 배포 경로 자체를
       # 검증하는 plan 이라 로컬 대응물이 없다). 세 스크립트에 모두 전달.
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2")
-      FS_ARGS+=("$1" "$2"); SD_ARGS+=("$1" "$2"); FL_ARGS+=("$1" "$2"); shift 2 ;;
+      FS_ARGS+=("$1" "$2"); SD_ARGS+=("$1" "$2"); FL_ARGS+=("$1" "$2")
+      FT_ARGS+=("$1" "$2"); shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|table-malformed|preserve)
+    webhook|korean-review|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -296,7 +309,7 @@ while [[ $# -gt 0 ]]; do
       # 항상 실패한다. 스크립트는 남겨 두고 명시 지정으로만 실행.
       PLANS+=(webhook korean-review anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent fill-stubs
-              split-docs fix-links table-malformed); shift ;;
+              split-docs fix-links fix-tables table-malformed); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -369,6 +382,14 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^FILL_STUBS: (OK|FAIL)' "$log" | tail -n1 || true)"
     fill_pr="$(grep -oE 'Fill PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fill_pr:-<no-pr>}")
+  elif [[ "$plan" == "fix-tables" ]]; then
+    # 깨진 표 정비 — 자체 스크립트. 픽스처가 alpha 상주라 align 프롤로그가
+    # 필요 없다 (fill-stubs 와 같은 모양).
+    bash "$REPO_ROOT/scripts/e2e-fix-tables.sh" "${FT_ARGS[@]}" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^FIX_TABLES: (OK|FAIL)' "$log" | tail -n1 || true)"
+    fix_pr="$(grep -oE 'Fix-tables PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fix_pr:-<no-pr>}")
   elif [[ "$plan" == "split-docs" ]]; then
     # 릴리스 노트 연도별 분리 — 자체 스크립트. 모델을 전혀 쓰지 않는 리팩터라
     # --engine/--model 은 의미가 없고, align 프롤로그도 필요 없다 (alpha 의
@@ -505,11 +526,14 @@ for plan in "${PLANS[@]}"; do
   # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
   # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
   if [[ "$plan" == "fill-stubs" && $ec -ne 0 ]]; then overall=1; fi
+  # fix-tables 도 기대값이 하나다 — 구조를 보는 plan 이라 exit 3 여지가 없다.
+  if [[ "$plan" == "fix-tables" && $ec -ne 0 ]]; then overall=1; fi
   # preserve 도 기대값이 하나다 — 반영됐거나 안 됐거나이고, exit 3 여지가 없다.
   if [[ "$plan" == "preserve" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
         && "$plan" != "anchor-audit" \
         && "$plan" != "concurrent" && "$plan" != "fill-stubs" \
+        && "$plan" != "fix-tables" \
         && "$plan" != "preserve" \
         && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
   # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
@@ -558,6 +582,7 @@ echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
 echo "  (fill-stubs: exit 0 = FILL_STUBS: OK. stub 섹션만 채우고 그 밖은 바이트 보존 · id 없는 stub 은 건너뜀)"
+echo "  (fix-tables: exit 0 = FIX_TABLES: OK. 표가 어긋난 section 만 ko 로 다시 만들고 대조군은 바이트 보존)"
 echo "  (row-drop-repro-noreconcile: exit 0/3 허용, 단 llm-patch=0 이면 실패 — 그 경로를 안 태운 실행)"
 echo "  (llm-patch: exit 0/3 허용, 단 llm-patch=0 이면 실패. ok/declined 로 fallback 판단을 확인)"
 [[ -n "$ALIGNED_BRANCH" ]] && echo "  (align 스냅샷: $ALIGNED_BRANCH — 재현/디버그용, 정리는 수동)"
