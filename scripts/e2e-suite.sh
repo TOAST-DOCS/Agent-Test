@@ -169,6 +169,11 @@
 #                 넘지 않으면 수정 전 코드도 통과해 회귀를 못 잡는다. 대조군
 #                 (--no-preserve-existing) 런과 churn 을 비교해 바이트 동일이
 #                 preserve 때문임을 확정한다. 기대: exit 0 / PRESERVE: OK.
+#                 **all 에서 제외 (2026-09-04)** — 이 plan 은 CLI 엔진의 preserve
+#                 섹션 슬라이스(cloud-translate #811/#817) 를 전제로 판정 (4)(5)
+#                 를 두었는데, 재번역을 api 엔진으로 처리하기로 하고 그 PR 들을
+#                 닫아서 main 에 대해 항상 실패한다. 스크립트는 그대로 두고
+#                 명시 지정(`scripts/e2e-suite.sh preserve`)으로만 실행.
 #   table-malformed — 표 reconcile 의 **선정** 가드 (e2e-table-malformed.sh).
 #                 세션 base 에 표 3개를 시드한다: (A) ko 셀에 실제 줄바꿈이
 #                 들어가 표가 끊긴 것, (B) 세 언어가 같은 스키마인데 대상 행
@@ -185,12 +190,13 @@
 #                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
 #
 # 별칭:
-#   all         — round2 / row-drop-repro-noreconcile 을 제외한 plan 전체
+#   all         — round2 / row-drop-repro-noreconcile / preserve 를 제외한 plan 전체
 #                 = webhook korean-review anchor-audit round1 table-suite
 #                   row-drop-repro llm-patch markup-churn retranslate concurrent
 #                   fill-stubs split-docs fix-links table-malformed
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
+#                 preserve 는 전제(CLI 섹션 슬라이스)가 폐기되어 제외 — 위 plan 설명 참고.
 #
 # 각 plan 은 자체 e2e 세션 브랜치(e2e/<ts>)에서 돌므로 서로 간섭하지 않지만,
 # 같은 작업 트리를 쓰므로 반드시 순차 실행 (이 러너가 보장). 개별 실행 로그는
@@ -285,9 +291,12 @@ while [[ $# -gt 0 ]]; do
       # "2026-08-24 실측" 참고. 현재 픽스처로는 LLM-patch 경로에 도달하지 못해
       # 이 plan 의 필수 조건(llm-patch>0)이 항상 실패한다. 픽스처가 갖춰지면
       # 여기에 다시 넣는다. 그때까지는 명시 지정으로만 실행.
+      # preserve 도 all 에서 제외 (2026-09-04) — 판정 (4)(5) 가 CLI preserve
+      # 섹션 슬라이스(cloud-translate #811/#817, 닫힘) 를 전제로 해 main 에서
+      # 항상 실패한다. 스크립트는 남겨 두고 명시 지정으로만 실행.
       PLANS+=(webhook korean-review anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent fill-stubs
-              split-docs fix-links table-malformed preserve); shift ;;
+              split-docs fix-links table-malformed); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
