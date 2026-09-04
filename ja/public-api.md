@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=8e6d00d3460b -->
 
 <a id="compute-instance-api-v2-guide"></a>
@@ -9,7 +11,13 @@
 
 | タイプ | リージョン | エンドポイント |
 |---|---|---|
-| compute | 韓国 (パンギョ) リージョン<br>韓国 (ピョンチョン) リージョン<br>韓国 (光州) リージョン<br>日本リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | 韓国(パンギョ) リージョン<br>韓国(ピョンチョン) リージョン<br>韓国(光州) リージョン<br>日本 リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com (行修正テスト) |
+| TEST-ROW | (新規行テスト) | (新規行テスト) |
+
+| コード | 意味 |
+|---|---|
+| RETRY | 再試行可能な一時的なエラーです。 |
+| FATAL | 再試行しても失敗するエラーです。 |
 
 API 応答には、このガイドに明示されていないフィールドが表示される場合があります。これらのフィールドは NHN Cloud の内部用途に使用され、予告なく変更される可能性があるため、使用しないでください。
 
