@@ -22,28 +22,32 @@ en/ja のコピーには、ko と表が食い違うセクションが意図的�
 
 <a id="fix-tables-missing"></a>
 ## 表が消えたセクション { #fix-tables-missing }
-
-en/ja の同じセクションには下の表がありません。セクション内の表の数が ko と異なるため、整備の実行はこのセクションの本文を ko 基準で作り直す必要があります。
-
-<a id="fix-tables-shifted"></a>
-## 最初の列が上書きされたセクション { #fix-tables-shifted }
-
-en/ja の同じセクションは、表の行数と列数が ko と同じですが、最初の列の識別子が形式名で上書きされています。ko の識別子行がペアの表に存在しないため、作り直す必要があります。
+en/ja の同じセクションには以下のテーブルが存在しません。セクション内のテーブル数が ko と異なるため、メンテナンス実行がこのセクションの本文を ko に基づいて再作成する必要があります。
 
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
-| UUID | Body | UUID | インスタンスタイプ UUID |
-| UUID | Body | UUID | イメージ UUID |
-| String | Body | String | キーペア名 |
+| clusterId | Body | UUID | クラスター UUID |
+| clusterName | Body | String | クラスター名 |
+| nodeCount | Body | Integer | ノード数 |
+
+<a id="fix-tables-shifted"></a>
+## 最初の列が上書きされたセクション { #fix-tables-shifted }
+en/ja の同一セクションのテーブルは、行数と列数は ko と同じですが、最初の列の識別子がフォーマット名で覆われています。ko の識別子行が対応テーブルにないため、再度作成する必要があります。
+
+| 名前 | 種類 | 形式 | 説明 |
+|---|---|---|---|
+| flavorId | Body | UUID | インスタンスタイプ UUID |
+| imageId | Body | UUID | イメージ UUID |
+| keyName | Body | String | キーペア名 |
 
 <a id="fix-tables-rows"></a>
 ## 行が抜けたセクション { #fix-tables-rows }
-
-en/ja の同じセクションは、表から識別子行が 1 つ抜けています。残りの行は正常です。
+en/ja の同じセクションでは、表で識別子行が1つ抜けています。残りの行は正常です。
 
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
 | volumeId | Body | UUID | ブロックストレージ UUID |
+| volumeSize | Body | Integer | サイズ(GB) |
 | volumeType | Body | String | ストレージの種類 |
 
 <a id="fix-tables-prose-keys"></a>
