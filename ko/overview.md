@@ -265,3 +265,10 @@ webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증
 이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
 webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
 마커는 정기 restore-alpha-origin 으로 정리됩니다.
+
+<a id="webhook-e2e-20260904-234835"></a>
+## webhook e2e marker (20260904-234835) { #webhook-e2e-20260904-234835 }
+
+이 섹션은 scripts/e2e-webhook.sh 가 삽입한 임시 마커입니다.
+webhook 이 이 PR 을 ko-review / translate 잡으로 라우팅하는지 검증한 뒤
+마커는 정기 restore-alpha-origin 으로 정리됩니다.
