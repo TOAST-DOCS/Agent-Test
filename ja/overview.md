@@ -248,7 +248,30 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## テスト用の追加セクション { #test-added-section }
+<a id="webhook-e2e-20260728-110207"></a>
+## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
-このセクションは翻訳パイプラインテストのために新たに追加したセクションです。新規セクションが翻訳され、ko/en/ja に同じアンカー ID が割り当てられているか確認します。
+このセクションは、scripts/e2e-webhook.sh が挿入した一時マーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングすることを検証した後、
+マーカーは定期的な restore-alpha-origin によりクリーンアップされます。
+
+<a id="webhook-e2e-20260728-111509"></a>
+## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
+
+このセクションは scripts/e2e-webhook.sh が挿入した一時マーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングするかを検証した後、
+マーカーは定期的な restore-alpha-origin によって整理されます。
+
+<a id="webhook-e2e-20260728-113416"></a>
+## webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
+
+このセクションは scripts/e2e-webhook.sh が挿入した一時的なマーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングするかどうかを検証した後、
+マーカーは定期的な restore-alpha-origin によって整理されます。
+
+<a id="webhook-e2e-20260904-234835"></a>
+## webhook e2e marker (20260904-234835) { #webhook-e2e-20260904-234835 }
+
+このセクションは、scripts/e2e-webhook.sh が挿入した一時マーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングすることを検証した後、
+マーカーは定期的な restore-alpha-origin によって削除されます。
