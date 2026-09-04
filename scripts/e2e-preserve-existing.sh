@@ -57,6 +57,7 @@
 #       (`Created preserve file … (>=90000 chars)`) 도 없다
 #   (6) 대조군: preserve 를 끈 런이 켠 런보다 바뀐 섹션 수가 **더 많다**
 #   (7) 발췌 경계 회귀 없음 — 펜스 앞 이중 공백 0 · 중복 앵커 0
+#   (8) 줄 구성 회귀 없음 — 문구는 같은데 줄바꿈만 달라진 섹션 0
 #
 # Usage:
 #   source ./load_env.sh
@@ -353,9 +354,13 @@ mode = sys.argv[3] if len(sys.argv) > 3 else "bytes"
 def norm(t):
     if mode != "prose":
         return t
-    # 공백 정규화 + 중복 앵커 접기 — 남는 차이는 문장이 바뀐 것뿐이다.
+    # 중복 앵커 접기 + 공백 **전부 제거**. `\s+ -> " "` 로 하면 안 된다 —
+    # 일본어·한국어는 줄바꿈 이음매에 공백이 없어서, 두 줄짜리 문단이 한 줄로
+    # 합쳐진 것과 원본이 **불일치**로 나온다. 5차 실행에서 이 지표가 순수한
+    # 줄바꿈 풀림을 ja 에서 "재번역 103건" 으로 세고 en 에서는 같은 현상 51건을
+    # 숨겼다. 공백을 다 지우면 남는 차이는 글자가 바뀐 것뿐이다.
     t = re.sub(r'(<a id="[^"]+"></a>)(\s*\1)+', r"\1", t)
-    return re.sub(r"\s+", " ", t).strip()
+    return re.sub(r"\s+", "", t)
 def sections(t):
     out, cur, key = {}, [], None
     for line in t.splitlines(keepends=True):
@@ -413,6 +418,38 @@ for lang in en ja; do
     ok "(4) $lang: 섹션 슬라이스 로그 ${n}건"
   else
     bad "(4) $lang: 'using this chunk's own section' 로그 없음 — 통짜로 갔거나 preserve 가 안 걸렸다"
+  fi
+done
+
+# (8) 줄 구성 회귀 — 문구는 같은데 줄바꿈만 달라진 섹션. 예전에는 (3) 이 en 에서
+# 숨기고 ja 에서 오탐으로 세던 현상이라, 이제 자기 판정으로 드러낸다. 결정적
+# 후처리(preserve_slice.restore_unchanged_blocks)가 넣어졌으므로 0 이어야 한다.
+for lang in en ja; do
+  mapfile -t rewrapped < <(python3 - "$tmpdir/seed/$lang.md" "$tmpdir/out/$lang.md" <<'PYW'
+import io, re, sys
+def sections(t):
+    out, cur, key = {}, [], None
+    for line in t.splitlines(keepends=True):
+        m = re.match(r'<a id="preserve-sec-(\d+)"></a>', line)
+        if m:
+            if key is not None: out[key] = "".join(cur)
+            key, cur = int(m.group(1)), [line]
+        elif key is not None: cur.append(line)
+    if key is not None: out[key] = "".join(cur)
+    return out
+a = sections(io.open(sys.argv[1], encoding="utf-8", newline="").read())
+b = sections(io.open(sys.argv[2], encoding="utf-8", newline="").read())
+sq = lambda t: re.sub(r"\s+", "", t or "")
+for i in sorted(set(a) | set(b)):
+    x, y = a.get(i, ""), b.get(i, "")
+    if x != y and sq(x) == sq(y):
+        print(i)
+PYW
+)
+  if (( ${#rewrapped[@]} == 0 )); then
+    ok "(8) $lang: 줄 구성만 달라진 섹션 0"
+  else
+    bad "(8) $lang: 문구는 같은데 줄바꿈이 달라진 섹션 ${#rewrapped[@]}개 — 기존 바이트 복원이 안 됐다"
   fi
 done
 
