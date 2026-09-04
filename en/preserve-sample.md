@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2epreserve -->
 
 <a id="preserve-e2e"></a>
@@ -114,8 +116,9 @@ sample below differ per section, so they can be told apart.
 | body.field7Name | String | Name of field 7 |
 | body.field7Count | Integer | Count of field 7 |
 
-The closing sentence of section 7. This sentence is what the line-level
-verdict is measured on.
+The closing sentence of section 7 was modified on 20260904-001358. Only this
+section should be retranslated, and the remaining sections should retain the
+existing translation.
 
 <a id="preserve-sec-8"></a>
 ### Preserve Section 8 { #preserve-sec-8 }
@@ -430,7 +433,6 @@ sample below differ per section, so they can be told apart.
 The closing sentence of section 26. This sentence is what the line-level
 verdict is measured on.
 
-<a id="preserve-sec-27"></a>
 ### Preserve Section 27 { #preserve-sec-27 }
 
 This section is fixture section 27 of the preserve-existing e2e. The table and
@@ -856,6 +858,7 @@ The closing sentence of section 52. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-53"></a>
+
 ### Preserve Section 53 { #preserve-sec-53 }
 
 This section is fixture section 53 of the preserve-existing e2e. The table and
@@ -871,6 +874,7 @@ The closing sentence of section 53. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-54"></a>
+
 ### Preserve Section 54 { #preserve-sec-54 }
 
 This section is fixture section 54 of the preserve-existing e2e. The table and
@@ -886,6 +890,7 @@ The closing sentence of section 54. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-55"></a>
+
 ### Preserve Section 55 { #preserve-sec-55 }
 
 This section is fixture section 55 of the preserve-existing e2e. The table and
@@ -908,6 +913,7 @@ The closing sentence of section 55. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-56"></a>
+
 ### Preserve Section 56 { #preserve-sec-56 }
 
 This section is fixture section 56 of the preserve-existing e2e. The table and
@@ -923,6 +929,7 @@ The closing sentence of section 56. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-57"></a>
+
 ### Preserve Section 57 { #preserve-sec-57 }
 
 This section is fixture section 57 of the preserve-existing e2e. The table and
@@ -938,6 +945,7 @@ The closing sentence of section 57. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-58"></a>
+
 ### Preserve Section 58 { #preserve-sec-58 }
 
 This section is fixture section 58 of the preserve-existing e2e. The table and
@@ -953,6 +961,7 @@ The closing sentence of section 58. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-59"></a>
+
 ### Preserve Section 59 { #preserve-sec-59 }
 
 This section is fixture section 59 of the preserve-existing e2e. The table and
@@ -968,6 +977,7 @@ The closing sentence of section 59. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-60"></a>
+
 ### Preserve Section 60 { #preserve-sec-60 }
 
 This section is fixture section 60 of the preserve-existing e2e. The table and
@@ -990,6 +1000,7 @@ The closing sentence of section 60. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-61"></a>
+
 ### Preserve Section 61 { #preserve-sec-61 }
 
 This section is fixture section 61 of the preserve-existing e2e. The table and
@@ -1005,6 +1016,7 @@ The closing sentence of section 61. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-62"></a>
+
 ### Preserve Section 62 { #preserve-sec-62 }
 
 This section is fixture section 62 of the preserve-existing e2e. The table and
@@ -1020,6 +1032,7 @@ The closing sentence of section 62. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-63"></a>
+
 ### Preserve Section 63 { #preserve-sec-63 }
 
 This section is fixture section 63 of the preserve-existing e2e. The table and
@@ -1035,6 +1048,7 @@ The closing sentence of section 63. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-64"></a>
+
 ### Preserve Section 64 { #preserve-sec-64 }
 
 This section is fixture section 64 of the preserve-existing e2e. The table and
@@ -1050,6 +1064,7 @@ The closing sentence of section 64. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-65"></a>
+
 ### Preserve Section 65 { #preserve-sec-65 }
 
 This section is fixture section 65 of the preserve-existing e2e. The table and
@@ -1072,6 +1087,7 @@ The closing sentence of section 65. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-66"></a>
+
 ### Preserve Section 66 { #preserve-sec-66 }
 
 This section is fixture section 66 of the preserve-existing e2e. The table and
@@ -1087,6 +1103,7 @@ The closing sentence of section 66. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-67"></a>
+
 ### Preserve Section 67 { #preserve-sec-67 }
 
 This section is fixture section 67 of the preserve-existing e2e. The table and
@@ -1102,6 +1119,7 @@ The closing sentence of section 67. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-68"></a>
+
 ### Preserve Section 68 { #preserve-sec-68 }
 
 This section is fixture section 68 of the preserve-existing e2e. The table and
@@ -1117,6 +1135,7 @@ The closing sentence of section 68. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-69"></a>
+
 ### Preserve Section 69 { #preserve-sec-69 }
 
 This section is fixture section 69 of the preserve-existing e2e. The table and
@@ -1132,6 +1151,7 @@ The closing sentence of section 69. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-70"></a>
+
 ### Preserve Section 70 { #preserve-sec-70 }
 
 This section is fixture section 70 of the preserve-existing e2e. The table and
@@ -1154,6 +1174,7 @@ The closing sentence of section 70. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-71"></a>
+
 ### Preserve Section 71 { #preserve-sec-71 }
 
 This section is fixture section 71 of the preserve-existing e2e. The table and
@@ -1169,6 +1190,7 @@ The closing sentence of section 71. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-72"></a>
+
 ### Preserve Section 72 { #preserve-sec-72 }
 
 This section is fixture section 72 of the preserve-existing e2e. The table and
@@ -1184,6 +1206,7 @@ The closing sentence of section 72. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-73"></a>
+
 ### Preserve Section 73 { #preserve-sec-73 }
 
 This section is fixture section 73 of the preserve-existing e2e. The table and
@@ -1199,6 +1222,7 @@ The closing sentence of section 73. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-74"></a>
+
 ### Preserve Section 74 { #preserve-sec-74 }
 
 This section is fixture section 74 of the preserve-existing e2e. The table and
@@ -1214,6 +1238,7 @@ The closing sentence of section 74. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-75"></a>
+
 ### Preserve Section 75 { #preserve-sec-75 }
 
 This section is fixture section 75 of the preserve-existing e2e. The table and
@@ -1236,6 +1261,7 @@ The closing sentence of section 75. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-76"></a>
+
 ### Preserve Section 76 { #preserve-sec-76 }
 
 This section is fixture section 76 of the preserve-existing e2e. The table and
@@ -1251,6 +1277,7 @@ The closing sentence of section 76. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-77"></a>
+
 ### Preserve Section 77 { #preserve-sec-77 }
 
 This section is fixture section 77 of the preserve-existing e2e. The table and
@@ -1266,6 +1293,7 @@ The closing sentence of section 77. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-78"></a>
+
 ### Preserve Section 78 { #preserve-sec-78 }
 
 This section is fixture section 78 of the preserve-existing e2e. The table and
@@ -1281,6 +1309,7 @@ The closing sentence of section 78. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-79"></a>
+
 ### Preserve Section 79 { #preserve-sec-79 }
 
 This section is fixture section 79 of the preserve-existing e2e. The table and
@@ -1706,6 +1735,7 @@ The closing sentence of section 104. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-105"></a>
+
 ### Preserve Section 105 { #preserve-sec-105 }
 
 This section is fixture section 105 of the preserve-existing e2e. The table and
@@ -2115,7 +2145,6 @@ sample below differ per section, so they can be told apart.
 The closing sentence of section 129. This sentence is what the line-level
 verdict is measured on.
 
-<a id="preserve-sec-130"></a>
 ### Preserve Section 130 { #preserve-sec-130 }
 
 This section is fixture section 130 of the preserve-existing e2e. The table and
@@ -2138,6 +2167,7 @@ The closing sentence of section 130. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-131"></a>
+
 ### Preserve Section 131 { #preserve-sec-131 }
 
 This section is fixture section 131 of the preserve-existing e2e. The table and
@@ -2153,6 +2183,7 @@ The closing sentence of section 131. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-132"></a>
+
 ### Preserve Section 132 { #preserve-sec-132 }
 
 This section is fixture section 132 of the preserve-existing e2e. The table and
@@ -2168,6 +2199,7 @@ The closing sentence of section 132. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-133"></a>
+
 ### Preserve Section 133 { #preserve-sec-133 }
 
 This section is fixture section 133 of the preserve-existing e2e. The table and
@@ -2183,6 +2215,7 @@ The closing sentence of section 133. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-134"></a>
+
 ### Preserve Section 134 { #preserve-sec-134 }
 
 This section is fixture section 134 of the preserve-existing e2e. The table and
@@ -2198,6 +2231,7 @@ The closing sentence of section 134. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-135"></a>
+
 ### Preserve Section 135 { #preserve-sec-135 }
 
 This section is fixture section 135 of the preserve-existing e2e. The table and
@@ -2220,6 +2254,7 @@ The closing sentence of section 135. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-136"></a>
+
 ### Preserve Section 136 { #preserve-sec-136 }
 
 This section is fixture section 136 of the preserve-existing e2e. The table and
@@ -2235,6 +2270,7 @@ The closing sentence of section 136. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-137"></a>
+
 ### Preserve Section 137 { #preserve-sec-137 }
 
 This section is fixture section 137 of the preserve-existing e2e. The table and
@@ -2250,6 +2286,7 @@ The closing sentence of section 137. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-138"></a>
+
 ### Preserve Section 138 { #preserve-sec-138 }
 
 This section is fixture section 138 of the preserve-existing e2e. The table and
@@ -2265,6 +2302,7 @@ The closing sentence of section 138. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-139"></a>
+
 ### Preserve Section 139 { #preserve-sec-139 }
 
 This section is fixture section 139 of the preserve-existing e2e. The table and
@@ -2280,6 +2318,7 @@ The closing sentence of section 139. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-140"></a>
+
 ### Preserve Section 140 { #preserve-sec-140 }
 
 This section is fixture section 140 of the preserve-existing e2e. The table and
@@ -2302,6 +2341,7 @@ The closing sentence of section 140. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-141"></a>
+
 ### Preserve Section 141 { #preserve-sec-141 }
 
 This section is fixture section 141 of the preserve-existing e2e. The table and
@@ -2317,6 +2357,7 @@ The closing sentence of section 141. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-142"></a>
+
 ### Preserve Section 142 { #preserve-sec-142 }
 
 This section is fixture section 142 of the preserve-existing e2e. The table and
@@ -2332,6 +2373,7 @@ The closing sentence of section 142. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-143"></a>
+
 ### Preserve Section 143 { #preserve-sec-143 }
 
 This section is fixture section 143 of the preserve-existing e2e. The table and
@@ -2347,6 +2389,7 @@ The closing sentence of section 143. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-144"></a>
+
 ### Preserve Section 144 { #preserve-sec-144 }
 
 This section is fixture section 144 of the preserve-existing e2e. The table and
@@ -2362,6 +2405,7 @@ The closing sentence of section 144. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-145"></a>
+
 ### Preserve Section 145 { #preserve-sec-145 }
 
 This section is fixture section 145 of the preserve-existing e2e. The table and
@@ -2384,6 +2428,7 @@ The closing sentence of section 145. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-146"></a>
+
 ### Preserve Section 146 { #preserve-sec-146 }
 
 This section is fixture section 146 of the preserve-existing e2e. The table and
@@ -2399,6 +2444,7 @@ The closing sentence of section 146. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-147"></a>
+
 ### Preserve Section 147 { #preserve-sec-147 }
 
 This section is fixture section 147 of the preserve-existing e2e. The table and
@@ -2414,6 +2460,7 @@ The closing sentence of section 147. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-148"></a>
+
 ### Preserve Section 148 { #preserve-sec-148 }
 
 This section is fixture section 148 of the preserve-existing e2e. The table and
@@ -2429,6 +2476,7 @@ The closing sentence of section 148. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-149"></a>
+
 ### Preserve Section 149 { #preserve-sec-149 }
 
 This section is fixture section 149 of the preserve-existing e2e. The table and
@@ -2444,6 +2492,7 @@ The closing sentence of section 149. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-150"></a>
+
 ### Preserve Section 150 { #preserve-sec-150 }
 
 This section is fixture section 150 of the preserve-existing e2e. The table and
@@ -2466,6 +2515,7 @@ The closing sentence of section 150. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-151"></a>
+
 ### Preserve Section 151 { #preserve-sec-151 }
 
 This section is fixture section 151 of the preserve-existing e2e. The table and
@@ -2481,6 +2531,7 @@ The closing sentence of section 151. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-152"></a>
+
 ### Preserve Section 152 { #preserve-sec-152 }
 
 This section is fixture section 152 of the preserve-existing e2e. The table and
@@ -2496,6 +2547,7 @@ The closing sentence of section 152. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-153"></a>
+
 ### Preserve Section 153 { #preserve-sec-153 }
 
 This section is fixture section 153 of the preserve-existing e2e. The table and
@@ -2511,6 +2563,7 @@ The closing sentence of section 153. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-154"></a>
+
 ### Preserve Section 154 { #preserve-sec-154 }
 
 This section is fixture section 154 of the preserve-existing e2e. The table and
@@ -2526,6 +2579,7 @@ The closing sentence of section 154. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-155"></a>
+
 ### Preserve Section 155 { #preserve-sec-155 }
 
 This section is fixture section 155 of the preserve-existing e2e. The table and
@@ -2936,6 +2990,7 @@ The closing sentence of section 179. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-180"></a>
+
 ### Preserve Section 180 { #preserve-sec-180 }
 
 This section is fixture section 180 of the preserve-existing e2e. The table and
@@ -2958,6 +3013,7 @@ The closing sentence of section 180. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-181"></a>
+
 ### Preserve Section 181 { #preserve-sec-181 }
 
 This section is fixture section 181 of the preserve-existing e2e. The table and
@@ -2973,6 +3029,7 @@ The closing sentence of section 181. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-182"></a>
+
 ### Preserve Section 182 { #preserve-sec-182 }
 
 This section is fixture section 182 of the preserve-existing e2e. The table and
@@ -2988,6 +3045,7 @@ The closing sentence of section 182. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-183"></a>
+
 ### Preserve Section 183 { #preserve-sec-183 }
 
 This section is fixture section 183 of the preserve-existing e2e. The table and
@@ -3003,6 +3061,7 @@ The closing sentence of section 183. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-184"></a>
+
 ### Preserve Section 184 { #preserve-sec-184 }
 
 This section is fixture section 184 of the preserve-existing e2e. The table and
@@ -3018,6 +3077,7 @@ The closing sentence of section 184. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-185"></a>
+
 ### Preserve Section 185 { #preserve-sec-185 }
 
 This section is fixture section 185 of the preserve-existing e2e. The table and
@@ -3040,6 +3100,7 @@ The closing sentence of section 185. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-186"></a>
+
 ### Preserve Section 186 { #preserve-sec-186 }
 
 This section is fixture section 186 of the preserve-existing e2e. The table and
@@ -3055,6 +3116,7 @@ The closing sentence of section 186. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-187"></a>
+
 ### Preserve Section 187 { #preserve-sec-187 }
 
 This section is fixture section 187 of the preserve-existing e2e. The table and
@@ -3070,6 +3132,7 @@ The closing sentence of section 187. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-188"></a>
+
 ### Preserve Section 188 { #preserve-sec-188 }
 
 This section is fixture section 188 of the preserve-existing e2e. The table and
@@ -3085,6 +3148,7 @@ The closing sentence of section 188. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-189"></a>
+
 ### Preserve Section 189 { #preserve-sec-189 }
 
 This section is fixture section 189 of the preserve-existing e2e. The table and
@@ -3100,6 +3164,7 @@ The closing sentence of section 189. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-190"></a>
+
 ### Preserve Section 190 { #preserve-sec-190 }
 
 This section is fixture section 190 of the preserve-existing e2e. The table and
@@ -3122,6 +3187,7 @@ The closing sentence of section 190. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-191"></a>
+
 ### Preserve Section 191 { #preserve-sec-191 }
 
 This section is fixture section 191 of the preserve-existing e2e. The table and
@@ -3137,6 +3203,7 @@ The closing sentence of section 191. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-192"></a>
+
 ### Preserve Section 192 { #preserve-sec-192 }
 
 This section is fixture section 192 of the preserve-existing e2e. The table and
@@ -3152,6 +3219,7 @@ The closing sentence of section 192. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-193"></a>
+
 ### Preserve Section 193 { #preserve-sec-193 }
 
 This section is fixture section 193 of the preserve-existing e2e. The table and
@@ -3167,6 +3235,7 @@ The closing sentence of section 193. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-194"></a>
+
 ### Preserve Section 194 { #preserve-sec-194 }
 
 This section is fixture section 194 of the preserve-existing e2e. The table and
@@ -3182,6 +3251,7 @@ The closing sentence of section 194. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-195"></a>
+
 ### Preserve Section 195 { #preserve-sec-195 }
 
 This section is fixture section 195 of the preserve-existing e2e. The table and
@@ -3204,6 +3274,7 @@ The closing sentence of section 195. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-196"></a>
+
 ### Preserve Section 196 { #preserve-sec-196 }
 
 This section is fixture section 196 of the preserve-existing e2e. The table and
@@ -3219,6 +3290,7 @@ The closing sentence of section 196. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-197"></a>
+
 ### Preserve Section 197 { #preserve-sec-197 }
 
 This section is fixture section 197 of the preserve-existing e2e. The table and
@@ -3234,6 +3306,7 @@ The closing sentence of section 197. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-198"></a>
+
 ### Preserve Section 198 { #preserve-sec-198 }
 
 This section is fixture section 198 of the preserve-existing e2e. The table and
@@ -3249,6 +3322,7 @@ The closing sentence of section 198. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-199"></a>
+
 ### Preserve Section 199 { #preserve-sec-199 }
 
 This section is fixture section 199 of the preserve-existing e2e. The table and
@@ -3264,6 +3338,7 @@ The closing sentence of section 199. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-200"></a>
+
 ### Preserve Section 200 { #preserve-sec-200 }
 
 This section is fixture section 200 of the preserve-existing e2e. The table and
@@ -3286,6 +3361,7 @@ The closing sentence of section 200. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-201"></a>
+
 ### Preserve Section 201 { #preserve-sec-201 }
 
 This section is fixture section 201 of the preserve-existing e2e. The table and
@@ -3301,6 +3377,7 @@ The closing sentence of section 201. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-202"></a>
+
 ### Preserve Section 202 { #preserve-sec-202 }
 
 This section is fixture section 202 of the preserve-existing e2e. The table and
@@ -3316,6 +3393,7 @@ The closing sentence of section 202. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-203"></a>
+
 ### Preserve Section 203 { #preserve-sec-203 }
 
 This section is fixture section 203 of the preserve-existing e2e. The table and
@@ -3331,6 +3409,7 @@ The closing sentence of section 203. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-204"></a>
+
 ### Preserve Section 204 { #preserve-sec-204 }
 
 This section is fixture section 204 of the preserve-existing e2e. The table and
@@ -3346,6 +3425,7 @@ The closing sentence of section 204. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-205"></a>
+
 ### Preserve Section 205 { #preserve-sec-205 }
 
 This section is fixture section 205 of the preserve-existing e2e. The table and
@@ -3368,6 +3448,7 @@ The closing sentence of section 205. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-206"></a>
+
 ### Preserve Section 206 { #preserve-sec-206 }
 
 This section is fixture section 206 of the preserve-existing e2e. The table and
@@ -3383,6 +3464,7 @@ The closing sentence of section 206. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-207"></a>
+
 ### Preserve Section 207 { #preserve-sec-207 }
 
 This section is fixture section 207 of the preserve-existing e2e. The table and
@@ -3398,6 +3480,7 @@ The closing sentence of section 207. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-208"></a>
+
 ### Preserve Section 208 { #preserve-sec-208 }
 
 This section is fixture section 208 of the preserve-existing e2e. The table and
@@ -3413,6 +3496,7 @@ The closing sentence of section 208. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-209"></a>
+
 ### Preserve Section 209 { #preserve-sec-209 }
 
 This section is fixture section 209 of the preserve-existing e2e. The table and
@@ -3428,6 +3512,7 @@ The closing sentence of section 209. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-210"></a>
+
 ### Preserve Section 210 { #preserve-sec-210 }
 
 This section is fixture section 210 of the preserve-existing e2e. The table and
@@ -3450,6 +3535,7 @@ The closing sentence of section 210. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-211"></a>
+
 ### Preserve Section 211 { #preserve-sec-211 }
 
 This section is fixture section 211 of the preserve-existing e2e. The table and
@@ -3465,6 +3551,7 @@ The closing sentence of section 211. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-212"></a>
+
 ### Preserve Section 212 { #preserve-sec-212 }
 
 This section is fixture section 212 of the preserve-existing e2e. The table and
@@ -3480,6 +3567,7 @@ The closing sentence of section 212. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-213"></a>
+
 ### Preserve Section 213 { #preserve-sec-213 }
 
 This section is fixture section 213 of the preserve-existing e2e. The table and
@@ -3495,6 +3583,7 @@ The closing sentence of section 213. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-214"></a>
+
 ### Preserve Section 214 { #preserve-sec-214 }
 
 This section is fixture section 214 of the preserve-existing e2e. The table and
@@ -3510,6 +3599,7 @@ The closing sentence of section 214. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-215"></a>
+
 ### Preserve Section 215 { #preserve-sec-215 }
 
 This section is fixture section 215 of the preserve-existing e2e. The table and
@@ -3532,6 +3622,7 @@ The closing sentence of section 215. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-216"></a>
+
 ### Preserve Section 216 { #preserve-sec-216 }
 
 This section is fixture section 216 of the preserve-existing e2e. The table and
@@ -3547,6 +3638,7 @@ The closing sentence of section 216. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-217"></a>
+
 ### Preserve Section 217 { #preserve-sec-217 }
 
 This section is fixture section 217 of the preserve-existing e2e. The table and
@@ -3562,6 +3654,7 @@ The closing sentence of section 217. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-218"></a>
+
 ### Preserve Section 218 { #preserve-sec-218 }
 
 This section is fixture section 218 of the preserve-existing e2e. The table and
@@ -3577,6 +3670,7 @@ The closing sentence of section 218. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-219"></a>
+
 ### Preserve Section 219 { #preserve-sec-219 }
 
 This section is fixture section 219 of the preserve-existing e2e. The table and
@@ -3592,6 +3686,7 @@ The closing sentence of section 219. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-220"></a>
+
 ### Preserve Section 220 { #preserve-sec-220 }
 
 This section is fixture section 220 of the preserve-existing e2e. The table and
@@ -3614,6 +3709,7 @@ The closing sentence of section 220. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-221"></a>
+
 ### Preserve Section 221 { #preserve-sec-221 }
 
 This section is fixture section 221 of the preserve-existing e2e. The table and
@@ -3629,6 +3725,7 @@ The closing sentence of section 221. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-222"></a>
+
 ### Preserve Section 222 { #preserve-sec-222 }
 
 This section is fixture section 222 of the preserve-existing e2e. The table and
@@ -3644,6 +3741,7 @@ The closing sentence of section 222. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-223"></a>
+
 ### Preserve Section 223 { #preserve-sec-223 }
 
 This section is fixture section 223 of the preserve-existing e2e. The table and
@@ -3659,6 +3757,7 @@ The closing sentence of section 223. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-224"></a>
+
 ### Preserve Section 224 { #preserve-sec-224 }
 
 This section is fixture section 224 of the preserve-existing e2e. The table and
@@ -3674,6 +3773,7 @@ The closing sentence of section 224. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-225"></a>
+
 ### Preserve Section 225 { #preserve-sec-225 }
 
 This section is fixture section 225 of the preserve-existing e2e. The table and
@@ -3696,6 +3796,7 @@ The closing sentence of section 225. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-226"></a>
+
 ### Preserve Section 226 { #preserve-sec-226 }
 
 This section is fixture section 226 of the preserve-existing e2e. The table and
@@ -3711,6 +3812,7 @@ The closing sentence of section 226. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-227"></a>
+
 ### Preserve Section 227 { #preserve-sec-227 }
 
 This section is fixture section 227 of the preserve-existing e2e. The table and
@@ -3726,6 +3828,7 @@ The closing sentence of section 227. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-228"></a>
+
 ### Preserve Section 228 { #preserve-sec-228 }
 
 This section is fixture section 228 of the preserve-existing e2e. The table and
@@ -3741,6 +3844,7 @@ The closing sentence of section 228. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-229"></a>
+
 ### Preserve Section 229 { #preserve-sec-229 }
 
 This section is fixture section 229 of the preserve-existing e2e. The table and
@@ -3756,6 +3860,7 @@ The closing sentence of section 229. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-230"></a>
+
 ### Preserve Section 230 { #preserve-sec-230 }
 
 This section is fixture section 230 of the preserve-existing e2e. The table and
@@ -3778,6 +3883,7 @@ The closing sentence of section 230. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-231"></a>
+
 ### Preserve Section 231 { #preserve-sec-231 }
 
 This section is fixture section 231 of the preserve-existing e2e. The table and
@@ -3793,6 +3899,7 @@ The closing sentence of section 231. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-232"></a>
+
 ### Preserve Section 232 { #preserve-sec-232 }
 
 This section is fixture section 232 of the preserve-existing e2e. The table and
@@ -3808,6 +3915,7 @@ The closing sentence of section 232. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-233"></a>
+
 ### Preserve Section 233 { #preserve-sec-233 }
 
 This section is fixture section 233 of the preserve-existing e2e. The table and
@@ -3823,6 +3931,7 @@ The closing sentence of section 233. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-234"></a>
+
 ### Preserve Section 234 { #preserve-sec-234 }
 
 This section is fixture section 234 of the preserve-existing e2e. The table and
@@ -3838,6 +3947,7 @@ The closing sentence of section 234. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-235"></a>
+
 ### Preserve Section 235 { #preserve-sec-235 }
 
 This section is fixture section 235 of the preserve-existing e2e. The table and
@@ -3860,6 +3970,7 @@ The closing sentence of section 235. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-236"></a>
+
 ### Preserve Section 236 { #preserve-sec-236 }
 
 This section is fixture section 236 of the preserve-existing e2e. The table and
@@ -3875,6 +3986,7 @@ The closing sentence of section 236. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-237"></a>
+
 ### Preserve Section 237 { #preserve-sec-237 }
 
 This section is fixture section 237 of the preserve-existing e2e. The table and
@@ -3890,6 +4002,7 @@ The closing sentence of section 237. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-238"></a>
+
 ### Preserve Section 238 { #preserve-sec-238 }
 
 This section is fixture section 238 of the preserve-existing e2e. The table and
@@ -3905,6 +4018,7 @@ The closing sentence of section 238. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-239"></a>
+
 ### Preserve Section 239 { #preserve-sec-239 }
 
 This section is fixture section 239 of the preserve-existing e2e. The table and
@@ -3920,6 +4034,7 @@ The closing sentence of section 239. This sentence is what the line-level
 verdict is measured on.
 
 <a id="preserve-sec-240"></a>
+
 ### Preserve Section 240 { #preserve-sec-240 }
 
 This section is fixture section 240 of the preserve-existing e2e. The table and
