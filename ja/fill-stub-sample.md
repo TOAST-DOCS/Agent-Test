@@ -23,22 +23,38 @@ en/ja のコピーには pre-align が残す 2 種類の stub をわざと残し
 <a id="fill-stub-table"></a>
 ## 表があるセクション { #fill-stub-table }
 
-<!-- TODO: translate body -->
+本文に表がある body stub です。埋められた後も表の列数と行数が ko と同じである必要があります。
+
+| 項目 | 説明 | デフォルト値 |
+|---|---|---|
+| インスタンスタイプ | 作成するインスタンスのCPU/メモリ仕様 | m2.c1m2 |
+| ブロックストレージ | ルートボリュームのサイズ(GB) | 20 |
+| ブートスクリプト | インスタンス初回ブート時に実行するスクリプト | なし |
 
 <a id="fill-stub-code"></a>
 ## コードブロックがあるセクション { #fill-stub-code }
 
-<!-- TODO: translate body -->
+コード ブロックは翻訳対象ではありません。以下のブロックは、入力後も内容がそのままでなければなりません。
+
+```bash
+# fill-stub-test: this line must be copied verbatim
+curl -X GET "https://api.example.com/v2.0/servers" \
+  -H "X-Auth-Token: ${TOKEN}"
+```
+
+ブロック外のこの文章のみが翻訳対象であり、コマンドとコメント行は変更しません。
 
 <a id="fill-stub-heading"></a>
-## 제목까지 비어 있는 섹션 { #fill-stub-heading }
+## 見出しまで空白のセクション { #fill-stub-heading }
 
-<!-- TODO: translate -->
+en/ja の同じセクションは、見出しがまだ韓国語である見出しスタブです。
+充填実行は見出しと本文を一緒に翻訳しますが、見出しのレベルと `{ #id }` は ko を正本として従う必要があります。
 
 <a id="fill-stub-heading-child"></a>
-### 하위 제목도 비어 있는 경우 { #fill-stub-heading-child }
+### 下位の見出しも空の場合 { #fill-stub-heading-child }
 
-<!-- TODO: translate -->
+見出しスタブが連続で現れる場合です。親セクションと独立的に、それぞれ記入する必要があり、
+`###` レベルが `##` に昇格または降格されてはいけません。
 
 ## 앵커가 없는 섹션
 
