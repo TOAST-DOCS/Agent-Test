@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
@@ -5,8 +7,8 @@
 
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
-NATインスタンスは、プライベートネットワークインスタンスから特定IPアドレス帯域にインターネットアクセスできるようにするインスタンスです。
-韓国(パンギョ)、韓国(ピョンチョン)リージョンでのみ提供する機能です。
+NAT インスタンスは、プライベート ネットワーク インスタンスが特定の IP アドレス範囲に対してインターネットにアクセスできるようにするインスタンスです。(本文修正テスト: この文は翻訳の再実行時に反映される必要があります。)
+韓国(パンギョ), 韓国(ピョンチョン) リージョンでのみ提供される機能です。
 
 <a id="key-features"></a>
 ### 主な機能 { #key-features }
@@ -189,7 +191,7 @@ SQL Server構成管理者のSQL Server構成管理者(ローカル) > SQL Server
 <a id="startingstopping-mysql"></a>
 ### MySQL起動/停止方法 { #startingstopping-mysql }
 
-```
+```bash
 #mysqlサービス起動
 shell> service mysqld start
 
@@ -205,7 +207,7 @@ shell> service mysqld restart
 
 イメージ作成後、最初は下記のように接続します。
 
-```
+```bash
 shell> mysql -uroot
 ```
 
@@ -217,7 +219,7 @@ shell> mysql -uroot
 
 初期インストール後、MySQL ROOTアカウントパスワードは指定されていません。したがってインストール後、すぐにパスワードを設定する必要があります。
 
-```
+```bash
 mysql> ALTER USER USER() IDENTIFIED BY '新しいパスワード';
 ```
 
@@ -231,7 +233,7 @@ MySQL基本validate\_password\_policyは下記の通りです。
 
 提供されるイメージポートはMySQL基本ポートの3306です。セキュリティー上、ポートの変更を推奨します。
 
-```
+```bash
 shell> vi /etc/my.cnf
 
 
@@ -264,7 +266,7 @@ my.cnfのデフォルトのパスは `/etc/my.cnf` で、NHN Cloud推奨変数(v
 | --- | --- |
 | default\_storage\_engine | 基本ストレージエンジン(storage engine)を指定します。InnoDBが指定され、Online-DDLとトランザクション(transaction)を使用できます。 |
 | expire\_logs\_days | binlog設定で、 ログを保存する日数を設定します。デフォルトで3日に指定されています。 |
-| innodb\_log\_file\_size | トランザクション(transaction)のredo logを保存するログファイルのサイズを指定します。<br><br>実際の運営環境では256MB以上を推奨しており、現在512MBに設定されています。設定値を修正した時は、DBの再起動が必要です。 |
+| innodb\_log\_file\_size | トランザクション(transaction)のredo logを保存するログファイルのサイズを指定します。<br/><br/>実際の運営環境では256MB以上を推奨しており、現在512MBに設定されています。設定値を修正した時は、DBの再起動が必要です。 |
 | innodb\_file\_per\_table | テーブルが削除されたりTRUNCATEされる時、テーブルスペースがOSにすぐに返却されます。 |
 | innodb\_log\_files\_in\_group | innodb\_log\_fileファイルの個数を設定し、循環的\(circular\)に使用されます。最小2個以上で構成されます。 |
 | log_timestamps | MySQL 5.7の基本log時間はUTCで表示されます。したがってログ時間をSYSTEMローカル時間に変更します。 |
@@ -292,7 +294,7 @@ MySQLディレクトリおよびファイル説明は下記の通りです。
 <a id="how-to-startstop-postgresql"></a>
 ### PostgreSQL開始/停止方法 { #how-to-startstop-postgresql }
 
-```
+```bash
 ##Ubuntuの場合
 # postgresqlサービス開始
 shell> sudo systemctl start postgresql
@@ -306,8 +308,8 @@ shell> sudo systemctl restart postgresql
 ### PostgreSQL接続 { #log-in-to-postgresql }
 
 イメージ作成後、最初は下記のように接続します。
-<br>
-```
+<br/>
+```bash
 #postgresにアカウント切り替え後、接続
 shell> sudo su - postgres
 shell> psql
@@ -320,8 +322,8 @@ shell> psql
 #### 1\. ポート\(port\)変更
 
 提供されるイメージポートはPostgreSQL基本ポート5432です。セキュリティ上、ポートの変更を推奨します。
-<br>
-```
+<br/>
+```bash
 
 shell> vi postgresql.conf
 
@@ -345,8 +347,8 @@ shell> psql -p[変更されたポート番号]
 #### 2\. サーバーログタイムゾーン変更
 
 サーバーログに記録される基本時間帯がUTCに設定されています。SYSTEMローカル時間と同じタイムゾーンに変更することを推奨します。
-<br>
-```
+<br/>
+```bash
 shell> vi postgresql.conf
 
 
@@ -378,8 +380,8 @@ postgres=# SHOW log_timezone;
 #### 3\. publicスキーマ権限の削除
 
 基本的にすべてのユーザーにpublicスキーマのCREATEおよびUSAGE権限を付与しているため、データベースに接続できるユーザーはpublicスキーマからオブジェクトを作成できます。すべてのユーザーがpublicスキーマからオブジェクトを作成できないように権限を削除すことを推奨します。
-<br>
-```
+<br/>
+```bash
 #postgresql接続
 
 shell> psql
@@ -394,8 +396,8 @@ postgres=# REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 #### 4\. 遠隔接続許可
 
 ローカルホスト以外の接続を許可するにはlisten_addresses変数とクライアント認証設定ファイルを変更する必要があります。
-<br>
-```
+<br/>
+```bash
 shell> vi postgresql.conf
 
 
@@ -450,7 +452,7 @@ PostgreSQLディレクトリおよびファイルの説明は下記のとおり�
 ### CUBRIDサービスの起動/停止方法 { #how-to-startstop-the-cubrid-service }
 
 `cubrid` LinuxアカウントにログインしてCUBRIDサービスを次のように開始または停止できます。
-```
+```bash
 # CUBRIDサービス/サーバーの起動
 shell> sudo su - cubrid
 shell> cubrid service start
@@ -477,7 +479,7 @@ shell> cubrid broker restart
 ### CUBRID接続 { #connect-to-cubrid }
 
 イメージ作成後、最初は以下のように接続します。
-```
+```bash
 shell> sudo su - cubrid
 shell> csql -u dba demodb@localhost
 ```
@@ -489,7 +491,7 @@ shell> csql -u dba demodb@localhost
 #### 1\. パスワード設定
 
 初期インストール後、CUBRID dbaアカウントのパスワードは指定されていません。そのため、インストール後に必ずパスワードを設定する必要があります。
-```
+```bash
 shell> csql -u dba -c "ALTER USER dba PASSWORD 'new_password'" demodb@localhost
 ```
 
@@ -502,7 +504,7 @@ shell> csql -u dba -c "ALTER USER dba PASSWORD 'new_password'" demodb@localhost
 ###### 1)ブローカーファイルの修正
 
 以下のファイルを開き、以下のように変更するポートアドレスを入力します。
-```
+```bash
 shell> vi /opt/cubrid/conf/cubrid_broker.conf
 
 [%query_editor]
@@ -515,7 +517,7 @@ BROKER_PORT             =[変更するportアドレス]
 ###### 2)ブローカーの再起動
 
 ポートの変更を適用するためにブローカーを再起動します。
-```
+```bash
 shell> cubrid broker restart
 ```
 
@@ -528,7 +530,7 @@ shell> cubrid broker restart
 ###### 1)  cm.confファイルの修正
 
 以下のファイルを開き、次のように変更するポートアドレスを入力します。
-```
+```bash
 shell> vi /opt/cubrid/conf/cm.conf
 
 cm_port =[変更するportアドレス]
@@ -537,7 +539,7 @@ cm_port =[変更するportアドレス]
 ###### 2)マネージャサーバーの再起動
 
 ポートの変更を適用するためにマネージャを再起動します。
-```
+```bash
 shell> cubrid manager stop
 shell> cubrid manager start
 ```
@@ -563,10 +565,10 @@ CUBRIDディレクトリおよびファイルの説明は次のとおりです�
 
 | 名前 | 説明 |
 | --- | --- |
-| service  | CUBRIDサービス開始時に自動的に開始するプロセスを登録するパラメータです。 <br>デフォルトでserver、broker、managerプロセスが登録されています。 |
+| service  | CUBRIDサービス開始時に自動的に開始するプロセスを登録するパラメータです。 <br/>デフォルトでserver、broker、managerプロセスが登録されています。 |
 | cubrid\_port\_id | マスタープロセスが使用するポートです。 |
 | max\_clients | 1つデータベースサーバープロセスが同時に接続できるクライアントの最大数です。 |
-| data\_buffer\_size | データベースサーバーがメモリ内にキャッシュするデータバッファのサイズを設定するためのパラメータです。 <br>必要なメモリサイズがシステムメモリの2/3以内になるように設定することを推奨します。 |
+| data\_buffer\_size | データベースサーバーがメモリ内にキャッシュするデータバッファのサイズを設定するためのパラメータです。 <br/>必要なメモリサイズがシステムメモリの2/3以内になるように設定することを推奨します。 |
 
 <a id="cubrid-directory-description-brokerconf-description"></a>
 #### broker.confの説明
@@ -635,7 +637,7 @@ Enter password:
 
 初期インストール後、MariaDB rootアカウントパスワードは指定されていません。そのため、インストール後に必ずパスワードを設定する必要があります。
 
-```
+```bash
 SET PASSWORD [FOR user] = password_option
 
 MariaDB> SET PASSWORD = PASSWORD('パスワード');
@@ -650,18 +652,18 @@ MariaDB> SET PASSWORD = PASSWORD('パスワード');
 
 `/etc/my.cnf.d/server.cnf`ファイルを開き、[mariadb]の下に以下のように変更するポートアドレスを入力します。
 
-```
+```bash
 shell> sudo vi /etc/my.cnf.d/server.cnf
 ```
 
-```
+```bash
 [mariadb]
 port=[変更するportアドレス]
 ```
 
 ##### 2)インスタンスの再起動
 ポートの変更が適用されるようにインスタンスを再起動します。
-```
+```bash
 sudo systemctl restart mariadb.service
 ```
 
@@ -699,7 +701,7 @@ sudo systemctl restart mariadb.service
 
 
 rootアカウントで /rootパスからdbcaコマンドを実行します。
-```
+```bash
 $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 ```
 
@@ -712,7 +714,7 @@ $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 | 5 | DB\_PORT | Tiberoで使用するサービスIPのポート |
 
 ##### Tibero 7インストール
-```
+```bash
 [rocky@tiberoinstance ~]$ sudo su - root
 [root@tiberoinstance ~]# pwd
 /root
@@ -725,7 +727,7 @@ $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 dbcaコマンドを実行すると進行状況が表示され、nomountモードで データベースが作成されます。所要時間は10分以下です。 
 完了すると下記のように出力されます。
 
-```
+```bash
 SQL>
 System altered.
 
@@ -742,7 +744,7 @@ SQL> Disconnected.
 
 Tiberoが動作していることを確認します。
 
-```
+```bash
 [root@tiberoinstance ~]# ps -ef |grep tbsvr
 nhncloud  9886     1  1 14:14 ?        00:00:00 tbsvr          -t NORMAL -SVR_SID tiberotestdb
 nhncloud  9888  9886  0 14:15 ?        00:00:00 tbsvr_MGWP     -t NORMAL -SVR_SID tiberotestdb
@@ -771,7 +773,7 @@ root     13517  8366  0 14:15 pts/0    00:00:00 grep --color=auto tbsvr
 
 インストールログは /root/.dbset.logで確認できます。
 
-```
+```bash
 [root@tiberoinstance ~]# ls -alh
 合計20K
 dr-xr-x---.  4 root root  104 10月17 14:15 .
@@ -794,7 +796,7 @@ drwx------   2 root root   29 10月17 14:04 .ssh
 dbcaコマンドで作成したOS\_ACCOUNTにログインします。
 
 
-```
+```bash
 [root@tiberoinstance ~]# su - nhncloud
 最終ログイン：1月13(木) 11:34:43 KST 2022日時pts/0
 
@@ -813,7 +815,7 @@ dbcaコマンドで作成したOS\_ACCOUNTにログインします。
 <a id="connect-to-tibero-check-connection"></a>
 #### 接続確認
 
-```
+```bash
 [nhncloud@tiberoinstance ~]$ tbsql sys/tibero
 
 tbSQL 7
@@ -880,7 +882,7 @@ Tiberoで提供する基本アカウントは次のとおりです。
 
 <a id="start-and-stop-zookeeper-kafka-broker"></a>
 ### Zookeeper、Kafka broker起動/停止 { #start-and-stop-zookeeper-kafka-broker }
-```
+```bash
 # Zookeeper、Kafka broker起動(Zookeeperを先に起動)
 shell> sudo systemctl start zookeeper.service
 shell> sudo systemctl start kafka.service
@@ -902,13 +904,13 @@ shell> sudo systemctl restart kafka.service
 - インスタンス間のKafka関連ポート通信のために、以下のセキュリティグループ設定を追加します。
 
 セキュリティグループ設定
-```
+```bash
 方向：受信
 IPプロトコル： TCP
 ポート： 22, 9092, 2181, 2888, 3888
 ```
 Hostname、IPの確認方法
-```
+```bash
 # Hostname確認
 shell> hostname
 # IP確認
@@ -916,7 +918,7 @@ shell> hostname
 またはshell> hostname -i
 ```
 Clusterインストールスクリプト実行例(上で確認したhostname、IPを入力)
-```
+```bash
 shell> sh ~/.kafka_make_cluster.sh
 Enter Cluster Node Count: 3
 ### 3 is odd number.
@@ -967,7 +969,7 @@ ls: cannot access /tmp/zookeeper: No such file or directory
 
 ##### 1) ~/kafka/config/zookeeper.propertiesファイル修正
 ~/kafka/config/zookeeper.propertiesファイルを開いてclientPortに変更するZookeeper portを入力します。
-```
+```bash
 shell> vi ~/kafka/config/zookeeper.properties
 clientPort=変更するzookeeper port
 ```
@@ -975,11 +977,11 @@ clientPort=変更するzookeeper port
 ~/kafka/config/server.propertiesファイルを開いてlistenersに変更するKafka portを入力します。
 
 インスタンスIPの確認方法
-```
+```bash
 コンソール画面のPrivate IP
 またはshell> hostname -i
 ```
-```
+```bash
 shell> vi ~/kafka/config/server.properties
 
 # コメント解除
@@ -991,7 +993,7 @@ zookeeper.connect=インスタンスIP：変更するzookeeper port
 ```
 
 ##### 3) Zookeeper、Kafka brokerの再起動
-```
+```bash
 shell> sudo systemctl stop kafka.service
 shell> sudo systemctl stop zookeeper.service
 shell> sudo systemctl start zookeeper.service
@@ -1000,7 +1002,7 @@ shell> sudo systemctl start kafka.service
 
 ##### 4) Zookeeper、Kafka port変更確認
 変更されたポートが使用されていることを確認します。
-```
+```bash
 shell> netstat -ntl | grep [Kafka port]
 shell> netstat -ntl | grep [Zookeeper port]
 ```
@@ -1009,7 +1011,7 @@ shell> netstat -ntl | grep [Zookeeper port]
 ### Kafkaトピックおよびデータ作成/使用 { #create-and-use-kafka-topic-and-data }
 
 トピックの作成/照会
-```
+```bash
 # インスタンスIP = Private IP / Kafka基本port = 9092
 # トピック作成
 shell> ~/kafka/bin/kafka-topics.sh --create --bootstrap-server [インスタンスIP]:[Kafka PORT] --topic kafka
@@ -1021,7 +1023,7 @@ shell> ~/kafka/bin/kafka-topics.sh --describe --bootstrap-server [インスタ�
 shell> ~/kafka/bin/kafka-topics.sh --delete --bootstrap-server [インスタンスIP]:[Kafka PORT] --topic kafka
 ```
 データ作成/使用
-```
+```bash
 # producer起動
 shell> ~/kafka/bin/kafka-console-producer.sh --broker-list [インスタンスIP]:[Kafka PORT] --topic kafka
 # consumer起動
@@ -1033,7 +1035,7 @@ shell> ~/kafka/bin/kafka-console-consumer.sh --bootstrap-server [インスタン
 
 <a id="startstop-redis"></a>
 ### Redis起動/停止 { #startstop-redis }
-```
+```bash
 # Redisサービスの起動
 shell> sudo systemctl start redis
 
@@ -1047,7 +1049,7 @@ shell> sudo systemctl restart redis
 <a id="connect-to-redis"></a>
 ### Redis接続 { #connect-to-redis }
 `redis-cli`コマンドでRedisインスタンスに接続できます。
-```
+```bash
 shell> redis-cli
 ```
 
@@ -1068,7 +1070,7 @@ Redisが使用するipの値です。サーバー外部からRedisインスタ�
 
 ポートはRedisデフォルト値である6379です。セキュリティ上、ポートを変更することを推奨します。ポートを変更した後は、以下のコマンドでRedisに接続できます。
 
-```
+```bash
 shell> redis-cli -p <新しいポート>
 ```
 
@@ -1087,7 +1089,7 @@ NHN CloudのRedisインスタンスは自動的にHA環境を構成するスク�
 ##### キーペアコピー
 インストールスクリプトを実行するインスタンスに他のインスタンス接続に必要なキーペア(PEMファイル)が必要です。キーペアは次のようにコピーできます。
 - ubuntu
-```
+```bash
 local> scp -i <キーペア>.pem <キーペア>.pem ubuntu@<floating ip>:/home/ubuntu/
 ```
 作成したインスタンスのキーペアは、すべて同じである必要があります。
@@ -1105,13 +1107,13 @@ Redisインスタンス間の通信に必要なセキュリティグループ(**
 #### Sentinel自動構成
 Sentinel構成のために3つのRedisインスタンスが必要です。マスターとして使用するインスタンスにキーペアをコピーし、以下のようにスクリプトを実行してください。
 
-```
+```bash
 shell> sh .redis_make_sentinel.sh
 ```
 
 その後、接続情報で使用するマスター名(Master Name)とマスター及びレプリカのprivate IPを順番に入力します。各インスタンスのprivate IPは`hostname -I`コマンドで確認できます。
 
-```
+```bash
 shell> sh .redis_make_sentinel.sh
 Enter Master's Name (ex> mymaster) : mymaster
 Enter Master's IP: 192.168.0.33
@@ -1120,7 +1122,7 @@ Enter Replica-2's IP: 192.168.0.97
 ```
 
 コピーしたキーペアのファイル名を入力します。
-```
+```bash
 shell> Enter Pemkey's name: <キーペア>.pem
 ```
 
@@ -1128,13 +1130,13 @@ shell> Enter Pemkey's name: <キーペア>.pem
 #### Cluster自動構成
 Cluster構成のために6つのRedisインスタンスが必要です。マスターとして使用するインスタンスにキーペアをコピーし、以下のようにスクリプトを実行してください。
 
-```
+```bash
 shell> sh .redis_make_cluster.sh
 ```
 
 その後、クラスタに使用するRedisインスタンスのprivate IPを順番に入力します。各インスタンスのprivate IPは`hostname -I`コマンドで確認できます。
 
-```
+```bash
 shell> sh .redis_make_cluster.sh
 Enter cluster-1'IP:  192.168.0.79
 Enter cluster-2'IP:  192.168.0.10
@@ -1146,12 +1148,12 @@ Enter cluster-6'IP:  192.168.0.32
 
 コピーしたキーペアのファイル名を入力します。
 
-```
+```bash
 shell> Enter Pemkey's name: <キーペア>.pem
 ```
 
 `yes`を入力し、クラスタ構成を完了します。
-```
+```bash
 >>> Performing hash slots allocation on 6 nodes...
 Master[0] -> Slots 0 - 5460
 Master[1] -> Slots 5461 - 10922
@@ -1174,7 +1176,7 @@ S: ab2aa9e37cee48ef8e4237fd63e8301d81193818 192.168.0.32:6379
 Can I set the above configuration? (type 'yes' to accept):
 ```
 
-```
+```bash
 [OK] All nodes agree about slots configuration.
 >>> Check for open slots...
 >>> Check slots coverage...
