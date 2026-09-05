@@ -241,20 +241,38 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 $ sudo update-grub
 ```
 
-<a id="test-added-section"></a>
-## Additional section for testing { #test-added-section }
+<a id="webhook-e2e-20260728-110207"></a>
+## webhook e2e marker (20260728-110207) { #webhook-e2e-20260728-110207 }
 
-This is a newly added section for testing the translation pipeline. This verifies that the new section is translated and receives the same anchor ID across the ko, en, and ja versions.
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying whether the webhook routes this PR to the ko-review / translate jobs,
+the marker is cleaned up by the regular restore-alpha-origin.
+
+<a id="webhook-e2e-20260728-111509"></a>
+## webhook e2e marker (20260728-111509) { #webhook-e2e-20260728-111509 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying whether webhook routes this PR to ko-review / translate jobs,
+the marker is cleaned up by the regular restore-alpha-origin.
+
+<a id="webhook-e2e-20260728-113416"></a>
+## Webhook e2e marker (20260728-113416) { #webhook-e2e-20260728-113416 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+After verifying whether the webhook routes this PR to the ko-review / translate jobs, the marker is cleaned up by the regular restore-alpha-origin process.
 
 <a id="e2e-table-malformed"></a>
 ### Table selection guard fixture
 
-The tables below are e2e fixtures.
+The following tables are e2e fixtures for selection guard validation (20260905-005334).
 
 | Number | Item | Example |
 |---|---|---|
 | 1 | Request rate limit | http {<BR>   limit_req_zone $binary_remote_addr zone=z:10m;<BR>} |
-| 2 | Connection limit | limit_conn z 10; |
+
+limit_req_zone $binary_remote_addr zone=z:10m;
+}
+| 2 | Concurrent connection limit | limit_conn z 10; |
 | 3 | Request body size limit | client_max_body_size 1m; |
 
 The second table.
@@ -262,7 +280,7 @@ The second table.
 | Name | Type | Required | Description |
 |---|---|---|---|
 | fileType | String | Y | File extension. |
-| resolution | String | N  Recommended resolution. |
+| resolution | String | N | Recommended resolution. |
 | idType | String | Y | ID type. |
 
 The third table.
@@ -272,3 +290,4 @@ The third table.
 | SVC-101 | Basic | Basic service. |
 | SVC-102 | Standard | Standard service. |
 | SVC-103 | Advanced | Advanced service. |
+| SVC-104 | Dedicated | Dedicated service. |
