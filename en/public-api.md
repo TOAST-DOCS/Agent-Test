@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=8e6d00d3460b -->
 
 <a id="compute-instance-api-v2-guide"></a>
@@ -9,7 +11,8 @@ The Instance API uses the `compute` type endpoint. For the exact endpoint, see `
 
 | Type | Region | Endpoint |
 |---|---|---|
-| compute | Korea (Pangyo) region<br>Korea (Pyeongchon) region<br>Korea (Gwangju) region<br>Japan region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | Korea (Pangyo) Region<br>Korea (Pyeongchon) Region<br>Korea (Gwangju) Region<br>Japan (Tokyo) Region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com (row modification test) |
+| TEST-ROW | (new row test) | (new row test) |
 
 API response may show fields that are not specified in this guide. These fields are used internally by NHN Cloud and are subject to change without prior notice, so they are not used.
 
@@ -207,6 +210,7 @@ X-Auth-Token: {tokenId}
 
 <a id="list-availability-zones-request"></a>
 #### Request
+
 This API does not require a request body.
 
 | Name | Type | Format | Required | Description |
@@ -216,6 +220,7 @@ This API does not require a request body.
 
 <a id="list-availability-zones-response"></a>
 #### Response
+
 | Name | Type | Format | Description |
 |---|---|---|---|
 | availabilityZoneInfo | Body | Object | Availability zone info object |
@@ -255,6 +260,7 @@ This API does not require a request body.
 
 <a id="list-key-pairs"></a>
 ### List Key Pairs { #list-key-pairs }
+
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
@@ -262,6 +268,7 @@ X-Auth-Token: {tokenId}
 
 <a id="list-key-pairs-request"></a>
 #### Request
+
 This API does not require a request body.
 
 | Name | Type | Format | Required | Description |
@@ -304,6 +311,7 @@ This API does not require a request body.
 
 <a id="show-key-pair"></a>
 ### Get Key Pair { #show-key-pair }
+
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -311,6 +319,7 @@ X-Auth-Token: {tokenId}
 
 <a id="show-key-pair-request"></a>
 #### Request
+
 This API does not require a request body.
 
 | Name | Type | Format | Required | Description |
@@ -426,6 +435,7 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-key-pair"></a>
 ### Delete a Key Pair { #delete-key-pair }
+
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -433,6 +443,7 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-key-pair-request"></a>
 #### Request
+
 This API does not require a request body.
 
 | Name | Type | Format | Required | Description |
@@ -443,6 +454,7 @@ This API does not require a request body.
 
 <a id="delete-key-pair-response"></a>
 #### Response
+
 This API does not return a response body.
 
 
@@ -998,6 +1010,7 @@ X-Auth-Token: {tokenId}
 
 <a id="modify-instance"></a>
 ### Modify Instance { #modify-instance }
+
 Modify created instance. Only some attributes are allowed to be modified.
 
 ```
@@ -1032,6 +1045,7 @@ X-Auth-Token: {tokenId}
 
 <a id="modify-instance-response"></a>
 #### Response
+
 Same as the instance view.
 
 ---
@@ -1063,3 +1077,29 @@ This API does not require a request body.
 This API does not return a response body.
 
 ---
+
+<a id="test-added-endpoint"></a>
+### New test endpoint { #test-added-endpoint }
+
+```
+POST /v2/{tenantId}/test-added-endpoint
+X-Auth-Token: {tokenId}
+```
+
+<a id="test-added-request"></a>
+#### Request { #test-added-request }
+
+| Name | Type | Format | Required | Description |
+|---|---|---|---|---|
+| tenantId | URL | String | O | Tenant ID |
+| tokenId | Header | String | O | Token ID |
+| name | Body | String | O | Endpoint name |
+
+<a id="test-added-response"></a>
+#### Response { #test-added-response }
+
+| Name | Type | Format | Description |
+|---|---|---|---|
+| endpoint | Body | Object | Endpoint object |
+| endpoint.id | Body | String | Endpoint ID |
+| endpoint.name | Body | String | Endpoint name |
