@@ -1,19 +1,21 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=cdbc88f0a12c -->
 
-{%- set api_host = "api-jinja.gov-nhncloudservice.com" if "gov" in build_flags else "api-jinja.nhncloudservice.com" -%}
+{%- set api_host = "api-jinja.gov-nhncloudservice.com" if "gov" in build_flags else "api-jinja.nhncloudservice.com" %}
 <a id="sample-jinja-guide"></a>
 ## Sample > Jinja ガイド { #sample-jinja-guide }
 
-この文書は、mkdocs-macros の Jinja 条件分岐と変数置換が ko/en/ja の三言語で同一に保たれるかを検証するためのフィクスチャです。タグは制御構文なので翻訳されず、本文のみ言語ごとに異なります。
+このドキュメントは、mkdocs-macros の Jinja 条件分岐と変数置換が ko/en/ja 3 つの言語で同一に維持されるかどうかを検証するためのフィクスチャです。タグは制御文法であるため、翻訳されず、本文のみが言語ごとに異なります。（本文修正テスト: この文は翻訳を再実行する際に反映される必要があります。）
 
 <a id="endpoint"></a>
 ### エンドポイント { #endpoint }
 
-{% if "gov" in build_flags -%}
+{%- if "gov" in build_flags %}
 政府網環境では専用エンドポイントを使用します。公用ドメインからはアクセスできません。
-{% else -%}
+{%- else %}
 公用環境では基本エンドポイントを使用します。リージョン別ホストは下の表を参照してください。
-{% endif %}
+{%- endif %}
 
 API ホストは `$[ api_host ]$` です。
 
@@ -25,11 +27,11 @@ API ホストは `$[ api_host ]$` です。
 <a id="auth"></a>
 ### 認証 { #auth }
 
-{% if "ngsc" in build_flags -%}
+{%- if "ngsc" in build_flags %}
 NGSC 環境は別途の認証手順に従います。担当者に発行手順をお問い合わせください。
-{% else -%}
+{%- else %}
 トークンを発行し、リクエストヘッダに含めて呼び出します。トークンには有効期限があります。
-{% endif %}
+{%- endif %}
 
 <a id="reference"></a>
 ### References { #reference }
