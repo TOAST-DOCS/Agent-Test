@@ -14,29 +14,29 @@
 
 同じファイルをデプロイ URL 形式のパスで指すリンクです。純粋な in-file `#slug` だけが残るべきです。
 
-* [正常なリンク集](./fix-links/#fix-links-controls)
+* [正常なリンク集](#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
 
 同じ repo 内のファイルを絶対 URL・repo-rooted パスで指すリンクです。どちらも `./overview.md#pricing` になるべきです。
 
-* [料金 (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ja/overview.md#pricing)
-* [料金 (repo-rooted パス)](/ja/overview.md#pricing)
+* [料金 (github blob URL)](./overview/#pricing)
+* [料金 (repo-rooted パス)](./overview/#pricing)
 
 <a id="fix-links-langdir"></a>
 ## lang-dir { #fix-links-langdir }
 
 別の言語フォルダーを指す in-repo リンクです。同じ言語の対応ファイルが実在するので入れ替わるべきです。
 
-* [料金 (別の言語フォルダー)](../ko/overview.md#pricing)
+* [料金 (別の言語フォルダー)](./overview/#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
 
 デプロイ URL の断片が fragment に入り込み `#a/#b` と重なったリンクです。最後の `/#` 以降だけが残るべきです。
 
-* [料金 (重なった fragment)](./overview.md#overview/#pricing)
+* [料金 (重なった fragment)](./overview.md#pricing)
 
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
@@ -44,7 +44,7 @@
 fragment は死んでいますが、リンクテキストが対象文書の heading と完全に一致するリンクです。
 その heading の canonical id になるべきです。
 
-* [キーペア(Key-pair)](./overview.md#keypair-legacy-slug)
+* [キーペア(Key-pair)](./overview.md#key-pair)
 
 <a id="fix-links-langsite"></a>
 ## lang-site { #fix-links-langsite }
@@ -53,7 +53,7 @@ site-root 短縮形が**別の言語**を指しているリンクです。ロケ
 見えますが、デプロイ時に前の位置がこの文書の言語で埋められ `/ja/…/ko/…` になるため、
 死んだリンクです。同じ言語の対応文書に置き換えられるべきです。
 
-* [料金 (site-root 別言語)](/Open%20Source/agent-test/ko/overview/#pricing)
+* [料金 (site-root 別言語)](./overview/#pricing)
 
 <a id="fix-links-absdocs"></a>
 ## abs-docs · abs-docs-env { #fix-links-absdocs }
@@ -63,8 +63,8 @@ alpha/beta/master のすべてにデプロイされるため、どの host を�
 誤りになります。どちらも相対パスになるべきで、非本番 host は別の表記コード
 (`abs-docs-env`) で判定されます。
 
-* [料金 (本番 host)](https://docs.nhncloud.com/ja/Open%20Source/agent-test/ja/overview/#pricing)
-* [料金 (alpha host)](https://docs.alpha-nhncloud.com/ja/Open%20Source/agent-test/ja/overview/#pricing)
+* [料金 (本番 host)](./overview/#pricing)
+* [料金 (alpha host)](./overview/#pricing)
 
 <a id="fix-links-legacyjp"></a>
 ## legacy-jp { #fix-links-legacyjp }
@@ -72,7 +72,7 @@ alpha/beta/master のすべてにデプロイされるため、どの host を�
 2026-08 以前の日本語セグメント `jp` が残っているリンクです。`jp` は両方の位置で死んだ
 ロケールなので、この文書の言語に置き換えられるべきです。
 
-* [料金 (レガシー jp)](/Open%20Source/agent-test/jp/overview/#pricing)
+* [料金 (レガシー jp)](./overview/#pricing)
 
 <a id="fix-links-report"></a>
 ## 訂正せず報告だけすべきリンク { #fix-links-report }
