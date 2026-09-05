@@ -23,22 +23,37 @@ If even one character changes, the fill touched something outside a stub, which 
 <a id="fill-stub-table"></a>
 ## Section With a Table { #fill-stub-table }
 
-<!-- TODO: translate body -->
+This is a body stub that contains a table. After being filled in, the number of columns and rows in the table must match those in the Korean source.
+
+| Item | Description | Default |
+|---|---|---|
+| Instance type | CPU/memory specifications of the instance to create | m2.c1m2 |
+| Block Storage | Root volume size (GB) | 20 |
+| Boot script | Script to run on the first instance boot | None |
 
 <a id="fill-stub-code"></a>
 ## Section With a Code Block { #fill-stub-code }
 
-<!-- TODO: translate body -->
+Code blocks are not translation targets. The block below must remain unchanged even after being filled.
+
+```bash
+# fill-stub-test: this line must be copied verbatim
+curl -X GET "https://api.example.com/v2.0/servers" \
+  -H "X-Auth-Token: ${TOKEN}"
+```
+
+Only this sentence outside the block is a translation target, and command and comment lines are not touched.
 
 <a id="fill-stub-heading"></a>
-## 제목까지 비어 있는 섹션 { #fill-stub-heading }
+## Section with an untranslated heading { #fill-stub-heading }
 
-<!-- TODO: translate -->
+The corresponding section in en/ja is a heading stub where the heading is still in Korean.
+When running a fill operation, translate both the heading and the body, but the heading level and `{ #id }` must follow the Korean source as the authoritative reference.
 
 <a id="fill-stub-heading-child"></a>
-### 하위 제목도 비어 있는 경우 { #fill-stub-heading-child }
+### When the child heading is also empty { #fill-stub-heading-child }
 
-<!-- TODO: translate -->
+This is a case where heading stubs appear consecutively. Each must be filled independently of the parent section, and the `###` level must not be promoted to `##` or demoted.
 
 ## 앵커가 없는 섹션
 
