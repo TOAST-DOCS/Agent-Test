@@ -1,12 +1,14 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-## Compute > Instance > Console Guide { #compute-instance-console-guide }
+## Compute > Instance > Console Guide Detailed Information { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
 ## Create Instances { #create-instances }
 
-You can create instances either by using the settings below or by using instance templates. To create instances using instance templates, select **Use instance template** from the Create Instance page. To learn how to create instance templates, see [Instance Template Console Guide](/Compute/Instance%20Template/en/console-guide/).
+![Instance Creation Guide Cover](../static/images/image-1704.jpg)
 
 <a id="os-settings"></a>
 ### OS Settings { #os-settings }
