@@ -26,7 +26,7 @@ Change the default repository for your system architecture and Rocky Linux versi
 [baseos]
 name=Rocky Linux $releasever - BaseOS
 mirrorlist=https://mirrors.rockylinux.org/mirrorlist?arch=$basearch&repo=BaseOS-$releasever
-#baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
+# baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
 gpgcheck=1
 enabled=1
 countme=1
@@ -251,7 +251,7 @@ Reboot the OS for the boot order change to take effect.
 Currently, the official Rocky 8.10 image does not allow me to make kernel changes with the grubby command, so I use the shell script below.
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 
 result=1
 kernel_list=(` rpm -qa | grep ^kernel-[0-9] | sort `)
@@ -324,7 +324,7 @@ Change the default repository for your system architecture and Rocky Linux versi
 [baseos]
 name=Rocky Linux $releasever - BaseOS
 mirrorlist=https://mirrors.rockylinux.org/mirrorlist?arch=$basearch&repo=BaseOS-$releasever$rltype
-#baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
+# baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
 gpgcheck=1
 enabled=1
 countme=1
