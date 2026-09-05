@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=2c62441c8680 -->
+<!-- pre-align:aligned sig=0b640fde76d8 -->
 
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
