@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=73ceeadcb5ee -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=36b960a8096b -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > カーネルバージョンアップガイド { #compute-instance-kernel-version-upgrade-guide }
@@ -15,6 +17,7 @@
 現在インストールされているカーネルバージョンを確認します。
 
 ```
+# code-edit-test: this line must be copied verbatim
 [root@rocky810 ~]# uname -r
 4.18.0-553.8.1.el8_10.x86_64
 ```
@@ -98,6 +101,7 @@ kernelshark.x86_64
 
 <a id="install-the-kernel-without-specifying-a-version"></a>
 #### バージョンを指定せずにカーネルをインストール
+
 バージョンを指定しない場合、majorバージョンの最新バージョンを基準にパッケージを検索します。
 
 ```
@@ -132,6 +136,7 @@ kernelshark.x86_64
 
 <a id="install-the-kernel-install-the-latest-kernel"></a>
 #### 最新カーネルインストール
+
 バージョンを指定しない場合、最新バージョンでインストールします。
 
 カーネルをインストールすると依存関係パッケージである**kernel-core**と **kernel-modules**も一緒にインストールします。
@@ -191,6 +196,7 @@ kernel-modules.x86_64                 4.18.0-553.16.1.el8_10                    
 
 <a id="select-create-a-configuration-file-for-the-grub2-bootloader"></a>
 ### <span style="color:#e11d21;">**[選択]**</span> GRUB2ブートローダの設定ファイル作成 { #select-create-a-configuration-file-for-the-grub2-bootloader }
+
 システムのブートメニューをアップデートして、新しくインストールされたカーネルやその他のブート項目を反映します。
 
 dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
@@ -433,6 +439,7 @@ kernelshark.x86_64                                                         1:1.2
 
 <a id="rocky-linux-9-install-the-kernel-install-the-kernel-without-specifying-a-version"></a>
 #### バージョンを指定せずにカーネルをインストール
+
 バージョンを指定しない場合、majorバージョンの最新バージョンを基準にパッケージを検索します。
 
 ```
@@ -482,6 +489,7 @@ kernelshark.x86_64                                                         1:1.2
 
 <a id="rocky-linux-9-install-the-kernel-install-the-latest-kernel"></a>
 #### 最新カーネルインストール
+
 バージョンを指定しない場合、最新バージョンでインストールします。
 
 カーネルをインストールすると依存関係パッケージである**kernel-core**と **kernel-modules**も一緒にインストールします。
@@ -568,6 +576,7 @@ kernel-modules-core.x86_64             5.14.0-503.23.2.el9_5          @baseos
 
 <a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader"></a>
 ### <span style="color:#e11d21;">**[選択]**</span> GRUB2ブートローダの設定ファイル作成 { #rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader }
+
 システムのブートメニューをアップデートして、新しくインストールされたカーネルやその他のブート項目を反映します。
 
 dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
@@ -575,17 +584,6 @@ dnf, yumは自動的にGRUB2設定ファイルをアップデートします。
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
-
-<a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
-#### カーネルアップデート確認
-
-カーネルバージョンが正常にアップデートされたか確認します。
-
-```
-[root@rocky810 ~]# uname -r
-4.18.0-553.16.1.el8_10.x86_64
-```
-
 
 <a id="rocky-linux-9-change-the-kernel-boot-order"></a>
 ### カーネル起動順序の変更 { #rocky-linux-9-change-the-kernel-boot-order }
