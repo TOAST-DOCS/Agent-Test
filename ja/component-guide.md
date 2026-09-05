@@ -1,15 +1,26 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > インストールコンポーネントガイド { #compute-instance-installation-component-guide }
 
+この段落は既存のセクションに追加されたテスト段落です。既存のヘディングはそのままにしておく必要があります。
+
+<a id="test-added-subsection"></a>
+### テスト用下位セクション { #test-added-subsection }
+
+このセクションは翻訳パイプラインテストのために追加されました。新しいh3が翻訳され、3つの言語に同じアンカーIDが割り当てられるかを確認します。
+
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
+
 NATインスタンスは、プライベートネットワークインスタンスから特定IPアドレス帯域にインターネットアクセスできるようにするインスタンスです。
 韓国(パンギョ)、韓国(ピョンチョン)リージョンでのみ提供する機能です。
 
 <a id="key-features"></a>
 ### 主な機能 { #key-features }
+
 * インターネットゲートウェイが接続されていないプライベートネットワークのインスタンスがNATインスタンスを介してインターネットにアクセスできます。
 * NATインスタンスのFloating IPをソースIPに変更してインターネットにアクセスします。
 * NATインスタンスまで転送されたパケットは、NATインスタンスのサブネットに接続されたルーティングテーブルのルート設定に基づいてパケットを転送します。
@@ -36,14 +47,17 @@ NATインスタンスは、プライベートネットワークインスタン�
 
 <a id="sourcetarget-check-setting"></a>
 ### スプーフィング防止設定 { #sourcetarget-check-setting }
+
 NATインスタンスが正常に動作するには、ネットワークインターフェイス設定で**スプーフィング防止**を**使用しない**に設定する必要があります。
 
 <a id="routing-setting"></a>
 ### ルート設定 { #routing-setting }
+
 NATインスタンスをルートゲートウェイに指定します。 NATインスタンスまで転送されたパケットは、NATインスタンスのサブネットに接続されたルーティングテーブルのルート設定に基づいてパケットを転送します。
 
 <a id="caution-on-settings"></a>
 ### 設定注意事項 { #caution-on-settings }
+
 * NATインスタンスは、1つのネットワークインタフェースのみ使用することを推奨します。 NATインスタンスに複数のネットワークインタフェースを接続しても、1つのインタフェース(eth0)だけがNAT機能を持つことができます。
 * NATインスタンスのサブネットに接続されたルーティングテーブルには、該当NATインスタンスをゲートウェイにするルート設定を追加してはいけません。
 * NATインスタンスサブネットとNATインスタンスをゲートウェイとして使用するインスタンスのサブネットを分離し、別々のルーティングテーブルを使用することを強く推奨します。
@@ -61,6 +75,7 @@ NATインスタンスをルートゲートウェイに指定します。 NATイ�
 
 <a id="ms-sql-instance"></a>
 ## MS-SQL Instance { #ms-sql-instance }
+
 インスタンス作成完了後、RDP(remote desktop protocol)を使用してインスタンスにアクセスします。
 インスタンスにFloating IPが接続されている必要があり、セキュリティーグループでTCPポート3389(RDP)が許可されている必要があります。
 **+ パスワード確認** ボタンをクリックし、インスタンス作成時に設定したキーペアを使用してパスワードを確認します。
@@ -161,6 +176,7 @@ Microsoft SQL Server Management Studioサーバープロパティのデータベ
 
 <a id="restart-microsoft-sql"></a>
 ### MS-SQLサービス再起動 { #restart-microsoft-sql }
+
 MS-SQLの設定変更時、MS-SQLサービスの再起動が必要な場合があります。
 変更設定を適用するにはMS-SQLサービスを再起動します。
 
@@ -170,6 +186,7 @@ SQL Server構成管理者の **SQL Server構成管理者(ローカル) > SQL Ser
 
 <a id="checkset-automatic-microsoft-sql-service-execution"></a>
 ### MS-SQLサービス自動実行確認/設定 { #checkset-automatic-microsoft-sql-service-execution }
+
 MS-SQLのサービスが、OS起動時に自動で起動するように設定されているかを確認します。
 
 SQL Server構成管理者のSQL Server構成管理者(ローカル) > SQL Serverサービスで「起動モード」を確認できます。
@@ -186,6 +203,7 @@ SQL Server構成管理者のSQL Server構成管理者(ローカル) > SQL Server
 
 <a id="mysql-instance"></a>
 ## MySQL Instance { #mysql-instance }
+
 <a id="startingstopping-mysql"></a>
 ### MySQL起動/停止方法 { #startingstopping-mysql }
 
@@ -289,6 +307,7 @@ MySQLディレクトリおよびファイル説明は下記の通りです。
 
 <a id="postgresql-instance"></a>
 ## PostgreSQL Instance { #postgresql-instance }
+
 <a id="how-to-startstop-postgresql"></a>
 ### PostgreSQL開始/停止方法 { #how-to-startstop-postgresql }
 
@@ -660,6 +679,7 @@ port=[変更するportアドレス]
 ```
 
 ##### 2)インスタンスの再起動
+
 ポートの変更が適用されるようにインスタンスを再起動します。
 ```
 sudo systemctl restart mariadb.service
@@ -712,6 +732,7 @@ $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 | 5 | DB\_PORT | Tiberoで使用するサービスIPのポート |
 
 ##### Tibero 7インストール
+
 ```
 [rocky@tiberoinstance ~]$ sudo su - root
 [root@tiberoinstance ~]# pwd
@@ -875,11 +896,13 @@ Tiberoで提供する基本アカウントは次のとおりです。
 
 <a id="kafka-instance"></a>
 ## Kafka Instance { #kafka-instance }
+
 > [参考]
 > インスタンスタイプはc1m2(CPU 1core、Memory 2GB)以上の仕様で作成してください。
 
 <a id="start-and-stop-zookeeper-kafka-broker"></a>
 ### Zookeeper、Kafka broker起動/停止 { #start-and-stop-zookeeper-kafka-broker }
+
 ```
 # Zookeeper、Kafka broker起動(Zookeeperを先に起動)
 shell> sudo systemctl start zookeeper.service
@@ -894,6 +917,7 @@ shell> sudo systemctl restart kafka.service
 
 <a id="install-kafka-cluster"></a>
 ### Kafka Clusterインストール { #install-kafka-cluster }
+
 - 必ず新規インスタンスにインストールします。
 - インスタンスは3台以上、奇数で必要です。インスタンス1台でインストールスクリプトを実行します。
 - インスタンス1台にkafka broker、zookeeper nodeが各1つずつ構成されます。
@@ -963,15 +987,18 @@ ls: cannot access /tmp/zookeeper: No such file or directory
 
 <a id="initial-setup-after-creating-a-kafka-instance-change-the-port"></a>
 #### ポート(port)変更
+
 最初のインストール後、ポートはKafkaデフォルトポート9092、Zookeeperデフォルトポート2181です。セキュリティのためにポートを変更することを推奨します。
 
 ##### 1) ~/kafka/config/zookeeper.propertiesファイル修正
+
 ~/kafka/config/zookeeper.propertiesファイルを開いてclientPortに変更するZookeeper portを入力します。
 ```
 shell> vi ~/kafka/config/zookeeper.properties
 clientPort=変更するzookeeper port
 ```
 ##### 2) ~/kafka/config/server.propertiesファイル修正
+
 ~/kafka/config/server.propertiesファイルを開いてlistenersに変更するKafka portを入力します。
 
 インスタンスIPの確認方法
@@ -991,6 +1018,7 @@ zookeeper.connect=インスタンスIP：変更するzookeeper port
 ```
 
 ##### 3) Zookeeper、Kafka brokerの再起動
+
 ```
 shell> sudo systemctl stop kafka.service
 shell> sudo systemctl stop zookeeper.service
@@ -999,6 +1027,7 @@ shell> sudo systemctl start kafka.service
 ```
 
 ##### 4) Zookeeper、Kafka port変更確認
+
 変更されたポートが使用されていることを確認します。
 ```
 shell> netstat -ntl | grep [Kafka port]
@@ -1033,6 +1062,7 @@ shell> ~/kafka/bin/kafka-console-consumer.sh --bootstrap-server [インスタン
 
 <a id="startstop-redis"></a>
 ### Redis起動/停止 { #startstop-redis }
+
 ```
 # Redisサービスの起動
 shell> sudo systemctl start redis
@@ -1046,6 +1076,7 @@ shell> sudo systemctl restart redis
 
 <a id="connect-to-redis"></a>
 ### Redis接続 { #connect-to-redis }
+
 `redis-cli`コマンドでRedisインスタンスに接続できます。
 ```
 shell> redis-cli
@@ -1053,10 +1084,12 @@ shell> redis-cli
 
 <a id="initial-setup-after-creating-a-redis-instance"></a>
 ### Redisインスタンス作成後の初期設定 { #initial-setup-after-creating-a-redis-instance }
+
 Redisインスタンスの基本設定ファイルは`~/redis/redis.conf`です。変更が必要なパラメータの説明は次のとおりです。
 
 <a id="initial-setup-after-creating-a-redis-instance-bind"></a>
 #### bind
+
 - 基本値：`127.0.0.1 -::1`
 - 変更値：`<private ip> 127.0.0.1 -::1`
 
@@ -1064,6 +1097,7 @@ Redisが使用するipの値です。サーバー外部からRedisインスタ�
 
 <a id="initial-setup-after-creating-a-redis-instance-port"></a>
 #### port
+
 - 基本値：`6379`
 
 ポートはRedisデフォルト値である6379です。セキュリティ上、ポートを変更することを推奨します。ポートを変更した後は、以下のコマンドでRedisに接続できます。
@@ -1074,17 +1108,20 @@ shell> redis-cli -p <新しいポート>
 
 <a id="initial-setup-after-creating-a-redis-instance-requirepassmasterauth"></a>
 #### requirepass/masterauth
+
 - 基本値：`nhncloud`
 
 基本パスワードは`nhncloud`です。セキュリティ上、パスワードを変更することを推奨します。複製接続を使用する場合、`requirepass`と`masterauth`値を同時に変更する必要があります。
 
 <a id="automatic-ha-configuration-script"></a>
 ### 自動HA構成スクリプト { #automatic-ha-configuration-script }
+
 NHN CloudのRedisインスタンスは自動的にHA環境を構成するスクリプトを提供します。スクリプトは必ず**インストール直後の新規インスタンス**でのみ使用することができ、redis.confで設定値を変更した場合には使用できません。
 
 スクリプトを使用するには次の設定が必ず必要です。
 
 ##### キーペアコピー
+
 インストールスクリプトを実行するインスタンスに他のインスタンス接続に必要なキーペア(PEMファイル)が必要です。キーペアは次のようにコピーできます。
 - ubuntu
 ```
@@ -1093,6 +1130,7 @@ local> scp -i <キーペア>.pem <キーペア>.pem ubuntu@<floating ip>:/home/u
 作成したインスタンスのキーペアは、すべて同じである必要があります。
 
 ##### セキュリティグループ設定
+
 Redisインスタンス間の通信に必要なセキュリティグループ(**Network** > **Security Groups**)設定が必要です。以下のルールでセキュリティグループを作成し、Redisインスタンスに適用してください。
 
 | 方向 | IPプロトコル| ポート範囲| Ether| 遠隔|
@@ -1103,6 +1141,7 @@ Redisインスタンス間の通信に必要なセキュリティグループ(**
 
 <a id="automatic-ha-configuration-script-sentinel-automatic-configuration"></a>
 #### Sentinel自動構成
+
 Sentinel構成のために3つのRedisインスタンスが必要です。マスターとして使用するインスタンスにキーペアをコピーし、以下のようにスクリプトを実行してください。
 
 ```
@@ -1126,6 +1165,7 @@ shell> Enter Pemkey's name: <キーペア>.pem
 
 <a id="automatic-ha-configuration-script-cluster-automatic-configuration"></a>
 #### Cluster自動構成
+
 Cluster構成のために6つのRedisインスタンスが必要です。マスターとして使用するインスタンスにキーペアをコピーし、以下のようにスクリプトを実行してください。
 
 ```
