@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=8e6d00d3460b -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=1240e97ef905 -->
 
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
@@ -9,7 +11,8 @@
 
 | タイプ | リージョン | エンドポイント |
 |---|---|---|
-| compute | 韓国 (パンギョ) リージョン<br>韓国 (ピョンチョン) リージョン<br>韓国 (光州) リージョン<br>日本リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | 韓国(パンギョ) リージョン<br>韓国(ピョンチョン) リージョン<br>韓国(クワンジュ) リージョン<br>日本 リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com (行修正テスト) |
+| TEST-ROW | (新規行テスト) | (新規行テスト) |
 
 API 応答には、このガイドに明示されていないフィールドが表示される場合があります。これらのフィールドは NHN Cloud の内部用途に使用され、予告なく変更される可能性があるため、使用しないでください。
 
@@ -207,6 +210,7 @@ X-Auth-Token: {tokenId}
 
 <a id="list-availability-zones-request"></a>
 #### リクエスト
+
 このAPIはリクエスト本文を必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -216,6 +220,7 @@ X-Auth-Token: {tokenId}
 
 <a id="list-availability-zones-response"></a>
 #### レスポンス
+
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
 | availabilityZoneInfo | Body | Object | 可用性ゾーン情報オブジェクト |
@@ -255,6 +260,7 @@ X-Auth-Token: {tokenId}
 
 <a id="list-key-pairs"></a>
 ### キーペア一覧の表示 { #list-key-pairs }
+
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
@@ -262,6 +268,7 @@ X-Auth-Token: {tokenId}
 
 <a id="list-key-pairs-request"></a>
 #### リクエスト
+
 このAPIはリクエストボディを必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -304,6 +311,7 @@ X-Auth-Token: {tokenId}
 
 <a id="show-key-pair"></a>
 ### キーペアの表示 { #show-key-pair }
+
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -311,6 +319,7 @@ X-Auth-Token: {tokenId}
 
 <a id="show-key-pair-request"></a>
 #### リクエスト
+
 このAPIはリクエストボディを必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -426,6 +435,7 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-key-pair"></a>
 ### キーペアを削除する { #delete-key-pair }
+
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -433,6 +443,7 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-key-pair-request"></a>
 #### リクエスト
+
 このAPIはリクエストボディを必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -443,6 +454,7 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-key-pair-response"></a>
 #### レスポンス
+
 このAPIはレスポンスボディを返しません。
 
 
@@ -998,6 +1010,7 @@ X-Auth-Token: {tokenId}
 
 <a id="modify-instance"></a>
 ### インスタンスを変更する { #modify-instance }
+
 作成されたインスタンスを変更します。変更できる属性は一部の項目に制限されています。
 
 ```
@@ -1032,12 +1045,14 @@ X-Auth-Token: {tokenId}
 
 <a id="modify-instance-response"></a>
 #### レスポンス
+
 インスタンスの表示と同じです。
 
 ---
 
 <a id="delete-instance"></a>
 ### インスタンスの削除 { #delete-instance }
+
 インスタンスを削除します。
 
 ```
@@ -1047,6 +1062,7 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-instance-request"></a>
 #### リクエスト
+
 このAPI はリクエスト本文を必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
@@ -1057,6 +1073,33 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-instance-response"></a>
 #### レスポンス
+
 このAPI はレスポンス本文を返しません。
 
 ---
+
+<a id="test-added-endpoint"></a>
+### テスト用新規エンドポイント { #test-added-endpoint }
+
+```
+POST /v2/{tenantId}/test-added-endpoint
+X-Auth-Token: {tokenId}
+```
+
+<a id="test-added-request"></a>
+#### リクエスト { #test-added-request }
+
+| 名前 | 種類 | 形式 | 必須 | 説明 |
+|---|---|---|---|---|
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
+| name | Body | String | O | エンドポイント名 |
+
+<a id="test-added-response"></a>
+#### レスポンス { #test-added-response }
+
+| 名前 | 種類 | 形式 | 説明 |
+|---|---|---|---|
+| endpoint | Body | Object | 作成されたエンドポイントオブジェクト |
+| endpoint.id | Body | String | エンドポイント ID |
+| endpoint.name | Body | String | エンドポイント名 |
