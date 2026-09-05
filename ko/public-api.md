@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=27ed74e0499b -->
+<!-- pre-align:aligned sig=b6ac75e9093f -->
 
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 가이드 { #compute-instance-api-v2-guide }
