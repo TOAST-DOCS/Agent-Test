@@ -1,5 +1,7 @@
+<!-- pre-align:aligned sig=27ed74e0499b -->
+
 <a id="compute-instance-api-v2-guide"></a>
-## Compute > Instance > API v2 Guide
+## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
 
 Instance uses IaaS tokens for authentication and authorization when making API calls. The IaaS token is an authentication token used for NHN Cloud's OpenStack-based infrastructure services (IaaS). For more information on issuing and using IaaS tokens, please refer to the [IaaS Token](/nhncloud/en/public-api/iaas-token).
 
@@ -12,16 +14,17 @@ The Instance API uses the `compute` type endpoint. For the exact endpoint, see `
 In each API response, you may find fields that are not specified within this guide. Those fields are for NHN Cloud internal usage, and as such refrain from using them since they may be changed without prior notice.
 
 <a id="instance-flavors"></a>
-## Instance Flavors
+## Instance Flavors { #instance-flavors }
 
 <a id="list-flavors"></a>
-### List Flavors
+### List Flavors { #list-flavors }
 
 ```
 GET /v2/{tenantId}/flavors
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-flavors-request"></a>
 #### Request
 
 This API does not require a request body.
@@ -33,6 +36,7 @@ This API does not require a request body.
 | minDisk | Query | Integer | - | Minimum block storage size (GB)<br>Returns only flavors with block storage sizes greater than specified value |
 | minRam | Query | Integer | - | Minimum RAM Size (MB)<br>Returns only flavors with RAM sizes greater than specified value |
 
+<a id="list-flavors-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
@@ -87,13 +91,14 @@ This API does not require a request body.
 ---
 
 <a id="list-flavors-with-details"></a>
-### List Flavors with Details
+### List Flavors with Details { #list-flavors-with-details }
 
 ```
 GET /v2/{tenantId}/flavors/detail
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-flavors-with-details-request"></a>
 #### Request
 
 This API does not require a request body.
@@ -105,6 +110,7 @@ This API does not require a request body.
 | minDisk | Query | Integer | - | Minimum block storage size (GB)<br/>Returns only flavors with block storage sizes greater than specified value |
 | minRam | Query | Integer | - | Minimum RAM Size (MB)<br/>Returns only flavors with RAM sizes greater than specified value |
 
+<a id="list-flavors-with-details-response"></a>
 #### Response
 
 | Name | Type | Format | Description             |
@@ -189,16 +195,17 @@ This API does not require a request body.
 ---
 
 <a id="availability-zones"></a>
-## Availability Zones
+## Availability Zones { #availability-zones }
 
 <a id="list-availability-zones"></a>
-### List Availability Zones
+### List Availability Zones { #list-availability-zones }
 
 ```
 GET /v2/{tenantId}/os-availability-zone
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-availability-zones-request"></a>
 #### Request
 This API does not require a request body.
 
@@ -207,6 +214,7 @@ This API does not require a request body.
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
 
+<a id="list-availability-zones-response"></a>
 #### Response
 | Name | Type | Format | Description |
 |---|---|---|---|
@@ -243,15 +251,16 @@ This API does not require a request body.
 ---
 
 <a id="key-pairs"></a>
-## Key Pairs
+## Key Pairs { #key-pairs }
 
 <a id="list-key-pairs"></a>
-### List Key Pairs
+### List Key Pairs { #list-key-pairs }
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-key-pairs-request"></a>
 #### Request
 This API does not require a request body.
 
@@ -260,6 +269,7 @@ This API does not require a request body.
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
 
+<a id="list-key-pairs-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
@@ -293,12 +303,13 @@ This API does not require a request body.
 ---
 
 <a id="show-key-pair"></a>
-### Show Key Pair
+### Show Key Pair { #show-key-pair }
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="show-key-pair-request"></a>
 #### Request
 This API does not require a request body.
 
@@ -308,6 +319,7 @@ This API does not require a request body.
 | keypairName | URL | String | O | Key pair name |
 | tokenId | Header | String | O | Token ID |
 
+<a id="show-key-pair-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
@@ -348,13 +360,14 @@ This API does not require a request body.
 ---
 
 <a id="createregister-key-pair"></a>
-### Create/Register Key Pair
+### Create/Register Key Pair { #createregister-key-pair }
 
 ```
 POST /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
+<a id="createregister-key-pair-request"></a>
 #### Request
 
 | Name | Type | Format | Required | Description |
@@ -380,6 +393,7 @@ X-Auth-Token: {tokenId}
 </p>
 </details>
 
+<a id="createregister-key-pair-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
@@ -411,12 +425,13 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="delete-key-pair"></a>
-### Delete Key Pair
+### Delete Key Pair { #delete-key-pair }
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
+<a id="delete-key-pair-request"></a>
 #### Request
 This API does not require a request body.
 
@@ -426,14 +441,16 @@ This API does not require a request body.
 | keypairName | URL | String | O | Key pair name |
 | tokenId | Header | String | O | Token ID |
 
+<a id="delete-key-pair-response"></a>
 #### Response
 This API does not return a response body.
 
 
-## Instance
+<a id="instance"></a>
+## Instance { #instance }
 
 <a id="instance-status"></a>
-### Instance Status
+### Instance Status { #instance-status }
 
 Instances exist in various statuses, and each status defines its own set of permissible operations. See the following list of instance statuses.
 
@@ -459,13 +476,14 @@ Instances exist in various statuses, and each status defines its own set of perm
 | `UNKNOWN` | Instance status is unknown<br>`Contact the administrator if the instance is in this status.` | 
 
 <a id="list-instances"></a>
-### List Instances
+### List Instances { #list-instances }
 
 ```
 GET /v2/{tenantId}/servers
 X-Auth-Token: {tokenId}
 ```
 
+<a id="list-instances-request"></a>
 #### Request
 
 This API does not require a request body.
@@ -483,6 +501,7 @@ This API does not require a request body.
 | limit | Query | Integer | - | Number of instances to query<br>Return list with up to specified number of instances |
 | marker | Query | UUID | - | UUID of first instance in the list <br>Return list of up to `limit` instances from the instance specified as the `marker`, according to the sort order |
 
+<a id="list-instances-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
