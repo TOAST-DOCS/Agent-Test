@@ -3,6 +3,14 @@
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > 설치 구성 요소 가이드 { #compute-instance-installation-component-guide }
 
+이 문단은 기존 섹션에 추가된 테스트 문단입니다. 기존 heading은 그대로 유지되어야 합니다.
+
+
+<a id="test-added-subsection"></a>
+### 테스트용 하위 섹션 { #test-added-subsection }
+
+이 하위 섹션은 번역 파이프라인 테스트를 위해 추가됐습니다. 신규 h3가 번역되고 세 언어에 동일한 anchor id가 부여되는지 확인합니다.
+
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
 
