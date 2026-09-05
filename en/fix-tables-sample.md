@@ -22,29 +22,33 @@ The table in this section is translated with the same identifier rows as ko. It 
 
 <a id="fix-tables-missing"></a>
 ## Section Whose Table Went Missing { #fix-tables-missing }
+The corresponding sections in en/ja do not have the table below. Since the number of tables in the section differs from ko, the maintenance run must rebuild this section's body based on the ko version.
 
-The same section in en/ja has no table below. Because the table count inside the section differs from ko, a fix run must rebuild this section body from ko.
+| Name | Type | Format | Description |
+|---|---|---|---|
+| clusterId | Body | UUID | Cluster UUID |
+| clusterName | Body | String | Cluster name |
+| nodeCount | Body | Integer | Number of nodes |
 
 <a id="fix-tables-shifted"></a>
 ## Section Whose First Column Was Overwritten { #fix-tables-shifted }
-
-The same section in en/ja has a table with ko's row and column count, but the identifiers in the first column were overwritten with format names. ko's identifier rows are absent from the paired table, so it must be rebuilt.
+The same sections in en/ja have the same number of rows and columns as ko, but the identifiers in the first column are overwritten with format names. Since the ko identifier row is missing from the paired table, it needs to be recreated.
 
 | Name | Type | Format | Description |
 |---|---|---|---|
-| UUID | Body | UUID | Instance type UUID |
-| UUID | Body | UUID | Image UUID |
-| String | Body | String | Key pair name |
+| flavorId | Body | UUID | Instance flavor UUID |
+| imageId | Body | UUID | Image UUID |
+| keyName | Body | String | Key pair name |
 
 <a id="fix-tables-rows"></a>
 ## Section Missing a Row { #fix-tables-rows }
-
-The same section in en/ja lost one identifier row from its table. The remaining rows are fine.
+The same section in en/ja is missing one identifier row from the table. The remaining rows are intact.
 
 | Name | Type | Format | Description |
 |---|---|---|---|
-| volumeId | Body | UUID | Block storage UUID |
-| volumeType | Body | String | Storage type |
+| volumeId | Body | UUID | Block Storage UUID |
+| volumeSize | Body | Integer | Block Storage Size (GB) |
+| volumeType | Body | String | Block Storage Type |
 
 <a id="fix-tables-prose-keys"></a>
 ## Table Without Identifiers { #fix-tables-prose-keys }
