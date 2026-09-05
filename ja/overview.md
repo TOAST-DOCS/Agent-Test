@@ -270,7 +270,7 @@ webhook がこの PR を ko-review / translate ジョブにルーティングす
 マーカーは定期的な restore-alpha-origin で整理されます。
 
 <a id="e2e-table-malformed"></a>
-### テーブル選定ガードのフィクスチャ
+### テーブル選定ガードのフィクスチャ { #e2e-table-malformed }
 
 下記のテーブルはe2eフィクスチャです。選定ガード検証用です（20260905-005334）。
 
