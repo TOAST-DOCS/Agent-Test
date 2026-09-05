@@ -1,9 +1,11 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview { #compute-instance-overview }
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Body text modification test: This sentence should be reflected when re-running the translation.)
 
 <a id="components"></a>
 ## Components { #components }
@@ -37,7 +39,7 @@ NHN Cloud provides various instance flavors to support a wide range of use cases
 | c2 | A flavor optimized for high CPU performance. Recommended for web application servers or analytics systems that require high-performance computations.                                                                           |
 | r2 | A flavor optimized for high memory utilization. Recommended for in-memory databases or cache servers.                                                                               |
 | t2 | A low-cost instance. Recommended for servers with low workloads.                                                                                                          |
-| u2 | The cheapest instance. Recommended for servers with low workloads.<br>This flavor utilizes local block storage, which makes it a less stable but more affordable option compared to other flavors.<br>Instances of this flavor do not guarantee I/O performance. |
+| u2 | The cheapest instance. Recommended for servers with low workloads.<br/>This flavor utilizes local block storage, which makes it a less stable but more affordable option compared to other flavors.<br/>Instances of this flavor do not guarantee I/O performance. |
 | x1 | A flavor that supports high-end CPU and memory. Recommended for services or applications that require high performance.                                                                                        |
 
 <a id="availability-zone"></a>
@@ -226,7 +228,7 @@ GRUB configuration is required to manipulate the bootloader on instances created
 
 Edit the GRUB configuration file.
 
-```
+```bash
 $ sudo vi /etc/default/grub.d/50-cloudimg-settings.cfg
 GRUB_TIMEOUT=3
 GRUB_TERMINAL="console serial"
@@ -235,6 +237,6 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 
 Apply the changed setting. The command to apply GRUB settings may vary depending on the OS.
 
-```
+```bash
 $ sudo update-grub
 ```
