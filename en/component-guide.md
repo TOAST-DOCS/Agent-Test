@@ -1,7 +1,16 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
+
+This paragraph is a test paragraph added to an existing section. Existing headings must remain unchanged.
+
+<a id="test-added-subsection"></a>
+### Test subsection { #test-added-subsection }
+
+This subsection has been added for translation pipeline testing. Verify that the new h3 is translated and the same anchor ID is assigned to all three languages.
 
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
@@ -38,14 +47,17 @@ This feature is available only in the Korea (Pangyo) and Korea (Pyeongchon) regi
 
 <a id="sourcetarget-check-setting"></a>
 ### Anti-spoofing Setting { #sourcetarget-check-setting }
+
 For the NAT instance to work normally, the option of **Anti-Spoofing** must be set to **Disabled** in the Network Interface settings.
 
 <a id="routing-setting"></a>
 ### Routing setting { #routing-setting }
+
 Specifies the NAT instance as a route gateway. The packets delivered to the NAT instance are delivered according to the routing setting of the routing table connected to the subnet of NAT instance.
 
 <a id="caution-on-settings"></a>
 ### Caution on settings { #caution-on-settings }
+
 * Using only one network interface for a NAT instance is recommended. Even if you connect multiple network interfaces to a NAT instance, the NAT feature is only available for one interface (eth0).
 * Do not add a routing setting that specifies the NAT instance as a gateway in the routing table connected to the subnet of the NAT instance.
 * It is strongly recommended to separate the NAT instance subnet from the subnet of an instance that is going to use the NAT instance as a gateway and use a different routing table.
@@ -65,6 +77,7 @@ Specifies the NAT instance as a route gateway. The packets delivered to the NAT 
 
 <a id="allow-security-group-tcp-port-3389-rdp"></a>
 ### Allow Security Group TCP Port 3389 (RDP) { #allow-security-group-tcp-port-3389-rdp }
+
 After instance is created, access the instance by using Remote Desktop Protocol (RDP).
 To that end, an instance must be associated with a floating IP and TCP port 3389 (RDP) must be allowed for security group.
 
@@ -160,6 +173,7 @@ In the **Database Setting** of **Server Properties** of Microsoft SQL Server Man
 
 <a id="restart-microsoft-sql"></a>
 ### Restart Microsoft SQL { #restart-microsoft-sql }
+
 Change of Microsoft SQL settings sometimes requires a restart of the service.
 To apply changed settings, restart Microsoft SQL.
 
@@ -169,6 +183,7 @@ From SQL Server Configuration Manager, go to **SQL Server Configuration Manager 
 
 <a id="checkset-automatic-microsoft-sql-service-execution"></a>
 ### Check/Set Automatic Microsoft SQL  Service Execution { #checkset-automatic-microsoft-sql-service-execution }
+
 Check if Microsoft SQL is set for automatic start with OS running.
 
 Go to **SQL Server Configuration Manager (local) > SQL Server** in the SQL Server Configuration Manager to find Start Mode.
@@ -637,6 +652,7 @@ port=[port address to change]
 ```
 
 ##### 2) Restart the instance
+
 Restart the instance for the port change to take effect.
 ```
 sudo systemctl restart mariadb.service
@@ -688,6 +704,7 @@ $ ./dbca OS_ACCOUNT DB_NAME DB_CHARACTERSET DB_TYPE DB_PORT
 | 5 | DB\_PORT | Service IP port used by Tibero |
 
 ##### Tibero 7 Installation
+
 ```
 [rocky@tiberoinstance ~]$ sudo su - root
 [root@tiberoinstance ~]# pwd
@@ -846,11 +863,13 @@ The default accounts provided by Tibero are as follows.
 
 <a id="kafka-instance"></a>
 ## Kafka Instance { #kafka-instance }
+
 > [Note]
 > For the instance flavor, please choose c1m2 (CPU 1core,  Memory 2GB) or higher specifications.
 
 <a id="start-and-stop-zookeeper-kafka-broker"></a>
 ### Start and Stop Zookeeper, Kafka broker { #start-and-stop-zookeeper-kafka-broker }
+
 ```
 # Start Zookeeper, Kafka broker (Zookeeper first)
 shell> sudo systemctl start zookeeper.service
@@ -867,6 +886,7 @@ shell> sudo systemctl restart kafka.service
 
 <a id="install-kafka-cluster"></a>
 ### Install Kafka Cluster { #install-kafka-cluster }
+
 - Must install in a new instance.
 - An odd number of instances (3 or more) are required, and installation script is executed in an instance.
 - An instance consists of of one kafka broker and one zookeeper node.
@@ -938,9 +958,11 @@ ls: cannot access /tmp/zookeeper: No such file or directory
 
 <a id="initial-setup-after-creating-a-kafka-instance-change-the-port"></a>
 #### Change the Port
+
 After initial installation, the ports are 9092, which is the Kafka default port, and 2181, which is the Zookeeper default port. It is recommended to change the port for security.
 
 ##### 1) Modify the ~/kafka/config/zookeeper.properties file
+
 Open the ~/kafka/config/zookeeper.properties file and enter the Zookeeper port to change in clientPort.
 ```
 shell> vi ~/kafka/config/zookeeper.properties
@@ -949,6 +971,7 @@ clientPort=zookeeper port to change
 ```
 
 ##### 2) Modify the ~/kafka/config/server.properties file
+
 Open the ~/kafka/config/server.properties file and enter the Kafka port to change in listeners.
 
 How to check Instance IP
@@ -968,6 +991,7 @@ zookeeper.connect=Instance IP:zookeeper port to change
 ```
 
 ##### 3) Restart Zookeeper, Kafka broker
+
 ```
 shell> sudo systemctl stop kafka.service
 shell> sudo systemctl stop zookeeper.service
@@ -977,6 +1001,7 @@ shell> sudo systemctl start kafka.service
 ```
 
 ##### 4) Check Zookeeper, Kafka Port Change
+
 Check if the changed port is in use.
 ```
 shell> netstat -ntl | grep [Kafka port]
@@ -1015,6 +1040,7 @@ shell> ~/kafka/bin/kafka-console-consumer.sh --bootstrap-server [Instance IP]:[K
 
 <a id="startstop-redis"></a>
 ### Start/Stop Redis { #startstop-redis }
+
 ```
 # Start the MySQL service
 shell> sudo systemctl start mysqld
@@ -1028,6 +1054,7 @@ shell> sudo systemctl restart mysqld
 
 <a id="connect-to-redis"></a>
 ### Connect to Redis { #connect-to-redis }
+
 Connect to a Redis instance by using the `redis-cli` command.
 ```
 shell> redis-cli
@@ -1035,10 +1062,12 @@ shell> redis-cli
 
 <a id="initial-setup-after-creating-a-redis-instance"></a>
 ### Initial Setup After Creating a Redis Instance { #initial-setup-after-creating-a-redis-instance }
+
 The default configuration file for a Redis instance is the `~/redis/redis.conf` file. The description for the parameters to be changed is as follows.
 
 <a id="initial-setup-after-creating-a-redis-instance-bind"></a>
 #### Bind
+
 - Default value: `127.0.0.1 -::1`
 - Changed value: `<private ip> 127.0.0.1 -::1`
 
@@ -1046,6 +1075,7 @@ Value for an IP used by Redis. To allow access to a Redis instance from outside 
 
 <a id="initial-setup-after-creating-a-redis-instance-port"></a>
 #### Port
+
 - Default value: `6379`
 
 Port is 6379, a default value for Redis. It is recommended to change the port for security reasons. After changing the port, you can connect to Redis with the following command.
@@ -1056,17 +1086,20 @@ shell> redis-cli -p <new port>
 
 <a id="initial-setup-after-creating-a-redis-instance-requirepassmasterauth"></a>
 #### Requirepass/masterauth
+
 - Default value: `nhncloud`
 
 The default password is `nhncloud`. For security reasons, it is recommended to change the password. If you are using replication connection, you must change the `requirepass` and `masterauth` values at the same time.
 
 <a id="automatic-ha-configuration-script"></a>
 ### Automatic HA Configuration Script { #automatic-ha-configuration-script }
+
 A Redis instance of NHN Cloud provides a script that automatically configures an HA environment. You can use the script only for **a new instance immediately after installation**, and cannot use after changing the set values from redis.conf.
 
 To use the script, the following settings are required.
 
 ##### Copy key pair
+
 The instance running the installation script must have a key pair (PEM file) required to connect to other instances. The key pair can be copied as follows.
 
 - ubuntu
@@ -1077,6 +1110,7 @@ local> scp -i <key pair>.pem <key pair>.pem ubuntu@<floating ip>:/home/ubuntu/
 The key pairs for created instances must be the same.
 
 ##### Set security group
+
 You must set a security group (**Network** > **Security Groups**) for communication between Redis instances. Create a security group with the following rules and apply it to a Redis instance.
 
 | Direction | IP protocol| Port range| Ether| Remote|
@@ -1087,6 +1121,7 @@ You must set a security group (**Network** > **Security Groups**) for communicat
 
 <a id="automatic-ha-configuration-script-sentinel-automatic-configuration"></a>
 #### Sentinel Automatic Configuration
+
 You will need 3 Redis instances to configure Sentinel. After copying the key pair to the instance used as the master, run the script as follows.
 
 ```
@@ -1109,6 +1144,7 @@ shell> Enter Pemkey's name: <key pair>.pem
 
 <a id="automatic-ha-configuration-script-cluster-automatic-configuration"></a>
 #### Cluster Automatic Configuration
+
 6 Redis instances are required for Cluster configuration. After copying the key pair to the instance used as the master, run the script as follows.
 
 ```
