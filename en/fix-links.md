@@ -14,29 +14,29 @@ This document is not registered in the user guide menu (`ko/nav.yml`). It is a p
 
 A link to this very file written as a deployed-URL-shaped path. Only the in-file `#slug` should survive.
 
-* [Valid links](./fix-links/#fix-links-controls)
+* [Valid links](#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
 
 Links to a file in this repo written as an absolute URL / repo-rooted path. Both should become `./overview.md#pricing`.
 
-* [Pricing (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/en/overview.md#pricing)
-* [Pricing (repo-rooted path)](/en/overview.md#pricing)
+* [Pricing (github blob URL)](./overview/#pricing)
+* [Pricing (repo-rooted path)](./overview/#pricing)
 
 <a id="fix-links-langdir"></a>
 ## lang-dir { #fix-links-langdir }
 
 An in-repo link pointing at another language folder. The same-language twin exists, so it should be swapped.
 
-* [Pricing (other language folder)](../ko/overview.md#pricing)
+* [Pricing (other language folder)](./overview/#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
 
 A link whose fragment swallowed a deployed-URL fragment, leaving `#a/#b`. Only the part after the last `/#` should survive.
 
-* [Pricing (nested fragment)](./overview.md#overview/#pricing)
+* [Pricing (nested fragment)](./overview.md#pricing)
 
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
@@ -44,7 +44,7 @@ A link whose fragment swallowed a deployed-URL fragment, leaving `#a/#b`. Only t
 The fragment is dead, but the link text matches a heading in the target document exactly.
 It should become that heading's canonical id.
 
-* [Key Pair](./overview.md#keypair-legacy-slug)
+* [Key Pair](./overview.md#key-pair)
 
 <a id="fix-links-langsite"></a>
 ## lang-site { #fix-links-langsite }
@@ -53,7 +53,7 @@ A site-root link naming **another language**. It looks like it carries the local
 deployed site fills the unwritten first position with this document's language, so it resolves to
 `/en/…/ko/…` and dies. It should be swapped to the same-language twin.
 
-* [Pricing (site-root, other language)](/Open%20Source/agent-test/ko/overview/#pricing)
+* [Pricing (site-root, other language)](./overview/#pricing)
 
 <a id="fix-links-absdocs"></a>
 ## abs-docs · abs-docs-env { #fix-links-absdocs }
@@ -63,8 +63,8 @@ deployed to alpha/beta/master alike, so hardcoding a host is wrong in at least t
 Both should become relative paths; a non-production host gets its own notation code
 (`abs-docs-env`).
 
-* [Pricing (production host)](https://docs.nhncloud.com/en/Open%20Source/agent-test/en/overview/#pricing)
-* [Pricing (alpha host)](https://docs.alpha-nhncloud.com/en/Open%20Source/agent-test/en/overview/#pricing)
+* [Pricing (production host)](./overview/#pricing)
+* [Pricing (alpha host)](./overview/#pricing)
 
 <a id="fix-links-legacyjp"></a>
 ## legacy-jp { #fix-links-legacyjp }
@@ -72,7 +72,7 @@ Both should become relative paths; a non-production host gets its own notation c
 A link still carrying the pre-2026-08 Japanese segment `jp`. That locale is dead at both
 positions, so it should be swapped to this document's language.
 
-* [Pricing (legacy jp)](/Open%20Source/agent-test/jp/overview/#pricing)
+* [Pricing (legacy jp)](./overview/#pricing)
 
 <a id="fix-links-report"></a>
 ## Links That Must Be Reported, Not Fixed { #fix-links-report }

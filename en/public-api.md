@@ -1512,7 +1512,7 @@ This API does not return a response body.
 <a id="additional-instance-features-4"></a>
 ### Create an Image from an Instance { #additional-instance-features-4 }
 
-Create an image from an instance. Only {1>U2<1} flavor instances can create images via this API. To create images of non-{2>U2<2} flavor instances, see [Block Storage API](/Storage/Block Storage/en/public-api/#_22).
+Create an image from an instance. Only {1>U2<1} flavor instances can create images via this API. To create images of non-{2>U2<2} flavor instances, see [Block Storage API](/Storage/Block%20Storage/en/public-api/#storage-block-storage-api-v2-guide).
 
 Images can only be created when an instance is {1>ACTIVE<1}, {2>SHUTOFF<2}, {3>SUSPENDED<3}, or {4>PAUSED<4}. It is recommended to stop instances before creating images to ensure data integrity.
 
