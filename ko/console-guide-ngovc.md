@@ -164,7 +164,7 @@ VPC에서 정의된 서브넷 중에서 인스턴스에 연결할 서브넷을 �
 
 사용자 스크립트의 첫 번째 줄은 반드시 `#!`으로 시작해야 합니다.
 ```
-#!/bin/bash
+# !/bin/bash
 ...
 ```
 
@@ -182,7 +182,7 @@ rem cmd
 
 * PowerShell 스크립트
 ```
-#ps1_sysnative
+# ps1_sysnative
 ...
 ```
 
