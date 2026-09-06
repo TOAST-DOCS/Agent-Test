@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
@@ -249,20 +251,23 @@ $ sudo update-grub
 <a id="e2e-table-malformed"></a>
 ### テーブル選定ガードのフィクスチャ
 
-以下のテーブルはe2eフィクスチャです。
+以下のテーブルは e2e フィクスチャです。選定ガード検証用です (20260906-042859)。
 
 | 番号 | 項目 | 例 |
 |---|---|---|
 | 1 | リクエスト速度制限 | http {<BR>   limit_req_zone $binary_remote_addr zone=z:10m;<BR>} |
-| 2 | 同時接続制限 | limit_conn z 10; |
-| 3 | 本文サイズ制限 | client_max_body_size 1m; |
+
+limit_req_zone $binary_remote_addr zone=z:10m;
+}
+| 2 | 同時接続の制限 | limit_conn z 10; |
+| 3 | 本文サイズの制限 | client_max_body_size 1m; |
 
 2番目のテーブルです。
 
 | 名前 | タイプ | 必須 | 説明 |
 |---|---|---|---|
 | fileType | String | Y | ファイル拡張子です。 |
-| resolution | String | N  推奨解像度です。 |
+| resolution | String | N | 推奨解像度です。 |
 | idType | String | Y | 身分証の種類です。 |
 
 3番目のテーブルです。
@@ -272,3 +277,4 @@ $ sudo update-grub
 | SVC-101 | 基本 | 基本サービスです。 |
 | SVC-102 | 標準 | 標準サービスです。 |
 | SVC-103 | 高級 | 高級サービスです。 |
+| SVC-104 | 専用 | 専用サービスです。 |
