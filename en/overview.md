@@ -242,7 +242,7 @@ $ sudo update-grub
 ```
 
 <a id="e2e-table-malformed"></a>
-### Table selection guard fixture
+### Table selection guard fixture { #e2e-table-malformed }
 
 Down tables are e2e fixtures. These are for selection guard validation (20260906-042859).
 
