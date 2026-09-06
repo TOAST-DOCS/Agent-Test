@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=73ceeadcb5ee -->
+<!-- pre-align:aligned sig=36b960a8096b -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > 커널 버전업 가이드 { #compute-instance-kernel-version-upgrade-guide }
@@ -15,6 +15,7 @@
 현재 설치된 커널 버전을 확인합니다.
 
 ```
+# code-edit-test: this line must be copied verbatim
 [root@rocky810 ~]# uname -r
 4.18.0-553.8.1.el8_10.x86_64
 ```
@@ -574,16 +575,6 @@ dnf, yum은 자동으로 GRUB2 설정 파일을 업데이트합니다.
 
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
-```
-
-<a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
-#### 커널 업데이트 확인
-
-커널 버전이 정상적으로 업데이트되었는지 확인합니다.
-
-```
-[root@rocky810 ~]# uname -r
-4.18.0-553.16.1.el8_10.x86_64
 ```
 
 

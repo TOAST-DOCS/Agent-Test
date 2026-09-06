@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=8e6d00d3460b -->
+<!-- pre-align:aligned sig=1240e97ef905 -->
 
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 가이드 { #compute-instance-api-v2-guide }
@@ -9,7 +9,8 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 
 | 타입 | 리전 | 엔드포인트 |
 |---|---|---|
-| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com (행 수정 테스트) |
+| TEST-ROW | (신규 행 테스트) | (신규 행 테스트) |
 
 API 응답에 가이드에 명시되지 않은 필드가 나타날 수 있습니다. 이런 필드는 NHN Cloud 내부 용도로 사용되며 사전 공지 없이 변경될 수 있으므로 사용하지 않습니다.
 
@@ -1060,3 +1061,30 @@ X-Auth-Token: {tokenId}
 이 API는 응답 본문을 반환하지 않습니다.
 
 ---
+
+
+<a id="test-added-endpoint"></a>
+### 테스트용 신규 엔드포인트 { #test-added-endpoint }
+
+```
+POST /v2/{tenantId}/test-added-endpoint
+X-Auth-Token: {tokenId}
+```
+
+<a id="test-added-request"></a>
+#### 요청 { #test-added-request }
+
+| 이름 | 종류 | 형식 | 필수 | 설명 |
+|---|---|---|---|---|
+| tenantId | URL | String | O | 테넌트 ID |
+| tokenId | Header | String | O | 토큰 ID |
+| name | Body | String | O | 엔드포인트 이름 |
+
+<a id="test-added-response"></a>
+#### 응답 { #test-added-response }
+
+| 이름 | 종류 | 형식 | 설명 |
+|---|---|---|---|
+| endpoint | Body | Object | 생성된 엔드포인트 객체 |
+| endpoint.id | Body | String | 엔드포인트 ID |
+| endpoint.name | Body | String | 엔드포인트 이름 |
