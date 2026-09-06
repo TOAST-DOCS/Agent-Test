@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=73ceeadcb5ee -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=36b960a8096b -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > Kernel Version Upgrade Guide { #compute-instance-kernel-version-upgrade-guide }
@@ -15,6 +17,7 @@
 Check the currently installed kernel version.
 
 ```
+# code-edit-test: this line must be copied verbatim
 [root@rocky810 ~]# uname -r
 4.18.0-553.8.1.el8_10.x86_64
 ```
@@ -98,6 +101,7 @@ kernelshark.x86_64
 
 <a id="install-the-kernel-without-specifying-a-version"></a>
 #### Install the kernel without specifying a version
+
 If you don't specify a version, the package is searched based on the latest version of the major version.
 
 ```
@@ -131,6 +135,7 @@ kernelshark.x86_64
 
 <a id="install-the-kernel-install-the-latest-kernel"></a>
 #### Install the latest kernel
+
 If you don't specify a version, the latest version is installed. 
 
 When you install the kernel, you also install the dependency packages **kernel-core and** **kernel-modules**.
@@ -189,6 +194,7 @@ Reboot the OS to apply the kernel update.
 
 <a id="select-create-a-configuration-file-for-the-grub2-bootloader"></a>
 ### <span style="color:#e11d21;">**[Select].**</span> Create a configuration file for the GRUB2 bootloader { #select-create-a-configuration-file-for-the-grub2-bootloader }
+
 Update the system's boot menu to reflect the newly installed kernel or other boot items.
 
 dnf, yum will automatically update the GRUB2 configuration file.
@@ -429,6 +435,7 @@ kernelshark.x86_64                                                         1:1.2
 
 <a id="rocky-linux-9-install-the-kernel-install-the-kernel-without-specifying-a-version"></a>
 #### Install the kernel without specifying a version
+
 If you don't specify a version, the package is searched based on the latest version of the major version.
 
 ```
@@ -478,6 +485,7 @@ kernelshark.x86_64                                                         1:1.2
 
 <a id="rocky-linux-9-install-the-kernel-install-the-latest-kernel"></a>
 #### Install the latest kernel
+
 If you don't specify a version, the latest version is installed. 
 
 When you install the kernel, you also install the dependency packages **kernel-core and** **kernel-modules**.
@@ -562,22 +570,13 @@ Reboot the OS to apply the kernel update.
 
 <a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader"></a>
 ### <span style="color:#e11d21;">**[Select].**</span> Create a configuration file for the GRUB2 bootloader { #rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader }
+
 Update the system's boot menu to reflect the newly installed kernel or other boot items.
 
 dnf, yum will automatically update the GRUB2 configuration file.
 
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
-```
-
-<a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
-#### Check for kernel updates
-
-Verify that the kernel version has been updated properly.
-
-```
-[root@rocky810 ~]# uname -r
-4.18.0-553.16.1.el8_10.x86_64
 ```
 
 <a id="rocky-linux-9-change-the-kernel-boot-order"></a>
