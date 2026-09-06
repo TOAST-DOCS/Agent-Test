@@ -336,6 +336,10 @@ if (( SKIP_PROLOGUE )); then
   # 재번역 결과를 붙일 브랜치 = 세션 브랜치 자체 (align PR 이 없다).
   head_ref="$BASE_BRANCH"
   align_pr_url=""
+  # 7단계는 두 경로 모두 실행되고 `set -u` 라, 프롤로그를 건너뛴 경로에서도
+  # 이 변수가 **정의되어 있어야** 한다 — 비어 있는 것과 없는 것은 다르다.
+  # (2026-09-06 실측: `align_pr_number: unbound variable` 로 7단계 진입 즉시 사망.)
+  align_pr_number=""
 else
 # ── 2) restore-alpha-origin (내부에서 commit+push) ────────────────────
 echo
@@ -576,7 +580,14 @@ if (( LOCAL_MODE )); then
   echo "  retranslate 완료 & align PR head branch ($head_ref) 최신화"
 else
 echo
-echo "[7/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, pr_number=$align_pr_number, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
+# 대상 표기는 아래 payload 조립(align PR 이 있으면 pr_number, 없으면 branch)과
+# 같은 분기를 따른다 — 로그가 실제로 보낸 것과 어긋나지 않도록.
+if [[ -n "$align_pr_url" ]]; then
+  retx_target_desc="pr_number=$align_pr_number"
+else
+  retx_target_desc="branch=$head_ref"
+fi
+echo "[7/14] POST $DASHBOARD_BASE_URL/api/translate/file ($RETRANSLATE_SOURCE/$RETRANSLATE_PATH 전체 재번역, $retx_target_desc, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
 
 # pr_number 지정 시 서버가 GH 에서 head.ref 조회 → commit_to_branch=head_ref
 retx_engine_json=""
