@@ -8,15 +8,15 @@ This document describes the resource field specifications in instance API respon
 <a id="resource-fields"></a>
 ### Resource fields { #resource-fields }
 
-| Path | Type | Not Null | Description |
-| --- | --- | --- | --- |
-| resource.id | String | O | Resource ID. |
-| resource.name | String | O | Resource name. You can change it in the console. |
-| resource.status | Enum | O | Resource status.<br>[ACTIVE(in use), PAUSED(paused), DELETED(deleted)] |
-| resource.quota | Object | X | Resource quota information. |
-| resource.quota.limit | Integer | X | Maximum quota. The default is 100. |
-| resource.quota.used | Integer | X | Current usage. |
-| resource.labels | Array | X | List of labels attached to the resource. |
+| Path | Type | Description |
+| --- | --- | --- |
+| resource.id | String | Resource ID. |
+| resource.name | String | Resource name. You can change it in the console. |
+| resource.status | Enum | Resource status.<br>[ACTIVE(in use), PAUSED(paused), DELETED(deleted)] |
+| resource.quota | Object | Resource quota information. |
+| resource.quota.limit | Integer | Maximum quota. The default is 100. |
+| resource.quota.used | Integer | Current usage. |
+| resource.labels | Array | List of labels attached to the resource. |
 
 <a id="spec-change-policy"></a>
 ### Specification change policy { #spec-change-policy }
