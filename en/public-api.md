@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=acfdd30fe5ef -->
+<!-- pre-align:aligned sig=8d42389c3907 -->
 
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
@@ -11,7 +11,8 @@ The Instance API uses the `compute` type endpoint. For the exact endpoint, refer
 
 | Type | Region | Endpoint |
 |---|---|---|
-| compute | Korea (Pangyo) region<br>Korea (Pyeongchon) region<br>Korea (Gwangju) region<br>Japan region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | Korea (Pangyo) region<br>Korea (Pyeongchon) region<br>Korea (Gwangju) region<br>Japan region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com (row modification test) |
+| TEST-ROW | (new row test) | (new row test) |
 
 The API response may include fields not specified in the guide. These fields are for NHN Cloud internal use and may change without prior notice, so do not use them.
 
@@ -209,6 +210,7 @@ X-Auth-Token: {tokenId}
 
 <a id="list-availability-zones-request"></a>
 #### Request
+
 This API does not require a request body.
 
 | Name | Type | Format | Required | Description |
@@ -218,6 +220,7 @@ This API does not require a request body.
 
 <a id="list-availability-zones-response"></a>
 #### Response
+
 | Name | Type | Format | Description |
 |---|---|---|---|
 | availabilityZoneInfo | Body | Object | Availability zone information object |
@@ -257,6 +260,7 @@ This API does not require a request body.
 
 <a id="list-key-pairs"></a>
 ### List Key Pairs { #list-key-pairs }
+
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
@@ -307,6 +311,7 @@ This API does not require a request body.
 
 <a id="show-key-pair"></a>
 ### Get Key Pair { #show-key-pair }
+
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -430,6 +435,7 @@ X-Auth-Token: {tokenId}
 
 <a id="delete-key-pair"></a>
 ### Delete Key Pair { #delete-key-pair }
+
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -545,3 +551,29 @@ This API does not require a request body.
 </details>
 
 ---
+
+<a id="test-added-endpoint"></a>
+### New test endpoint { #test-added-endpoint }
+
+```
+POST /v2/{tenantId}/test-added-endpoint
+X-Auth-Token: {tokenId}
+```
+
+<a id="test-added-request"></a>
+#### Request { #test-added-request }
+
+| Name | Type | Format | Required | Description |
+|---|---|---|---|---|
+| tenantId | URL | String | O | Tenant ID |
+| tokenId | Header | String | O | Token ID |
+| name | Body | String | O | Endpoint name |
+
+<a id="test-added-response"></a>
+#### Response { #test-added-response }
+
+| Name | Type | Format | Description |
+|---|---|---|---|
+| endpoint | Body | Object | Created endpoint object |
+| endpoint.id | Body | String | Endpoint ID |
+| endpoint.name | Body | String | Endpoint name |
