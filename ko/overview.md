@@ -243,7 +243,7 @@ $ sudo update-grub
 ```
 
 <a id="e2e-table-malformed"></a>
-### 표 선정 가드 픽스처
+### 표 선정 가드 픽스처 { #e2e-table-malformed }
 
 아래 표들은 e2e 픽스처입니다. 선정 가드 검증용입니다 (20260906-042859).
 
