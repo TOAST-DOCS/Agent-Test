@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=fcc451b0bec8 -->
 
 <a id="compute-instance-version-guide"></a>
@@ -7,6 +9,14 @@ This document summarizes the supported cluster image versions and release histor
 
 <a id="version-history"></a>
 ### Version history { #version-history }
+
+| Version | Release Date | Major Changes |
+|---|---|---|
+| 1.202601.1 | 2026-01-15 | Initial release. Node pool automation, autoscaling, multi-region support. (row edit test) |
+| 1.202602.1 | 2026-02-20 | Improved system log collector and expanded backup storage. Added node self-healing feature. |
+| 1.202603.1 | 2026-03-25 | Network performance tuning. Shortened LB node health check interval. Improved pod scheduler. |
+| 1.202604.1 | 2026-04-30 | Applied security patches. Fixed container runtime vulnerabilities. Expanded audit log fields. |
+| 1.202605.1 | 2026-05-30 | Redesigned dashboard UI. Expanded notification channels. Added integrated monitoring widget.
 
 
 <a id="upgrade-policy"></a>
