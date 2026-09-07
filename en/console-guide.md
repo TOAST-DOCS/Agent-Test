@@ -3,11 +3,9 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-
 ## Compute > Instance > Console User Guide { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
-
 ## Create an Instance { #create-instances }
 
 You can create instances using the settings below or by using an Instance Template. To create instances using an Instance Template, select **Use Instance Template** on the instance creation screen. For information about creating Instance Templates, see [Instance Template Console User Guide](/Compute/Instance%20Template/en/console-guide/).
@@ -217,7 +215,6 @@ You can check user script logs in `C:\Program Files\Cloudbase Solutions\Cloudbas
 For more information about user scripts, see the [cloud-init](https://cloudinit.readthedocs.io/ko/latest/topics/format.html) or [Cloudbase-init](https://cloudbase-init.readthedocs.io/ko/latest/userdata.html) guide.
 
 <a id="additional-instance-features"></a>
-
 ## Additional Instance Features { #additional-instance-features }
 
 ![Additional Instance Features section cover](../static/images/image-1791.jpg)
@@ -326,7 +323,6 @@ Only the `anti-affinity` placement policy type for distributed placement is prov
 Placement policies can be deleted even if instances are assigned to them. In this case, the instances are not deleted.
 
 <a id="key-pairs"></a>
-
 ## Key Pairs { #key-pairs }
 
 ![Key Pairs cover image](../static/images/en/image-1461.jpg)
@@ -376,7 +372,6 @@ The registered key pair can be used to create instances, and you must use this k
 Just as with key pairs created from NHN Cloud, imported key pairs also need to be managed cautiously since exposed private keys can be abused by anyone to access instances.
 
 <a id="appendix-1-change-language-packs-in-windows"></a>
-
 ## Appendix 1. Change language packs in Windows { #appendix-1-change-language-packs-in-windows }
 
 NHN Cloud Windows images are provided with English as the default language. If you want to use a different language as the default, you can do so by following the steps below.
@@ -412,7 +407,6 @@ NHN Cloud Windows images are provided with English as the default language. If y
 ![Windows language changed screen](http://static.toastoven.net/prod_instance/windows10.png)
 
 <a id="appendix-2-change-routing-in-windows"></a>
-
 ## Appendix 2. Change routing in Windows { #appendix-2-change-routing-in-windows }
 
 The following are ways to change routing in NHN Cloud Windows:
@@ -470,7 +464,6 @@ Case 3 - Remove a specific route
 ![Windows route delete command](http://static.toastoven.net/prod_instance/windows_route7.png)
 
 <a id="appendix-3-change-system-locale"></a>
-
 ## Appendix 3. Change system locale { #appendix-3-change-system-locale }
 
 The following is how to change the system locale in NHN Cloud Windows.
@@ -491,7 +484,6 @@ The following is how to change the system locale in NHN Cloud Windows.
 ![Windows system restart](http://static.toastoven.net/prod_instance/win_locale5.png)
 
 <a id="appendix-4-restarting-instances-for-hypervisor-maintenance"></a>
-
 ## Appendix 4. Restart instances for hypervisor maintenance { #appendix-4-restarting-instances-for-hypervisor-maintenance }
 
 NHN Cloud updates hypervisor software on a regular basis to enhance the security and stability of infrastructure services that we provide.
