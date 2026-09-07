@@ -1068,12 +1068,22 @@ declare -a PLAN_TABLE_SUITE=(
 #     jinja_edit_wrapped_body : 태그 개수 불변 + 블록 안 본문 수정 (M4 no-op)
 #     jinja_wrap              : 문단을 새 태그로 감쌈 (M4 bail — #200 과 같은 모양)
 #
+#   macro-shapes.md 는 **en/ja 가 없는 ko 전용 픽스처**다 — 그래서 splice 가 아니라
+#   **full 번역** 경로를 탄다 (기존 번역이 없으니 _translate_modified 가 full 로
+#   떨어진다). jinja-guide 는 splice 경로를 보므로 한 run 이 두 경로를 함께 덮는다.
+#   담고 있는 모양: 문단을 감싼 조건부(#200 이 깨진 모양) / 한 줄 안의 조건부 /
+#   `<details>`+펜스를 감싼 조건부 / 표 행 안의 `$[ var ]$` / `{% else %}` 양쪽 분기 /
+#   여러 줄 `{% set %}`. ko 자체는 유효하고 조건은 `build_flags` 만 쓴다.
+#   정렬 검사(check_docs_align)는 ko/en/ja 세 언어에 모두 있는 파일만 보므로 이
+#   파일은 그 단계에 나타나지 않는다 — 정상이다.
+#
 #   PASS 판정: en/ja 의 `{% %}` 태그 시퀀스가 ko 와 **바이트 단위로 일치** +
 #   ko/en/ja 세 파일이 macros 델리미터(`$[`/`]$`)로 jinja 파싱을 통과 +
 #   로그에 `Template-tag mismatch` / `falling back to unprotected` 없음.
 declare -a PLAN_JINJA_MASK=(
   "jinja_edit_wrapped_body|ko/jinja-guide.md"
   "jinja_wrap|ko/jinja-guide.md"
+  "edit_body|ko/macro-shapes.md"
   "noop|ko/troubleshooting-guide.md"
 )
 
