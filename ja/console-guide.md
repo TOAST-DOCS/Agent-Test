@@ -3,11 +3,9 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-
 ## Compute > Instance > コンソール使用ガイド { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
-
 ## インスタンスの作成 { #create-instances }
 
 下記の設定を使用してインスタンスを作成するか、インスタンステンプレート (Instance Template) を通じてインスタンスを作成できます。インスタンステンプレートを通じてインスタンスを作成する場合は、インスタンス作成画面で**[インスタンステンプレートを使用]**を選択します。インスタンステンプレートの作成方法は、[インスタンステンプレートコンソールガイド](/Compute/Instance%20Template/ja/console-guide/)を参照してください。
@@ -216,7 +214,6 @@ BatchスクリプトとPowerShellスクリプトを一緒に使用したい場�
 ユーザースクリプトに関する詳細については、[cloud-init](https://cloudinit.readthedocs.io/en/latest/topics/format.html)または[Cloudbase-init](https://cloudbase-init.readthedocs.io/en/latest/userdata.html)ガイドを参照してください。
 
 <a id="additional-instance-features"></a>
-
 ## インスタンスの追加機能 { #additional-instance-features }
 
 ![インスタンスの追加機能セクションカバー](../static/images/image-1791.jpg)
@@ -325,13 +322,11 @@ Floating IP の詳細については、「[VPC 概要](/Network/VPC/ja/overview/
 配置ポリシーにインスタンスが割り当てられている場合でも、配置ポリシーの削除が可能であり、この場合インスタンスは削除されません。
 
 <a id="key-pairs"></a>
-
 ## キーペア { #key-pairs }
 
 ![キーペア セクション カバー](../static/images/ja/image-1461.jpg)
 
 <a id="import-key-pairs-windows"></a>
-
 ### キーペアのインポート(Windows ユーザー) { #import-key-pairs-windows }
 
 PuTTY SSH クライアントをインストールすると、一緒にインストールされる puttygen プログラムでキーペアを生成し、NHN Cloud に登録して使用できます。
@@ -358,7 +353,6 @@ puttygen を実行します。
 NHN Cloud で生成されたキーペアと同様に、このように作成されたキーペアの秘密キーも外部に漏洩した場合、誰でも漏洩した秘密キーで対応するインスタンスにアクセスできるようになるため、慎重に管理する必要があります。
 
 <a id="import-key-pairs-mac-and-linux"></a>
-
 ### キーペアのインポート(Mac、Linux ユーザー) { #import-key-pairs-mac-and-linux }
 
 Mac または Linux の `ssh-keygen` で作成したキーペアを NHN Cloud に登録して使用できます。キーペアは次のコマンドで生成します。
@@ -377,7 +371,6 @@ Mac または Linux の `ssh-keygen` で作成したキーペアを NHN Cloud �
 NHN Cloud で生成されたキーペアと同様に、このように作成されたキーペアの秘密キーも外部に漏洩した場合、誰でも漏洩した秘密キーで対応するインスタンスにアクセスできるようになるため、慎重に管理する必要があります。
 
 <a id="appendix-1-change-language-packs-in-windows"></a>
-
 ## 付録 1. Windows 言語パックの変更 { #appendix-1-change-language-packs-in-windows }
 
 NHN Cloud Windows イメージは英語版を既定値として提供しています。他の言語を既定値として使用したいユーザーは、次の方法に従って使用できます。
@@ -413,7 +406,6 @@ NHN Cloud Windows イメージは英語版を既定値として提供してい�
 ![イメージ1](http://static.toastoven.net/prod_instance/windows10.png)
 
 <a id="appendix-2-change-routing-in-windows"></a>
-
 ## 付録 2. Windows ルーティングの変更 { #appendix-2-change-routing-in-windows }
 
 NHN Cloud Windows でルーティングを変更する方法は、次のような方法があります。
@@ -471,7 +463,6 @@ Case 3 - 特定のルートを削除
 ![イメージ1](http://static.toastoven.net/prod_instance/windows_route7.png)
 
 <a id="appendix-3-change-system-locale"></a>
-
 ## 付録 3. システム ロケールの変更 { #appendix-3-change-system-locale }
 
 NHN Cloud Windows でシステム ロケールを変更する方法は次のとおりです。
@@ -492,7 +483,6 @@ NHN Cloud Windows でシステム ロケールを変更する方法は次のと�
 ![イメージ1](http://static.toastoven.net/prod_instance/win_locale5.png)
 
 <a id="appendix-4-restarting-instances-for-hypervisor-maintenance"></a>
-
 ## 付録 4. ハイパーバイザー メンテナンスのためのインスタンスの再起動ガイド { #appendix-4-restarting-instances-for-hypervisor-maintenance }
 
 NHN Cloud は、基盤となるインフラ サービスのセキュリティと安定性を向上させるために、ハイパーバイザー ソフトウェアを定期的に更新しています。
