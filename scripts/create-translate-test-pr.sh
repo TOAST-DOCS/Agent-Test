@@ -166,6 +166,55 @@ elif mutation == "markup_jinja_ws":
     if not n:
         raise SystemExit(f"markup_jinja_ws: no jinja tag to move in {path}")
 
+elif mutation == "jinja_edit_wrapped_body":
+    # 템플릿 태그 마스크 ①: 이미 `{% if %}` 블록 '안'에 있는 본문 줄을 수정.
+    # 태그는 하나도 안 건드리므로 M4 미러는 no-op 이고(변경된 태그 0),
+    # block granularity 에서 태그 줄과 그 아래 본문은 빈 줄이 없어 한 유닛이라
+    # **여는 태그를 선두에 단 유닛이 그대로 모델로 간다** — cloud-translate 의
+    # `_mask_template_tags` 가 실제로 타는 경로가 이것이다.
+    # 그 마스크가 없던 시절 Storage-Object-Storage#200 의 ja 가 바로 이 모양에서
+    # 선두 `{% if not release_2026_08 %}` 한 줄을 흘려 mkdocs 빌드를 깨뜨렸다.
+    TAG = re.compile(r'^\s*\{%.*%\}\s*$')
+    done = False
+    for j, l in enumerate(lines[:-1]):
+        if not TAG.match(l.rstrip("\r")):
+            continue
+        nxt = lines[j + 1]
+        s2 = nxt.strip()
+        if not s2 or TAG.match(nxt.rstrip("\r")) or is_anchor(nxt) \
+           or is_table_row(nxt) or s2.startswith(("<!--", "```", "|", "#")):
+            continue
+        lines[j + 1] = nxt.rstrip("\r") + " (태그 블록 안 본문 수정: 이 문장은 번역 재실행 시 반영되어야 합니다.)"
+        done = True
+        break
+    if not done:
+        raise SystemExit(f"jinja_edit_wrapped_body: no body line inside a jinja tag block in {path}")
+    out = join(lines)
+
+elif mutation == "jinja_wrap":
+    # 템플릿 태그 마스크 ②: 기존 산문 문단을 **새 `{% if %}` 로 감싼다**.
+    # 태그 개수가 늘어나므로 M4 미러는 설계대로 bail 하고(삽입은 splice 의 일),
+    # 감싸인 문단이 "변경됨" 이 되어 선두 태그와 함께 모델로 간다.
+    # Storage-Object-Storage#199 가 ko 태그를 1개 -> 13개로 늘린 것과 같은 모양.
+    # 조건은 `build_flags` 만 쓴다 — mkdocs 가 항상 정의하므로 alpha 빌드에서
+    # 미정의 변수(`on_error_fail: true` 면 빌드 실패)가 될 일이 없고, public
+    # 빌드에서는 참이라 문단이 그대로 렌더된다.
+    hi = first_heading_idx(lines)
+    done = False
+    j = (hi + 1) if hi is not None else 0
+    while j < len(lines):
+        s2 = lines[j].strip()
+        if s2 and not HEAD.match(lines[j].rstrip("\r")) and not is_anchor(lines[j]) \
+           and not is_table_row(lines[j]) and not s2.startswith(("{", "<!--", "```", "|", "-", "*", ">")):
+            body = lines[j].rstrip("\r")
+            lines[j] = '{%- if "gov" not in build_flags %}\n' + body + '\n{%- endif %}'
+            done = True
+            break
+        j += 1
+    if not done:
+        raise SystemExit(f"jinja_wrap: no prose paragraph found in {path}")
+    out = join(lines)
+
 elif mutation == "markup_heading_blank":
     # 코스메틱 마크업 churn ③: 헤딩 바로 뒤 빈 줄을 토글. block granularity 에서
     # 헤딩+본문 한 유닛이 두 유닛으로 쪼개지거나 합쳐져 유닛 정렬이 통째로
@@ -1010,6 +1059,24 @@ declare -a PLAN_TABLE_SUITE=(
 #   accept 가 ko/public-api.md 의 EOL 을 CRLF -> LF 로 정규화해 ko PR 에 4000줄대
 #   허위 diff 가 생긴다. 마크업 변형 자체는 CRLF 를 보존한다(변형 커밋 시점
 #   CRLF 1984 유지 확인). 번역 결과에는 영향 없음 — en/ja 는 원래 LF.
+#   jinja-mask: 템플릿 태그 마스크 경로 전용 (markup-churn 과 다른 것을 본다).
+#
+#   markup-churn 의 markup_jinja_ws 는 M4 미러가 태그 churn 을 흡수해 버려서
+#   **태그를 품은 유닛이 모델에 가지 않는다** — 2026-09-07 실측: 모델 호출 1건,
+#   그 유닛에 태그 0개. 즉 그 플랜은 M4 회귀만 보고 마스크는 못 본다.
+#   이 플랜은 두 변형으로 태그 유닛을 실제로 모델에 태운다:
+#     jinja_edit_wrapped_body : 태그 개수 불변 + 블록 안 본문 수정 (M4 no-op)
+#     jinja_wrap              : 문단을 새 태그로 감쌈 (M4 bail — #200 과 같은 모양)
+#
+#   PASS 판정: en/ja 의 `{% %}` 태그 시퀀스가 ko 와 **바이트 단위로 일치** +
+#   ko/en/ja 세 파일이 macros 델리미터(`$[`/`]$`)로 jinja 파싱을 통과 +
+#   로그에 `Template-tag mismatch` / `falling back to unprotected` 없음.
+declare -a PLAN_JINJA_MASK=(
+  "jinja_edit_wrapped_body|ko/jinja-guide.md"
+  "jinja_wrap|ko/jinja-guide.md"
+  "noop|ko/troubleshooting-guide.md"
+)
+
 declare -a PLAN_MARKUP_CHURN=(
   "markup_fence_info|ko/component-guide.md"
   "markup_br_slash|ko/component-guide.md"
@@ -1032,7 +1099,8 @@ case "$PLAN_NAME" in
   llm-patch) PLAN=("${PLAN_LLM_PATCH[@]}") ;;
   table-suite) PLAN=("${PLAN_TABLE_SUITE[@]}") ;;
   markup-churn) PLAN=("${PLAN_MARKUP_CHURN[@]}") ;;
-  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn)" >&2; exit 1 ;;
+  jinja-mask) PLAN=("${PLAN_JINJA_MASK[@]}") ;;
+  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn|jinja-mask)" >&2; exit 1 ;;
 esac
 
 # ── table-suite 전용: en/ja stale 상태를 BASE 브랜치에 조성 ────────────────

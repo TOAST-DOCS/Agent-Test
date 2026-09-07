@@ -144,6 +144,11 @@
 #   table-suite — 표 변형 종합 + stale 결함 재현 (stale-ify 커밋 포함).
 #                 기대: 번역 로직에 table-row reconcile(PR #290)이 있으면 exit 0,
 #                 없으면 exit 3 (version-guide/release-notes FAIL).
+#   jinja-mask  — mkdocs 템플릿 태그 마스크. 태그를 품은 유닛이 실제로 모델에
+#                 가도록 두 가지로 변형한다 (블록 안 본문 수정 / 문단을 새 태그로
+#                 감쌈). markup-churn 은 M4 미러가 churn 을 흡수해 태그 유닛이
+#                 모델에 가지 않으므로 이 경로를 못 본다 (2026-09-07 실측).
+#                 판정: tag-mismatch=0 unprotected-fallback=0.
 #   markup-churn— 코스메틱 마크업 churn(펜스 info string, <br/>, 헤딩 뒤 빈 줄,
 #                 Jinja 태그 whitespace 제어) + 소수 내용 변경. load guard 가
 #                 정상 리뷰 PR 을 runaway 로 오판해 파일을 제외하던 것을 재현
@@ -314,7 +319,7 @@ while [[ $# -gt 0 ]]; do
       FT_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve)
+    webhook|korean-review|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -328,7 +333,7 @@ while [[ $# -gt 0 ]]; do
       # 항상 실패한다. 스크립트는 남겨 두고 명시 지정으로만 실행.
       PLANS+=(webhook korean-review anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent fill-stubs
-              split-docs fix-links fix-tables table-malformed); shift ;;
+              split-docs fix-links fix-tables table-malformed jinja-mask); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -568,6 +573,20 @@ for plan in "${PLANS[@]}"; do
       rd_skipfull="$(grep -c 'skip-full-table: .*skipped —' "$log" 2>/dev/null || true)"
       rd_stub="$(grep -cE 'table todo-stub|<todo: translate>' "$log" 2>/dev/null || true)"
       verdict="${verdict:-<no-verdict>} llm-patch=${rd_patch:-0} skip-full-table=${rd_skipfull:-0} todo-stub=${rd_stub:-0}"
+    fi
+    if [[ "$plan" == "jinja-mask" ]]; then
+      # 이 plan 의 핵심은 "모델이 템플릿 태그를 아예 못 본다" 다. ALIGNMENT 는
+      # heading/anchor/표만 보므로 `{% %}` 유실을 못 잡는다 — markup-churn 의
+      # guard-skips 가 공허하게 통과했던 것과 같은 함정이라 로그에서 직접 센다.
+      # 두 카운터는 WARNING/ERROR 급이라 기본 로그 레벨에서도 잡힌다.
+      jm_mismatch="$(grep -c 'Template-tag mismatch' "$log" 2>/dev/null || true)"
+      jm_fallback="$(grep -c 'falling back to unprotected' "$log" 2>/dev/null || true)"
+      # 기작 자체는 debug 로만 보인다 (TRANSLATE_LOG_LEVEL=debug 로 돌린 경우).
+      jm_masked="$(grep -c 'Masked .* template tag' "$log" 2>/dev/null || true)"
+      verdict="${verdict:-<no-verdict>} tag-mismatch=${jm_mismatch:-0} unprotected-fallback=${jm_fallback:-0} masked=${jm_masked:-0}"
+      if [[ "${jm_mismatch:-0}" != "0" || "${jm_fallback:-0}" != "0" ]]; then
+        verdict="$verdict (FAIL: 태그 시퀀스가 어긋났거나 보호 없이 재번역됐다)"
+      fi
     fi
     if [[ "$plan" == "markup-churn" ]]; then
       # ALIGNMENT 만으로는 이 plan 의 핵심(가드 미발동)을 알 수 없다 — 미러링이
