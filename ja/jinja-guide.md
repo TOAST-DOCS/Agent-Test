@@ -1,18 +1,22 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=cdbc88f0a12c -->
 
 {%- set api_host = "api-jinja.gov-nhncloudservice.com" if "gov" in build_flags else "api-jinja.nhncloudservice.com" -%}
 <a id="sample-jinja-guide"></a>
 ## Sample > Jinja ガイド { #sample-jinja-guide }
 
-この文書は、mkdocs-macros の Jinja 条件分岐と変数置換が ko/en/ja の三言語で同一に保たれるかを検証するためのフィクスチャです。タグは制御構文なので翻訳されず、本文のみ言語ごとに異なります。
+{%- if "gov" not in build_flags %}
+このドキュメントは、mkdocs-macros の Jinja 条件分岐と変数置換が ko/en/ja の 3 言語で同じように維持されているかを検証するためのフィクスチャーです。タグは制御構文であるため、翻訳されず、本文のみが言語によって異なります。
+{%- endif %}
 
 <a id="endpoint"></a>
 ### エンドポイント { #endpoint }
 
 {% if "gov" in build_flags -%}
-政府網環境では専用エンドポイントを使用します。公用ドメインからはアクセスできません。
+政府ネットワーク環境では、専用エンドポイントを使用します。パブリックドメインではアクセスできません。(タグブロック内のテキスト編集: このテキストは翻訳の再実行時に反映される必要があります。)
 {% else -%}
-公用環境では基本エンドポイントを使用します。リージョン別ホストは下の表を参照してください。
+パブリック環境では、デフォルトエンドポイントを使用します。リージョン別のホストは以下の表を参照してください。
 {% endif %}
 
 API ホストは `$[ api_host ]$` です。

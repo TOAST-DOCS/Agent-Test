@@ -4,13 +4,15 @@
 <a id="sample-jinja-guide"></a>
 ## Sample > Jinja 가이드 { #sample-jinja-guide }
 
+{%- if "gov" not in build_flags %}
 이 문서는 mkdocs-macros 의 Jinja 조건부 분기와 변수 치환이 ko/en/ja 세 언어에 동일하게 유지되는지 검증하기 위한 픽스처입니다. 태그는 제어 문법이므로 번역되지 않고, 본문만 언어별로 달라집니다.
+{%- endif %}
 
 <a id="endpoint"></a>
 ### 엔드포인트 { #endpoint }
 
 {% if "gov" in build_flags -%}
-정부망 환경에서는 전용 엔드포인트를 사용합니다. 공용 도메인으로는 접근할 수 없습니다.
+정부망 환경에서는 전용 엔드포인트를 사용합니다. 공용 도메인으로는 접근할 수 없습니다. (태그 블록 안 본문 수정: 이 문장은 번역 재실행 시 반영되어야 합니다.)
 {% else -%}
 공용 환경에서는 기본 엔드포인트를 사용합니다. 리전별 호스트는 아래 표를 참고하세요.
 {% endif %}
