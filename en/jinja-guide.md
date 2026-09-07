@@ -1,18 +1,22 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=cdbc88f0a12c -->
 
 {%- set api_host = "api-jinja.gov-nhncloudservice.com" if "gov" in build_flags else "api-jinja.nhncloudservice.com" -%}
 <a id="sample-jinja-guide"></a>
 ## Sample > Jinja Guide { #sample-jinja-guide }
 
-This document is a fixture for verifying that mkdocs-macros' Jinja conditionals and variable substitutions stay identical across ko/en/ja. The tags are control syntax, so they are never translated; only the body text differs per language.
+{%- if "gov" not in build_flags %}
+This document is a fixture for verifying that mkdocs-macros Jinja conditional branching and variable substitution remain identical across the three languages (ko, en, ja). Tags are control syntax and are not translated; only the body text differs by language.
+{%- endif %}
 
 <a id="endpoint"></a>
 ### Endpoint { #endpoint }
 
 {% if "gov" in build_flags -%}
-The government environment uses a dedicated endpoint. It cannot be reached over the public domain.
+In the government network environment, use a dedicated endpoint. You can't access it using public domains. (Body text edited within tag block: This sentence should be reflected on re-translation.)
 {% else -%}
-The public environment uses the default endpoint. Refer to the table below for per-region hosts.
+In the public environment, use the default endpoint. For region-specific hosts, see the table below.
 {% endif %}
 
 The API host is `$[ api_host ]$`.
