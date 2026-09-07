@@ -1,5 +1,7 @@
+<!-- pre-align:aligned sig=178a08dfcc40 -->
+
 <a id="compute-instance-spec-guide"></a>
-## Compute > Instance > 리소스 명세 가이드
+## Compute > Instance > 리소스 명세 가이드 { #compute-instance-spec-guide }
 
 인스턴스 API 응답 본문의 리소스 필드 명세를 정리한 문서입니다. 각 필드의 경로, 타입, Not Null 여부, 설명을 표로 제공합니다.
 
