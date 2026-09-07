@@ -3,23 +3,25 @@
 <!-- pre-align:aligned sig=27ed74e0499b -->
 
 <a id="compute-instance-api-v2-guide"></a>
+
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
-インスタンスはAPI呼び出し時の認証/認可のためにIaaSトークンを使用します。IaaSトークンはNHN CloudのOpenStackベースのインフラストラクチャサービス(IaaS)で使用する認証トークンです。IaaSトークンの発行および使用についての詳細は、[IaaSトークン](/nhncloud/ja/public-api/iaas-token)を参照してください。
+インスタンスは、API 呼び出し時に認証/認可を行うために IaaS トークンを使用します。IaaS トークンは、NHN Cloud の OpenStack ベースのインフラストラクチャサービス (IaaS) で使用される認証トークンです。IaaS トークンの発行と使用の詳細については、[IaaS トークン](/nhncloud/ja/public-api/iaas-token) を参照してください。
 
-インスタンスAPIは`compute`タイプのエンドポイントを使用します。正確なエンドポイントはトークン発行応答の`serviceCatalog`を参照してください。
+インスタンス API は compute タイプのエンドポイントを使用します。正確なエンドポイントについては、トークン発行応答の serviceCatalog を参照してください。
 
-| タイプ | リージョン | エンドポイント |
+| 型 | リージョン | エンドポイント |
 |---|---|---|
-| compute | 韓国(Pangyo)リージョン<br>韓国(Pyeongchon)リージョン<br>韓国(Gwangju)リージョン<br>日本リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | 韓国 (Pangyo) リージョン<br>韓国 (Pyeongchon) リージョン<br>韓国 (Gwangju) リージョン<br>日本 リージョン | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
 
-API応答にガイドに明記されていないフィールドが表示される場合があります。このようなフィールドはNHN Cloud内部用途で使用されており、事前の通知なく変更される可能性があるため、これらを使用しないでください。
+API 応答に、ガイドで指定されていないフィールドが表示される場合があります。このようなフィールドは NHN Cloud 内部用に使用されており、予告なしに変更される可能性があるため、使用しないでください。
 
 <a id="instance-flavors"></a>
+
 ## インスタンスタイプ { #instance-flavors }
 
 <a id="list-flavors"></a>
-### タイプ一覧の表示 { #list-flavors }
+### 一覧の取得 { #list-flavors }
 
 ```
 GET /v2/{tenantId}/flavors
@@ -29,14 +31,14 @@ X-Auth-Token: {tokenId}
 <a id="list-flavors-request"></a>
 #### リクエスト
 
-このAPIはリクエストボディを必要としません。
+この API はリクエスト本文を必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
-| minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズより大きいブロックストレージサイズのタイプのみを返します |
-| minRam | Query | Integer | - | 最小RAMサイズ(MB)<br>指定したサイズより大きいRAMサイズのタイプのみを返します |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
+| minDisk | Query | Integer | - | 最小ブロックストレージサイズ (GB)<br>指定したサイズより大きいブロックストレージサイズのタイプのみを返します。 |
+| minRam | Query | Integer | - | 最小 RAM サイズ (MB)<br>指定したサイズより大きい RAM サイズのタイプのみを返します。 |
 
 <a id="list-flavors-response"></a>
 #### レスポンス
@@ -44,8 +46,8 @@ X-Auth-Token: {tokenId}
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
 | flavors | Body | Object | インスタンスタイプ一覧オブジェクト |
-| flavors.id | Body | UUID | インスタンスタイプID |
-| flavors.links | Body | Object | インスタンスタイプのリンクオブジェクト |
+| flavors.id | Body | UUID | インスタンスタイプ ID |
+| flavors.links | Body | Object | インスタンスタイプリンクオブジェクト |
 | flavors.name | Body | String | インスタンスタイプ名 |
 
 
@@ -93,7 +95,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-flavors-with-details"></a>
-### タイプ一覧の詳細表示 { #list-flavors-with-details }
+### 詳細一覧の取得 { #list-flavors-with-details }
 
 ```
 GET /v2/{tenantId}/flavors/detail
@@ -103,14 +105,14 @@ X-Auth-Token: {tokenId}
 <a id="list-flavors-with-details-request"></a>
 #### リクエスト
 
-このAPIはリクエストボディを必要としません。
+この API はリクエスト本文を必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
-| minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズより大きいブロックストレージサイズのタイプのみを返します |
-| minRam | Query | Integer | - | 最小RAMサイズ(MB)<br>指定したサイズより大きいRAMサイズのタイプのみを返します |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
+| minDisk | Query | Integer | - | 最小ブロックストレージサイズ (GB)<br>指定したサイズより大きいブロックストレージサイズのタイプのみを返します。 |
+| minRam | Query | Integer | - | 最小 RAM サイズ (MB)<br>指定したサイズより大きい RAM サイズのタイプのみを返します。 |
 
 <a id="list-flavors-with-details-response"></a>
 #### レスポンス
@@ -118,18 +120,18 @@ X-Auth-Token: {tokenId}
 | 名前 | 種類 | 形式 | 説明             |
 |---|---|---|----------------|
 | flavors | Body | Object | インスタンスタイプ一覧オブジェクト  |
-| flavors.id | Body | UUID | インスタンスタイプID     |
-| flavors.links | Body | Object | インスタンスタイプのリンクオブジェクト  |
+| flavors.id | Body | UUID | インスタンスタイプ ID     |
+| flavors.links | Body | Object | インスタンスタイプリンクオブジェクト  |
 | flavors.name | Body | String | インスタンスタイプ名     |
-| flavors.ram | Body | Integer | メモリサイズ(MB)     |
+| flavors.ram | Body | Integer | メモリサイズ (MB)     |
 | flavors.OS-FLV-DISABLED:disabled | Body | Boolean | 有効化の状態         |
-| flavors.vcpus | Body | Integer | vCPU数        |
+| flavors.vcpus | Body | Integer | vCPU 数        |
 | flavors.extra_specs | Body | Object | 追加仕様オブジェクト       |
-| flavors.swap | Body | Integer | スワップ領域サイズ(GB)  |
-| flavors.os-flavor-access:is_public | Body | Boolean | 共有状態          |
+| flavors.swap | Body | Integer | スワップ領域サイズ (GB)  |
+| flavors.os-flavor-access:is_public | Body | Boolean | 共有の有無          |
 | flavors.rxtx_factor | Body | Float | ネットワーク送受信パケット比率 |
-| flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | 一時ブロックストレージサイズ(GB)     |
-| flavors.disk | Body | Integer | ルートブロックストレージサイズ(GB) |
+| flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | エフェメラルブロックストレージサイズ (GB)     |
+| flavors.disk | Body | Integer | ルートブロックストレージサイズ (GB) |
 
 <details><summary>例</summary>
 <p>
@@ -197,10 +199,11 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="availability-zones"></a>
+
 ## 可用性ゾーン { #availability-zones }
 
 <a id="list-availability-zones"></a>
-### 可用性一覧の表示 { #list-availability-zones }
+### 一覧の取得 { #list-availability-zones }
 
 ```
 GET /v2/{tenantId}/os-availability-zone
@@ -209,12 +212,12 @@ X-Auth-Token: {tokenId}
 
 <a id="list-availability-zones-request"></a>
 #### リクエスト
-このAPIはリクエストボディを必要としません。
+この API はリクエスト本文を必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
 
 <a id="list-availability-zones-response"></a>
 #### レスポンス
@@ -253,10 +256,11 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="key-pairs"></a>
+
 ## キーペア { #key-pairs }
 
 <a id="list-key-pairs"></a>
-### キーペアリストを表示 { #list-key-pairs }
+### キーペアの一覧を表示 { #list-key-pairs }
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
@@ -268,18 +272,18 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
 
 <a id="list-key-pairs-response"></a>
 #### レスポンス
 
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
-| keypairs | Body | Array | キーペアオブジェクトのリスト |
+| keypairs | Body | Array | キーペアオブジェクトの一覧 |
 | keypairs.keypair | Body | Object | キーペアオブジェクト |
 | keypairs.keypair.name | Body | String | キーペア名 |
-| keypairs.keypair.public_key | Body | String | 公開キー |
+| keypairs.keypair.public_key | Body | String | 公開鍵 |
 | keypairs.keypair.fingerprint | Body | String | キーペアフィンガープリント |
 
 <details><summary>例</summary>
@@ -305,7 +309,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="show-key-pair"></a>
-### キーペアを表示 { #show-key-pair }
+### キーペアの表示 { #show-key-pair }
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -317,9 +321,9 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
+| tenantId | URL | String | O | テナント ID |
 | keypairName | URL | String | O | キーペア名 |
-| tokenId | Header | String | O | トークンID |
+| tokenId | Header | String | O | トークン ID |
 
 <a id="show-key-pair-response"></a>
 #### レスポンス
@@ -327,15 +331,15 @@ X-Auth-Token: {tokenId}
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
 | keypair | Body | Object | キーペアオブジェクト |
-| keypair.public_key | Body | String | 公開キー |
-| keypair.user_id | Body | String | キーペア所有者ID |
+| keypair.public_key | Body | String | 公開鍵 |
+| keypair.user_id | Body | String | キーペア所有者 ID |
 | keypair.name | Body | String | キーペア名 |
-| keypair.deleted | Body | Boolean | キーペア削除フラグ |
+| keypair.deleted | Body | Boolean | キーペア削除の有無 |
 | keypair.created_at | Body | Datetime | キーペア作成時刻<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
 | keypair.updated_at | Body | Datetime | キーペア更新時刻<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
 | keypair.deleted_at | Body | Datetime | キーペア削除時刻<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
 | keypair.fingerprint | Body | String | キーペアフィンガープリント |
-| keypair.id | Body | Integer | キーペアID |
+| keypair.id | Body | Integer | キーペア ID |
 
 <details><summary>例</summary>
 <p>
@@ -362,7 +366,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="createregister-key-pair"></a>
-### キーペアを作成/登録 { #createregister-key-pair }
+### キーペアの作成/登録 { #createregister-key-pair }
 
 ```
 POST /v2/{tenantId}/os-keypairs
@@ -374,11 +378,11 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | O | テナント ID |
+| tokenId | Header | String | O | トークン ID |
 | keypair | Body | Object | O | キーペアオブジェクト |
 | keypair.name | Body | String | O | 作成または登録するキーペア名 |
-| keypair.public_key | Body | String | - | 登録する公開キー。このフィールドが省略された場合は、新しいキーペアを作成します。 |
+| keypair.public_key | Body | String | - | 登録する公開鍵。省略時は新規作成。 |
 
 <details><summary>例</summary>
 <p>
@@ -401,9 +405,9 @@ X-Auth-Token: {tokenId}
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
 | keypair | Body | Object | キーペアオブジェクト |
-| keypair.public_key | Body | String | 公開キー |
-| keypair.private_key | Body | String | 秘密キー。新しいキーペアを作成した場合に秘密キーが返されます。 |
-| keypair.user_id | Body | String | キーペア所有者ID |
+| keypair.public_key | Body | String | 公開鍵 |
+| keypair.private_key | Body | String | 秘密鍵。新規作成時に返却。 |
+| keypair.user_id | Body | String | キーペア所有者 ID |
 | keypair.name | Body | String | キーペア名 |
 | keypair.fingerprint | Body | String | キーペアフィンガープリント |
 
@@ -427,7 +431,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="delete-key-pair"></a>
-### キーペアを削除 { #delete-key-pair }
+### キーペアの削除 { #delete-key-pair }
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
@@ -439,9 +443,9 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
+| tenantId | URL | String | O | テナント ID |
 | keypairName | URL | String | O | キーペア名 |
-| tokenId | Header | String | O | トークンID |
+| tokenId | Header | String | O | トークン ID |
 
 <a id="delete-key-pair-response"></a>
 #### レスポンス
@@ -449,33 +453,34 @@ X-Auth-Token: {tokenId}
 
 
 <a id="instance"></a>
+
 ## インスタンス { #instance }
 
 <a id="instance-status"></a>
 ### インスタンス状態 { #instance-status }
 
-インスタンスはさまざまな状態を持ち、状態に応じて実行できる操作が決まっています。インスタンス状態の一覧は次のとおりです。
+インスタンスはさまざまな状態を持ち、状態に応じて実行できるアクションが決定されます。インスタンス状態の一覧は次のとおりです。
 
 | 状態名 | 説明 |
 |---|---|
-| `ACTIVE` | インスタンスがアクティブ状態の場合 |
-| `BUILD` | インスタンスが作成中の場合 |
-| `DELETED` | インスタンスが削除された場合 |
-| `ERROR` | インスタンスの直前の操作が失敗した場合 |
-| `HARD_REBOOT` | インスタンスをハード再起動した場合<br>物理サーバーの電源を切り、再度電源を入れることと同じ操作 |
-| `MIGRATING` | インスタンスが移行中の場合<br>これはライブマイグレーション(アクティブインスタンスの移動)作業により発生します |
-| `PASSWORD` | インスタンスでパスワードをリセット中の場合 |
-| `PAUSED` | インスタンスが一時停止された場合<br>一時停止されたインスタンスはハイパーバイザーのメモリに保存されます |
-| `REBOOT` | インスタンスがソフト再起動状態の場合<br>再起動コマンドが仮想マシンのオペレーティングシステムに渡されます |
-| `REBUILD` | インスタンスを作成時のイメージから新たに構築する状態 |
-| `RESCUE` | インスタンスを復旧モードで実行中の場合 |
-| `RESIZE` | インスタンスタイプを変更するか、インスタンスを別のホストに移動する場合<br>インスタンスが停止され、その後再起動された状態 |
-| `REVERT_RESIZE` | インスタンスタイプの変更またはインスタンスを別のホストに移動する過程で失敗した場合、元の状態に戻すために復旧する場合 |
-| `VERIFY_RESIZE` | インスタンスがタイプ変更またはインスタンスを別のホストに移動する過程を完了し、ユーザーの承認を待機している場合<br>NHN Cloudでは、この場合、自動的に`ACTIVE`状態になります |
-| `SHELVED_OFFLOADED` | インスタンスがシャットダウンされた場合 |
-| `SHUTOFF` | インスタンスが停止された場合 |
-| `SUSPENDED` | インスタンスが管理者により最大節電モードに入った場合 |
-| `UNKNOWN` | インスタンスの状態が不明な場合<br>`インスタンスがこの状態に入った場合は、管理者に問い合わせてください。` |
+| `ACTIVE` | インスタンスがアクティブな状態である場合 |
+| `BUILD` | インスタンスが作成中である場合 |
+| `DELETED` | インスタンスが削除されている場合 |
+| `ERROR` | 直前に実行した操作が失敗した場合 |
+| `HARD_REBOOT` | インスタンスを強制的に再起動した場合<br>物理サーバーの電源をオフにして再度オンにするのと同じ動作 |
+| `MIGRATING` | インスタンスがマイグレーション中である場合<br>これはライブマイグレーション(アクティブインスタンスの移動)タスクが原因で発生します |
+| `PASSWORD` | インスタンスでパスワードをリセット中である場合 |
+| `PAUSED` | インスタンスが一時停止されている場合<br>一時停止されているインスタンスはハイパーバイザーのメモリに格納されます |
+| `REBOOT` | インスタンスがソフト再起動状態である場合<br>再起動コマンドが仮想マシンOSに渡されます |
+| `REBUILD` | インスタンスが作成時のイメージから新たに作成される状態 |
+| `RESCUE` | インスタンスをリカバリーモードで実行中である場合 |
+| `RESIZE` | インスタンスタイプを変更するか、インスタンスを別のホストに移動する場合<br>インスタンスが停止してから再起動された状態 |
+| `REVERT_RESIZE` | インスタンスタイプを変更するか、インスタンスを別のホストに移動する過程で失敗した場合、元の状態に戻すために復旧する場合 |
+| `VERIFY_RESIZE` | インスタンスがタイプ変更またはインスタンスを別のホストに移動するプロセスを完了し、ユーザーの承認を待っている場合<br>NHN Cloudではこの場合、自動的に`ACTIVE`状態になります |
+| `SHELVED_OFFLOADED` | インスタンスが終了されている場合 |
+| `SHUTOFF` | インスタンスが停止されている場合 |
+| `SUSPENDED` | インスタンスが管理者によって休止モードに入っている場合 |
+| `UNKNOWN` | インスタンスの状態が不明な場合<br>`インスタンスがこの状態に入った場合は、管理者に連絡してください。` |
 
 <a id="list-instances"></a>
 ### インスタンス一覧の表示 { #list-instances }
@@ -488,20 +493,20 @@ X-Auth-Token: {tokenId}
 <a id="list-instances-request"></a>
 #### リクエスト
 
-このAPIはリクエスト本文を要求しません。
+このAPIはリクエスト本文を必要としません。
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
 | tenantId | URL | String | O | テナントID |
 | tokenId | Header | String | O | トークンID |
 | reservation_id | Query | String | - | インスタンス作成予約ID。<br>予約IDを指定すると、同時に作成されたインスタンス一覧のみが返されます |
-| changes-since | Query | Datetime | - | 指定された時刻以降に変更されたインスタンス一覧を返します。`YYYY-MM-DDThh:mm:ss`の形式。 |
-| image | Query | UUID | - | イメージID<br>指定されたイメージを使用したインスタンス一覧を返します |
-| flavor | Query | UUID | - | インスタンスタイプID<br>指定されたタイプを使用したインスタンス一覧を返します |
-| name | Query | String | - | インスタンス名<br>指定された名前を持つインスタンス一覧を返します。正規表現で照会可能 |
+| changes-since | Query | Datetime | - | 指定された時刻以降に変更されたインスタンス一覧を返します。`YYYY-MM-DDThh:mm:ss`の形式です。 |
+| image | Query | UUID | - | イメージID<br>指定されたイメージを使用するインスタンス一覧を返します |
+| flavor | Query | UUID | - | インスタンスタイプID<br>指定されたタイプを使用するインスタンス一覧を返します |
+| name | Query | String | - | インスタンス名<br>指定された名前を持つインスタンス一覧を返します。正規表現を使用して照会できます |
 | status | Query | Enum | - | インスタンス状態<br>指定された状態を持つインスタンス一覧を返します |
-| limit | Query | Integer | - | インスタンス一覧の数<br>指定された数のインスタンス一覧を返します |
-| marker | Query | UUID | - | 一覧の最初のインスタンスUUID<br>ソート基準に従い、`marker`で指定されたインスタンスから`limit`個のインスタンス一覧を返します |
+| limit | Query | Integer | - | インスタンス一覧の個数<br>指定された個数のインスタンス一覧を返します |
+| marker | Query | UUID | - | 一覧の最初のインスタンスUUID<br>ソート基準に応じて、`marker`で指定されたインスタンスから`limit`個数のインスタンス一覧を返します |
 
 <a id="list-instances-response"></a>
 #### レスポンス
