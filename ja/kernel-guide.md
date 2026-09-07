@@ -3,16 +3,19 @@
 <!-- pre-align:aligned sig=73ceeadcb5ee -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
+
 ## Compute > Instance > カーネルバージョンアップガイド { #compute-instance-kernel-version-upgrade-guide }
 
-> [注意]
-> カーネル更新時に OS が破損したり、起動に失敗したりする可能性があり、その結果についての責任はユーザーにあります。
+> [注意] 
+> カーネルアップデート時、OS が破損したり、ブートに失敗する可能性があります。これによる結果に対する責任はユーザーにあります。
 
 <a id="rocky-linux-8"></a>
+
 ## Rocky Linux 8 { #rocky-linux-8 }
 
 <a id="check-the-kernel-version"></a>
-### カーネルバージョン確認 { #check-the-kernel-version }
+
+### カーネルバージョンの確認 { #check-the-kernel-version }
 
 現在インストールされているカーネルバージョンを確認します。
 
@@ -22,9 +25,10 @@
 ```
 
 <a id="default-storage-settings"></a>
+
 ### デフォルトリポジトリ設定 { #default-storage-settings }
 
-システムアーキテクチャと Rocky Linux バージョンに合わせてデフォルトリポジトリを変更します。
+システムアーキテクチャと Rocky Linux バージョンに合わせたデフォルトリポジトリを変更します。
 
 ```
 [baseos]
@@ -37,36 +41,39 @@ countme=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-rockyofficial
 ```
 
-* **名前**
-  * リポジトリの名前で、変更しても問題ありません。
+* **name**
+  * リポジトリの名前であり、変更しても問題ありません。
 * **mirrorlist**
   * パッケージをダウンロードできるミラーサーバーリストを提供する URL を指定します。
-  * システムのアーキテクチャ(`$basearch`)と Rocky Linux バージョン(`$releasever`)に合わせてミラーサーバーリストを取得します。
+  * システムのアーキテクチャ (`$basearch`) と Rocky Linux バージョン (`$releasever`) に合わせたミラーサーバーリストを取得します。
 * **baseurl**
   * パッケージをダウンロードするためのベース URL を指定します。この URL は単一のサーバーを指し、そのサーバーから直接パッケージをダウンロードします。
 * **gpgcheck**
-  * GPG(GNU Privacy Guard) キーが含まれているリポジトリの URL またはパスを設定します。GPG キーは rpm パッケージを認証するために使用される暗号化署名です。
+  * GPG (GNU Privacy Guard) キーが含まれるリポジトリの URL またはパスを設定します。GPG キーは rpm パッケージを認証するために使用される暗号化署名です。
 
 > [注記]
-> **mirrorlist** と **baseurl** の両方が設定されている場合、**mirrorlist** が優先的に適用され、**baseurl** はフォールバックオプションとして機能します。
+> **mirrorlist** と **baseurl** がどちらも設定されている場合、**mirrorlist** が優先的に適用され、**baseurl** は代替オプションとして機能します。
 
 <a id="clear-the-cache-before-updating"></a>
-### 更新前のキャッシュ削除 { #clear-the-cache-before-updating }
 
-既存のダウンロード済みパッケージのメタデータが保存されたキャッシュを削除します。
+### アップデート前のキャッシュ削除 { #clear-the-cache-before-updating }
+
+既にダウンロード済みのパッケージのメタデータが保存されたキャッシュを削除します。
 
 ```
 [root@rocky810 ~]# rm -rf /var/cache/dnf
 ```
 
 <a id="install-the-kernel"></a>
-### カーネルインストール { #install-the-kernel }
+
+### カーネルのインストール { #install-the-kernel }
 
 <a id="install-the-kernel-by-specifying-a-version"></a>
+
 #### バージョンを指定してカーネルをインストール
 
 > [注記]
-> Rocky Linux パッケージ 8.8 以下のバージョンはサポートされていません。
+> Rocky Linux 8.8 以下のバージョンはサポートされていません。
 
 ```
 [root@rocky810 ~]# dnf --releasever=8.10 list kernel*
@@ -99,8 +106,9 @@ kernelshark.x86_64
 ```
 
 <a id="install-the-kernel-without-specifying-a-version"></a>
+
 #### バージョンを指定せずにカーネルをインストール
-バージョンを指定しない場合、major バージョンの最新バージョンを基準としてパッケージを検索します。
+バージョンを指定しない場合、メジャーバージョンの最新バージョンを基準に、パッケージを検索します。
 
 ```
 [root@rocky810 ~]# dnf list kernel*
@@ -133,10 +141,11 @@ kernelshark.x86_64
 
 
 <a id="install-the-kernel-install-the-latest-kernel"></a>
-#### 最新カーネルをインストール
-別途のバージョンを指定しない場合、最新バージョンでインストールします。
 
-カーネルをインストールすると、依存パッケージの **kernel-core** と **kernel-modules** も一緒にインストールします。
+#### 最新カーネルをインストール
+バージョンを指定しない場合、最新バージョンでインストールします。 
+
+カーネルをインストールすると、依存性パッケージである **kernel-core** と **kernel-modules** も同時にインストールします。
 
 ```
 [root@rocky810 ~]# dnf install kernel
@@ -171,9 +180,10 @@ Complete!
 
 
 <a id="install-the-kernel-check-package-installation"></a>
+
 #### パッケージのインストール確認
 
-カーネルパッケージが正常にインストールされたかどうかを確認します。
+カーネルパッケージが正常にインストールされたかを確認します。
 
 ```
 [root@rocky810 ~]# dnf list installed | grep -iE "kernel.*4.18.0-553.16"
@@ -183,17 +193,19 @@ kernel-modules.x86_64                 4.18.0-553.16.1.el8_10                    
 ```
 
 <a id="reboot-the-os"></a>
-### OS 再起動 { #reboot-the-os }
 
-カーネルアップデートを適用するために、OS を再起動します。
+### OS の再起動 { #reboot-the-os }
+
+カーネルの更新を適用するために OS を再起動します。
 
 ```
 [root@rocky810 ~]# sync; reboot
 ```
 
 <a id="select-create-a-configuration-file-for-the-grub2-bootloader"></a>
-### <span style="color:#e11d21;">**[選択]**</span> GRUB2 ブートローダーの設定ファイルの生成 { #select-create-a-configuration-file-for-the-grub2-bootloader }
-システムのブートメニューを更新して、新しくインストールされたカーネルやその他のブート項目を反映します。
+
+### <span style="color:#e11d21;">**[選択]**</span> GRUB2 ブートローダーの設定ファイル生成 { #select-create-a-configuration-file-for-the-grub2-bootloader }
+システムのブートメニューを更新して、新たにインストールされたカーネルやその他のブート項目を反映します。
 
 dnf、yum は自動的に GRUB2 設定ファイルを更新します。
 
@@ -202,9 +214,9 @@ dnf、yum は自動的に GRUB2 設定ファイルを更新します。
 ```
 
 <a id="select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
-#### カーネルアップデートの確認
+#### カーネル更新確認
 
-カーネルバージョンが正常に更新されたかどうかを確認します。
+カーネルバージョンが正常に更新されたかを確認します。
 
 ```
 [root@rocky810 ~]# uname -r
@@ -212,25 +224,26 @@ dnf、yum は自動的に GRUB2 設定ファイルを更新します。
 ```
 
 <a id="change-the-kernel-boot-order"></a>
-### カーネルのブート順序を変更する { #change-the-kernel-boot-order }
 
-複数のカーネルがインストールされている場合、目的のカーネルでブートできるようにブート順序を変更します。
+### カーネル起動順序の変更 { #change-the-kernel-boot-order }
+
+複数のカーネルがインストールされている場合、目的のカーネルで起動できるように起動順序を変更します。
 
 <a id="change-the-kernel-boot-order-rocky-versions-below-810"></a>
-#### Rocky 8.10 より前のバージョン
+#### Rocky 8.10 未満バージョン
 
 ##### デフォルトカーネルの確認
 
-現在のデフォルト設定されたカーネルを確認します。
+現在デフォルト設定されているカーネルを確認します。
 
 ```
 [root@rocky810 ~]# grubby --default-kernel
 /boot/vmlinuz-4.18.0-553.16.1.el8_10.x86_64
 ```
 
-##### 現在インストールされているカーネルの一覧
+##### 現在インストールされているカーネル一覧
 
-現在インストールされているカーネルの一覧を確認します。
+現在インストールされているカーネル一覧を確認します。
 
 ```
 [root@rocky810 ~]# grubby --info=ALL | grep ^kernel | grep -v rescue
@@ -239,9 +252,9 @@ kernel="/boot/vmlinuz-4.18.0-553.16.1.el8_10.x86_64"
 kernel="/boot/vmlinuz-4.18.0-553.8.1.el8_10.x86_64"
 ```
 
-##### デフォルトカーネルを変更する
+##### デフォルトカーネルの変更
 
-現在インストールされているカーネルの一覧からいずれかを選択して、デフォルトカーネルを変更します。
+現在インストールされているカーネル一覧のいずれかを選択して、デフォルトカーネルを変更します。
 
 ```
 [root@rocky810 ~]# grubby --set-default="/boot/vmlinuz-4.18.0-553.8.1.el8_10.x86_64"
@@ -252,16 +265,16 @@ The default is /boot/loader/entries/ea5b6e1e7bc09da25505ebb3a26a8bf4-4.18.0-553.
 
 ##### OS の再起動
 
-ブート順序の変更を適用するために OS を再起動します。
+起動順序変更の適用のために OS を再起動します。
 
 ```
 [root@rocky810 ~]# sync; reboot
 ```
 
 <a id="change-the-kernel-boot-order-rocky-810-and-later-versions"></a>
-#### Rocky 8.10 以降のバージョン
+#### Rocky 8.10 以上バージョン
 
-現在、Rocky 8.10 公式イメージでは grubby コマンドでカーネルの変更ができない問題があるため、以下のシェルスクリプトを使用します。
+現在 Rocky 8.10 公式イメージで grubby コマンドでカーネル変更ができない問題があるため、以下のシェルスクリプトを使用します。
 
 ```bash
 #!/bin/bash
@@ -289,9 +302,9 @@ if [[ "$result" -eq "1" ]]; then
 fi
 ```
 
-##### スクリプト使用方法
+##### スクリプトの使用方法
 
-シェルスクリプト実行後に出力されるカーネルの一覧からブートするカーネルの番号を入力します。
+シェルスクリプト実行後に出力されるカーネル一覧のうち、起動するカーネルの番号を入力します。
 
 ```
 [root@rocky810 ~]# bash kernel_select.sh
@@ -309,16 +322,18 @@ done
 
 ##### OS の再起動
 
-ブート順序の変更を適用するために OS を再起動します。
+起動順序変更の適用のために OS を再起動します。
 
 ```
 [root@rocky810 ~]# sync; reboot
 ```
 
 <a id="rocky-linux-9"></a>
+
 ## Rocky Linux 9 { #rocky-linux-9 }
 
 <a id="rocky-linux-9-check-the-kernel-version"></a>
+
 ### カーネルバージョンの確認 { #rocky-linux-9-check-the-kernel-version }
 
 現在インストールされているカーネルバージョンを確認します。
@@ -329,9 +344,10 @@ done
 ```
 
 <a id="rocky-linux-9-default-storage-settings"></a>
+
 ### デフォルトリポジトリ設定 { #rocky-linux-9-default-storage-settings }
 
-システムアーキテクチャと Rocky Linux バージョンに合わせてデフォルトリポジトリを変更します。
+システムアーキテクチャと Rocky Linux バージョンに対応するデフォルトリポジトリを変更します。
 
 ```
 [baseos]
@@ -346,32 +362,33 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
 ```
 
 * **name**
-  * リポジトリの名前です。変更しても問題ありません。
+  * リポジトリの名前であり、変更しても問題ありません。
 * **mirrorlist**
-  * パッケージをダウンロードできるミラーサーバーの一覧を提供する URL を指定します。
-  * システムのアーキテクチャ（`$basearch`）と Rocky Linux バージョン（`$releasever`）に合わせてミラーサーバーの一覧を取得します。
+  * パッケージをダウンロードできるミラーサーバー一覧を提供する URL を指定します。
+  * システムのアーキテクチャ (`$basearch`) と Rocky Linux バージョン (`$releasever`) に対応するミラーサーバー一覧を取得します。
 * **baseurl**
-  * パッケージをダウンロードするベース URL を指定します。この URL は単一のサーバーを指し、そのサーバーから直接パッケージをダウンロードします。
+  * パッケージをダウンロードする基本 URL を指定します。この URL は単一のサーバーを指し、そのサーバーから直接パッケージをダウンロードします。
 * **gpgcheck**
-  * GPG (GNU Privacy Guard) キーを含むリポジトリの URL またはパスを設定します。GPG キーは rpm パッケージを認証するために使用される暗号化署名です。
+  * GPG (GNU Privacy Guard) キーが含まれているリポジトリの URL またはパスを設定します。GPG キーは rpm パッケージを認証するために使用される暗号化署名です。
 * **enabled**
   * このリポジトリを有効にするかどうかを設定します。
   * 値が 1 の場合は有効、0 の場合は無効です。
 * **countme**
-  * Rocky Linux の使用統計を収集する機能です。
-  * 値が 1 の場合、Rocky Linux プロジェクトのユーザーがどのくらい多いかを把握できます。
+  * Rocky Linux 使用統計を収集する機能です。
+  * 値が 1 の場合、Rocky Linux プロジェクトにどれだけの数のユーザーがいるかを把握できます。
 * **metadata_expire**
-  * dnf がリポジトリのメタデータ（パッケージリストなど）を特定の期間（例では 6 時間）で更新するように設定します。
+  * dnf がリポジトリのメタデータ (パッケージリストなど) を特定の時間 (例では 6 時間) の周期で更新するように設定します。
 * **gpgkey**
   * パッケージ署名を検証する GPG キーファイルのパスです。
 
 > [注記]
-> **mirrorlist** と **baseurl** が両方設定されている場合、**mirrorlist** が優先適用され、**baseurl** は代替オプションとして機能します。
+> **mirrorlist** と **baseurl** が両方設定されている場合は、**mirrorlist** が優先適用され、**baseurl** は代替オプションとして動作します。
 
 <a id="rocky-linux-9-clear-the-cache-before-updating"></a>
+
 ### 更新前のキャッシュ削除 { #rocky-linux-9-clear-the-cache-before-updating }
 
-既にダウンロードされたパッケージのメタデータが保存されたキャッシュを削除します。
+既存にダウンロードされたパッケージのメタデータが保存されたキャッシュを削除します。
 
 
 ```
@@ -379,13 +396,15 @@ gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-9
 ```
 
 <a id="rocky-linux-9-install-the-kernel"></a>
+
 ### カーネルのインストール { #rocky-linux-9-install-the-kernel }
 
 <a id="rocky-linux-9-install-the-kernel-install-the-kernel-by-specifying-a-version"></a>
+
 #### バージョンを指定してカーネルをインストール
 
 > [注記]
-> 現在、Rocky Linux 9 パッケージは バージョン 9.5 のみ利用可能です。
+> 現在、Rocky Linux 9 パッケージは 9.5 バージョンのみ使用できます。
 
 
 ```
@@ -434,8 +453,9 @@ kernelshark.x86_64                                                         1:1.2
 ```
 
 <a id="rocky-linux-9-install-the-kernel-install-the-kernel-without-specifying-a-version"></a>
-#### バージョン指定なしでカーネルをインストール
-バージョンを指定しないと、メジャーバージョンの最新バージョンを基準にパッケージを検索します。
+
+#### バージョンを指定せずにカーネルをインストール
+バージョンを指定しない場合、メジャーバージョンの最新版を基準にパッケージを検索します。
 
 ```
 [root@rocky95 ~]# dnf list kernel*
@@ -483,10 +503,12 @@ kernelshark.x86_64                                                         1:1.2
 ```
 
 <a id="rocky-linux-9-install-the-kernel-install-the-latest-kernel"></a>
-#### 最新カーネルをインストール
-バージョンを指定しない場合、最新バージョンをインストールします。
 
-カーネルをインストールすると、依存パッケージの **kernel-core** と **kernel-modules** も一緒にインストールされます。
+#### 最新のカーネルをインストール
+
+バージョンを指定しない場合、最新バージョンがインストールされます。
+
+カーネルをインストールすると、依存パッケージの **kernel-core** および **kernel-modules** もインストールされます。
 
 ```
 [root@rocky95 ~]# dnf install kernel
@@ -547,9 +569,10 @@ Complete!
 
 
 <a id="rocky-linux-9-install-the-kernel-check-package-installation"></a>
-#### パッケージ インストールの確認
 
-カーネル パッケージが正常にインストールされたことを確認します。
+#### パッケージのインストールを確認
+
+カーネルパッケージが正しくインストールされたことを確認します。
 
 ```
 [root@rocky95 ~]# dnf list installed | grep -i "5.14.0-503.23.2"
@@ -560,28 +583,32 @@ kernel-modules-core.x86_64             5.14.0-503.23.2.el9_5          @baseos
 ```
 
 <a id="rocky-linux-9-reboot-the-os"></a>
-### OS を再起動 { #rocky-linux-9-reboot-the-os }
 
-カーネル更新を適用するために OS を再起動します。
+### OS を再起動する { #rocky-linux-9-reboot-the-os }
+
+カーネルアップデートを適用するために OS を再起動します。
 
 ```
 [root@rocky95 ~]# sync; reboot
 ```
 
 <a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader"></a>
-### <span style="color:#e11d21;">**[オプション]**</span> GRUB2 ブートローダーの設定ファイルを作成 { #rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader }
-システムのブート メニューを更新して、新しくインストールされたカーネルまたは他のブート項目を反映します。
 
-dnf と yum は GRUB2 設定ファイルを自動的に更新します。
+### <span style="color:#e11d21;">**[選択]**</span> GRUB2 ブートローダーの設定ファイルの作成 { #rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader }
+
+システムのブートメニューを更新して、新しくインストールされたカーネルやその他のブート項目を反映します。
+
+dnf および yum は自動的に GRUB2 設定ファイルを更新します。
 
 ```
 [root@rocky95 ~]# grub2-mkconfig -o /etc/grub2.cfg
 ```
 
 <a id="rocky-linux-9-select-create-a-configuration-file-for-the-grub2-bootloader-check-for-kernel-updates"></a>
-#### カーネル更新の確認
 
-カーネル バージョンが正常に更新されたことを確認します。
+#### カーネルアップデートを確認
+
+カーネルバージョンが正しく更新されたことを確認します。
 
 ```
 [root@rocky810 ~]# uname -r
@@ -590,22 +617,23 @@ dnf と yum は GRUB2 設定ファイルを自動的に更新します。
 
 
 <a id="rocky-linux-9-change-the-kernel-boot-order"></a>
-### カーネル ブート順序を変更 { #rocky-linux-9-change-the-kernel-boot-order }
 
-複数のカーネルがインストールされている場合、希望するカーネルでブートするようにブート順序を変更します。
+### カーネルのブート順序を変更する { #rocky-linux-9-change-the-kernel-boot-order }
 
-##### デフォルト カーネルを確認
+複数のカーネルがインストールされている場合、目的のカーネルでブートできるようにブート順序を変更します。
 
-現在設定されているデフォルト カーネルを確認します。
+##### デフォルトカーネルを確認
+
+現在デフォルトに設定されているカーネルを確認します。
 
 ```
 [root@rocky95 ~]# grubby --default-kernel
 /boot/vmlinuz-5.14.0-503.22.1.el9_5.x86_64
 ```
 
-##### 現在インストール済みのカーネル一覧
+##### 現在インストールされているカーネルのリスト
 
-現在インストール済みのカーネル一覧を確認します。
+現在インストールされているカーネルのリストを確認します。
 
 ```
 [root@rocky95 ~]# grubby --info=ALL | grep ^kernel | grep -v rescue
@@ -613,9 +641,9 @@ kernel="/boot/vmlinuz-5.14.0-503.14.1.el9_5.x86_64"
 kernel="/boot/vmlinuz-5.14.0-503.22.1.el9_5.x86_64"
 ```
 
-##### デフォルト カーネルを変更
+##### デフォルトカーネルを変更
 
-現在インストール済みのカーネル一覧から 1 つを選択して、デフォルト カーネルを変更します。
+現在インストールされているカーネルのリストから 1 つを選択してデフォルトカーネルを変更します。
 
 ```
 [root@rocky95 ~]# grubby --set-default="/boot/vmlinuz-5.14.0-503.14.1.el9_5.x86_64"
