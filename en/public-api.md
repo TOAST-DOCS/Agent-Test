@@ -3,23 +3,25 @@
 <!-- pre-align:aligned sig=27ed74e0499b -->
 
 <a id="compute-instance-api-v2-guide"></a>
+
 ## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
 
-Instance uses the IaaS token for authentication/authorization when making API calls. The IaaS token is the authentication token used by the NHN Cloud's OpenStack-based infrastructure service (IaaS). For more information on issuing and using IaaS tokens, see [IaaS token](/nhncloud/en/public-api/iaas-token).
+Instance uses the IaaS token for authentication/authorization when making API calls. The IaaS token is the authentication token used by the NHN Cloud's OpenStack-based infrastructure service (IaaS). For more information on issuing and using IaaS tokens, see [IaaS Token](/nhncloud/en/public-api/iaas-token).
 
-The Instance API uses the `compute` type endpoint. For the exact endpoint, see `serviceCatalog` from the token issue response.
+The Instance API uses the `compute` type endpoint. For the exact endpoint, see `serviceCatalog` from the token issuance response.
 
 | Type | Region | Endpoint |
 |---|---|---|
-| compute | Korea (Pangyo) region<br>Korea (Pyeongchon) region<br>Korea (Gwangju) region<br>Japan region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | Korea (Pangyo) Region<br>Korea (Pyeongchon) Region<br>Korea (Gwangju) Region<br>Japan Region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
 
-API response may show the fields not specified by the guide. These fields are internally used by NHN Cloud, and not used because they are subject to change without prior notice.
+API responses may include fields not specified in this guide. These fields are used internally by NHN Cloud and are subject to change without prior notice, so they are not used.
 
 <a id="instance-flavors"></a>
+
 ## Instance Types { #instance-flavors }
 
 <a id="list-flavors"></a>
-### List Types { #list-flavors }
+### List Instance Types { #list-flavors }
 
 ```
 GET /v2/{tenantId}/flavors
@@ -35,8 +37,8 @@ This API does not require a request body.
 |---|---|---|---|---|
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
-| minDisk | Query | Integer | - | Minimum block storage size (GB)<br>Returns only types with a block storage size larger than the specified size |
-| minRam | Query | Integer | - | Minimum RAM size (MB)<br>Returns only types with a RAM size larger than the specified size |
+| minDisk | Query | Integer | - | Minimum block storage size (GB)<br>Returns only types with block storage size larger than the specified size |
+| minRam | Query | Integer | - | Minimum RAM size (MB)<br>Returns only types with RAM size larger than the specified size |
 
 <a id="list-flavors-response"></a>
 #### Response
@@ -47,7 +49,6 @@ This API does not require a request body.
 | flavors.id | Body | UUID | Instance type ID |
 | flavors.links | Body | Object | Instance type path object |
 | flavors.name | Body | String | Instance type name |
-
 
 <details><summary>Example</summary>
 <p>
@@ -93,7 +94,7 @@ This API does not require a request body.
 ---
 
 <a id="list-flavors-with-details"></a>
-### List Types with Details { #list-flavors-with-details }
+### List Instance Types in Detail { #list-flavors-with-details }
 
 ```
 GET /v2/{tenantId}/flavors/detail
@@ -109,26 +110,26 @@ This API does not require a request body.
 |---|---|---|---|---|
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
-| minDisk | Query | Integer | - | Minimum block storage size (GB)<br>Returns only types with a block storage size larger than the specified size |
-| minRam | Query | Integer | - | Minimum RAM size (MB)<br>Returns only types with a RAM size larger than the specified size |
+| minDisk | Query | Integer | - | Minimum block storage size (GB)<br>Returns only types with block storage size larger than the specified size |
+| minRam | Query | Integer | - | Minimum RAM size (MB)<br>Returns only types with RAM size larger than the specified size |
 
 <a id="list-flavors-with-details-response"></a>
 #### Response
 
-| Name | Type | Format | Description             |
-|---|---|---|----------------|
-| flavors | Body | Object | Instance type list object  |
-| flavors.id | Body | UUID | Instance type ID     |
-| flavors.links | Body | Object | Instance type path object  |
-| flavors.name | Body | String | Instance type name     |
-| flavors.ram | Body | Integer | Memory size (MB)     |
-| flavors.OS-FLV-DISABLED:disabled | Body | Boolean | Whether enabled         |
-| flavors.vcpus | Body | Integer | Number of vCPUs        |
-| flavors.extra_specs | Body | Object | Additional specifications object       |
-| flavors.swap | Body | Integer | Swap area size (GB)  |
-| flavors.os-flavor-access:is_public | Body | Boolean | Whether shared          |
-| flavors.rxtx_factor | Body | Float | Network send/receive packet ratio |
-| flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | Temporary block storage size (GB)     |
+| Name | Type | Format | Description |
+|---|---|---|---|
+| flavors | Body | Object | Instance type list object |
+| flavors.id | Body | UUID | Instance type ID |
+| flavors.links | Body | Object | Instance type path object |
+| flavors.name | Body | String | Instance type name |
+| flavors.ram | Body | Integer | Memory size (MB) |
+| flavors.OS-FLV-DISABLED:disabled | Body | Boolean | Enabled status |
+| flavors.vcpus | Body | Integer | vCPU count |
+| flavors.extra_specs | Body | Object | Additional specifications object |
+| flavors.swap | Body | Integer | Swap area size (GB) |
+| flavors.os-flavor-access:is_public | Body | Boolean | Shared status |
+| flavors.rxtx_factor | Body | Float | Network transmission/reception packet ratio |
+| flavors.OS-FLV-EXT-DATA:ephemeral | Body | Integer | Temporary block storage size (GB) |
 | flavors.disk | Body | Integer | Root block storage size (GB) |
 
 <details><summary>Example</summary>
@@ -197,6 +198,7 @@ This API does not require a request body.
 ---
 
 <a id="availability-zones"></a>
+
 ## Availability Zones { #availability-zones }
 
 <a id="list-availability-zones"></a>
@@ -209,6 +211,7 @@ X-Auth-Token: {tokenId}
 
 <a id="list-availability-zones-request"></a>
 #### Request
+
 This API does not require a request body.
 
 | Name | Type | Format | Required | Description |
@@ -218,12 +221,13 @@ This API does not require a request body.
 
 <a id="list-availability-zones-response"></a>
 #### Response
+
 | Name | Type | Format | Description |
 |---|---|---|---|
-| availabilityZoneInfo | Body | Object | Availability zone information object |
-| availabilityZoneInfo.zoneName | Body | String | Availability zone name |
-| availabilityZoneInfo.zoneState | Body | Object | Availability zone state information object |
-| availabilityZoneInfo.available | Body | Object | Availability zone state |
+| availabilityZoneInfo | Body | Object | Availability Zone information object |
+| availabilityZoneInfo.zoneName | Body | String | Availability Zone name |
+| availabilityZoneInfo.zoneState | Body | Object | Availability Zone status information object |
+| availabilityZoneInfo.available | Body | Object | Availability Zone status |
 
 <details><summary>Example</summary>
 <p>
@@ -253,7 +257,8 @@ This API does not require a request body.
 ---
 
 <a id="key-pairs"></a>
-## Key Pairs { #key-pairs }
+
+## Key Pair { #key-pairs }
 
 <a id="list-key-pairs"></a>
 ### List Key Pairs { #list-key-pairs }
@@ -330,10 +335,10 @@ This API does not require a request body.
 | keypair.public_key | Body | String | Public key |
 | keypair.user_id | Body | String | Key pair owner ID |
 | keypair.name | Body | String | Key pair name |
-| keypair.deleted | Body | Boolean | Whether the key pair is deleted |
-| keypair.created_at | Body | Datetime | Key pair created time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
-| keypair.updated_at | Body | Datetime | Key pair updated time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
-| keypair.deleted_at | Body | Datetime | Key pair deleted time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.deleted | Body | Boolean | Whether the key pair has been deleted |
+| keypair.created_at | Body | Datetime | Key pair creation time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.updated_at | Body | Datetime | Key pair modification time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
+| keypair.deleted_at | Body | Datetime | Key pair deletion time<br>`YYYY-MM-DDThh:mm:ss.SSSSSS` |
 | keypair.fingerprint | Body | String | Key pair fingerprint |
 | keypair.id | Body | Integer | Key pair ID |
 
@@ -449,6 +454,7 @@ This API does not return a response body.
 
 
 <a id="instance"></a>
+
 ## Instance { #instance }
 
 <a id="instance-status"></a>
@@ -456,26 +462,26 @@ This API does not return a response body.
 
 Instances exist in various statuses, and each status defines its own set of permissible operations. See the following list of instance statuses.
 
-| Status Name              | Description                                                                                                |
-|-------------------|---------------------------------------------------------------------------------------------------|
+| Status | Description |
+|---|---|
 | `ACTIVE` | Instance is active |
 | `BUILD` | Instance is being created |
-| `DELETED` | Instance is deleted |
-| `ERROR` | Previous operation on the instance failed |
-| `HARD_REBOOT` | Instance is force rebooted<br>Same as turning the physical server's power switch off and back on again |
-| `MIGRATING` | Instance is being migrated<br>This occurs due to live migration (moving active instances) |
+| `DELETED` | Instance has been deleted |
+| `ERROR` | Previous operation on instance failed |
+| `HARD_REBOOT` | Instance has been hard-rebooted<br> Same as turning the physical server's power switch off and back on again |
+| `MIGRATING` | Instance is being migrated<br> This occurs due to live migration (active instance migration) operations |
 | `PASSWORD` | Instance password is being reset |
-| `PAUSED` | Instance is paused<br>Paused instance is stored in hypervisor memory |
-| `REBOOT` | Instance is in soft reboot<br>Reboot command is sent to the virtual machine's operating system |
+| `PAUSED` | Instance is paused<br> Paused instances are stored in hypervisor memory |
+| `REBOOT` | Instance is rebooting (soft reboot)<br> Reboot command is sent to virtual machine operating system |
 | `REBUILD` | Instance is being rebuilt from the original image |
 | `RESCUE` | Instance is running in rescue mode |
-| `RESIZE` | Instance flavor is being changed or migrated to another host<br>Instance is stopped and then restarted |
+| `RESIZE` | Instance type is being changed or instance is being migrated to another host<br> Instance is stopped and then restarted |
 | `REVERT_RESIZE` | Instance is restored to its original state when a failure occurs while changing flavors or migrating to another host |
-| `VERIFY_RESIZE` | Instance is waiting for confirmation after changing flavors or migrating to another host<br>In NHN Cloud, it automatically changes to `ACTIVE` status |
-| `SHELVED_OFFLOADED` | Instance is shelved and offloaded |
+| `VERIFY_RESIZE` | Instance is waiting for confirmation after changing flavors or migrating to another host<br> In NHN Cloud, the instance automatically becomes `ACTIVE` |
+| `SHELVED_OFFLOADED` | Instance has been shelved |
 | `SHUTOFF` | Instance is stopped |
-| `SUSPENDED` | Instance is in hibernation mode by administrator |
-| `UNKNOWN` | Instance status is unknown<br>`If the instance enters this state, contact your administrator.` | 
+| `SUSPENDED` | Instance has been suspended by administrator |
+| `UNKNOWN` | Instance status cannot be determined<br> `If instance enters this state, contact administrator.` |
 
 <a id="list-instances"></a>
 ### List Instances { #list-instances }
@@ -494,24 +500,24 @@ This API does not require a request body.
 |---|---|---|---|---|
 | tenantId | URL | String | O | Tenant ID |
 | tokenId | Header | String | O | Token ID |
-| reservation_id | Query | String | - | Reservation ID for instance creation.<br>If specified, returns only instances created simultaneously |
+| reservation_id | Query | String | - | Instance creation reservation ID.<br> If you specify a reservation ID, returns only instances created at the same time |
 | changes-since | Query | Datetime | - | Returns list of instances changed since the specified time. `YYYY-MM-DDThh:mm:ss` format. |
-| image | Query | UUID | - | Image ID<br>Returns list of instances using the specified image |
-| flavor | Query | UUID | - | Instance flavor ID<br>Returns list of instances using the specified flavor |
-| name | Query | String | - | Instance name<br>Returns list of instances with the specified name; regex is supported |
-| status | Query | Enum | - | Instance status<br>Returns list of instances with the specified status |
-| limit | Query | Integer | - | Instance list count<br>Returns the specified number of instances |
-| marker | Query | UUID | - | First instance UUID in the list<br>According to sort order, returns up to `limit` instances starting from the instance specified as `marker` |
+| image | Query | UUID | - | Image ID<br> Returns list of instances using the specified image |
+| flavor | Query | UUID | - | Instance type ID<br> Returns list of instances using the specified type |
+| name | Query | String | - | Instance name<br> Return list of instances with specified name, regex is supported |
+| status | Query | Enum | - | Instance status<br> Returns list of instances with the specified status |
+| limit | Query | Integer | - | Number of instances<br> Returns the specified number of instances |
+| marker | Query | UUID | - | First instance UUID in the list<br> Return list of up to limit instances from the instance specified as the marker, according to the sort order |
 
 <a id="list-instances-response"></a>
 #### Response
 
 | Name | Type | Format | Description |
 |---|---|---|---|
-| servers | Body | Object | Instance list object |
+| servers | Body | Object | Instances object |
 | id | Body | UUID | Instance UUID |
-| links | body | Object | Instance path object |
-| name | body | String | Instance name |
+| links | Body | Object | Instance path object |
+| name | Body | String | Instance name |
 
 <details><summary>Example</summary>
 <p>
