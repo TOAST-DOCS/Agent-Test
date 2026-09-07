@@ -338,6 +338,44 @@ if (( ! TABLE_RECONCILE )) && (( ! LOCAL_MODE )); then
   exit 1
 fi
 
+# PR merge 헬퍼 — "Base branch was modified" 를 재시도로 흡수한다.
+#
+# 왜 필요한가 (2026-09-05 실측, suite 의 round1·markup-churn): 이 스크립트는
+# 마지막에 두 번 연속으로 머지한다 — 번역 PR → ko PR head, 그 다음 ko PR →
+# BASE_BRANCH. 앞의 머지가 ko PR 의 head 를 움직이고 그 앞의 align 머지가
+# BASE_BRANCH 를 움직였으므로, GitHub 이 계산해 둔 ko PR 의 mergeability 스냅샷이
+# 아직 낡은 상태다. 그 창에 머지를 걸면
+#   GraphQL: Base branch was modified. Review and try the merge again.
+# 로 거절된다. 번역 검증은 이미 전부 통과한 뒤라(ALIGNMENT: OK, 번역 PR 머지 완료)
+# 이 거절은 파이프라인 결함이 아니라 뒷정리 단계의 경합인데, exit 1 로 나가서
+# suite 요약에서는 두 plan 이 실패로 보였다.
+#
+# 지수 백오프 없이 고정 간격으로 충분하다 — GitHub 이 mergeability 를 다시
+# 계산하는 데 걸리는 시간이고, 실측에서 한 번의 대기로 풀렸다. 재시도해도 안
+# 되면 원래대로 실패시킨다 (진짜 충돌을 재시도로 덮지 않기 위해).
+merge_pr_retry() {
+  local url="$1" label="${2:-PR}" tries="${3:-4}" wait_s="${4:-15}"
+  local i out
+  for (( i = 1; i <= tries; i++ )); do
+    if out="$(gh pr merge "$url" --repo "$REPO" --merge --delete-branch 2>&1)"; then
+      [[ -n "$out" ]] && printf '%s\n' "$out"
+      return 0
+    fi
+    printf '%s\n' "$out" >&2
+    # 재시도로 풀릴 수 있는 것만 다시 시도한다. 그 밖(권한·충돌·이미 머지됨)은
+    # 기다려도 달라지지 않으므로 즉시 실패.
+    if ! grep -qiE 'Base branch was modified|not mergeable|mergeable state is unknown' <<<"$out"; then
+      return 1
+    fi
+    if (( i < tries )); then
+      echo "  $label merge 경합 — ${wait_s}s 후 재시도 ($i/$((tries - 1)))" >&2
+      sleep "$wait_s"
+    fi
+  done
+  echo "  $label merge 를 ${tries}회 시도했으나 계속 경합 — 실패로 처리" >&2
+  return 1
+}
+
 # local 단계 실행 헬퍼 — cloud-translate 체크아웃에서 python 스크립트를 돌린다.
 # 로그는 stdout 으로 흘려 e2e 로그에 인라인으로 남는다 (api 모드의 Jenkins
 # 콘솔 대응물). 실패하면 호출자가 exit code 로 처리.
@@ -500,7 +538,7 @@ fi
 
 # 감지한 PR 을 merge 하고 로컬 alpha 를 최신화
 echo "  merging: $fix_pr_url"
-gh pr merge "$fix_pr_url" --repo "$REPO" --merge --delete-branch
+merge_pr_retry "$fix_pr_url" "fix-heading-syntax PR"
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated"
 
@@ -653,7 +691,7 @@ fi
 # ── 9) 검증 통과 → align PR 을 alpha 로 merge ─────────────────────────
 echo
 echo "[9/17] 검증 통과 — align PR 을 $BASE_BRANCH 로 merge"
-gh pr merge "$align_pr_url" --repo "$REPO" --merge --delete-branch
+merge_pr_retry "$align_pr_url" "align PR"
 git pull --ff-only origin "$BASE_BRANCH"
 echo "  merged & local $BASE_BRANCH updated: $align_pr_url"
 
@@ -1127,12 +1165,12 @@ fi
 # 검증 통과 → 번역 PR 을 ko PR head 브랜치로 merge → ko PR 을 alpha 로 merge
 echo
 echo "검증 통과 — 번역 PR merge: $trans_pr_url (base=$ko_head_ref)"
-gh pr merge "$trans_pr_url" --repo "$REPO" --merge --delete-branch
+merge_pr_retry "$trans_pr_url" "번역 PR"
 echo "  merged: $trans_pr_url"
 
 echo
 echo "ko 변경 PR merge: $ko_pr_url (base=$BASE_BRANCH)"
-gh pr merge "$ko_pr_url" --repo "$REPO" --merge --delete-branch
+merge_pr_retry "$ko_pr_url" "ko 변경 PR"
 git fetch origin "$BASE_BRANCH"
 git checkout "$BASE_BRANCH"
 git pull --ff-only origin "$BASE_BRANCH"

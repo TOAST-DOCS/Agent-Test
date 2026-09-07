@@ -37,6 +37,22 @@ Prerequisites (all must be on PATH): `git`, `gh` (logged in), `curl`, `python3`,
 
 Env: `load_env.sh` at repo root exports `DASHBOARD_BASE_URL` and `DASHBOARD_API_TOKEN`. **It is untracked and holds a real token — never commit it.**
 
+Optional, for `--translate api` runs of `e2e-suite.sh`: `JENKINS_USER` (default
+`cloud-qa-agent`) and `JENKINS_TOKEN`. In api mode the translation runs on Jenkins, so
+**the plan log holds no `app.translator` lines** and the counters that grade the
+`llm-patch` / `markup-churn` plans have nothing local to read. With a token the runner
+fetches the build's `consoleText` (via the build URL in the translation PR body) and
+grades that; without one it prints the counters as `?` and does not fail the suite —
+scoring an unmeasured path as "never fired" mis-attributes it to a code regression
+(2026-09-05: build 499 had fired the guard and applied the patch on both languages
+while the suite recorded `skip-full-table=0` and went red). Populate it with:
+
+```bash
+export JENKINS_TOKEN=$(KUBECONFIG=~/works/cloud-translate/dashboard/k8s/cloud-qa-services_kubeconfig.yaml \
+  kubectl -n toast-docs get secret toast-docs-viewer-secrets \
+  -o jsonpath='{.data.JENKINS_TOKEN}' | base64 -d)
+```
+
 ```bash
 source ./load_env.sh
 

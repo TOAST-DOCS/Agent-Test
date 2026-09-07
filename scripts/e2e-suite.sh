@@ -7,6 +7,11 @@
 #                        [--translate-pipeline-branch <jenkins-child>] \
 #                        [--sleep-between <sec>] [plan ...]
 #
+#   env JENKINS_TOKEN (선택, --translate api 에서만) — api 모드는 번역을 Jenkins
+#       에서 돌려 plan 로그에 translator 줄이 없다. 이 토큰이 있으면 러너가 번역
+#       PR 본문의 build 콘솔을 받아 llm-patch·markup-churn 카운터를 실측하고,
+#       없으면 '?' 로 남기고 suite 를 실패시키지 않는다. 획득 방법은 CLAUDE.md.
+#
 #   --sleep-between <sec> — plan 과 plan 사이 대기 (기본 0). Jenkins agent 의
 #       claude CLI (OAuth) 가 연속 실행으로 usage limit 에 걸려 align/ko-review
 #       가 무더기 is_error 로 무너지는 것(2026-08-13 08:15Z 실측: align build
@@ -104,6 +109,11 @@
 #                 강제로 켜므로 "프로덕션에서 폴백이 꺼졌다" 를 감지할 수 없고,
 #                 api 모드만 그걸 잡을 수 있다 (dashboard 가 이 플래그를 보내지
 #                 않아 배포 잡 .env 값이 그대로 드러나기 때문).
+#                 **api 모드의 카운터는 Jenkins 콘솔에서 센다** — plan 로그에는
+#                 translator 줄이 없다. JENKINS_TOKEN 이 없으면 카운터가 '?' 가
+#                 되고 suite 실패로 잡지 않는다 (미측정 ≠ 미발동. 2026-09-05 에
+#                 build 499 가 실제로는 en·ja 양쪽 정상이었는데 0 으로 적혀
+#                 코드 회귀로 오귀속됐다). 자격 증명은 아래 jenkins_console 참고.
 #   fill-stubs  — 빈 번역 채우기(translate_fill_stubs.py) 검증
 #                 (e2e-fill-stubs.sh). pre-align 이 남긴
 #                 `<!-- TODO: translate* -->` stub 을 ko 의 같은 <a id> 섹션으로
@@ -115,6 +125,12 @@
 #                 없음). 기본 --translate local (모델 호출 2회, ~2분);
 #                 --translate api 는 dashboard /api/fill-empty → Jenkins 경로를
 #                 태운다 (그 모드에선 dry-run 규칙 1건이 SKIP). 기대: exit 0.
+#                 exit 4 = HELD: 채우기는 동작했고 남은 실패가 전부 도구가
+#                 **보고한 보류**(블록 구조 검증에 걸려 쓰지 않음) 다. 백스톱이
+#                 동작한 모양이라 ⚠️ 로만 집계하고 suite 를 실패시키지 않는다 —
+#                 2026-09-05 에 en #fill-stub-body 하나가 보류돼(ja 는 통과)
+#                 suite 전체가 붉어졌고, 모델 편차로 게이트가 붉어지면 신호가
+#                 죽는다. 조용히 빠진 경우는 그대로 exit 1 이다.
 #   concurrent  — 같은 ko 파일을 만지는 동시 PR 시나리오 (e2e-concurrent-prs.sh).
 #                 A 생성 → B 생성 → B 머지·번역·번역 머지 → A 머지 → A 번역
 #                 순서에서, A 번역이 B 의 신규 섹션·표 행을 지우지 않는지
@@ -271,6 +287,9 @@ PLANS=()
 SLEEP_BETWEEN=0
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
 ALIGNED_BRANCH="" # 그 스냅샷 브랜치 (첫 align 기반 plan 의 로그에서 파싱)
+TRANSLATE_MODE=local  # --translate 의 현재값. api 모드에서는 번역 로그가 Jenkins
+                      # 쪽에만 있어 로컬 로그를 세는 카운터가 구조적으로 0 이 된다
+                      # (아래 jenkins_console 참고).
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --sleep-between)
@@ -292,7 +311,7 @@ while [[ $# -gt 0 ]]; do
       # 검증하는 plan 이라 로컬 대응물이 없다). 세 스크립트에 모두 전달.
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2")
       FS_ARGS+=("$1" "$2"); SD_ARGS+=("$1" "$2"); FL_ARGS+=("$1" "$2")
-      FT_ARGS+=("$1" "$2"); shift 2 ;;
+      FT_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
     webhook|korean-review|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve)
@@ -328,6 +347,43 @@ fi
 ts="$(date +%Y%m%d-%H%M%S)"
 outdir="/tmp/e2e-suite-$ts"
 mkdir -p "$outdir"
+
+# ── api 모드에서 번역 로그를 어디서 읽는가 ────────────────────────────────
+# --translate api 는 번역을 Jenkins 에서 돌리므로 **plan 로그에 translator 줄이
+# 한 줄도 없다** (2026-09-05 실측: llm-patch plan 로그의 `app.translator` 0줄).
+# 그래서 로컬 로그를 grep 하는 카운터는 "발동하지 않았다" 와 "측정할 수 없다" 를
+# 구별하지 못하고 둘 다 0 을 돌려준다 — llm-patch plan 이 정확히 그 함정에 빠져
+# 실제로는 en·ja 양쪽에서 가드+폴백이 성공(build 499)했는데 suite 를 실패로
+# 만들었다.
+#
+# 대시보드 API 로는 대체할 수 없다: Log & Crash 문서의 `guardFullFiles` 는 그
+# 실행에서 skip-full-table 이 2회 발동했는데도 '0' 이었다 (같은 날 실측). 유일한
+# 근거는 Jenkins 콘솔이므로 그것을 읽는다.
+#
+# 자격 증명은 env 로 받는다 (untracked `load_env.sh` 에 넣어 두면 된다):
+#   export JENKINS_USER=cloud-qa-agent
+#   export JENKINS_TOKEN=$(KUBECONFIG=<repo>/dashboard/k8s/cloud-qa-services_kubeconfig.yaml \
+#     kubectl -n toast-docs get secret toast-docs-viewer-secrets \
+#     -o jsonpath='{.data.JENKINS_TOKEN}' | base64 -d)
+# 없으면 카운터를 '?' 로 남긴다 — 0 으로 적어 회귀로 오귀속하는 것보다 낫다.
+JENKINS_USER="${JENKINS_USER:-cloud-qa-agent}"
+JENKINS_TOKEN="${JENKINS_TOKEN:-}"
+
+# jenkins_console <plan-log> — 그 plan 의 번역 PR 본문에 적힌 Jenkins build 의
+# consoleText 를 stdout 으로. 실패하면 아무것도 출력하지 않고 1 을 돌려준다.
+jenkins_console() {
+  local plog="$1" tpr burl
+  [[ -n "$JENKINS_TOKEN" ]] || return 1
+  tpr="$(grep -oE 'detected translation PR: https://[^ ]+' "$plog" 2>/dev/null \
+         | tail -n1 | awk '{print $NF}')"
+  [[ -n "$tpr" ]] || return 1
+  # 번역 PR 본문 꼬리의 "*Jenkins build: <url>*" 줄.
+  burl="$(gh pr view "$tpr" --json body --jq .body 2>/dev/null \
+          | grep -oE 'https?://[^ )*]*/job/[^ )*]*/[0-9]+/' | tail -n1)"
+  [[ -n "$burl" ]] || return 1
+  curl -sS --max-time 120 -u "$JENKINS_USER:$JENKINS_TOKEN" \
+    "${burl}consoleText" 2>/dev/null || return 1
+}
 
 declare -a RESULTS=()
 overall=0
@@ -379,7 +435,7 @@ for plan in "${PLANS[@]}"; do
     # 직접 심으므로) 라서 --from-aligned 계열 인자는 전달하지 않는다.
     bash "$REPO_ROOT/scripts/e2e-fill-stubs.sh" "${FS_ARGS[@]}" > "$log" 2>&1
     ec=$?
-    verdict="$(grep -oE '^FILL_STUBS: (OK|FAIL)' "$log" | tail -n1 || true)"
+    verdict="$(grep -oE '^FILL_STUBS: (OK|HELD|FAIL)' "$log" | tail -n1 || true)"
     fill_pr="$(grep -oE 'Fill PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fill_pr:-<no-pr>}")
   elif [[ "$plan" == "fix-tables" ]]; then
@@ -477,11 +533,31 @@ for plan in "${PLANS[@]}"; do
       # 이 plan 의 존재 이유는 LLM-patch fallback 을 실제로 태우는 것이다 —
       # exit code 만으로는 알 수 없으므로 로그에서 직접 센다. ok/declined 는
       # fallback 이 무엇을 판단했는지 (#585 류 결함의 실질 신호).
-      lp_call="$(grep -c 'LLM-patch fallback: ' "$log" 2>/dev/null || true)"
-      lp_ok="$(grep -c 'LLM-patch fallback succeeded' "$log" 2>/dev/null || true)"
-      lp_dec="$(grep -c 'LLM-patch fallback declined' "$log" 2>/dev/null || true)"
-      lp_skip="$(grep -c 'skip-full-table: .*skipped —' "$log" 2>/dev/null || true)"
-      verdict="${verdict:-<no-verdict>} llm-patch=${lp_call:-0} ok=${lp_ok:-0} declined=${lp_dec:-0} skip-full-table=${lp_skip:-0}"
+      #
+      # 어느 로그를 세는지가 관건이다: api 모드의 plan 로그에는 translator 줄이
+      # 없으므로(위 jenkins_console 주석) 그 모드에서는 Jenkins 콘솔을 받아
+      # 그것을 센다. 받지 못하면 카운터를 '?' 로 남기고 아래 판정에서 실패로
+      # 잡지 않는다 — 측정하지 못한 것을 미발동으로 적으면 코드 회귀로
+      # 오귀속된다 (2026-09-05, build 499 가 실제로는 정상이었다).
+      lp_src="$log"; lp_measured=1
+      if [[ "$TRANSLATE_MODE" == "api" ]]; then
+        if jenkins_console "$log" > "$outdir/$plan.jenkins.log" 2>/dev/null \
+           && [[ -s "$outdir/$plan.jenkins.log" ]]; then
+          lp_src="$outdir/$plan.jenkins.log"
+          echo "    (Jenkins 콘솔 확보: $plan.jenkins.log — api 모드 카운터의 근거)"
+        else
+          lp_measured=0
+        fi
+      fi
+      if (( lp_measured )); then
+        lp_call="$(grep -c 'LLM-patch fallback: ' "$lp_src" 2>/dev/null || true)"
+        lp_ok="$(grep -c 'LLM-patch fallback succeeded' "$lp_src" 2>/dev/null || true)"
+        lp_dec="$(grep -c 'LLM-patch fallback declined' "$lp_src" 2>/dev/null || true)"
+        lp_skip="$(grep -c 'skip-full-table: .*skipped —' "$lp_src" 2>/dev/null || true)"
+        verdict="${verdict:-<no-verdict>} llm-patch=${lp_call:-0} ok=${lp_ok:-0} declined=${lp_dec:-0} skip-full-table=${lp_skip:-0}"
+      else
+        verdict="${verdict:-<no-verdict>} llm-patch=? ok=? declined=? skip-full-table=? (api 모드·Jenkins 자격 없음 — 미측정)"
+      fi
     fi
     if [[ "$plan" == "row-drop-repro-noreconcile" ]]; then
       # 이 변형의 존재 이유는 **LLM-patch fallback 경로를 실제로 태우는 것**이다.
@@ -496,16 +572,32 @@ for plan in "${PLANS[@]}"; do
     if [[ "$plan" == "markup-churn" ]]; then
       # ALIGNMENT 만으로는 이 plan 의 핵심(가드 미발동)을 알 수 없다 — 미러링이
       # 없어도 정렬은 OK 로 나온다. 로그에서 직접 센다.
-      mc_mirrored="$(grep -c 'Cosmetic markup mirrored' "$log" 2>/dev/null || true)"
+      # api 모드에서는 llm-patch 와 같은 이유로 Jenkins 콘솔을 근거로 쓴다.
+      # 그러지 않으면 아래 두 카운터가 0 으로 고정돼 'guard-skips=0' 이 공허하게
+      # 통과한다 (아래 2026-08-19 주석이 지적한 그 상태 — 이제 실측한다).
+      mc_src="$log"; mc_measured=1
+      if [[ "$TRANSLATE_MODE" == "api" ]]; then
+        if jenkins_console "$log" > "$outdir/$plan.jenkins.log" 2>/dev/null \
+           && [[ -s "$outdir/$plan.jenkins.log" ]]; then
+          mc_src="$outdir/$plan.jenkins.log"
+          echo "    (Jenkins 콘솔 확보: $plan.jenkins.log — api 모드 카운터의 근거)"
+        else
+          mc_measured=0
+        fi
+      fi
+      mc_mirrored="$(grep -c 'Cosmetic markup mirrored' "$mc_src" 2>/dev/null || true)"
       # 'load guard: … skipped —' 는 **더 이상 존재하지 않는 문구**다 — 부하
       # 가드는 파일을 제외하지 않고 'load signal:' / 'load routing:' 으로만
       # 알린다 (worker.py: skipped-load 는 legacy). 그래서 이 grep 은 항상 0 을
       # 돌려주며 guard-skips=0 이 공허하게 통과했다 (2026-08-23 발견). 지금 실제로
       # 파일을 제외하는 가드는 skip-full-table 뿐이므로 그것을 센다.
-      mc_guard="$(grep -c 'skip-full-table: .*skipped —' "$log" 2>/dev/null || true)"
+      mc_guard="$(grep -c 'skip-full-table: .*skipped —' "$mc_src" 2>/dev/null || true)"
       # --translate api (jenkins) 모드에서는 번역 로그가 Jenkins 쪽에만 있어서
-      # 위 두 카운터가 항상 0 이 된다 — 즉 "guard-skips=0" 이 공허하게 통과한다
-      # (2026-08-19 실측). 그 모드의 실제 증거는 번역 PR 본문의 제외 섹션이다.
+      # 위 두 카운터가 항상 0 이 됐다 — 즉 "guard-skips=0" 이 공허하게 통과했다
+      # (2026-08-19 실측). 지금은 위에서 Jenkins 콘솔을 받아 실측하고, 받지 못한
+      # 경우에만 '?' 로 남긴다. 번역 PR 본문의 제외 섹션(pr-excl)은 자격 증명이
+      # 없어도 읽히므로 독립적인 두 번째 증거로 그대로 둔다.
+      (( mc_measured )) || { mc_mirrored='?'; mc_guard='?'; }
       mc_excl=0
       if [[ -n "$trans_pr" && "$trans_pr" != "<no-pr>" ]]; then
         mc_excl="$(gh pr view "$trans_pr" --json body --jq .body 2>/dev/null \
@@ -525,7 +617,18 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" == "concurrent" && $ec -ne 0 ]]; then overall=1; fi
   # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
   # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
-  if [[ "$plan" == "fill-stubs" && $ec -ne 0 ]]; then overall=1; fi
+  # fill-stubs: exit 4 = HELD — 채우기는 동작했고 남은 실패가 전부 도구가
+  # **보고한 보류** 다 (블록 구조 검증에 걸려 쓰지 않음 = 백스톱 동작). 모델
+  # 편차로 게이트를 붉히면 신호가 죽으므로 suite 실패로 잡지 않고 경고만 낸다.
+  # 조용히 빠진 경우는 스크립트가 1 을 돌려주므로 그대로 실패다.
+  if [[ "$plan" == "fill-stubs" ]]; then
+    if (( ec == 4 )); then
+      echo "    ! 보류(HELD) — 채우기는 동작, 남은 실패는 도구가 보고한 보류뿐." >&2
+      echo "      구제 경로는 재실행이다. 같은 stub 이 계속 보류되면 그때 조사할 것." >&2
+    elif (( ec != 0 )); then
+      overall=1
+    fi
+  fi
   # fix-tables 도 기대값이 하나다 — 구조를 보는 plan 이라 exit 3 여지가 없다.
   if [[ "$plan" == "fix-tables" && $ec -ne 0 ]]; then overall=1; fi
   # preserve 도 기대값이 하나다 — 반영됐거나 안 됐거나이고, exit 3 여지가 없다.
@@ -555,6 +658,12 @@ for plan in "${PLANS[@]}"; do
   #                       배포 잡 .env 의 TRANSLATE_DIFF_LLM_PATCH_FALLBACK 에
   #                       좌우되고, local 모드는 --llm-patch-fallback 을 직접
   #                       넘기므로 이 분기가 나오면 하네스 쪽 회귀다.
+  if [[ "$plan" == "llm-patch" ]] && [[ "$verdict" == *"llm-patch=?"* ]]; then
+    echo "    ! LLM-patch 경로를 **측정하지 못했다** (api 모드, Jenkins 자격 없음)." >&2
+    echo "      JENKINS_TOKEN 을 export 하고 다시 돌리거나, 번역 PR 본문의" >&2
+    echo "      Jenkins build 콘솔에서 'LLM-patch fallback' 을 직접 확인할 것." >&2
+    echo "      suite 실패로는 잡지 않는다 — 미측정을 미발동으로 적으면 회귀로 오귀속된다." >&2
+  fi
   if [[ "$plan" == "llm-patch" ]] && [[ "$verdict" == *"llm-patch=0"* ]]; then
     if [[ "$verdict" == *"skip-full-table=0"* ]]; then
       echo "    ! 트리거(skip-full-table) 미발동 — 경로가 사라졌는지 확인 (코드 회귀 의심)." >&2
@@ -570,8 +679,15 @@ for plan in "${PLANS[@]}"; do
     overall=1
   fi
   if [[ "$plan" == "markup-churn" ]]; then
-    if (( ec != 0 )) || [[ "$verdict" != *"guard-skips=0"* ]] \
-       || [[ "$verdict" != *"pr-excl=0"* ]]; then overall=1; fi
+    if [[ "$verdict" == *"guard-skips=?"* ]]; then
+      # 미측정은 미발동이 아니다 — pr-excl 은 자격 증명 없이도 읽히므로 그것만
+      # 강제하고, 가드 카운터는 확인 안내로 남긴다 (llm-patch 와 같은 규칙).
+      echo "    ! guard-skips 를 측정하지 못했다 (api 모드, Jenkins 자격 없음) — pr-excl 로만 판정." >&2
+      if (( ec != 0 )) || [[ "$verdict" != *"pr-excl=0"* ]]; then overall=1; fi
+    else
+      if (( ec != 0 )) || [[ "$verdict" != *"guard-skips=0"* ]] \
+         || [[ "$verdict" != *"pr-excl=0"* ]]; then overall=1; fi
+    fi
   fi
 done
 
@@ -581,7 +697,8 @@ for r in "${RESULTS[@]}"; do echo "  $r"; done
 echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포함이면 exit 3 이 정상)"
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
-echo "  (fill-stubs: exit 0 = FILL_STUBS: OK. stub 섹션만 채우고 그 밖은 바이트 보존 · id 없는 stub 은 건너뜀)"
+echo "  (fill-stubs: exit 0 = OK. stub 섹션만 채우고 그 밖은 바이트 보존 · id 없는 stub 은 건너뜀)"
+echo "  (fill-stubs: exit 4 = HELD — 도구가 보고한 보류만 남음. ⚠️ 로 집계하고 suite 는 실패시키지 않는다)"
 echo "  (fix-tables: exit 0 = FIX_TABLES: OK. 표가 어긋난 section 만 ko 로 다시 만들고 대조군은 바이트 보존)"
 echo "  (row-drop-repro-noreconcile: exit 0/3 허용, 단 llm-patch=0 이면 실패 — 그 경로를 안 태운 실행)"
 echo "  (llm-patch: exit 0/3 허용, 단 llm-patch=0 이면 실패. ok/declined 로 fallback 판단을 확인)"

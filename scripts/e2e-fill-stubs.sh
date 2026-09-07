@@ -48,7 +48,9 @@
 #   3) dry-run 탐지 (모델 호출 0 · PR 생성 없음)        [--translate local 전용]
 #   4) 실제 채우기 → Fill PR
 #   5) 판정 (아래 규칙, 전부 바이트/구조 비교)
-#   6) 결과 (FILL_STUBS: OK|FAIL)
+#   6) 결과 (FILL_STUBS: OK|HELD|FAIL)
+#      HELD = 실패한 규칙이 전부 '도구가 보고한 보류' — 채우기는 동작했고
+#      백스톱이 모델 출력을 거절한 것. exit 4. suite 는 ⚠️ 로 분류한다.
 #   7) cleanup
 #
 # ── 판정 규칙 ─────────────────────────────────────────────────────────────
@@ -388,7 +390,8 @@ git show "$base_sha:ko/$DOC" > "$tmpdir/ko.md"
 gh pr view "$fill_pr_url" --repo "$REPO" --json body --jq .body > "$tmpdir/pr_body.md"
 
 # (3)~(8) 구조/바이트 검사 — LLM 판정 없음.
-python3 - "$tmpdir" "$BODY_IDS" "$HEAD_IDS" "$NOID_HEADING" <<'PY' || fails=$((fails + 1))
+verdict_rc=0
+python3 - "$tmpdir" "$BODY_IDS" "$HEAD_IDS" "$NOID_HEADING" <<'PY' || verdict_rc=$?
 import io, re, sys
 
 tmp, body_csv, head_csv, noid_heading = sys.argv[1:5]
@@ -402,6 +405,8 @@ BODY_MARK = "<!-- TODO: translate body -->"
 HEAD_MARK = "<!-- TODO: translate -->"
 FENCE = re.compile(r"^\s*(```+|~~~+)")
 rc = 0
+n_hard = 0   # 조용히 빠지거나 내용이 틀린 실패 (진짜 결함)
+n_held = 0   # 도구가 보고한 보류 (백스톱 동작 — held() 의 docstring 참고)
 
 
 def read(p):
@@ -556,11 +561,36 @@ def ok(msg):
 
 
 def bad(msg, *extra):
-    global rc
+    global rc, n_hard
     print(f"  FAIL  {msg}")
     for e in extra:
         print(f"        {e}")
     rc = 1
+    n_hard += 1
+
+
+def held(msg, *extra):
+    """도구가 스스로 **보류**했다고 보고한 경우.
+
+    실패는 실패다 (이 e2e 의 계약은 "이 stub 들은 채워진다") — 그래서 rc 는
+    똑같이 1 이고 규칙도 FAIL 로 찍힌다. 다만 원인이 다르다: 도구가 자기
+    검증(블록 구조/heading 형식)에 걸려 "내용이 빠졌을 수 있으니 쓰지 않는다"
+    고 판단하고 **그 사실을 PR 본문에 보고**한 것이므로, 백스톱이 제대로 동작한
+    모양이다. 조용히 빠진 것과 같은 칸에 넣으면 두 가지가 섞인다:
+      - 조용히 빠짐 → 채우기 자체가 깨졌다 (진짜 결함)
+      - 보고된 보류 → 모델 편차. 도구가 "재실행 시 다시 시도" 를 계약으로 명시
+    그래서 이쪽만 모였을 때는 종료코드 4 로 나가고, suite 가 그것을 ⚠️ 로
+    분류한다 (2026-09-05: en #fill-stub-body 하나가 보류돼 ja 는 통과했는데
+    suite 전체가 빨갛게 됐다 — 모델 편차로 게이트가 붉어지면 신호가 죽는다).
+    같은 stub 이 여러 run 에 걸쳐 계속 보류되면 그건 편차가 아니므로, 반복
+    여부는 ⚠️ 가 연속으로 뜨는지로 사람이 판단한다.
+    """
+    global rc, n_held
+    print(f"  FAIL  {msg}")
+    for e in extra:
+        print(f"        {e}")
+    rc = 1
+    n_held += 1
 
 
 ko = sections(read(f"{tmp}/ko.md"))
@@ -577,11 +607,15 @@ for lang, (base, new) in langs.items():
             # 도구가 검증에 걸려 **보류**한 것일 수 있다 (블록 구조/heading
             # 형식). 그래도 이 e2e 의 계약은 "이 stub 들은 채워진다" 이므로
             # 실패는 실패인데, 원인이 "조용히 안 됨" 과 "거절함" 은 다르다.
-            held = [l for l in read(f"{tmp}/pr_body.md").splitlines()
-                    if "보류" in l and bid in l]
-            bad(f"(3) {lang} #{bid} 에 stub 마커가 남아 있음",
-                *(["도구가 보류로 보고함: " + held[0].strip()[:160]] if held else
-                  ["PR 본문에 보류 보고도 없음 — 조용히 빠졌다"]))
+            held_lines = [l for l in read(f"{tmp}/pr_body.md").splitlines()
+                          if "보류" in l and bid in l]
+            if held_lines:
+                held(f"(3) {lang} #{bid} 에 stub 마커가 남아 있음",
+                     "도구가 보류로 보고함: " + held_lines[0].strip()[:160],
+                     "→ 백스톱 동작. 재실행이 도구의 계약된 구제 경로다.")
+            else:
+                bad(f"(3) {lang} #{bid} 에 stub 마커가 남아 있음",
+                    "PR 본문에 보류 보고도 없음 — 조용히 빠졌다")
             continue
         if HANGUL.search(sec):
             bad(f"(3) {lang} #{bid} 에 한글 잔류 — 번역되지 않은 채 ko 가 복사됨",
@@ -729,13 +763,31 @@ if all(links.values()):
     else:
         ok(f"(8c) 채운 섹션 {len(links)}개에 before/after 프리뷰 링크 (앵커 + 커밋 SHA)")
 
+# 보류만 모였으면 4 — suite 가 ⚠️ 로 분류한다 (held() 의 docstring 참고).
+# 하드 실패가 하나라도 섞였으면 그냥 1 이다: 보류가 진짜 결함을 가리지 않는다.
+if rc and n_held and not n_hard:
+    print(f"  HELD  보류 {n_held}건만 남았고 하드 실패는 0건 — exit 4")
+    raise SystemExit(4)
 raise SystemExit(rc)
 PY
 
 # ── 6) 결과 ───────────────────────────────────────────────────────────────
 echo
 echo "[6/7] 결과"
-if (( fails == 0 )); then
+# verdict_rc=4 는 "실패한 규칙이 전부 도구가 보고한 보류" 라는 뜻이다 (판정
+# 블록의 held() 참고). 하드 실패가 섞여 있으면 python 이 1 을 돌려주므로 여기
+# 오지 않는다. fails 는 python 밖의 규칙((1)(2)) 도 세므로 함께 본다.
+if (( fails == 0 && verdict_rc == 4 )); then
+  echo "FILL_STUBS: HELD"
+  echo "  채우기 자체는 동작했고, 남은 실패는 도구가 **보고한 보류** 뿐이다 —"
+  echo "  블록 구조 검증에 걸려 쓰지 않은 것이므로 백스톱이 제대로 동작한 모양."
+  echo "  구제 경로는 재실행이다 (도구가 'stub 은 그대로이므로 재실행 시 다시 시도' 를 명시)."
+  echo "  같은 stub 이 여러 run 에 걸쳐 계속 보류되면 그건 모델 편차가 아니다 — 그때 조사할 것."
+  echo "  PR 은 보존합니다: $fill_pr_url"
+  KEEP=1
+  exit 4
+fi
+if (( fails == 0 && verdict_rc == 0 )); then
   echo "FILL_STUBS: OK"
   echo "  빈 번역 채우기가 stub 섹션만 채우고 나머지는 바이트 보존 (PR: $fill_pr_url)"
   echo
@@ -743,7 +795,7 @@ if (( fails == 0 )); then
   exit 0
 fi
 echo "FILL_STUBS: FAIL"
-echo "  $fails 개 규칙 실패 — 로그: $LOG / dry-run: $DRYLOG"
+echo "  $fails 개 규칙 실패 (판정 블록 rc=$verdict_rc) — 로그: $LOG / dry-run: $DRYLOG"
 echo "  PR 은 보존합니다: $fill_pr_url"
 KEEP=1
 exit 1
