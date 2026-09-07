@@ -1,23 +1,25 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview { #compute-instance-overview }
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPU, memory, and root block storage. You can install your services or applications on this server and use them in combination with various services provided by NHN Cloud.
 
 <a id="components"></a>
-## Components { #components }
+## Instance Components { #components }
 
-An instance consists of the following components:
+The components that make up an instance are as follows:
 
-- **Image**: Virtual disk that contains the operating system of an instance
-- **Flavor**: Virtual hardware performance specifications of an instance
-- **Availability Zone** (AZ): Physical location where an instance will be created
-- **Key Pair**: Key used to access an instance
-- **Security Groups**: Network security settings for an instance
-- **Network**: Virtual network where an instance will be connected
+- **Image**: A virtual disk that contains the instance's operating system
+- **Flavor**: The virtual hardware performance of the instance
+- **Availability zone**: The physical location where the instance will be created
+- **Key pair**: A key that is used to access the instance
+- **Security groups**: Network security settings for the instance
+- **Network**: The virtual network to which the instance will be connected
 
-Instance properties and usage change depending on these components. While settings for these components, with the exception of image and availability zone, can be modified after the creation of an instance, some flavors cannot be modified after an instance has been created. For more details on modifying instance flavors, see [Modify Flavor in the Console Guide](./console-guide/#modify-flavor).
+Instance properties and usage change depending on these components. Of these components, all settings except image and availability zone can be modified after instance creation. However, some instance flavors cannot be modified after instance creation. For more details on modifying instance flavors, see [Modify Flavor in the Console Guide](./console-guide/#modify-flavor).
 
 <a id="image"></a>
 ### Image { #image }
@@ -27,67 +29,67 @@ An image is a virtual disk that contains an operating system. NHN Cloud currentl
 All images are configured to run optimally on an instance's virtual hardware and are safe to use as they have undergone security inspection by NHN Cloud. For more details on images, see [Image Overview](/Compute/Image/en/overview/).
 
 <a id="flavor"></a>
-### Flavor { #flavor }
+### Instance flavor { #flavor }
 
 NHN Cloud provides various instance flavors to support a wide range of use cases. Instances can be created with flavors that best match the requirements of your services or applications. Flavors can be easily modified from the web console, even after an instance has been created.
 
-| Type    | Description                                                                                                                                               |
+| Flavor    | Description                                                                                                                                               |
 | ------- |--------------------------------------------------------------------------------------------------------------------------------------------------|
-| m2 | A flavor with a balanced setting between CPU and memory. Recommended when performance requirements of a service or an application are not clear.                                                                               |
-| c2 | A flavor optimized for high CPU performance. Recommended for web application servers or analytics systems that require high-performance computations.                                                                           |
-| r2 | A flavor optimized for high memory utilization. Recommended for in-memory databases or cache servers.                                                                               |
-| t2 | A low-cost instance. Recommended for servers with low workloads.                                                                                                          |
-| u2 | The cheapest instance. Recommended for servers with low workloads.<br>This flavor utilizes local block storage, which makes it a less stable but more affordable option compared to other flavors.<br>Instances of this flavor do not guarantee I/O performance. |
-| x1 | A flavor that supports high-end CPU and memory. Recommended for services or applications that require high performance.                                                                                        |
+| m2 | A flavor with balanced CPU and memory settings. Use this when the performance requirements of your services or applications are not clearly defined.                                                                               |
+| c2 | A flavor with high CPU performance. Use this for high-performance web application servers or analytical systems that require high computational performance.                                                                           |
+| r2 | A flavor used when memory usage is high compared to other resources. Typically used for in-memory databases or cache servers.                                                                               |
+| t2 | An inexpensive flavor. Use this for servers with low workloads.                                                                                                          |
+| u2 | The most inexpensive flavor. Use this for servers with low workloads.<br>Because it uses local block storage, it has relatively lower stability than other flavors, but can be used at a lower price.<br>This flavor does not guarantee I/O performance. |
+| x1 | A flavor that supports high-end CPU and memory. Use this for services or applications that require high performance.                                                                                        |
 
 <a id="availability-zone"></a>
-### Availability Zone { #availability-zone }
+### Availability zone { #availability-zone }
 
 NHN Cloud has divided the entire system into multiple availability zones to prepare for potential failures caused by physical hardware issues. Each availability zone has its own storage system, network switch, data center space, and power supply units. A failure that occurs within one availability zone does not affect other zones, thereby increasing the availability of the whole service. You can ensure increased service availability by creating instances across multiple availability zones.
 
-The following properties hold across different availability zones.
+The characteristics between different availability zones are as follows:
 
-- Instances dispersed across different availability zones can communicate with each other over the network without incurring additional network usage costs.
-- Block storage can be shared between instances created within the same availability zone, but not between instances in different availability zones.
-- Floating IP can be shared across different availability zones. If one availability zone experiences a failure, floating IP can quickly be relocated to another availability zone in order to minimize downtime.
+- Instances created across multiple availability zones can communicate with each other over the network, and no network usage charges are incurred for this communication.
+- Block storage can be shared between instances in the same availability zone, but cannot be shared across different availability zones.
+- Floating IPs can be shared across different availability zones. If one availability zone fails, you can quickly move the floating IP to another availability zone to minimize downtime.
 
 <a id="key-pair"></a>
-### Key Pair { #key-pair }
+### Key pair { #key-pair }
 
-A key pair is a pair of [PKI](https://en.wikipedia.org/wiki/Public_key_infrastructure)-based public and private SSH keys. To access an instance created in NHN Cloud, a key pair is required instead of keyboard-inputted ID/PW authentication which is vulnerable to security attacks. You can safely access an instance once you have been authenticated after sending the instance your login information encoded by your key pair's private key. For more details on how to access instances using key pairs, see [How to Access Instances](#how-to-access-instances).
+A key pair is a pair of PKI-based public and private SSH keys. To access an instance created in NHN Cloud, a key pair is required instead of keyboard-inputted ID/PW authentication, which is vulnerable to security attacks. You can safely access an instance once you have been authenticated after sending the instance your login information, encoded by your key pair's private key. For more details on how to access instances using key pairs, see [How to Access Instances](#how-to-access-instances).
 
-Key pairs can be newly generated from the NHN Cloud console during instance creation, or you can register your own existing key pairs. For more details on how to register key pairs, see [Import Key Pairs in the Console Guide](./console-guide/#key-pairs).
+Key pairs can be created new in the NHN Cloud console when creating an instance, or you can register and use key pairs that you have created yourself. For more details on how to import key pairs, see [Import Key Pairs in the Console Guide](./console-guide/#import-key-pairs-windows).
 
 > [Caution]
-When a key pair is newly generated, its private key is downloaded. As private keys cannot be reissued, be sure to store them in a safe disk or USB drive. If a private key is exposed, anyone can access the instance using the exposed private key, so it must be managed carefully.
+> When a key pair is newly generated, its private key is downloaded. As private keys are issued only once, be sure to store downloaded private keys in a safe disk or USB drive. If a private key is exposed, anyone can access the instance using the exposed private key, so it must be managed carefully.
 
 > [Note]
-> Key pair is a resource assigned to the user account, so it's not deleted when you delete a project.
+> Key pairs are resources assigned to a user account and are retained even if the project is deleted.
 
 <a id="security-groups"></a>
-### Security Groups { #security-groups }
+### Security groups { #security-groups }
 
-A security group is a virtual firewall that determines network traffic delivered to an instance. For more details on security groups, see [VPC Overview](/Network/VPC/en/overview/).
+A security group is a virtual firewall that determines the network traffic delivered to an instance. For more details on security groups, see [VPC Overview](/Network/VPC/en/overview/).
 
 > [Note]
-The default security group is configured to ignore all inbound network traffic. Before accessing an instance using SSH, configure the instance's security group to allow access to the SSH port.
+> The default security group is configured to ignore all inbound network traffic from outside. When accessing an instance via SSH, configure the security group that the instance belongs to to open SSH ports before accessing the instance.
 
 <a id="network"></a>
 ### Network { #network }
 
-An instance must be connected to at least one network defined in the VPC in order to communicate externally. An instance that is not connected to a network cannot be accessed. To create or modify networks, see [VPC Overview](/Network/VPC/en/overview/).
+For an instance to communicate with external systems, it must be connected to at least one network defined in VPC. An instance that is not connected to a network cannot be accessed. To create or modify a network, see [VPC Overview](/Network/VPC/en/overview/).
 
 <a id="pricing"></a>
-## Pricing { #pricing }
+## Billing { #pricing }
 
-Instances are charged using the following criteria.
+Billing for instances is as follows:
 
 * Instances are charged from the moment they are created.
-* Instance root block storage are charged separately according to the block storage pricing policy.
-* When an instance is stopped, a 90% discount based on the website rate is applied for 90 days. If your suspension exceeds 90 days, you will revert to normal rates while maintaining your suspension.
-* Terminated instances are not billed.
+* Instance root block storage is charged separately based on block storage billing criteria.
+* When an instance is stopped, a 90% discount off the homepage rate is applied for 90 days. If the stopped state exceeds 90 days, the full billing rate is applied while maintaining the stopped state.
+* Terminated instances are not charged.
 
-For more details on pricing, see [Pricing](https://www.toast.com/kr/service/compute/instance#price).
+For more details on billing, see the [Pricing page](https://www.toast.com/kr/service/compute/instance#price) for each service.
 
 <a id="how-to-access-instances"></a>
 ## How to Access Instances { #how-to-access-instances }
@@ -100,140 +102,140 @@ You can access your Linux instances using an SSH client. An instance cannot be a
 <a id="how-to-access-linux-instances-from-mac-or-linux-using-an-ssh-client"></a>
 #### How to Access Linux Instances from Mac or Linux Using an SSH Client
 
-Generally, Mac and Linux have SSH clients installed by default. Use a key pair's private key to access an instance from an SSH client as shown below.
+Mac and Linux typically have SSH clients installed by default. Use the SSH client to access an instance using your key pair's private key as follows:
 
-Ubuntu instances
+Ubuntu instance
 
-	$ ssh -i my_private_key.pem ubuntu@<instance IP>
+	$ ssh -i my_private_key.pem ubuntu@<instance-ip>
 
-Debian instances
+Debian instance
 
-	$ ssh -i my_private_key.pem debian@<instance IP>
+	$ ssh -i my_private_key.pem debian@<instance-ip>
 
-Rocky instances
+Rocky instance
 
-	$ ssh -i my_private_key.pem rocky@<instance IP>
+	$ ssh -i my_private_key.pem rocky@<instance-ip>
 
 <a id="how-to-access-linux-instances-from-windows-using-putty-ssh-client"></a>
 #### How to Access Linux Instances from Windows Using PuTTY SSH Client
 
-PuTTY SSH client is a widely used SSH client program for Windows. Install [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) before proceeding to the next steps.
+PuTTY SSH Client is a popular SSH client program for Windows. Install [PuTTY](https://www.chiark.greenend.org.uk/~sgtatham/putty/latest.html) or [iPuTTY](https://github.com/iPuTTY/iPuTTY/releases/tag/l0.70i) with Korean localization applied.
 
-Follow these three steps in order to access Linux instances from Windows using the PuTTY SSH client.
+To access a Linux instance from Windows using PuTTY SSH Client, you need to follow three steps:
 
-* Convert your key pair's private key to a PuTTY-compatible private key
-* Register your PuTTY-compatible private key with PuTTY
-* Access instances with PuTTY
+* Convert the key pair's private key to a PuTTY-compatible private key
+* Register the PuTTY-compatible private key with PuTTY
+* Access the instance using PuTTY
 
-##### 1. Convert Your Key Pair’s Private Key to a PuTTY-Compatible Private Key
+##### 1. Convert the key pair's private key to a PuTTY-compatible private key
 
-In order to use PuTTY, you must convert your private key into a PuTTY-compatible private key format. To convert your key, use puttygen which is installed along with PuTTY.
+In PuTTY, you must convert the key pair's private key to PuTTY's private key format. Use puttygen, which is installed with PuTTY, to convert the key.
 
-![Image1](http://static.toastoven.net/prod_instance/putty-ssh-001-en.png)
+![Image 1](http://static.toastoven.net/prod_instance/putty001.png)
 
 At the bottom of the **PuTTY Key Generator** window under **Parameters**, select **RSA** for the **Type of key to generate**, and enter the default value '2048' bits for the **Number of bits in a generated key**. Under **Actions**, click **Load** next to **Load an existing private key file** to import your key pair's private key file.
 
-![Image2](http://static.toastoven.net/prod_instance/putty002-en.png)
+![Image 2](http://static.toastoven.net/prod_instance/putty002.png)
 
-Under **Actions**, click **Save private key** next to **Save the generated key** to save the converted PuTTY-compatible private key. If you save the private key leaving the **Key passphrase** blank, the message **"Are you sure you want to save this key without a passphrase to protect it?"** will appear. In order to save your converted private key more securely, set a passphrase before saving.
+Under **Actions**, click **Save private key** next to **Save the generated key** to save your key pair's private key converted for PuTTY. If you leave the **Key passphrase** field empty and save the private key, a message appears asking "Save the key without a passphrase?". To save the converted private key more securely, set and save a passphrase.
 
 > [Caution]
-If you wish to be able to automatically log in to your instance, you should not set a key passphrase. When a passphrase is used, you must manually enter the private key's passphrase during login.
+> To set up automatic login to the instance, you must not use a passphrase. If you use a passphrase, you must enter the password for the private key each time you log in.
 
-##### 2. Register Your PuTTY-Compatible Private Key With Putty
+##### 2. Register the PuTTY-compatible private key with PuTTY
 
-Your PuTTY-compatible private key generated in the previous step can be registered by the following two methods.
+The PuTTY-compatible private key you have created can be registered and used in two ways:
 
-* By registering a private key file for authentication in PuTTY
-* By registering a private key file for authentication in pageant (PuTTY's authentication agent)
+* Register the authentication private key file in PuTTY
+* Register the authentication private key file with pageant (PuTTY Authentication Agent)
 
-**A. Registering a Private Key File for Authentication in PuTTY**
+**A. How to register the authentication private key file in PuTTY and use it**
 
-Run PuTTY and select **Connection > SSH > Auth** from the **Category** on the left. Under **Authentication parameters** on the right, register your PuTTY-compatible private key in **Private key file for authentication**.
+Run PuTTY and select **Connection > SSH > Auth** in the left **Category**. Register the PuTTY-compatible private key under **Private key file for authentication** in the **Authentication parameters** on the right.
 
-![Image3](http://static.toastoven.net/prod_instance/putty005-en.png)
+![Image 3](http://static.toastoven.net/prod_instance/putty005.png)
 
-Once you register your private key, you do not have to re-register your private key file each time you access your instance if you save your access information. For details on how to save your access information, see the section below on accessing instances.
+After registering the private key, if you save the connection information, you do not need to register the private key file again each time. See the following access method for how to save connection information.
 
-**B. Registering a Private Key File for Authentication in pageant (PuTTY's Authentication Agent)**
+**B. How to register the authentication private key file with pageant (PuTTY Authentication Agent) and use it**
 
 When you run pageant, which is installed along with PuTTY, the icon shown below appears in the Windows tray. Right-click the pageant icon and select **Add Key** to add your PuTTY-compatible private key.
 
-![Image4](http://static.toastoven.net/prod_instance/putty006.png)
+![Image 4](http://static.toastoven.net/prod_instance/putty006.png)
 
-To confirm that your private key has been added, select **View Keys**. If successful, the added key is displayed as below.
+To verify that the private key has been added, select **View Keys**. If the key has been added successfully, you can see the added key as shown below.
 
-![Image5](http://static.toastoven.net/prod_instance/putty008-en.png)
+![Image 5](http://static.toastoven.net/prod_instance/putty008.png)
 
-Once you run pageant, it remains running in the Windows tray, so there is no need for you to rerun it every time you access an instance. However, you must run pageant again when you restart Windows.
+Once pageant runs, it continues to run in the Windows tray, so you do not need to run it again each time you access the instance. However, if you restart Windows, you must run it again.
 
-##### 3. Access Instances With PuTTY
+##### 3. Access the instance using PuTTY
 
-Now that the PuTTY-compatible private key has been successfully registered, run PuTTY.
+If the private key converted for PuTTY has been registered correctly, run PuTTY.
 
-![Image6](http://static.toastoven.net/prod_instance/putty009-en.png)
+![Image 6](http://static.toastoven.net/prod_instance/putty009.png)
 
-Set the **Host Name** as the following.
+Use the **Host name** in the basic connection information as follows:
 
 Ubuntu
 
-	ubuntu@<Instance IP>
+	ubuntu@<instance-ip>
 
 Debian
 
-	debian@<Instance IP>
+	debian@<instance-ip>
 
 Rocky
 
-	rocky@<Instance IP>
+	rocky@<instance-ip>
 
-Select 22, the default SSH port, for the **Port**, and **SSH** for the **Connection type**.
+Set the **Port** to 22, which is the default SSH port, and set the **Connection type** to **SSH**.
 
-If all of the information is correct, save the session. Under **Load, save or delete a stored session**, enter the name of the session to save in **Saved Sessions** and click **Save** to save the session. If you do not save the session, your private key settings registered in 2-A are also not preserved.
+If all of the information is correct, save the session. Under **Load, save or delete a stored session**, enter the name of the session to save in the field under **Saved Sessions** and click **Save** to save the session. If you do not save the session, your private key settings registered in 2-A are also not preserved.
 
-Now click **Open** to access your instance.
+Now click **Open** to access the instance.
 
 <a id="how-to-access-windows-instances"></a>
 ### How to Access Windows Instances { #how-to-access-windows-instances }
 
-To access your Windows server, select a Windows instance to access from the NHN Cloud console. In the instance details page under the **Access Information** tab, click **Confirm Password** to check the password set in the Windows server.
+To access a Windows server, select the Windows instance you want to access in the NHN Cloud console. On the **Connection Information** tab in the instance details screen, click **Confirm Password** to verify the password set on the Windows server.
 
-Your key pair's private key that you input in **Confirm Password** is not sent to the server, but is instead only used in your browser to decrypt the password.
+The private key of the key pair that you input in **Confirm Password** is not transmitted to the server and is only used to decrypt the password in the browser.
 
-Click **Connect** next to **Confirm Password** to receive the rdp file configured for remote desktop access and run it to access your Windows server. Use `Administrator` for your Windows server ID, and use the password that you checked from the NHN Cloud console.
+Click the **Connect** button next to **Confirm Password** to download and run the .rdp file with remote desktop access settings saved. This allows you to access the Windows server. The ID of the Windows server is `Administrator`, and the password is the one you confirmed in the NHN Cloud console.
 
 <a id="how-to-connect-serial-console"></a>
-### How to Connect Serial Console { #how-to-connect-serial-console }
+### How to Connect to Serial Console { #how-to-connect-serial-console }
 
-You can connect to your instance via the serial console in situations where the SSH client is unavailable, such as a boot failure or network configuration issue.
+If you cannot use an SSH client due to boot failures or network configuration issues, you can access the instance by connecting to the serial console.
 
-The serial console feature has the following limitations:
+The serial console function has the following limitations:
 
-* Only one serial console connection is allowed per instance, and multiple connection attempts may not connect properly.
-* Serial console access is not guaranteed for instances created with personally uploaded images or instances created with personal images.
-* Serial console connections last up to 10 minutes.
-* Windows instances do not support the serial console feature.
-* Instances created before the January 27, 2026 release require **Stop the instance** and **Start the instance**. **Reboot the instance** feature does not apply.
+* Only one serial console connection per instance is possible. Multiple connection attempts may not connect properly.
+* Instances created from user-uploaded images or personal images do not guarantee serial console access.
+* Serial console connections can be accessed for a maximum of 10 minutes.
+* Windows instances do not support the serial console function.
+* For instances created before the deployment on January 27, 2026, **stop the instance** and then **start the instance** is required. The **reboot instance** function does not apply these settings.
 
 > [Caution]
-> Changing the boot method while accessing an instance via the serial console may result in a boot failure, and users are responsible for any resulting consequences.
-> Under normal circumstances, we recommend using an SSH client connection.
+> You may experience boot failures if you change boot settings by accessing the instance via serial console, and you are responsible for any consequences that result.
+> For normal situations, it is recommended to use SSH client access.
 
 <a id="how-to-connect-serial-console-change-grub-bootloader-settings"></a>
-#### Change GRUB Bootloader Settings
+#### Modify GRUB Bootloader Settings
 
-GRUB configuration is required to manipulate the bootloader on instances created before the November 26, 2024 deployment.
+GRUB configuration is required to manipulate the bootloader on instances created before the deployment on November 26, 2024.
 
-Edit the GRUB configuration file.
+Modify the GRUB configuration file.
 
 ```
 $ sudo vi /etc/default/grub.d/50-cloudimg-settings.cfg
 GRUB_TIMEOUT=3
 GRUB_TERMINAL="console serial"
 GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
-```
+````
 
-Apply the changed setting. The command to apply GRUB settings may vary depending on the OS.
+Apply the changed settings. The GRUB configuration command may differ depending on the OS.
 
 ```
 $ sudo update-grub
