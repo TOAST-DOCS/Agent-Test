@@ -1,67 +1,69 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=45e098944fc5 -->
 
 <a id="compute-instance-troubleshooting-guide"></a>
-## Compute > Instance > 問題解決ガイド { #compute-instance-troubleshooting-guide }
+## Compute > Instance > トラブルシューティングガイド { #compute-instance-troubleshooting-guide }
 
-NHN Cloudの使用時に問題が発生した場合、それを解決する方法を説明します。
+NHN Cloud を使用する際に発生する可能性がある様々な問題を解決する方法について説明します。
 
-<h3>現在NHN Cloudで基本提供するOSバージョン以外のバージョンを使用したいです。個人イメージをアップロードして使用できますか？</h3>
+<h3>現在、NHN Cloud で基本提供されている OS バージョン以外のバージョンを使用したいです。個人イメージをアップロードして使用することはできませんか？</h3>
 
-NHN Cloudで提供するOSバージョンのみ利用できます。個人イメージのアップロードはサポートしません。
-個人OSイメージを使用するにはNHN Cloudが提供するイメージでインスタンスを作成した後、**イメージ作成**機能を利用してください。
+NHN Cloud で提供されている OS バージョンのみを使用できます。個人イメージのアップロードはサポートされていません。
+個人 OS イメージを使用する場合は、NHN Cloud で提供されるイメージでインスタンスを作成した後、**[イメージ作成]** 機能を使用することをお勧めします。
 <br>
 
 <h3>インスタンスに接続すると、「Permissions 0644 for '/Users/username/.ssh/your-key.pem' are too open.」というメッセージが表示されて接続できません。</h3>
 
-インスタンス接続に使用するキーペアの秘密鍵(PEMキー)の権限が正しくないため生じる問題です。
-下記のように秘密鍵ファイルの権限を調整します。
+インスタンス接続に使用するキーペアの秘密鍵(PEM キー)の権限が正しくないため発生する問題です。
+以下のように秘密鍵ファイルの権限を調整します。
 
     $ chmod 600 your-key.pem
 <br>
 
-<h3>CentOSインスタンスでどうやってroot権限を取得しますか？</h3>
+<h3>CentOS インスタンスで root 権限を取得するにはどうしたらいいですか？</h3>
 
-CentOSインスタンスでroot権限を取得するには、次のように`sudo`コマンドを利用します。
+CentOS インスタンスで root 権限を取得するには、以下のように `sudo` コマンドを使用します。
 
     $ sudo su
 <br>
 
-<h3>個人イメージを作り、インスタンスを作成して起動しましたがマウント(mount)エラーが発生します。</h3>
+<h3>個人イメージを作成してインスタンスを生成して起動しましたが、マウント(mount)エラーが発生します。</h3>
 
-2つ以上のブロックストレージを使用するインスタンスでイメージを作成し、作成したイメージでインスタンスを作って起動すると上記のような問題が発生します。
+2 つ以上のブロックストレージを使用するインスタンスからイメージを作成し、作成したイメージでインスタンスを作成して起動すると、このような問題が発生します。
 
-2つ以上のブロックストレージを使用するインスタンスは、基本ディスク以外のディスクを`/etc/fstab`ファイルに設定します。イメージ作成時にこのファイルも複製されるため、新しいインスタンスが起動する時、`/etc/fstab`ファイルが参照するブロックストレージがなくてマウントエラーが発生します。
+2 つ以上のブロックストレージを使用するインスタンスでは、基本ディスク以外のディスクを `/etc/fstab` ファイルに設定します。イメージ作成時にこのファイルも複製されるため、新しいインスタンスが起動される際に `/etc/fstab` ファイルが参照するブロックストレージが存在せず、マウントエラーが発生します。
 
-この問題を解消するには、`/etc/fstab`ファイルで基本ディスク以外のブロックストレージ設定をコメント処理してイメージを作成する必要があります。
+この問題を解決するには、`/etc/fstab` ファイルで基本ディスク以外のブロックストレージ設定をコメント化して、イメージを作成する必要があります。
 <br>
 <br>
 
-<h3>SSH接続が遅すぎます</h3>
+<h3>SSH 接続が非常に遅いです。</h3>
 
-インスタンスが属すセキュリティグループの送信部分でDNSをブロックした場合に発生します。DNS送信ができるようにセキュリティグループを調整します。
+インスタンスが属するセキュリティグループの送信ルールで DNS がブロックされている場合に発生します。DNS の送信ができるようにセキュリティグループを調整します。
 <br>
 <br>
 
-<h3>「Could not resolve the host」メッセージが表示され、yumなどを使用できません。</h3>
+<h3>「Could not resolve the host」というメッセージが表示されて yum などを使用できません。</h3>
 
-インスタンスが属すセキュリティグループの送信部分でDNSをブロックした場合に発生します。DNS送信ができるようにセキュリティグループを調整します。
+インスタンスが属するセキュリティグループの送信ルールで DNS がブロックされている場合に発生します。DNS の送信ができるようにセキュリティグループを調整します。
 <br>
 <br>
 
 <a id="proxy-instance-issue">
-<h3>プロキシを使用しているインスタンスでの動作がおかしいです。</h3>
+<h3>プロキシを使用するインスタンスでの動作が異常です。</h3>
 </a>
 
-プロキシを使用するインスタンスでNHN CloudのMonitoringサービス(System Monitoring, Service Monitoring, Cloud Monitoring)が正常に動作しない場合があります。また、Windows OSの場合、パスワード初期化どの問題が発生する可能性があります。
+プロキシを使用するインスタンスでは、NHN Cloud のモニタリングサービス(System Monitoring、Service Monitoring、Cloud Monitoring)が正常に動作しない場合があります。また、Windows オペレーティングシステムの場合、パスワード初期化などの問題が発生する可能性があります。
 
-このような問題を防止するには、プロキシを使用するインスタンスで`169.254.0.0/16`帯域については、プロキシを使用できないように設定する必要があります。一般的には、`no_proxy`という環境変数にこの値を設定しますが、使用するプロキシによってはこの環境変数を無視する場合もありますので、使用するプロキシのガイドを参考にして設定してください。
+このような問題を防ぐには、プロキシを使用するインスタンスで `169.254.0.0/16` 範囲に対してはプロキシを使用しないように設定する必要があります。通常は `no_proxy` という環境変数にこの値を設定しますが、使用するプロキシによっては、この環境変数を無視する場合もあるため、使用するプロキシのガイドを参照して設定してください。
 <br>
 <br>
 
-<h3>CentOS インスタンスでパッケージアップデートに失敗します。</h3>
+<h3>CentOS インスタンスでパッケージ更新に失敗します。</h3>
 
-次のように`yum repository`ファイルを修正して使用します。
-公式サポートが終了したOSは追加アップデートがサポートされないため、上位バージョンOSの使用を推奨します。
+以下のように `yum repository` ファイルを修正して使用します。
+公式サポートが終了した OS は追加の更新がサポートされていないため、より高いバージョンの OS の使用をお勧めします。
 
 <h4>CentOS 6.x</h4>
 
@@ -69,22 +71,21 @@ CentOSインスタンスでroot権限を取得するには、次のように`sud
 $ sudo vi /etc/yum.repos.d/CentOS-Base.repo
 
 [base]
-…
+...
 #mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra&cc=$cc
 #baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
 baseurl=https://vault.centos.org/6.10/os/$basearch/
-…
+...
 
 [updates]
-…
+...
 #mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates&infra=$infra&cc=$cc
 #baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
 baseurl=https://vault.centos.org/6.10/updates/$basearch/
-…
+...
 
-#additional packages that may be useful
 [extras]
-name=CentOS-$releasever - Extras
+...
 #mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra&cc=$cc
 #baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
 baseurl=https://vault.centos.org/6.10/extras/$basearch/
@@ -95,25 +96,30 @@ baseurl=https://vault.centos.org/6.10/extras/$basearch/
 <h4>CentOS 7.x</h4>
 
 ```
+
 $ sudo vi /etc/yum.repos.d/CentOS-Base.repo
+
 [base]
 ...
 #mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra&cc=$cc
 #baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
 baseurl=https://vault.centos.org/7.9.2009/os/$basearch/
 ...
+
 [updates]
 ...
 #mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates&infra=$infra&cc=$cc
 #baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
 baseurl=https://vault.centos.org/7.9.2009/updates/$basearch/
 ...
+
 [extras]
 ...
 #mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra&cc=$cc
 #baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
 baseurl=https://vault.centos.org/7.9.2009/extras/$basearch/
 ...
+
 [centosplus]
 ...
 #mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus&infra=$infra&cc=$cc
