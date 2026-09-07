@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=bd7c613fa6f9 -->
+<!-- pre-align:aligned sig=5e542d265d9e -->
 
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
@@ -73,6 +73,37 @@ A link still carrying the pre-2026-08 Japanese segment `jp`. That locale is dead
 positions, so it should be swapped to this document's language.
 
 * [Pricing (legacy jp)](/Open%20Source/agent-test/jp/overview/#pricing)
+
+<a id="fix-links-fragslash"></a>
+## frag-slash { #fix-links-fragslash }
+
+A link whose fragment carries a trailing `/`. mkdocs' directory URLs end in `/`, so authors append
+one to the fragment too — the page loads with a 200 and **simply does not scroll**, which no check
+that grades a URL by its response can see. The path notation must be left alone and only the
+trailing slash removed.
+
+* [Pricing (trailing slash on the fragment)](./overview.md#pricing/)
+
+<a id="fix-links-parenthop"></a>
+## parent-hop { #fix-links-parenthop }
+
+A link that climbs one level with `../` while its target sits **inside the same language folder**.
+mkdocs emits the target verbatim when it cannot find a `.md` behind the source-relative reading, and
+the browser then resolves it against the page URL — one level deeper than the source directory — so
+the link is **alive** on the deployed site. It is not a path that exists in the source, so it must
+become `./`.
+
+* [Pricing (one level up)](../overview/#pricing)
+
+<a id="fix-links-sitelang"></a>
+## site-lang { #fix-links-sitelang }
+
+A link that spells the deployed path out **in full** (`/{site lang}/{slug}/{doc lang}/{stem}/`). It
+is a live URL, so not a dead link — but it pins the site language, which sends a translated reader
+to the source language. The leading language segment must go and the link become a same-language
+relative path.
+
+* [Pricing (site language spelled out)](/ko/Open%20Source/agent-test/ko/overview/#pricing)
 
 <a id="fix-links-report"></a>
 ## Links That Must Be Reported, Not Fixed { #fix-links-report }

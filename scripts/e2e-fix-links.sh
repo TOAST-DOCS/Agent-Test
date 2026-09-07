@@ -19,8 +19,8 @@
 #
 # ── 픽스처 ────────────────────────────────────────────────────────────────
 # `{ko,en,ja}/fix-links.md` (alpha 에 상주). 결정적 규칙 하나씩을 겨냥한 링크
-# **6개**와, 고칠 수 없어 보고만 해야 하는 링크 2개, 그리고 절대 바뀌면 안 되는
-# 대조군(정상 링크 4개 + 코드 펜스 안 링크 2개)이 들어 있다. 언어별로 같은
+# **13개**와, 고칠 수 없어 보고만 해야 하는 링크 4개, 그리고 절대 바뀌면 안 되는
+# 대조군(정상 링크 6개 + 코드 펜스 안 링크 2개)이 들어 있다. 언어별로 같은
 # 구조라 `lang-parity` 검증도 통과해야 한다.
 #
 #   self-link    ./fix-links/#fix-links-controls          → #fix-links-controls
@@ -56,11 +56,11 @@
 #   6) cleanup
 #
 # ── 판정 규칙 ─────────────────────────────────────────────────────────────
-#   (1) dry-run 이 언어당 10건 정정 · 4건 manual · PR 미생성 [local 전용, api=SKIP]
+#   (1) dry-run 이 언어당 13건 정정 · 4건 manual · PR 미생성 [local 전용, api=SKIP]
 #   (2) Fix PR 생성 (head=fix-links/… · content-agent + fix-link 라벨)
-#   (3) 픽스처 세 파일이 **기대 결과와 바이트 동일** — 정정 10건이 정확히
+#   (3) 픽스처 세 파일이 **기대 결과와 바이트 동일** — 정정 13건이 정확히
 #       적용되고, 대조군·펜스·보고 대상·링크 밖 바이트는 그대로
-#   (4) 규칙별 진단 — 10건의 정정이 각각 적용되었는지 개별 확인 (3 이 실패했을
+#   (4) 규칙별 진단 — 13건의 정정이 각각 적용되었는지 개별 확인 (3 이 실패했을
 #       때 무엇이 어긋났는지 바로 보이도록)
 #   (5) PR 본문의 매핑 표가 규칙 이름과 이전→이후를 싣는다
 #   (6) 고칠 수 없는 링크 4건이 '사람이 직접 확인' 표에 사유와 함께 오른다
@@ -277,12 +277,12 @@ bad()  { echo "  FAIL  $1"; fails=$((fails + 1)); }
 skip() { echo "  SKIP  $1"; }
 
 nlang="$(awk -F, '{print NF}' <<<"$LANGS")"
-# (1) dry-run — 언어당 정정 10건 · manual 4건.
+# (1) dry-run — 언어당 정정 13건 · manual 4건.
 if (( dry_skipped )); then
   skip "(1) dry-run — api 모드"
 else
   d_ok=1
-  want_rep=$(( nlang * 10 )); want_manual=$(( nlang * 4 ))
+  want_rep=$(( nlang * 13 )); want_manual=$(( nlang * 4 ))
   grep -qE "^repaired  : $want_rep in $nlang file\(s\)" "$DRYLOG" \
     || { d_ok=0; echo "        dry-run 정정 건수가 $want_rep 이 아님"; }
   grep -qE "^left      : $want_manual for manual review" "$DRYLOG" \
@@ -346,7 +346,7 @@ def bad(msg, *extra):
 
 
 def expected_repairs(lang):
-    """(규칙, 이전 target, 이후 target) — 픽스처가 심은 10건.
+    """(규칙, 이전 target, 이후 target) — 픽스처가 심은 13건.
 
     뒤의 4건은 로케일·표기 판정이 바뀐 뒤 추가됐다 (cloud-translate #692·#722):
     site-root 축약형의 타언어 링크는 배포 시 앞자리가 이 문서의 언어로 채워져
@@ -380,6 +380,20 @@ def expected_repairs(lang):
          "./overview/#pricing"),
         ("legacy-jp(site-root)",
          f"{slug}/jp/overview/#pricing", "./overview/#pricing"),
+        # ── 아래 3건: cloud-translate #847 (링크 오탐·규칙 추가) 이후 ──────
+        # frag-slash 는 fragment 만 고치므로 저자가 쓴 경로 표기를 그대로 둔다
+        # (nested-frag·heading-frag 와 같은 부류).
+        ("frag-slash",
+         "./overview.md#pricing/", "./overview.md#pricing"),
+        # parent-hop: 배포본에서는 페이지 URL 기준으로 풀려 살아 있는 링크다.
+        # 소스 기준으로는 없는 경로이므로 표기만 고친다.
+        ("parent-hop",
+         "../overview/#pricing", "./overview/#pricing"),
+        # site-lang: 배포 경로를 완전히 펼쳐 쓴 모양. 앞 언어 세그먼트가 붙어
+        # 있어 예전엔 "이 repo 에 그 파일이 없습니다" 로 보고됐다 (repo 도
+        # 결함도 틀린 문구). ko 는 표기만, en/ja 는 로케일까지 고쳐진다.
+        ("site-lang(펼쳐 쓴 배포 경로)",
+         f"/ko{slug}/ko/overview/#pricing", "./overview/#pricing"),
     ]
 
 
@@ -412,7 +426,7 @@ for lang in langs:
     want, applied = apply_expected(base, lang)
     per_lang_missing[lang] = applied
     if new == want:
-        ok(f"(3) {lang}/fix-links.md 가 기대 결과와 바이트 동일 (정정 10건 · 그 외 보존)")
+        ok(f"(3) {lang}/fix-links.md 가 기대 결과와 바이트 동일 (정정 13건 · 그 외 보존)")
         continue
     wl, nl = want.splitlines(), new.splitlines()
     diffs = [(i + 1, w, n) for i, (w, n) in enumerate(zip(wl, nl)) if w != n]
@@ -437,7 +451,7 @@ for lang in langs:
         bad(f"(4) {lang} 에서 적용되지 않은 규칙: {', '.join(missed)}",
             "정정되지 않은 채 남았다 = /link-check 는 계속 NotOK 로 보고한다")
     else:
-        ok(f"(4) {lang} 10건의 정정이 모두 적용됨")
+        ok(f"(4) {lang} 13건의 정정이 모두 적용됨")
 
 pr_body = read(f"{tmp}/pr_body.md")
 
@@ -548,7 +562,7 @@ echo
 echo "[5/6] 결과"
 if (( fails == 0 )); then
   echo "FIX_LINKS: OK"
-  echo "  링크 정정이 확인 가능한 10건만 적용하고 나머지는 보존/보고 (PR: $fix_pr_url)"
+  echo "  링크 정정이 확인 가능한 13건만 적용하고 나머지는 보존/보고 (PR: $fix_pr_url)"
   echo
   echo "[6/6] cleanup"
   exit 0

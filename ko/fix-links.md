@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=bd7c613fa6f9 -->
+<!-- pre-align:aligned sig=5e542d265d9e -->
 
 <a id="fix-links-overview"></a>
 ## 링크 정정 테스트 { #fix-links-overview }
@@ -72,6 +72,33 @@ site-root 축약형이 **다른 언어**를 가리키는 링크입니다. 로케
 이 문서의 언어로 바뀌어야 합니다.
 
 * [과금 (레거시 jp)](/Open%20Source/agent-test/jp/overview/#pricing)
+
+<a id="fix-links-fragslash"></a>
+## frag-slash { #fix-links-fragslash }
+
+fragment 뒤에 `/` 가 붙은 링크입니다. mkdocs 의 디렉터리 URL 이 `/` 로 끝나서 저자가 fragment 에도
+붙이는데, 페이지는 200 으로 열리고 **스크롤만 안 됩니다** — 응답으로 판정하는 어떤 점검에도 안 걸립니다.
+경로 표기는 그대로 두고 뒤 슬래시만 떨어져야 합니다.
+
+* [과금 (fragment 뒤 슬래시)](./overview.md#pricing/)
+
+<a id="fix-links-parenthop"></a>
+## parent-hop { #fix-links-parenthop }
+
+`../` 로 한 단계 올라갔지만 대상은 **같은 언어 폴더 안**인 링크입니다. mkdocs 는 소스 기준으로 `.md`
+짝을 못 찾으면 링크를 그대로 내보내고, 그러면 브라우저가 페이지 URL 기준(소스 디렉터리보다 한 단계 깊다)
+으로 풀어 배포본에서는 **살아 있습니다**. 소스 기준으로는 없는 경로라 `./` 로 바뀌어야 합니다.
+
+* [과금 (한 단계 위로)](../overview/#pricing)
+
+<a id="fix-links-sitelang"></a>
+## site-lang { #fix-links-sitelang }
+
+배포 경로를 **완전히 펼쳐** 쓴 링크입니다 (`/{site 언어}/{slug}/{문서 언어}/{stem}/`). 살아 있는
+URL 이라 죽은 링크는 아니지만 site 언어가 박히므로 번역본 독자가 원문 언어로 넘어갑니다. 앞 언어
+세그먼트가 빠지고 같은 언어의 상대 경로가 되어야 합니다.
+
+* [과금 (site 언어까지 박힌 경로)](/ko/Open%20Source/agent-test/ko/overview/#pricing)
 
 <a id="fix-links-report"></a>
 ## 고치지 말고 보고만 해야 하는 링크 { #fix-links-report }

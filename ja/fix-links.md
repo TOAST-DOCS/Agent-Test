@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=bd7c613fa6f9 -->
+<!-- pre-align:aligned sig=5e542d265d9e -->
 
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
@@ -73,6 +73,34 @@ alpha/beta/master のすべてにデプロイされるため、どの host を�
 ロケールなので、この文書の言語に置き換えられるべきです。
 
 * [料金 (レガシー jp)](/Open%20Source/agent-test/jp/overview/#pricing)
+
+<a id="fix-links-fragslash"></a>
+## frag-slash { #fix-links-fragslash }
+
+fragment の後ろに `/` が付いたリンクです。mkdocs のディレクトリ URL が `/` で終わるため著者が
+fragment にも付けてしまいますが、ページは 200 で開き**スクロールだけがされません** — レスポンスで
+判定するどの点検にも掛かりません。パス表記はそのままにし、後ろのスラッシュだけが外れるべきです。
+
+* [料金 (fragment 後のスラッシュ)](./overview.md#pricing/)
+
+<a id="fix-links-parenthop"></a>
+## parent-hop { #fix-links-parenthop }
+
+`../` で一段上がっているが対象は**同じ言語フォルダの中**にあるリンクです。mkdocs はソース基準で
+`.md` の対応が見つからないとリンクをそのまま出力し、ブラウザがページ URL 基準(ソースディレクトリ
+より一段深い)で解決するため、配布物では**生きています**。ソース基準では存在しないパスなので `./`
+に変わるべきです。
+
+* [料金 (一段上へ)](../overview/#pricing)
+
+<a id="fix-links-sitelang"></a>
+## site-lang { #fix-links-sitelang }
+
+配布パスを**完全に書き出した**リンクです(`/{site 言語}/{slug}/{文書言語}/{stem}/`)。生きている
+URL なので死んだリンクではありませんが、site 言語が固定されるため翻訳版の読者が原文の言語へ移って
+しまいます。先頭の言語セグメントが外れ、同じ言語の相対パスになるべきです。
+
+* [料金 (site 言語まで書かれたパス)](/ko/Open%20Source/agent-test/ko/overview/#pricing)
 
 <a id="fix-links-report"></a>
 ## 訂正せず報告だけすべきリンク { #fix-links-report }
