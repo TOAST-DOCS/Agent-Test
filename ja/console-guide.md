@@ -3,11 +3,9 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-
 ## Compute > Instance > コンソール使用ガイド { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
-
 ## インスタンスの作成 { #create-instances }
 
 下の設定を使用してインスタンスを作成するか、インスタンステンプレート (Instance Template) を使用してインスタンスを作成できます。インスタンステンプレートからインスタンスを作成するには、インスタンス作成画面で **[インスタンステンプレートを使用]** を選択します。インスタンステンプレートの作成方法については、「[インスタンステンプレート コンソール使用ガイド](/Compute/Instance%20Template/ja/console-guide/)」を参照してください。
@@ -217,7 +215,6 @@ Batch スクリプトと PowerShell スクリプトを一緒に使用する場�
 ユーザー スクリプトの詳細については、「[cloud-init](https://cloudinit.readthedocs.io/en/latest/topics/format.html)」または「[Cloudbase-init](https://cloudbase-init.readthedocs.io/en/latest/userdata.html)」ガイドを参照してください。
 
 <a id="additional-instance-features"></a>
-
 ## インスタンス追加機能 { #additional-instance-features }
 
 ![インスタンス追加機能セクション画像](../static/images/image-1791.jpg)
@@ -326,7 +323,6 @@ Batch スクリプトと PowerShell スクリプトを一緒に使用する場�
 配置ポリシーにインスタンスが割り当てられている場合でも、配置ポリシーの削除が可能で、この場合インスタンスは削除されません。
 
 <a id="key-pairs"></a>
-
 ## キーペア { #key-pairs }
 
 ![キーペアセクション表紙](../static/images/ja/image-1461.jpg)
@@ -376,7 +372,6 @@ Mac または Linux の `ssh-keygen` で作成したキーペアを NHN Cloud �
 NHN Cloud で生成したキーペアと同様に、この方法で作成したキーペアの秘密鍵も、外部流出時には、誰もが流出した秘密鍵でそのインスタンスにアクセスできるようになるため、慎重に管理する必要があります。
 
 <a id="appendix-1-change-language-packs-in-windows"></a>
-
 ## 付録 1. Windows 言語パック変更 { #appendix-1-change-language-packs-in-windows }
 
 NHN Cloud Windows イメージは英語版をデフォルトで提供しています。別の言語をデフォルトで使用したいユーザーは、次の手順に従って使用できます。
@@ -412,7 +407,6 @@ NHN Cloud Windows イメージは英語版をデフォルトで提供してい�
 ![イメージ1](http://static.toastoven.net/prod_instance/windows10.png)
 
 <a id="appendix-2-change-routing-in-windows"></a>
-
 ## 付録 2. Windows ルーティング変更 { #appendix-2-change-routing-in-windows }
 
 NHN Cloud Windows でルーティングを変更する方法は、次のような方法があります。
@@ -470,7 +464,6 @@ Route コマンド
 ![イメージ1](http://static.toastoven.net/prod_instance/windows_route7.png)
 
 <a id="appendix-3-change-system-locale"></a>
-
 ## 付録 3. システム ロケール変更 { #appendix-3-change-system-locale }
 
 NHN Cloud Windows でシステム ロケールを変更する方法は、次のとおりです。
@@ -491,7 +484,6 @@ NHN Cloud Windows でシステム ロケールを変更する方法は、次の�
 ![イメージ1](http://static.toastoven.net/prod_instance/win_locale5.png)
 
 <a id="appendix-4-restarting-instances-for-hypervisor-maintenance"></a>
-
 ## 付録 4. ハイパーバイザーメンテナンスのためのインスタンス再起動ガイド { #appendix-4-restarting-instances-for-hypervisor-maintenance }
 
 NHN Cloud は定期的にハイパーバイザーソフトウェアを更新して、基盤となるインフラストラクチャ サービスのセキュリティと安定性を向上させています。
