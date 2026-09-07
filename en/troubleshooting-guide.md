@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=45e098944fc5 -->
 
 <a id="compute-instance-troubleshooting-guide"></a>
@@ -5,60 +7,60 @@
 
 The document describes how to resolve issues you may encounter while using NHN Cloud.
 
-<h3> I want to use a different version, other than the default OS version of NHN Cloud. Can I upload my personal images? </h3>
+<h3>I want to use a different version, other than the default OS version of NHN Cloud. Can I upload my personal images?</h3>
 
-You can only use the OS version provided by NHN Cloud. And uploading personal images is not allowed.
+You can only use the OS version provided by NHN Cloud. Uploading personal images is not allowed.
 To use personal OS images, create an instance with NHN Cloud image and apply **Create Image**.
 <br>
 
-<h3> When I try to access instance, I find "Permissions 0644 for '/Users/username/.ssh/your-key.pem' are too open." and access is not available. </h3>
+<h3>When I try to access an instance, I find "Permissions 0644 for '/Users/username/.ssh/your-key.pem' are too open." and access is not available.</h3>
 
-It happens when the personal key (PEM key) applied to access instance has invalid authority.
-Adjust the authority of personal key file like below.
+This issue occurs when the personal key (PEM key) used to access the instance has invalid permissions.
+Adjust the permissions of the personal key file as follows.
 
     $ chmod 600 your-key.pem
 <br>
 
-<h3> How do I get the root authority from CentOS instance?  </h3>
+<h3>How do I get root privileges on a CentOS instance?</h3>
 
-To get root authority from CentOS instance, use the 'sudo' command like follows.
+To get root privileges on a CentOS instance, use the `sudo` command as follows.
 
     $ sudo su
 <br>
 
-<h3> I find error mounting, after creating image and instance, and booting it. </h3>
+<h3>I created a personal image and launched an instance, but I get a mount error.</h3>
 
-You shall encounter with such error, when an image is created with instance using two or more block storages and instance is created and booted with such image.
+This issue occurs when you create an image from an instance that uses two or more block storages, and then create and boot a new instance from that image.
 
-For instances that use more than two block storages, set disks other than default disk in the `/etc/fstab` file. Since the file is to be replicated as well, when image is created, error occurs in mounting due to lack of a block storage referenced by the`/etc/fstab` file.
+For instances that use more than two block storages, set disks other than the default disk in the `/etc/fstab` file. Since this file is also replicated when the image is created, when the new instance boots, a mount error occurs because the block storage referenced by the `/etc/fstab` file does not exist.
 
-To resolve this issue, set block storage of the `/etc/fstab` file, except default disk, as footnote, before creating an image.
+To resolve this issue, comment out the block storage settings other than the default disk in the `/etc/fstab` file before creating an image.
 <br>
 <br>
 
-<h3> It takes too long to access SSH. </h3>
+<h3>SSH access is too slow.</h3>
 
-It happens when DNS is blocked at the receiving part of the security group to which instance belongs. Adjust the security group to be allowed to receive DNS.
+This issue occurs when DNS is blocked in the outbound section of the security group to which the instance belongs. Adjust the security group to allow DNS outbound traffic.
 <br>
 <br>
 
-<h3> I find "Could not resolve the host" and cannot use yum. </h3>
+<h3>"Could not resolve the host" error appears and I cannot use yum.</h3>
 
-It happens when DNS is blocked at the receiving part of the security group to which instance belongs. Adjust the security group to be allowed to receive DNS.
+This issue occurs when DNS is blocked in the outbound section of the security group to which the instance belongs. Adjust the security group to allow DNS outbound traffic.
 <br>
 <br>
 
 <a id="proxy-instance-issue">
-<h3>Something goes wrong on instances using proxies</h3>
+<h3>Instances configured with a proxy are not working properly.</h3>
 </a>
 
-NHN Cloud's Monitoring services (System Monitoring, Service Monitoring, Cloud Monitoring) may not work properly on instances that use proxies. Also, in the case of Windows operating systems, problems such as password reset may occur.
+The Monitoring services (System Monitoring, Service Monitoring, Cloud Monitoring) of NHN Cloud may not work properly on instances that use a proxy. Additionally, Windows instances may encounter issues such as password reset failures.
 
-To avoid this issue, you must disable proxying for the `169.254.0.0/16` band on instances that use proxies. Typically, you would set this value in an environment variable called `no_proxy`, but some proxies ignore this environment variable, so refer to the proxy guide to set this up.
+To prevent these issues, configure the instance to bypass the proxy for the `169.254.0.0/16` address range. Typically, you set this value in the `no_proxy` environment variable, but some proxies ignore this environment variable. Refer to the documentation of your proxy for configuration details.
 <br>
 <br>
 
-<h3> Package update fails on CentOS instances. </h3>
+<h3>Package update fails on a CentOS instance.</h3>
 
 Use the `yum repository` file after modifying the file as follows.
 Additional updates are not supported for OS for which official support has ended, so it is recommended that you use a higher version of the OS.
@@ -135,4 +137,3 @@ $ sudo yum repolist
 
 <br>
 <br>
-
