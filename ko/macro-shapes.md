@@ -3,7 +3,7 @@
 <a id="sample-macro-shapes"></a>
 ## Sample > 매크로 태그 모양 모음 { #sample-macro-shapes }
 
-이 문서는 mkdocs-macros 템플릿 태그가 번역을 거쳐도 한 글자도 변하지 않는지 검증하기 위한 픽스처입니다. Storage-Object-Storage 의 `ja/acl-guide.md` 가 태그 한 줄을 잃어 alpha 빌드를 깨뜨린 사고(2026-09-07)에서 나온 모양들을 한곳에 모았습니다. 태그는 제어 문법이라 번역 대상이 아니고, 하나라도 유실되면 짝이 어긋나 `_Macro Syntax Error_` 로 빌드 전체가 실패합니다.
+이 문서는 mkdocs-macros 템플릿 태그가 번역을 거쳐도 한 글자도 변하지 않는지 검증하기 위한 픽스처입니다. Storage-Object-Storage 의 `ja/acl-guide.md` 가 태그 한 줄을 잃어 alpha 빌드를 깨뜨린 사고(2026-09-07)에서 나온 모양들을 한곳에 모았습니다. 태그는 제어 문법이라 번역 대상이 아니고, 하나라도 유실되면 짝이 어긋나 `_Macro Syntax Error_` 로 빌드 전체가 실패합니다. (본문 수정 테스트: 이 문장은 번역 재실행 시 반영되어야 합니다.)
 
 <a id="wrapped-paragraph"></a>
 ### 문단을 감싼 조건부 { #wrapped-paragraph }
