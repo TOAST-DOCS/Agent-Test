@@ -1,5 +1,7 @@
+<!-- pre-align:aligned sig=21f8e4b6814c -->
+
 <a id="compute-instance-release-notes"></a>
-## Compute > Instance > 릴리스 노트
+## Compute > Instance > 릴리스 노트 { #compute-instance-release-notes }
 
 인스턴스 서비스의 각 릴리스에서 변경된 내용을 시간 역순으로 정리한 문서입니다. 릴리스 번호는 `주버전.부버전.패치` 형식을 따르며, 배포 날짜와 주요 변경 내용을 함께 표기합니다.
 

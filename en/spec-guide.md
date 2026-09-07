@@ -1,5 +1,7 @@
+<!-- pre-align:aligned sig=178a08dfcc40 -->
+
 <a id="compute-instance-spec-guide"></a>
-## Compute > Instance > Resource Specification Guide
+## Compute > Instance > Resource Specification Guide { #compute-instance-spec-guide }
 
 This document describes the resource field specifications in instance API response bodies. Each field's path, type, Not Null status, and description are provided in tables.
 
