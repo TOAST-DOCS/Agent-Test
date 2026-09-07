@@ -3,11 +3,9 @@
 <!-- pre-align:aligned sig=82f23cc3f97e -->
 
 <a id="compute-instance-console-guide"></a>
-
 ## Compute > Instance > Console User Guide { #compute-instance-console-guide }
 
 <a id="create-instances"></a>
-
 ## Create Instances { #create-instances }
 
 You can create instances through the following settings or by using an Instance Template. To create an instance using an Instance Template, choose **Use Instance Template** on the instance creation screen. For instructions on creating an Instance Template, see [Instance Template Console User Guide](/Compute/Instance%20Template/en/console-guide/).
@@ -217,13 +215,11 @@ You can check user script logs in `C:\Program Files\Cloudbase Solutions\Cloudbas
 For detailed information about user scripts, see the [cloud-init](https://cloudinit.readthedocs.io/ko/latest/topics/format.html) or [Cloudbase-init](https://cloudbase-init.readthedocs.io/ko/latest/userdata.html) guides.
 
 <a id="additional-instance-features"></a>
-
 ## Additional Instance Features { #additional-instance-features }
 
 ![Additional Instance Features Section Cover](../static/images/image-1791.jpg)
 
 <a id="change-instance-status"></a>
-
 ### Change Instance Status { #change-instance-status }
 
 You can change the status of an instance by stopping, terminating, deleting, or starting it.
@@ -239,7 +235,6 @@ For information about hypervisor resources and billing related to stopping, term
 > [Note] GPU Instance cannot be terminated and normal (100%) billing applies even when stopped.
 
 <a id="create-image"></a>
-
 ### Create an Image { #create-image }
 
 Create an image from the instance's root block storage. It is recommended that you create images while the instance is stopped to ensure data consistency.
@@ -252,7 +247,6 @@ Created images are registered as private images in **Compute > Image**. You can 
 > The size of the created image may be larger than the actual usage of the root block storage.
 
 <a id="associatedisassociate-floating-ip"></a>
-
 ### Associate and Disassociate Floating IP { #associatedisassociate-floating-ip }
 
 Floating IP can be associated with or disassociated from an instance, regardless of the instance's status. If you have no available floating IP or if the floating IP you want is not available, you can create one by clicking **Create**. Alternatively, floating IP can also be created from **Network > VPC > Floating IP**.
@@ -260,7 +254,6 @@ Floating IP can be associated with or disassociated from an instance, regardless
 For more information about Floating IP, see [VPC Overview](/Network/VPC/en/overview/).
 
 <a id="modify-security-group"></a>
-
 ### Modify Security Group { #modify-security-group }
 
 You can modify the security group of an instance regardless of the instance's status. Modified security groups are applied immediately.
@@ -268,13 +261,11 @@ You can modify the security group of an instance regardless of the instance's st
 For more information about security groups, see [Security Group](./console-guide/#security-group) and [VPC Overview](/Network/VPC/en/overview/).
 
 <a id="change-network-subnet"></a>
-
 ### Change Network Subnet { #change-network-subnet }
 
 An instance's network subnet can only be changed while the instance is stopped. When you add a subnet, a network interface that will be connected to that subnet is automatically created on your instance. If you add multiple subnets at once, the order of the newly created network interfaces on the instance is set randomly. Deleting a subnet from an instance automatically deletes the network interface that was created along with the subnet.
 
 <a id="modify-flavor"></a>
-
 ### Change Instance Flavor { #modify-flavor }
 
 Instance flavors can be changed once an instance has been stopped. If an instance is running, click **Stop Instance** in **Additional Features** to stop the instance.
@@ -292,7 +283,6 @@ When you modify flavors, instance resize and resize confirmation tasks proceed. 
 Instances are billed according to the changed flavor from the time of change.
 
 <a id="change-instance-os-details"></a>
-
 ### Change Instance OS Information { #change-instance-os-details }
 
 You can change the instance OS information regardless of the instance's status.
@@ -302,7 +292,6 @@ On the **Compute > Instance** service page, click the instance for which you wan
 > [Note] The OS type cannot be changed.
 
 <a id="change-instance-description"></a>
-
 ### Change Instance Description { #change-instance-description }
 
 You can change the instance description regardless of the instance's status.
@@ -310,7 +299,6 @@ You can change the instance description regardless of the instance's status.
 On the **Compute > Instance** service page, click the instance for which you want to change the description. On the **Basic Information** tab of that instance's details screen, click **Description > Change**.
 
 <a id="change-instance-key-pair"></a>
-
 ### Change Instance Key Pair { #change-instance-key-pair }
 
 The instance key pair can only be changed when the instance is active.
@@ -326,7 +314,6 @@ Change the key pair of the instance default account to the selected key pair. Th
 > [Note] If the image version used to create the instance is outdated, the key pair change feature may not be supported.
 
 <a id="manage-placement-policies"></a>
-
 ### Manage Placement Policies { #manage-placement-policies }
 
 You can create and delete placement policies and view a list of instances assigned to placement policies.
@@ -336,7 +323,6 @@ Only the `anti-affinity` placement policy type for distributed placement is prov
 Placement policies can be deleted even if instances are assigned to them, and in this case the instances are not deleted.
 
 <a id="key-pairs"></a>
-
 ## Key Pairs { #key-pairs }
 
 ![Key Pairs section cover](../static/images/en/image-1461.jpg)
@@ -386,7 +372,6 @@ The registered key pair can be used to create instances, and the key pair's priv
 Just as with key pairs created from NHN Cloud, imported key pairs also need to be managed cautiously since exposed private keys can be abused by anyone to access instances.
 
 <a id="appendix-1-change-language-packs-in-windows"></a>
-
 ## Appendix 1. Change language packs in Windows { #appendix-1-change-language-packs-in-windows }
 
 NHN Cloud provides English as the default Windows image. Users who want to use a different language as the default can do so by following the steps below.
@@ -422,7 +407,6 @@ NHN Cloud provides English as the default Windows image. Users who want to use a
 ![Image 1](http://static.toastoven.net/prod_instance/windows10.png)
 
 <a id="appendix-2-change-routing-in-windows"></a>
-
 ## Appendix 2. Change routing in Windows { #appendix-2-change-routing-in-windows }
 
 The following are methods for changing routing in NHN Cloud Windows:
@@ -480,7 +464,6 @@ Case 3 - Remove a specific route
 ![Image 1](http://static.toastoven.net/prod_instance/windows_route7.png)
 
 <a id="appendix-3-change-system-locale"></a>
-
 ## Appendix 3. Change system locale { #appendix-3-change-system-locale }
 
 The following is how to change the system locale in NHN Cloud Windows.
@@ -501,7 +484,6 @@ The following is how to change the system locale in NHN Cloud Windows.
 ![Image 1](http://static.toastoven.net/prod_instance/win_locale5.png)
 
 <a id="appendix-4-restarting-instances-for-hypervisor-maintenance"></a>
-
 ## Appendix 4. Restart instances for hypervisor maintenance { #appendix-4-restarting-instances-for-hypervisor-maintenance }
 
 NHN Cloud updates hypervisor software on a regular basis to enhance the security and stability of infrastructure services that we provide.
