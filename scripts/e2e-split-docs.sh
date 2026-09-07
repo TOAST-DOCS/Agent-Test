@@ -39,7 +39,12 @@
 #   (3) ko/en/ja **전부** 분리됨 (all-or-nothing — 한 언어만 잘리면 실패)
 #   (4) 부모가 header + include 지시자만 남음 (날짜 heading 0개)
 #   (5) **왕복**: 부모의 include 를 순서대로 펼치면 원본과 내용 동일
-#       (빈 줄 무시) — 유실·중복·재정렬을 한 번에 잡는다
+#       (빈 줄 무시) — 유실·중복·재정렬을 한 번에 잡는다. 단 링크 target 은
+#       **유일하게 달라져도 되는 자리**다: 연도 파일은 한 단계 깊으므로 옮겨진
+#       본문의 상대 경로에 `../` 가 하나 더 붙는다. 그래서 두 단계로 본다 —
+#       (5a) target 을 가린 내용이 완전히 같고, (5b) 가리지 않은 차이가 전부
+#       `./x → ../x` 로 설명된다. 예전 바이트 동일 규칙보다 강하다: 재기준화가
+#       아닌 target 변경도 이제 실패로 잡힌다.
 #   (6) 원본의 모든 `<a id>`/`<a name>` anchor 가 **순서까지 같게** 보존
 #       (연도 경계에 걸린 anchor 가 header 에 남지 않았는지)
 #   (7) 연도 파일마다 자기 outline 으로 계산된 유효한 pre-align marker,
@@ -319,6 +324,46 @@ except Exception as exc:                                   # pragma: no cover
 INCLUDE_RE = re.compile(r"\{%-?\s*include-markdown\s+'([^']+)'\s*-?%\}")
 DATE_HEAD_RE = re.compile(r"^#{2,4}\s+\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.")
 ANCHOR_RE = re.compile(r'<(?:a|span)\b[^>]*?\b(?:id|name)\s*=\s*"([^"]+)"')
+
+# 링크 target 슬롯 — 왕복 검증에서 **유일하게 달라져도 되는 자리**다.
+# 연도 파일은 원본보다 한 단계 깊으므로 옮겨진 본문의 상대 경로에 `../` 가 하나
+# 더 붙는다 (`pre-align/tools/splice/rebase_links.py`). 그래서 (5) 는 두 단계로
+# 본다: (a) target 을 가린 내용이 완전히 같아야 하고 — 유실·중복·재정렬은 이
+# 비교가 잡는다 — (b) 가리지 않은 차이는 전부 `./x → ../x` (또는 bare `x`) 로
+# 설명돼야 한다. 예전 규칙은 (a) 만 하던 것이 아니라 아예 바이트 동일을
+# 요구했으므로, 재기준화가 들어온 뒤에는 정상 실행을 실패로 적었다.
+MD_TARGET_RE = re.compile(
+    r'(?P<head>!?\['
+    r'(?:\\.|[^\[\]\\]|!?\[(?:\\.|[^\[\]\\])*\](?:\([^)]*\))?)*'
+    r'\]\()'
+    r'(?P<target>[^)\s]*)'
+    r'(?P<tail>(?:\s+(?:"[^"]*"|\'[^\']*\'))?\))')
+HTML_ATTR_RE = re.compile(
+    r'(?P<head><(?:a|img|iframe|source)\b[^>]*?\b(?:href|src)\s*=\s*)'
+    r'(?P<q>["\'])(?P<target>[^"\']*)(?P=q)', re.IGNORECASE)
+
+
+def mask_targets(line):
+    line = MD_TARGET_RE.sub(lambda m: m.group("head") + "\x00" + m.group("tail"), line)
+    return HTML_ATTR_RE.sub(
+        lambda m: m.group("head") + m.group("q") + "\x00" + m.group("q"), line)
+
+
+def rebased_only(orig_line, new_line):
+    """new_line 의 차이가 `./x → ../x` (bare 포함) 뿐인가."""
+    def targets(line):
+        return ([m.group("target") for m in MD_TARGET_RE.finditer(line)]
+                + [m.group("target") for m in HTML_ATTR_RE.finditer(line)])
+    o, n = targets(orig_line), targets(new_line)
+    if len(o) != len(n):
+        return False
+    for a, b in zip(o, n):
+        if a == b:
+            continue
+        body = a[2:] if a.startswith("./") else a
+        if b != "../" + body:
+            return False
+    return True
 MARKER_RE = re.compile(r"<!--\s*pre-align:aligned\s+sig=[0-9a-f]+\s*-->")
 
 
@@ -397,15 +442,32 @@ for lang in split_langs:
         bad(f"(5) {lang} include 가 가리키는 연도 파일이 없음: {', '.join(missing_files)}")
     else:
         orig = content_lines(base)
-        if expanded == orig:
-            ok(f"(5) {lang} 왕복 검증 — include 펼침 == 원본 ({len(orig)}줄)")
-        else:
-            first = next((i for i, (a, b) in enumerate(zip(orig, expanded)) if a != b),
-                         min(len(orig), len(expanded)))
-            bad(f"(5) {lang} 왕복 검증 실패 — 원본 {len(orig)}줄 vs 펼침 {len(expanded)}줄",
+        masked_orig = [mask_targets(l) for l in orig]
+        masked_new = [mask_targets(l) for l in expanded]
+        if masked_orig != masked_new:
+            first = next((i for i, (a, b) in enumerate(zip(masked_orig, masked_new))
+                          if a != b), min(len(masked_orig), len(masked_new)))
+            bad(f"(5a) {lang} 왕복 검증 실패 — 링크 target 을 가려도 내용이 다르다 "
+                f"(원본 {len(orig)}줄 vs 펼침 {len(expanded)}줄)",
                 f"첫 불일치 #{first}:",
                 f"  원본: {orig[first] if first < len(orig) else '<없음>'!r}",
                 f"  펼침: {expanded[first] if first < len(expanded) else '<없음>'!r}")
+        else:
+            ok(f"(5a) {lang} 왕복 검증 — 링크 target 을 가린 내용이 원본과 동일 "
+               f"({len(orig)}줄)")
+            # 가리지 않은 차이는 전부 재기준화(`./x → ../x`)여야 한다.
+            unexplained = [
+                (i, a, b) for i, (a, b) in enumerate(zip(orig, expanded))
+                if a != b and not rebased_only(a, b)]
+            n_rebased = sum(1 for a, b in zip(orig, expanded) if a != b)
+            if unexplained:
+                i, a, b = unexplained[0]
+                bad(f"(5b) {lang} 링크 target 이 재기준화 말고 다른 이유로 바뀜 "
+                    f"({len(unexplained)}줄)",
+                    f"첫 사례 #{i}:", f"  원본: {a!r}", f"  펼침: {b!r}")
+            else:
+                ok(f"(5b) {lang} 달라진 줄 {n_rebased}개가 전부 상대 경로 "
+                   f"재기준화(`./x` → `../x`)")
 
     # (6) anchor 순서까지 보존 — 연도 경계에 걸린 <a id> 가 header 에 남으면
     #     그 날짜로 가는 링크가 전부 죽는다. 개수만 세면 잡히지 않는다.
