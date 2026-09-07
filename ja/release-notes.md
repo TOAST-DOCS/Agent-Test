@@ -1,22 +1,42 @@
-<!-- pre-align:aligned sig=21f8e4b6814c -->
+<!-- pre-align:aligned sig=41ceb708de52 -->
 
 <a id="compute-instance-release-notes"></a>
-## Compute > Instance > リリースノート { #compute-instance-release-notes }
+## Compute > Instance > 릴리스 노트 { #compute-instance-release-notes }
 
-インスタンスサービスの各リリースで変更された内容を新しい順にまとめたドキュメントです。リリース番号は `メジャー.マイナー.パッチ` 形式に従い、リリース日と主な変更内容を併記します。
+Instance サービスの各リリースで変更された内容を時系列の逆順にまとめた文書です。
+ヘッダー自身のリンクは[コンソールガイド](./console-guide/)です — 親文書に残るため再基準化の対象ではありません。
 
-<a id="release-history"></a>
-### リリース一覧 { #release-history }
+<a id="may-12-2026"></a>
+### 2026年5月12日 { #may-12-2026 }
 
-| リリース | リリース日 | 変更内容 |
-|---|---|---|
-| 2.5.0 | 2026-05-12 | スナップショット予約機能を追加。コンソールで予約間隔を設定できます。 |
-| 2.4.1 | 2026-04-02 | ノードイメージキャッシュの改善により作成時間を短縮。内部エラーを修正。 |
-| 2.4.0 | 2026-03-18 | GPU ノードプール対応。スケジューラ優先度ポリシーを刷新。 |
-| 2.3.2 | 2026-02-05 | セキュリティ脆弱性パッチ。コンソールアクセスログを強化。 |
-| 2.3.1 | 2026-01-08 | 初回公開リリースノート。基本機能の案内。 |
+* スナップショット予約機能を追加
+    * 詳細は[コンソールガイド > インスタンス作成](./console-guide/#create-instances)を参照してください。
+    * API は[Public API](./compute-public-api/)で確認できます。
+* [この文書の最初のセクション](#compute-instance-release-notes) · [NHN Cloud](https://www.nhncloud.com/)
 
-<a id="release-policy"></a>
-### リリースポリシー { #release-policy }
+### 2026年3月18日
 
-定期リリースは毎月第 2 週に配信され、セキュリティパッチは必要に応じて随時配信されます。リリース後に問題が見つかった場合はパッチバージョンが優先的に配信され、影響範囲が大きい場合はロールバックが行われることがあります。各リリースの詳細な変更内容はコンソールのお知らせでも確認できます。
+* GPU ノードプールをサポート
+    * [デプロイ API ガイド](deploy-api-guide.md)も併せて参照してください。
+    * 他 repo のガイドは[Instance 概要](/Compute/Instance/ja/overview/)です — site-root はそのままにします。
+
+<a id="november-1-2025"></a>
+### 2025年11月1日 { #november-1-2025 }
+
+* コンソールアクセスログを強化
+    * [概要 > イメージ](./overview/#image)を参照してください。
+    * repo の外へ出る相対パス: [Instance 概要](../../../../Compute/Instance/ja/overview/)
+
+### 2025年2月5日
+
+* セキュリティパッチ
+
+```markdown
+[フェンス内のリンク](./console-guide/#create-instances)
+```
+
+<a id="june-25-2024"></a>
+### 2024年6月25日 { #june-25-2024 }
+
+* 最初の公開リリースノート
+    * [カーネルガイド](./kernel-guide/)を参照してください。

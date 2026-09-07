@@ -1,22 +1,42 @@
-<!-- pre-align:aligned sig=21f8e4b6814c -->
+<!-- pre-align:aligned sig=41ceb708de52 -->
 
 <a id="compute-instance-release-notes"></a>
-## Compute > Instance > Release notes { #compute-instance-release-notes }
+## Compute > Instance > 릴리스 노트 { #compute-instance-release-notes }
 
-This document lists the changes in each release of the instance service in reverse chronological order. Release numbers follow the `major.minor.patch` format, and each entry shows the release date and key changes.
+A reverse-chronological record of what changed in each release of the Instance service.
+The header's own link is the [console guide](./console-guide/) — it stays in the parent, so it is not re-based.
 
-<a id="release-history"></a>
-### Release history { #release-history }
+<a id="may-12-2026"></a>
+### May 12, 2026 { #may-12-2026 }
 
-| Release | Release date | Changes |
-|---|---|---|
-| 2.5.0 | 2026-05-12 | Snapshot scheduling added. You can configure the schedule interval in the console. |
-| 2.4.1 | 2026-04-02 | Reduced creation time through improved node image caching. Fixed internal errors. |
-| 2.4.0 | 2026-03-18 | GPU node pool support. Scheduler priority policy revamped. |
-| 2.3.2 | 2026-02-05 | Security vulnerability patch. Console access logging strengthened. |
-| 2.3.1 | 2026-01-08 | First public release notes. Basic feature guide. |
+* Snapshot scheduling added
+    * See [Console guide > Create instances](./console-guide/#create-instances).
+    * The API lives in [Public API](./compute-public-api/).
+* [First section of this doc](#compute-instance-release-notes) · [NHN Cloud](https://www.nhncloud.com/)
 
-<a id="release-policy"></a>
-### Release policy { #release-policy }
+### March 18, 2026
 
-Regular releases are deployed in the second week of each month, and security patches are deployed as needed. If an issue is found after a release, a patch version is deployed first, and a rollback may be performed when the impact is significant. Detailed changes for each release are also available in the console notices.
+* GPU node pool support
+    * See also the [deploy API guide](deploy-api-guide.md).
+    * Another repo's guide is [Instance overview](/Compute/Instance/en/overview/) — site-root is left alone.
+
+<a id="november-1-2025"></a>
+### November 1, 2025 { #november-1-2025 }
+
+* Console access logging hardened
+    * See [Overview > Image](./overview/#image).
+    * A relative path that climbs out of the repo: [Instance overview](../../../../Compute/Instance/en/overview/)
+
+### February 5, 2025
+
+* Security patch
+
+```markdown
+[link inside a fence](./console-guide/#create-instances)
+```
+
+<a id="june-25-2024"></a>
+### June 25, 2024 { #june-25-2024 }
+
+* First public release notes
+    * See the [kernel guide](./kernel-guide/).

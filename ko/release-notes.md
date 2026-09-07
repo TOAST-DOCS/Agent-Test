@@ -1,22 +1,42 @@
-<!-- pre-align:aligned sig=21f8e4b6814c -->
+<!-- pre-align:aligned sig=41ceb708de52 -->
 
 <a id="compute-instance-release-notes"></a>
 ## Compute > Instance > 릴리스 노트 { #compute-instance-release-notes }
 
-인스턴스 서비스의 각 릴리스에서 변경된 내용을 시간 역순으로 정리한 문서입니다. 릴리스 번호는 `주버전.부버전.패치` 형식을 따르며, 배포 날짜와 주요 변경 내용을 함께 표기합니다.
+인스턴스 서비스의 각 릴리스에서 변경된 내용을 시간 역순으로 정리한 문서입니다.
+헤더의 링크는 [콘솔 가이드](./console-guide/)입니다 — 부모 문서에 남으므로 재작성 대상이 아닙니다.
 
-<a id="release-history"></a>
-### 릴리스 목록 { #release-history }
+<a id="may-12-2026"></a>
+### 2026. 05. 12. { #may-12-2026 }
 
-| 릴리스 | 배포 날짜 | 변경 내용 |
-|---|---|---|
-| 2.5.0 | 2026-05-12 | 스냅숏 예약 기능 추가. 콘솔에서 예약 주기를 설정할 수 있습니다. |
-| 2.4.1 | 2026-04-02 | 노드 이미지 캐시 개선으로 생성 시간 단축. 내부 오류 수정. |
-| 2.4.0 | 2026-03-18 | GPU 노드 풀 지원. 스케줄러 우선순위 정책 개편. |
-| 2.3.2 | 2026-02-05 | 보안 취약점 패치. 콘솔 접근 로그 강화. |
-| 2.3.1 | 2026-01-08 | 최초 공개 릴리스 노트. 기본 기능 안내. |
+* 스냅숏 예약 기능 추가
+    * 자세한 내용은 [콘솔 가이드 > 인스턴스 생성](./console-guide/#create-instances)을 참고하세요.
+    * API 는 [Public API](./compute-public-api/)에서 확인할 수 있습니다.
+* [이 문서 첫 섹션](#compute-instance-release-notes) · [NHN Cloud](https://www.nhncloud.com/)
 
-<a id="release-policy"></a>
-### 릴리스 정책 { #release-policy }
+### 2026. 03. 18.
 
-정기 릴리스는 매월 둘째 주에 배포되며, 보안 패치는 필요 시 수시로 배포됩니다. 릴리스 배포 후 문제가 발견되면 패치 버전이 우선 배포되고, 영향 범위가 큰 경우 롤백이 진행될 수 있습니다. 각 릴리스의 세부 변경 사항은 콘솔 공지사항에서도 확인할 수 있습니다.
+* GPU 노드 풀 지원
+    * [배포 API 가이드](deploy-api-guide.md)를 함께 보세요.
+    * 다른 repo 가이드는 [Instance 개요](/Compute/Instance/ko/overview/)입니다 — site-root 는 그대로 둡니다.
+
+<a id="november-1-2025"></a>
+### 2025. 11. 01. { #november-1-2025 }
+
+* 콘솔 접근 로그 강화
+    * [개요 > 이미지](./overview/#image)를 참고하세요.
+    * repo 밖으로 나가는 상대 경로: [Instance 개요](../../../../Compute/Instance/ko/overview/)
+
+### 2025. 02. 05.
+
+* 보안 취약점 패치
+
+```markdown
+[펜스 안의 링크](./console-guide/#create-instances)
+```
+
+<a id="june-25-2024"></a>
+### 2024. 06. 25. { #june-25-2024 }
+
+* 최초 공개 릴리스 노트
+    * [커널 가이드](./kernel-guide/) 참고.
