@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=8e6d00d3460b -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 Guide { #compute-instance-api-v2-guide }
 
 Instance uses the IaaS token for authentication/authorization when making API calls. The IaaS token is the authentication token used by NHN Cloud's OpenStack-based infrastructure service (IaaS). For more information on IaaS token issuance and usage, see [IaaS token](/nhncloud/en/public-api/iaas-token).
@@ -17,7 +16,6 @@ The Instance API uses the `compute` type endpoint. For the exact endpoint, refer
 The API response may contain fields not specified in this guide. These fields are for NHN Cloud internal use and may be changed without prior notice, so do not use them.
 
 <a id="instance-flavors"></a>
-
 ## Instance Flavors { #instance-flavors }
 
 <a id="list-flavors"></a>
@@ -199,7 +197,6 @@ This API does not require a request body.
 ---
 
 <a id="availability-zones"></a>
-
 ## Availability Zone { #availability-zones }
 
 <a id="list-availability-zones"></a>
@@ -256,7 +253,6 @@ This API does not require a request body.
 ---
 
 <a id="key-pairs"></a>
-
 ## Key Pairs { #key-pairs }
 
 <a id="list-key-pairs"></a>
@@ -453,7 +449,6 @@ This API does not return a response body.
 
 
 <a id="instance"></a>
-
 ## Instance { #instance }
 
 <a id="instance-status"></a>
