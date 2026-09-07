@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=0c594ab22164 -->
+
 {%- set portal_url = "https://console.gov-nhncloudservice.com" if "gov" in build_flags
     else "https://console.nhncloudservice.com" -%}
 <a id="sample-macro-shapes"></a>
