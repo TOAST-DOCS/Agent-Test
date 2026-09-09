@@ -47,7 +47,7 @@ while [[ $# -gt 0 ]]; do
     --base-branch) BASE_BRANCH="$2"; shift 2 ;;   # 기본 alpha, e2e 세션 브랜치로 override
     --title)  TITLE="$2";  shift 2 ;;
     --body)   BODY="$2";   shift 2 ;;
-    --plan)   PLAN_NAME="$2"; shift 2 ;;   # round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn
+    --plan)   PLAN_NAME="$2"; shift 2 ;;   # round1|round2|delete-only|row-drop-repro|llm-patch|table-suite|markup-churn
     --dry-run|-n) DRY_RUN=1; shift ;;
     --list-files) LIST_FILES=1; shift ;;   # 이 plan 이 다루는 ko/ 파일만 출력하고 종료
     -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
@@ -871,6 +871,19 @@ declare -a PLAN_ROUND2=(
 #         → 모델이 그 행 삽입 patch 를 만들지 않고 조용히 커밋 → 결함 재현.
 #   비교군: overview.md 는 정상 정렬 상태 그대로 `add_paragraph` 만 적용해
 #           같은 잡 안에서 정상 경로도 함께 동작하는지 확인.
+# delete-only: ko 문서를 **삭제만** 하는 plan (추가된 줄 0).
+#   왜 필요한가 — 한글 검수는 PR 이 *추가한 줄* 만 검수하므로 삭제만 있는 PR 은
+#   검수 대상이 0건이 되고, 그 경로는 리뷰를 게시하지 않는다. 실측
+#   TOAST-DOCS/Gamebase#419 (Unity UI 가이드 섹션 제거) 에서 ko-review 가 두 번
+#   성공했는데도 PR 에 코멘트도 라벨도 남지 않아, 검수가 돌았는지 알 수 없고
+#   번역 webhook 의 label_require(`content-agent` + `한글 검수`)도 못 넘었다.
+#   이 plan 이 그 PR 모양을 재현한다 (`e2e-korean-review-no-targets.sh` 전용).
+#   두 변형 모두 `del lines[...]` 뿐이라 diff 에 `+` 줄이 없다 — 그것이 이 plan 의
+#   유일한 계약이므로 여기에 *추가* 계열 변형을 섞지 말 것.
+declare -a PLAN_DELETE_ONLY=(
+  "remove_section|ko/kernel-guide.md"
+  "remove_paragraph|ko/console-guide.md"
+)
 declare -a PLAN_ROW_DROP_REPRO=(
   "edit_body|ko/version-guide.md"
   "add_paragraph|ko/overview.md"
@@ -1105,12 +1118,13 @@ declare -a PLAN_MARKUP_CHURN=(
 case "$PLAN_NAME" in
   round1) PLAN=("${PLAN_ROUND1[@]}") ;;
   round2) PLAN=("${PLAN_ROUND2[@]}") ;;
+  delete-only) PLAN=("${PLAN_DELETE_ONLY[@]}") ;;
   row-drop-repro) PLAN=("${PLAN_ROW_DROP_REPRO[@]}") ;;
   llm-patch) PLAN=("${PLAN_LLM_PATCH[@]}") ;;
   table-suite) PLAN=("${PLAN_TABLE_SUITE[@]}") ;;
   markup-churn) PLAN=("${PLAN_MARKUP_CHURN[@]}") ;;
   jinja-mask) PLAN=("${PLAN_JINJA_MASK[@]}") ;;
-  *) echo "unknown --plan: $PLAN_NAME (round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn|jinja-mask)" >&2; exit 1 ;;
+  *) echo "unknown --plan: $PLAN_NAME (round1|round2|delete-only|row-drop-repro|llm-patch|table-suite|markup-churn|jinja-mask)" >&2; exit 1 ;;
 esac
 
 # ── table-suite 전용: en/ja stale 상태를 BASE 브랜치에 조성 ────────────────
