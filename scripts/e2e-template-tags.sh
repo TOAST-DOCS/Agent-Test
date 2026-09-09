@@ -211,6 +211,13 @@ for (( r = 1; r <= ROUNDS; r++ )); do
     LOG="$OUT/r$r.$path.translate.log"
     echo "── [$r/$path] local translate_pr.py → $LOG"
     tx_rc=0; run_translate "$ko_pr" "$LOG" || tx_rc=$?
+    # GitHub 읽기 토큰의 일시적 403(rate limit)은 코드가 아니라 인프라다 — 한 번만
+    # 60초 뒤 재실행한다 (2026-09-09 1라운드: en 은 끝났고 ja 의 contents GET 이 403).
+    if (( tx_rc != 0 )) && grep -q "403 Forbidden" "$LOG"; then
+      echo "  ! GitHub 403 — 60초 뒤 번역 1회 재실행"; sleep 60
+      mv "$LOG" "$LOG.403"
+      tx_rc=0; run_translate "$ko_pr" "$LOG" || tx_rc=$?
+    fi
     IFS='|' read -r n_left n_mm n_lo n_rt <<< "$(grade_log "$LOG")"
     echo "  exit=$tx_rc  left-in-prose=$n_left  mismatch=$n_mm  leftover=$n_lo  retries=$n_rt"
 
@@ -224,11 +231,11 @@ for (( r = 1; r <= ROUNDS; r++ )); do
     if (( n_left > 0 )); then echo "  PASS  (L2) 한글 태그가 모델에 갔다 (${n_left}건)"; else echo "  FAIL  (L2) 'Left … source-language text' 로그 없음"; fails=$((fails+1)); fi
     echo "  INFO  (L3) mismatch=$n_mm leftover=$n_lo → 재시도 $n_rt 회로 흡수"
 
-    tx_pr="$(grep -oE 'Translation PR: https://[^ ]+' "$LOG" | tail -1 | awk '{print $NF}')"
+    tx_pr="$( (grep -oE 'Translation PR: https://[^ ]+' "$LOG" || true) | tail -1 | awk '{print $NF}')"
     if [[ -n "$tx_pr" ]]; then
-      echo "  번역 PR: $tx_pr"; e2e_label_pr "$REPO" "$tx_pr"
-      tx_branch="$(gh pr view "$tx_pr" --repo "$REPO" --json headRefName --jq .headRefName)"
-      git fetch -q origin "$tx_branch"
+      echo "  번역 PR: $tx_pr"; e2e_label_pr "$REPO" "$tx_pr" || true
+      tx_branch="$(gh pr view "$tx_pr" --repo "$REPO" --json headRefName --jq .headRefName || true)"
+      git fetch -q origin "$tx_branch" || true
       git show "origin/$HEAD:ko/$DOC" > "$OUT/r$r.$path.ko.md"
       got=1
       for lang in en ja; do
