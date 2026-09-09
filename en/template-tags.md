@@ -84,13 +84,22 @@ In the public environment you can configure this directly in the console. This p
 <a id="tt-fenced"></a>
 ### Tags Inside a Code Block { #tt-fenced }
 
-Tags inside a code block are sample text, so not a single character may change.
+mkdocs-macros processes tags inside a code block as Jinja too, so a tag shown **as an example** must be wrapped in `{% raw %}`. Without the wrapper the conditional is evaluated and the variables are substituted, and the example disappears.
 
+{% raw %}
 ```jinja
 {% if "gov" in build_flags %}
-  {%- set region_names = "한국(판교) 리전" -%}
+  {%- set region_names = "Korea (Pangyo) Region" -%}
 {% endif %}
-$[ region_names ]$ / {{ 칼럼 이름 }} / $[ api_host ]$
+$[ region_names ]$ / {{ column name }} / $[ api_host ]$
+```
+{% endraw %}
+
+The block below is a control with no Korean in it. It must stay byte-identical through translation.
+
+```
+$ curl -X POST -H 'Content-Type: application/json' \
+  https://$[ api_host ]$/v2/containers
 ```
 
 <a id="tt-tail"></a>

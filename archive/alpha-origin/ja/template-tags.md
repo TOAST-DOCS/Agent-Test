@@ -84,13 +84,22 @@ $[ tt_response_table('volume.') ]$
 <a id="tt-fenced"></a>
 ### コードブロック内のタグ { #tt-fenced }
 
-コードブロック内のタグは例示テキストなので、1文字も変わってはいけません。
+mkdocs-macrosはコードブロック内のタグもJinjaとして処理するため、タグを**例として見せる**には`{% raw %}`で囲む必要があります。囲まないと条件文が評価され、変数が置き換えられて例が消えてしまいます。
 
+{% raw %}
 ```jinja
 {% if "gov" in build_flags %}
-  {%- set region_names = "한국(판교) 리전" -%}
+  {%- set region_names = "韓国(板橋)リージョン" -%}
 {% endif %}
-$[ region_names ]$ / {{ 칼럼 이름 }} / $[ api_host ]$
+$[ region_names ]$ / {{ カラム名 }} / $[ api_host ]$
+```
+{% endraw %}
+
+下のブロックは韓国語が入っていない対照群です。翻訳を経てもバイト単位で同じでなければなりません。
+
+```
+$ curl -X POST -H 'Content-Type: application/json' \
+  https://$[ api_host ]$/v2/containers
 ```
 
 <a id="tt-tail"></a>

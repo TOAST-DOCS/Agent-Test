@@ -16,7 +16,14 @@ Rules (each printed as PASS/FAIL per language; exit code = number of failures):
       whitespace-control markers exact — or, for a tag with no literal, the same
       delimiters). Every other tag must be byte-identical.
   (2) no Hangul inside any tag of the translation (outside fences).
-  (3) every fenced code block byte-identical to ko's, in order.
+  (3) fenced code blocks, positionally: a block with NO Korean in ko must be
+      byte-identical (a true control); a block that DOES carry Korean is
+      translated on purpose (the pipeline rewraps a fence whose inner has
+      Hangul and translates the inner), so it is graded on structure instead —
+      same number of tags, each matching by skeleton. Tags inside a fence are
+      NOT masked, yet mkdocs-macros still evaluates them unless the author
+      wrapped the sample in `{% raw %}`, so rule (4)'s render is what proves a
+      mangled sample tag cannot reach the build.
   (4) the translation parses AND renders with the site's Jinja config
       (`$[ ]$` variable delimiters, StrictUndefined) for build_flags public / gov /
       ngsc; no placeholder token (`XTPLTAG`, `XCODEBLOCK`) survives; no `\_`
@@ -185,12 +192,33 @@ def main():
         else:
             ok(lang, "(2) no Hangul inside any tag")
 
-        # (3) fences byte-identical
+        # (3) fences — bytes for Korean-free blocks, structure for the rest
         tf = fenced_blocks(tr)
-        if tf == ko_fences:
-            ok(lang, f"(3) {len(tf)} fenced block(s) byte-identical to ko")
+        if len(tf) != len(ko_fences):
+            bad(lang, f"(3) fenced block count {len(tf)} != ko {len(ko_fences)}")
         else:
-            bad(lang, f"(3) fenced blocks differ from ko ({len(tf)} vs {len(ko_fences)})")
+            plain_bad, struct_bad = [], []
+            n_plain = n_struct = 0
+            for i, (kf, gf) in enumerate(zip(ko_fences, tf)):
+                if HANGUL.search(kf):
+                    n_struct += 1
+                    kt, gt = TAG_RE.findall(kf), TAG_RE.findall(gf)
+                    if len(kt) != len(gt) or any(
+                        not same_structure(w, g) for w, g in zip(kt, gt)
+                    ):
+                        struct_bad.append(f"#{i} tags {len(kt)} -> {len(gt)}")
+                else:
+                    n_plain += 1
+                    if kf != gf:
+                        plain_bad.append(f"#{i}")
+            if plain_bad:
+                bad(lang, f"(3a) Korean-free fenced block(s) changed: {plain_bad}")
+            else:
+                ok(lang, f"(3a) {n_plain} Korean-free fenced block(s) byte-identical to ko")
+            if struct_bad:
+                bad(lang, f"(3b) translated fenced block(s) lost tag structure: {struct_bad}")
+            else:
+                ok(lang, f"(3b) {n_struct} translated fenced block(s) kept their tag structure")
 
         # (4) Jinja render + no placeholders + no escaped underscore in tags
         try:

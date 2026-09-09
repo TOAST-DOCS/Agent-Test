@@ -84,13 +84,22 @@ $[ tt_response_table('volume.') ]$
 <a id="tt-fenced"></a>
 ### 코드 블록 안의 태그 { #tt-fenced }
 
-코드 블록 안의 태그는 예시 텍스트이므로 한 글자도 바뀌면 안 됩니다.
+mkdocs-macros 는 코드 블록 안의 태그도 Jinja 로 처리하므로, 태그를 **예시로 보여 주려면** `{% raw %}` 로 감싸야 합니다. 감싸지 않으면 조건문이 평가되고 변수가 치환되어 예시가 사라집니다.
 
+{% raw %}
 ```jinja
 {% if "gov" in build_flags %}
   {%- set region_names = "한국(판교) 리전" -%}
 {% endif %}
 $[ region_names ]$ / {{ 칼럼 이름 }} / $[ api_host ]$
+```
+{% endraw %}
+
+아래 블록은 한글이 없는 대조군입니다. 번역을 거쳐도 바이트 단위로 같아야 합니다.
+
+```
+$ curl -X POST -H 'Content-Type: application/json' \
+  https://$[ api_host ]$/v2/containers
 ```
 
 <a id="tt-tail"></a>
