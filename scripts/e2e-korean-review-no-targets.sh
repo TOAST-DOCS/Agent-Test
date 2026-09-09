@@ -236,9 +236,21 @@ git checkout "$ko_head_ref"
 git pull --ff-only origin "$ko_head_ref"
 git commit -q --allow-empty -m "e2e(no-targets): empty commit — new head SHA, identical diff"
 git push -q origin "$ko_head_ref"
-ko_sha_b="$(gh pr view "$ko_pr_url" --repo "$REPO" --json headRefOid --jq .headRefOid)"
-echo "  head SHA: ${ko_sha_a:0:7} → ${ko_sha_b:0:7}"
-[[ "$ko_sha_a" != "$ko_sha_b" ]] || { echo "  error: 빈 커밋 후에도 SHA 가 같다" >&2; exit 2; }
+pushed_sha="$(git rev-parse HEAD)"
+# push 직후 GitHub 이 PR 객체의 head 를 갱신하기까지 지연이 있다 (실측: 곧바로
+# 조회하면 옛 SHA 를 돌려줘 "빈 커밋 후에도 SHA 가 같다" 로 오판했다). 검수가
+# 새 SHA 를 보도록 PR 의 head 가 방금 push 한 커밋과 일치할 때까지 기다린다.
+ko_sha_b=""
+for _ in $(seq 30); do
+  ko_sha_b="$(gh pr view "$ko_pr_url" --repo "$REPO" --json headRefOid --jq .headRefOid)"
+  [[ "$ko_sha_b" == "$pushed_sha" ]] && break
+  sleep 2
+done
+echo "  head SHA: ${ko_sha_a:0:7} → ${ko_sha_b:0:7} (pushed ${pushed_sha:0:7})"
+if [[ "$ko_sha_b" != "$pushed_sha" ]]; then
+  echo "  error: PR head 가 push 한 커밋(${pushed_sha:0:7})으로 갱신되지 않았다 (60s 대기)" >&2
+  exit 2
+fi
 run_review "$ko_pr_url"
 snapshot "$ko_pr_number" "b"
 
