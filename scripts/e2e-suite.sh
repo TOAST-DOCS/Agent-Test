@@ -27,6 +27,13 @@
 #                 ~1분. base=alpha 를 직접 쓰므로 매 실행마다 alpha 에 마커
 #                 커밋 1개가 추가되지만 restore-alpha-origin 이 다음 e2e 에서
 #                 정리한다.
+#   korean-review-no-targets — 삭제만 있는 ko PR (검수 대상 0건). 리뷰가 게시되지
+#                 않는 것이 정상이고, 그래도 '검수 대상 없음' 코멘트와
+#                 `한글 검수`·`content-agent` 라벨이 남는지 검증(라벨이 없으면
+#                 머지 후 번역 webhook 의 label_require 를 못 넘는다 — 실측
+#                 TOAST-DOCS/Gamebase#419). 재검수 시 코멘트가 쌓이지 않는지와
+#                 ko 미변경 PR 은 침묵하는지도 함께 본다.
+#                 e2e-korean-review-no-targets.sh 를 실행.
 #   korean-review — dashboard /api/ko-review 잡의 산출물(요약 리뷰 본문 규격,
 #                 인라인 코멘트, ```suggestion``` 블록) 을 검증. e2e-align-and-
 #                 translate.sh 가 아니라 e2e-korean-review.sh 를 실행.
@@ -222,7 +229,8 @@
 #
 # 별칭:
 #   all         — round2 / row-drop-repro-noreconcile / preserve 를 제외한 plan 전체
-#                 = webhook korean-review anchor-audit round1 table-suite
+#                 = webhook korean-review korean-review-no-targets anchor-audit
+#                   round1 table-suite
 #                   row-drop-repro llm-patch markup-churn retranslate concurrent
 #                   fill-stubs split-docs fix-links fix-tables table-malformed
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
@@ -319,7 +327,7 @@ while [[ $# -gt 0 ]]; do
       FT_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
+    webhook|korean-review|korean-review-no-targets|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -331,7 +339,7 @@ while [[ $# -gt 0 ]]; do
       # preserve 도 all 에서 제외 (2026-09-04) — 판정 (4)(5) 가 CLI preserve
       # 섹션 슬라이스(cloud-translate #811/#817, 닫힘) 를 전제로 해 main 에서
       # 항상 실패한다. 스크립트는 남겨 두고 명시 지정으로만 실행.
-      PLANS+=(webhook korean-review anchor-audit round1 table-suite row-drop-repro
+      PLANS+=(webhook korean-review korean-review-no-targets anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent fill-stubs
               split-docs fix-links fix-tables table-malformed jinja-mask); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
@@ -508,6 +516,15 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^KO_REVIEW: (OK|FAIL)' "$log" | tail -n1 || true)"
     ko_pr="$(grep -oE '  ko PR         : https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${ko_pr:-<no-pr>}")
+  elif [[ "$plan" == "korean-review-no-targets" ]]; then
+    # 삭제만 있는 PR = 검수 대상 0건. korean-review plan 과 기대값이 정반대다
+    # (리뷰가 없는 것이 정상이고, 코멘트·라벨은 남아야 한다) — 그래서 별도 plan.
+    # 판정이 전부 결정적(코멘트 개수·라벨·SHA)이라 fable 검증도 exit 3 여지도 없다.
+    bash "$REPO_ROOT/scripts/e2e-korean-review-no-targets.sh" "${KR_ARGS[@]}" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^KO_REVIEW_NO_TARGETS: (OK|FAIL)' "$log" | tail -n1 || true)"
+    ko_pr="$(grep -oE '  ko PR \(삭제만\) : https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${ko_pr:-<no-pr>}")
   else
     # align 프롤로그 재사용: 앞선 plan 이 남긴 스냅샷이 있으면 2~9단계를 건너뛴다.
     reuse_args=()
@@ -631,6 +648,7 @@ for plan in "${PLANS[@]}"; do
   # table-suite 는 번역 로직에 따라 기대값이 다르므로 exit 3 도 정상 허용
   if [[ "$plan" == "webhook" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "korean-review" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "korean-review-no-targets" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "anchor-audit" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "round1" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "concurrent" && $ec -ne 0 ]]; then overall=1; fi
@@ -653,6 +671,7 @@ for plan in "${PLANS[@]}"; do
   # preserve 도 기대값이 하나다 — 반영됐거나 안 됐거나이고, exit 3 여지가 없다.
   if [[ "$plan" == "preserve" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
+        && "$plan" != "korean-review-no-targets" \
         && "$plan" != "anchor-audit" \
         && "$plan" != "concurrent" && "$plan" != "fill-stubs" \
         && "$plan" != "fix-tables" \
