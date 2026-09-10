@@ -1,5 +1,7 @@
+<!-- pre-align:aligned sig=8e6d00d3460b -->
+
 <a id="compute-instance-api-v2-guide"></a>
-## Compute > Instance > API v2 가이드
+## Compute > Instance > API v2 가이드 { #compute-instance-api-v2-guide }
 
 Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용에 대한 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token) 을 참고하세요.
 
@@ -12,10 +14,10 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 API 응답에 가이드에 명시되지 않은 필드가 나타날 수 있습니다. 이런 필드는 NHN Cloud 내부 용도로 사용되며 사전 공지 없이 변경될 수 있으므로 사용하지 않습니다.
 
 <a id="instance-flavors"></a>
-## 인스턴스 타입
+## 인스턴스 타입 { #instance-flavors }
 
 <a id="list-flavors"></a>
-### 타입 목록 보기
+### 타입 목록 보기 { #list-flavors }
 
 ```
 GET /v2/{tenantId}/flavors
@@ -23,7 +25,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="request"></a>
-
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -36,7 +37,6 @@ X-Auth-Token: {tokenId}
 | minRam | Query | Integer | - | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
 
 <a id="response"></a>
-
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -91,7 +91,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-flavors-with-details"></a>
-### 타입 목록 상세 보기
+### 타입 목록 상세 보기 { #list-flavors-with-details }
 
 ```
 GET /v2/{tenantId}/flavors/detail
@@ -99,7 +99,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-flavors-with-details-request"></a>
-
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -112,7 +111,6 @@ X-Auth-Token: {tokenId}
 | minRam | Query | Integer | - | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
 
 <a id="list-flavors-with-details-response"></a>
-
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명             |
@@ -197,10 +195,10 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="availability-zones"></a>
-## 가용성 영역
+## 가용성 영역 { #availability-zones }
 
 <a id="list-availability-zones"></a>
-### 가용성 목록 보기
+### 가용성 목록 보기 { #list-availability-zones }
 
 ```
 GET /v2/{tenantId}/os-availability-zone
@@ -208,7 +206,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-availability-zones-request"></a>
-
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -218,7 +215,6 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 
 <a id="list-availability-zones-response"></a>
-
 #### 응답
 | 이름 | 종류 | 형식 | 설명 |
 |---|---|---|---|
@@ -255,17 +251,16 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="key-pairs"></a>
-## 키페어
+## 키페어 { #key-pairs }
 
 <a id="list-key-pairs"></a>
-### 키페어 목록 보기
+### 키페어 목록 보기 { #list-key-pairs }
 ```
 GET /v2/{tenantId}/os-keypairs
 X-Auth-Token: {tokenId}
 ```
 
 <a id="list-key-pairs-request"></a>
-
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -275,7 +270,6 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 
 <a id="list-key-pairs-response"></a>
-
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -309,14 +303,13 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="show-key-pair"></a>
-### 키페어 보기
+### 키페어 보기 { #show-key-pair }
 ```
 GET /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
 <a id="show-key-pair-request"></a>
-
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -327,7 +320,6 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 
 <a id="show-key-pair-response"></a>
-
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -368,7 +360,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="createregister-key-pair"></a>
-### 키페어 생성/등록하기
+### 키페어 생성/등록하기 { #createregister-key-pair }
 
 ```
 POST /v2/{tenantId}/os-keypairs
@@ -376,7 +368,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="createregister-key-pair-request"></a>
-
 #### 요청
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -403,7 +394,6 @@ X-Auth-Token: {tokenId}
 </details>
 
 <a id="createregister-key-pair-response"></a>
-
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -435,14 +425,13 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="delete-key-pair"></a>
-### 키페어 삭제하기
+### 키페어 삭제하기 { #delete-key-pair }
 ```
 DELETE /v2/{tenantId}/os-keypairs/{keypairName}
 X-Auth-Token: {tokenId}
 ```
 
 <a id="delete-key-pair-request"></a>
-
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -453,16 +442,15 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 
 <a id="delete-key-pair-response"></a>
-
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
 
 <a id="instance"></a>
-## 인스턴스
+## 인스턴스 { #instance }
 
 <a id="instance-status"></a>
-### 인스턴스 상태
+### 인스턴스 상태 { #instance-status }
 
 인스턴스는 다양한 상태를 가지며 상태에 따라 취할 수 있는 동작이 정해져 있습니다. 인스턴스 상태 목록은 다음과 같습니다.
 
@@ -488,7 +476,7 @@ X-Auth-Token: {tokenId}
 | `UNKNOWN` | 인스턴스의 상태를 알 수 없는 경우<br>`인스턴스가 이 상태로 진입한 경우 관리자에게 문의합니다.` | 
 
 <a id="list-instances"></a>
-### 인스턴스 목록 보기
+### 인스턴스 목록 보기 { #list-instances }
 
 ```
 GET /v2/{tenantId}/servers
@@ -496,7 +484,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-instances-request"></a>
-
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -515,7 +502,6 @@ X-Auth-Token: {tokenId}
 | marker | Query | UUID | - | 목록의 첫번째 인스턴스 UUID<br>정렬 기준에 따라 `marker`로 지정된 인스턴스부터 `limit` 개수 만큼의 인스턴스 목록을 반환 |
 
 <a id="list-instances-response"></a>
-
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명 |
@@ -555,7 +541,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="list-instances-with-details"></a>
-### 인스턴스 목록 상세 보기
+### 인스턴스 목록 상세 보기 { #list-instances-with-details }
 
 인스턴스 목록 보기와 동일하게 현재 테넌트에 생성된 인스턴스 목록을 반환합니다. 단, 인스턴스별 상세한 정보가 같이 조회됩니다.
 
@@ -565,13 +551,11 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="list-instances-with-details-request"></a>
-
 #### 요청
 
 인스턴스 목록 보기와 동일한 요청 형태입니다.
 
 <a id="list-instances-with-details-response"></a>
-
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명                                                                                                                                                                                                        |
@@ -713,7 +697,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="get-instance"></a>
-### 인스턴스 보기
+### 인스턴스 보기 { #get-instance }
 
 ```
 GET /v2/{tenantId}/servers/{serverId}
@@ -721,7 +705,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="get-instance-request"></a>
-
 #### 요청
 
 이 API는 요청 본문을 요구하지 않습니다.
@@ -733,7 +716,6 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 
 <a id="get-instance-response"></a>
-
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명                                                                                                                                                                                                       |
@@ -873,7 +855,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="create-instance"></a>
-### 인스턴스 생성하기
+### 인스턴스 생성하기 { #create-instance }
 
 인스턴스를 생성합니다.
 
@@ -900,7 +882,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="create-instance-request"></a>
-
 #### 요청
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -977,7 +958,6 @@ X-Auth-Token: {tokenId}
 </details>
 
 <a id="create-instance-response"></a>
-
 #### 응답
 
 | 이름 | 종류 | 형식 | 설명                                                                                                                                                                                                           |
@@ -1017,7 +997,7 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="modify-instance"></a>
-### 인스턴스 수정하기
+### 인스턴스 수정하기 { #modify-instance }
 생성된 인스턴스를 수정합니다. 변경할 수 있는 속성은 일부 항목으로 제한됩니다.
 
 ```
@@ -1026,7 +1006,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="modify-instance-request"></a>
-
 #### 요청
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
@@ -1052,14 +1031,13 @@ X-Auth-Token: {tokenId}
 </details>
 
 <a id="modify-instance-response"></a>
-
 #### 응답
 인스턴스 보기와 동일합니다.
 
 ---
 
 <a id="delete-instance"></a>
-### 인스턴스 삭제하기
+### 인스턴스 삭제하기 { #delete-instance }
 생성된 인스턴스를 삭제합니다.
 
 ```
@@ -1068,7 +1046,6 @@ X-Auth-Token: {tokenId}
 ```
 
 <a id="delete-instance-request"></a>
-
 #### 요청
 이 API는 요청 본문을 요구하지 않습니다.
 
@@ -1079,7 +1056,6 @@ X-Auth-Token: {tokenId}
 | tokenId | Header | String | O | 토큰 ID |
 
 <a id="delete-instance-response"></a>
-
 #### 응답
 이 API는 응답 본문을 반환하지 않습니다.
 
