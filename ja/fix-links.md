@@ -1,11 +1,13 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=5e542d265d9e -->
 
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
 
-この文書は**リンク訂正**(`dashboard/links/fix.py`、Jenkins `fix-links`)の e2e フィクスチャです。
-以下の各セクションは決定的ルールを 1 つずつ狙って**わざと壊したリンク**を持ち、
-`scripts/e2e-fix-links.sh` が訂正結果をルールごとに判定します。
+このドキュメントは**リンク修正**(`dashboard/links/fix.py`, Jenkins `fix-links`) e2e フィクスチャーです。(順序テストA: この文は lag-order-a-edit 検証用です。)
+以下のセクションでは、決定的なルール1つずつを対象とした**意図的に誤って書かれたリンク**を含んでおり、
+`scripts/e2e-fix-links.sh` が修正結果をルール別に判定します。
 
 この文書はユーザーガイドメニュー(`ko/nav.yml`)には登録しません。配布される文書ではなくパイプラインのフィクスチャです。
 
