@@ -1,10 +1,12 @@
+<!-- pre-align:aligned sig=af6d5efd1d39 -->
+
 <a id="compute-instance-feature-matrix"></a>
-## Compute > Instance > 기능 매트릭스
+## Compute > Instance > 기능 매트릭스 { #compute-instance-feature-matrix }
 
 인스턴스 서비스가 제공하는 기능을 리전과 요금제 관점에서 정리한 문서입니다. 번역 파이프라인 테스트를 위해 표, 목록, 코드 블록, 중첩 heading 을 모두 포함합니다.
 
 <a id="feature-overview"></a>
-## 기능 개요
+## 기능 개요 { #feature-overview }
 
 인스턴스의 주요 기능은 다음과 같습니다.
 
@@ -14,7 +16,7 @@
 - **모니터링**: CPU, 메모리, 디스크 사용량을 대시보드에서 확인합니다.
 
 <a id="feature-by-region"></a>
-## 리전별 기능 제공 여부
+## 리전별 기능 제공 여부 { #feature-by-region }
 
 리전에 따라 제공되는 기능이 다릅니다. 아래 표에서 확인하세요.
 
@@ -26,7 +28,7 @@
 | INST-MON | 인스턴스 모니터링 | 제공 | 제공 | 제공 |
 
 <a id="feature-by-plan"></a>
-### 요금제별 제공 한도
+### 요금제별 제공 한도 { #feature-by-plan }
 
 요금제에 따라 생성 가능한 인스턴스 수가 다릅니다.
 
@@ -37,12 +39,12 @@
 | 엔터프라이즈 | 무제한 | 무제한 |
 
 <a id="feature-api"></a>
-## API 로 기능 확인
+## API 로 기능 확인 { #feature-api }
 
 기능 제공 여부는 API 로도 조회할 수 있습니다.
 
 <a id="feature-api-request"></a>
-### 조회 요청
+### 조회 요청 { #feature-api-request }
 
 아래 예시와 같이 기능 코드를 지정해 호출합니다.
 
@@ -61,6 +63,6 @@ curl -X GET "https://kr1-api-instance.example.com/v2/features?code=INST-CREATE" 
 - `regions`: 제공 리전 목록
 
 <a id="feature-notes"></a>
-## 참고 사항
+## 참고 사항 { #feature-notes }
 
 기능 제공 여부는 사전 공지 후 변경될 수 있습니다. 최신 정보는 콘솔 공지사항을 확인하세요.
