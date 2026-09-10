@@ -148,6 +148,15 @@
 #                 exit 1 = B 콘텐츠 유실(버그 재현), 2 = 하네스 오류.
 #   round1      — 일반 종합 (heading/anchor/섹션/문단/표 기본 변형 15항목).
 #                 기대: exit 0 (전 파일 PASS).
+#   lag-order   — 앞선 번역 PR 이 **미머지** 인 창 안에서 다른 ko PR 이 머지되는
+#                 시나리오 (e2e-translation-lag-order.sh). B 생성 → A 생성 →
+#                 B 머지·번역(열어 둠) → A 머지·번역 → 검증 1(A 번역이 B 섹션을
+#                 다시 넣지 않음) → B 번역 머지 → A 번역 머지 → 검증 2(en/ja 에
+#                 B 섹션 1회). concurrent 의 거울상 — 그쪽은 앞선 번역이 이미
+#                 머지된 순서에서 '지우지 않는지', 이쪽은 아직 안 머지된 순서에서
+#                 '다시 넣지 않는지'. nhn-cloud-foundry#37→#38 재현 (Dooray
+#                 cloud-user-guide-agent/359). concurrent 와 같이 항상 로컬
+#                 translate_pr.py 로 번역한다.
 #   table-suite — 표 변형 종합 + stale 결함 재현 (stale-ify 커밋 포함).
 #                 기대: 번역 로직에 table-row reconcile(PR #290)이 있으면 exit 0,
 #                 없으면 exit 3 (version-guide/release-notes FAIL).
@@ -231,7 +240,7 @@
 #   all         — round2 / row-drop-repro-noreconcile / preserve 를 제외한 plan 전체
 #                 = webhook korean-review korean-review-no-targets anchor-audit
 #                   round1 table-suite
-#                   row-drop-repro llm-patch markup-churn retranslate concurrent
+#                   row-drop-repro llm-patch markup-churn retranslate concurrent lag-order
 #                   fill-stubs split-docs fix-links fix-tables table-malformed
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
@@ -327,7 +336,7 @@ while [[ $# -gt 0 ]]; do
       FT_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|korean-review-no-targets|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
+    webhook|korean-review|korean-review-no-targets|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -340,7 +349,7 @@ while [[ $# -gt 0 ]]; do
       # 섹션 슬라이스(cloud-translate #811/#817, 닫힘) 를 전제로 해 main 에서
       # 항상 실패한다. 스크립트는 남겨 두고 명시 지정으로만 실행.
       PLANS+=(webhook korean-review korean-review-no-targets anchor-audit round1 table-suite row-drop-repro
-              llm-patch markup-churn retranslate concurrent fill-stubs
+              llm-patch markup-churn retranslate concurrent lag-order fill-stubs
               split-docs fix-links fix-tables table-malformed jinja-mask); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
@@ -439,6 +448,13 @@ for plan in "${PLANS[@]}"; do
     # 동시 PR 시나리오 — dashboard 를 쓰지 않고 로컬 translate_pr.py 로만
     # 번역하므로 translate/engine/model 계열 인자는 의미가 없다.
     bash "$REPO_ROOT/scripts/e2e-concurrent-prs.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$log" | tail -n1 || true)"
+    trans_pr="$(grep -oE '^  A 번역 PR:\s+https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "lag-order" ]]; then
+    # 번역 지연 순서 시나리오 — concurrent 와 같이 로컬 translate_pr.py 전용.
+    bash "$REPO_ROOT/scripts/e2e-translation-lag-order.sh" > "$log" 2>&1
     ec=$?
     verdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE '^  A 번역 PR:\s+https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
@@ -652,6 +668,7 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" == "anchor-audit" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "round1" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "concurrent" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "lag-order" && $ec -ne 0 ]]; then overall=1; fi
   # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
   # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
   # fill-stubs: exit 4 = HELD — 채우기는 동작했고 남은 실패가 전부 도구가
@@ -673,7 +690,7 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
         && "$plan" != "korean-review-no-targets" \
         && "$plan" != "anchor-audit" \
-        && "$plan" != "concurrent" && "$plan" != "fill-stubs" \
+        && "$plan" != "concurrent" && "$plan" != "lag-order" && "$plan" != "fill-stubs" \
         && "$plan" != "fix-tables" \
         && "$plan" != "preserve" \
         && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
@@ -735,6 +752,7 @@ for r in "${RESULTS[@]}"; do echo "  $r"; done
 echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포함이면 exit 3 이 정상)"
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
+echo "  (lag-order: exit 0 = A 번역이 B 섹션을 넣지 않고 최종 1회. exit 1 = 중복(버그 재현), 2 = 하네스 오류)"
 echo "  (fill-stubs: exit 0 = OK. stub 섹션만 채우고 그 밖은 바이트 보존 · id 없는 stub 은 건너뜀)"
 echo "  (fill-stubs: exit 4 = HELD — 도구가 보고한 보류만 남음. ⚠️ 로 집계하고 suite 는 실패시키지 않는다)"
 echo "  (fix-tables: exit 0 = FIX_TABLES: OK. 표가 어긋난 section 만 ko 로 다시 만들고 대조군은 바이트 보존)"
