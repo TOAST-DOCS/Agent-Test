@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=5e542d265d9e -->
+<!-- pre-align:aligned sig=6fad408e473b -->
 
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
@@ -143,3 +143,8 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 [フェンス内の壊れたリンク](./no-such-doc-e2e.md#nowhere)
 [フェンス内の self-path](./fix-links/#fix-links-controls)
 ```
+
+<a id="lag-order-b-added"></a>
+## 翻訳遅延順序テストセクション { #lag-order-b-added }
+
+このセクションは PR B が追加しました。PR A の翻訳ジョブはこのセクションに触れてはならず、PR B の翻訳 PR がマージされたら en/ja に 1 回だけ存在する必要があります。
