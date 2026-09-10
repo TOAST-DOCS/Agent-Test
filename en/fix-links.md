@@ -5,9 +5,9 @@
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
 
-This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`).
-Each section below targets one deterministic rule with a **deliberately malformed link**, and
-`scripts/e2e-fix-links.sh` judges the repair rule by rule.
+This document is a **link-fixing** e2e fixture (`dashboard/links/fix.py`, Jenkins `fix-links`). (Lag-order test A: This sentence is for lag-order-a-edit validation.)
+The sections below contain **intentionally incorrect links** aimed at each deterministic rule,
+and `scripts/e2e-fix-links.sh` verifies the correction results by rule.
 
 This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide.
 
