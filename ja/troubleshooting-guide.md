@@ -67,23 +67,23 @@ $ sudo vi /etc/yum.repos.d/CentOS-Base.repo
 
 [base]
 …
-#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra&cc=$cc
-#baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
+# mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra&cc=$cc
+# baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
 baseurl=https://vault.centos.org/6.10/os/$basearch/
 …
 
 [updates]
 …
-#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates&infra=$infra&cc=$cc
-#baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
+# mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates&infra=$infra&cc=$cc
+# baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
 baseurl=https://vault.centos.org/6.10/updates/$basearch/
 …
 
-#additional packages that may be useful
+# additional packages that may be useful
 [extras]
 name=CentOS-$releasever - Extras
-#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra&cc=$cc
-#baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
+# mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra&cc=$cc
+# baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
 baseurl=https://vault.centos.org/6.10/extras/$basearch/
 ...
 
@@ -95,26 +95,26 @@ baseurl=https://vault.centos.org/6.10/extras/$basearch/
 $ sudo vi /etc/yum.repos.d/CentOS-Base.repo
 [base]
 ...
-#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra&cc=$cc
-#baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
+# mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=os&infra=$infra&cc=$cc
+# baseurl=http://mirror.centos.org/centos/$releasever/os/$basearch/
 baseurl=https://vault.centos.org/7.9.2009/os/$basearch/
 ...
 [updates]
 ...
-#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates&infra=$infra&cc=$cc
-#baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
+# mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=updates&infra=$infra&cc=$cc
+# baseurl=http://mirror.centos.org/centos/$releasever/updates/$basearch/
 baseurl=https://vault.centos.org/7.9.2009/updates/$basearch/
 ...
 [extras]
 ...
-#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra&cc=$cc
-#baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
+# mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=extras&infra=$infra&cc=$cc
+# baseurl=http://mirror.centos.org/centos/$releasever/extras/$basearch/
 baseurl=https://vault.centos.org/7.9.2009/extras/$basearch/
 ...
 [centosplus]
 ...
-#mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus&infra=$infra&cc=$cc
-#baseurl=http://mirror.centos.org/centos/$releasever/centosplus/$basearch/
+# mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=centosplus&infra=$infra&cc=$cc
+# baseurl=http://mirror.centos.org/centos/$releasever/centosplus/$basearch/
 baseurl=https://vault.centos.org/7.9.2009/centosplus/$basearch/
 ...
 ```

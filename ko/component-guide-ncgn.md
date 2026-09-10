@@ -189,13 +189,13 @@ SQL Server 구성관리자의 SQL Server 구성관리자(로컬) > SQL Server �
 ### MySQL 시작/정지 방법
 
 ```
-#mysql 서비스 시작
+# mysql 서비스 시작
 shell> service mysqld start
 
-#mysql 서비스 정지
+# mysql 서비스 정지
 shell> service mysqld stop
 
-#mysql 서비스 재시작
+# mysql 서비스 재시작
 shell> service mysqld restart
 ```
 
@@ -231,21 +231,21 @@ MySQL의 기본 validate\_password\_policy는 아래와 같습니다.
 shell> vi /etc/my.cnf
 
 
-#my.cnf 파일에 사용하고자 하는 포트를 명시해 줍니다.
+# my.cnf 파일에 사용하고자 하는 포트를 명시해 줍니다.
 
 port =사용하고자 하는 포트명
 
 
-#vi 편집기 저장
+# vi 편집기 저장
 
 
-#mysql 서비스 재시작
+# mysql 서비스 재시작
 
 
 shell> service mysqld restart
 
 
-#변경된 포트로 아래와 같이 접속
+# 변경된 포트로 아래와 같이 접속
 
 
 shell> mysql -uroot -P[변경된 포트 번호]
@@ -305,7 +305,7 @@ shell> sudo systemctl restart postgresql
 이미지 생성 후 초기에는 아래와 같이 접속합니다.
 <br>
 ```
-#postgres로 계정 전환 후 접속
+# postgres로 계정 전환 후 접속
 shell> sudo su - postgres
 shell> psql
 ```
@@ -321,17 +321,17 @@ shell> psql
 
 shell> vi postgresql.conf
 
-#postgresql.conf 파일에 사용하고자 하는 포트를 명시해 줍니다.
+# postgresql.conf 파일에 사용하고자 하는 포트를 명시해 줍니다.
 
 port =사용하고자 하는 포트명
 
-#vi 편집기 저장
+# vi 편집기 저장
 
-#postgresql 서비스 재시작
+# postgresql 서비스 재시작
 
 shell> sudo systemctl restart postgresql
 
-#변경된 포트로 아래와 같이 접속
+# 변경된 포트로 아래와 같이 접속
 
 shell> psql -p[변경된 포트 번호]
 ```
@@ -344,25 +344,25 @@ shell> psql -p[변경된 포트 번호]
 shell> vi postgresql.conf
 
 
-#postgresql.conf 파일에 사용하고자 하는 타임 존을 명시해 줍니다.
+# postgresql.conf 파일에 사용하고자 하는 타임 존을 명시해 줍니다.
 
 log_timezone =사용하고자 하는 타임 존
 
 
-#vi 편집기 저장
+# vi 편집기 저장
 
 
-#postgresql 서비스 재시작
+# postgresql 서비스 재시작
 
 shell> sudo systemctl restart postgresql
 
 
-#postgresql 접속
+# postgresql 접속
 
 shell> psql
 
 
-#변경한 설정 확인
+# 변경한 설정 확인
 
 postgres=# SHOW log_timezone;
 ```
@@ -372,12 +372,12 @@ postgres=# SHOW log_timezone;
 기본적으로 모든 사용자에게 public 스키마의 CREATE 및 USAGE 권한을 부여하고 있으므로 데이터베이스에 접속할 수 있는 사용자는 public 스키마에서 객체를 생성할 수 있습니다. 모든 사용자가 public 스키마에서 객체를 생성하지 못하도록 권한 취소를 권장합니다.
 <br>
 ```
-#postgresql 접속
+# postgresql 접속
 
 shell> psql
 
 
-#권한 취소 명령어 실행
+# 권한 취소 명령어 실행
 
 postgres=# REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 ```
@@ -390,22 +390,22 @@ postgres=# REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 shell> vi postgresql.conf
 
 
-#postgresql.conf 파일에 허용하고자 하는 주소를 명시해 줍니다.
-#IPv4 주소를 모두 허용하는 경우 0.0.0.0
-#IPv6 주소를 모두 허용하는 경우 ::
-#모든 주소를 허용하는 경우 *
+# postgresql.conf 파일에 허용하고자 하는 주소를 명시해 줍니다.
+# IPv4 주소를 모두 허용하는 경우 0.0.0.0
+# IPv6 주소를 모두 허용하는 경우 ::
+# 모든 주소를 허용하는 경우 *
 
 listen_addresses =허용하고자 하는 주소
 
 
-#vi 편집기 저장
+# vi 편집기 저장
 
 
 shell> vi pg_hba.conf
 
 
-#IP주소 형식별로 클라이언트 인증 제어
-#오래된 클라이언트 라이브러리는 scram-sha-256 방식이 지원되지 않으므로 md5로 변경 필요
+# IP주소 형식별로 클라이언트 인증 제어
+# 오래된 클라이언트 라이브러리는 scram-sha-256 방식이 지원되지 않으므로 md5로 변경 필요
 
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 # IPv4 local connections:
@@ -416,7 +416,7 @@ host    all             all             ::1/128                 scram-sha-256
 host    허용DB           허용유저          허용주소                   scram-sha-256
 
 
-#postgresql 서비스 재시작
+# postgresql 서비스 재시작
 
 shell> pg_ctl reload -D /var/lib/postgresql/${version}/main
 
