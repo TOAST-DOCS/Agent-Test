@@ -26,8 +26,15 @@
 # Exit code: 0 = 정상 (A 가 B 섹션을 넣지 않았고 최종 1회), 1 = 결함 재현
 #            (A 가 다시 넣었거나 최종 2회), 2 = 하네스 오류
 #
+# 픽스처는 `{ko,en,ja}/fix-links.md` (--doc 로 변경) — 세 언어가 heading 마다 같은
+# `<a id>` 를 갖는, 운영의 pre-align 된 문서와 같은 모양이라 A 의 번역이 자기 diff 안에서만
+# 움직인다. `overview.md` 는 앵커 없는 `###`/`####` 소절 3개가 매 실행 재번역돼
+# (heading 텍스트 `__line__` 키는 언어 간에 절대 안 맞는다) B·A 두 번역 PR 이 같은
+# 절을 다른 문장으로 다시 써 검증 2 의 머지가 충돌한다 (2026-09-10 실측) — 그 churn 은
+# 이 e2e 의 대상이 아니다.
+#
 # Usage:
-#   bash e2e-translation-lag-order.sh [--cloud-translate-dir DIR] [--keep]
+#   bash e2e-translation-lag-order.sh [--cloud-translate-dir DIR] [--doc <stem>.md] [--keep]
 #
 # 의존성: git, gh(로그인), python3, DASHBOARD_* (webhook 토글). 번역은 local 실행.
 set -euo pipefail
@@ -37,12 +44,14 @@ REPO_URL="https://github.com/${REPO}.git"
 BASE_SOURCE_BRANCH="alpha"
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 KEEP=0
+DOC="${DOC:-fix-links.md}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --cloud-translate-dir) CLOUD_TRANSLATE_DIR="$2"; shift 2 ;;
     --keep) KEEP=1; shift ;;
-    -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
+    --doc) DOC="$2"; shift 2 ;;
+    -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
@@ -72,7 +81,7 @@ echo "workdir: $WORK"
 cleanup() { if (( ! KEEP )); then rm -rf "$WORK"; fi; }
 trap cleanup EXIT
 
-echo "[1/9] clone ${REPO} + 세션 브랜치 ${SESSION} + fixture 복원"
+echo "[1/9] clone ${REPO} + 세션 브랜치 ${SESSION} + fixture 복원 (doc=${DOC})"
 git clone --quiet "$REPO_URL" "$WORK/repo"
 cd "$WORK/repo"
 git checkout --quiet -b "$SESSION" "origin/${BASE_SOURCE_BRANCH}"
@@ -88,7 +97,7 @@ if ! git diff --quiet; then
 fi
 
 mutate() {  # $1: a|b
-  python3 - "$1" ko/overview.md <<PY
+  python3 - "$1" "ko/$DOC" <<PY
 import sys
 which, path = sys.argv[1], sys.argv[2]
 text = open(path, encoding="utf-8").read()
@@ -123,7 +132,7 @@ PY
 make_pr() {  # $1: branch  $2: a|b  $3: title  → PR URL
   git checkout --quiet -b "$1" "$SESSION"
   mutate "$2"
-  git add ko/overview.md
+  git add "ko/$DOC"
   git commit --quiet -m "$3"
   git push --quiet origin "$1"
   gh pr create --repo "$REPO" --base "$SESSION" --head "$1" \
@@ -170,7 +179,7 @@ TRANS_B_NUM="${TRANS_B_URL##*/}"
 TRANS_B_REF="$(gh api "repos/${REPO}/pulls/${TRANS_B_NUM}" -q .head.ref)"
 git fetch --quiet origin "$TRANS_B_REF"
 for lang in en ja; do
-  if ! git show "FETCH_HEAD:${lang}/overview.md" | grep -q "$TOKEN_B_ANCHOR"; then
+  if ! git show "FETCH_HEAD:${lang}/$DOC" | grep -q "$TOKEN_B_ANCHOR"; then
     echo "error: B 번역 PR 의 ${lang} 에 B 섹션이 없음 (하네스 전제 실패)" >&2; exit 2
   fi
 done
@@ -178,9 +187,9 @@ done
 echo "[5/9] A 머지 (ko 에 B 섹션 있음 · en/ja 에는 아직 없음)"
 merge_pr "$PR_A_URL"
 git fetch --quiet origin "$SESSION"
-git show "origin/${SESSION}:ko/overview.md" | grep -q "$TOKEN_B_ANCHOR" \
+git show "origin/${SESSION}:ko/$DOC" | grep -q "$TOKEN_B_ANCHOR" \
   || { echo "error: A 머지 후 ko 에 B 섹션이 없음" >&2; exit 2; }
-if git show "origin/${SESSION}:en/overview.md" | grep -q "$TOKEN_B_ANCHOR"; then
+if git show "origin/${SESSION}:en/$DOC" | grep -q "$TOKEN_B_ANCHOR"; then
   echo "error: en 에 B 섹션이 이미 있음 — 창(window) 재현 실패" >&2; exit 2
 fi
 
@@ -196,8 +205,8 @@ TRANS_A_REF="$(gh api "repos/${REPO}/pulls/${TRANS_A_NUM}" -q .head.ref)"
 git fetch --quiet origin "$TRANS_A_REF"
 fail=0
 for lang in en ja; do
-  content="$(git show "FETCH_HEAD:${lang}/overview.md" 2>/dev/null || true)"
-  if [[ -z "$content" ]]; then echo "  [$lang] overview.md 없음/미변경"; continue; fi
+  content="$(git show "FETCH_HEAD:${lang}/$DOC" 2>/dev/null || true)"
+  if [[ -z "$content" ]]; then echo "  [$lang] $DOC 없음/미변경"; continue; fi
   if grep -q "$TOKEN_B_ANCHOR" <<<"$content"; then
     echo "  [$lang] B 섹션: PRESENT ✗  ← A 의 잡이 자기 diff 밖의 섹션을 다시 번역해 넣었다"
     fail=1
@@ -226,8 +235,8 @@ git fetch --quiet origin "$SESSION"
 
 echo "[9/9] 검증 2: 세션 브랜치 en/ja 에 B 섹션 anchor 가 정확히 1번인가"
 for lang in ko en ja; do
-  n="$(git show "origin/${SESSION}:${lang}/overview.md" | grep -c "<a id=\"${TOKEN_B_ANCHOR}\"></a>" || true)"
-  h="$(git show "origin/${SESSION}:${lang}/overview.md" | grep -c "{ #${TOKEN_B_ANCHOR} }" || true)"
+  n="$(git show "origin/${SESSION}:${lang}/$DOC" | grep -c "<a id=\"${TOKEN_B_ANCHOR}\"></a>" || true)"
+  h="$(git show "origin/${SESSION}:${lang}/$DOC" | grep -c "{ #${TOKEN_B_ANCHOR} }" || true)"
   if [[ "$n" == "1" && "$h" == "1" ]]; then
     echo "  [$lang] anchor ×$n · heading ×$h ✓"
   else
