@@ -235,3 +235,8 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
+
+<a id="lag-order-b-added"></a>
+## 번역 지연 순서 테스트 섹션 { #lag-order-b-added }
+
+이 섹션은 PR B 가 추가했습니다. PR A 의 번역 잡은 이 섹션을 건드리지 않아야 하고, B 의 번역 PR 이 머지되면 en/ja 에 한 번만 있어야 합니다.
