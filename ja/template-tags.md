@@ -1,16 +1,18 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=0877fab4a34e -->
 
 {% if "gov" in build_flags -%}
   {%- set api_host      = "api-tt.gov-nhncloudservice.com" -%}
-  {%- set region_names  = "韓国(板橋)リージョン" -%}
+  {%- set region_names  = "韓国（パンギョ）リージョン" -%}
   {%- set encrypt       = false -%}
 {%- elif "ngsc" in build_flags -%}
   {%- set api_host      = "api-tt.ngsc.go.kr" -%}
-  {%- set region_names  = "韓国(大邱)リージョン" -%}
+  {%- set region_names  = "韓国（テグ）リージョン" -%}
   {%- set encrypt       = false -%}
 {%- else -%}
   {%- set api_host      = "api-tt.nhncloudservice.com" -%}
-  {%- set region_names  = "韓国(板橋)リージョン<br>韓国(坪村)リージョン<br>韓国(光州)リージョン" -%}
+  {%- set region_names  = "韓国（パンギョ）リージョン<br>韓国（ピョンチョン）リージョン<br>韓国（クァンジュ）リージョン<br>韓国（プサン）リージョン" -%}
   {%- set encrypt       = true -%}
 {%- endif -%}
 {%- set replication = "gov" not in build_flags -%}
@@ -41,12 +43,12 @@
 <a id="tt-inline-literal"></a>
 ### 文中の条件付き文字列 { #tt-inline-literal }
 
-コンテナの$[ "基本情報と暗号化情報" if encrypt else "基本情報" ]$を確認し、アクセスポリシーと静的ウェブサイトの設定を変更できます。
+コンテナの $[ "基本情報と暗号化情報" if encrypt else "基本情報" ]$ を確認し、アクセスポリシーと静的Webサイトの設定を変更できます。変更内容は即時反映されます。
 
 !!! note "参考"
-    一般コンテナをオブジェクトロックコンテナに変更することはできません。
+    通常のコンテナをオブジェクトロックコンテナに変更することはできません。
 
-    オブジェクトロックコンテナは、アーカイブコンテナ$[ " またはレプリケーション対象コンテナとして" if replication else "として" ]$指定することはできません。
+    オブジェクトロックコンテナはアーカイブコンテナ$[ " またはレプリケーション対象コンテナ" if replication else "" ]$として指定することはできません。この制限は解除することはできません。
 
 <a id="tt-macro-arg"></a>
 ### マクロ引数として渡した韓国語の文字列 { #tt-macro-arg }
@@ -55,8 +57,8 @@
 
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
-$[ tt_response_table('interface.', '作成された ') ]$
-| interface.subnetId | Body | String | インターフェイスのサブネットID |
+$[ tt_response_table('interface.', '新しく作成された ') ]$
+| interface.subnetId | Body | String | インターフェイスのサブネット ID |
 
 接頭辞なしで呼び出すと、説明がそのまま表示されます。
 
@@ -69,14 +71,14 @@ $[ tt_response_table('volume.') ]$
 
 | 項目 | 必須 | 説明 |
 |---|---|---|
-| ユーザープロンプトテンプレート | X | 行ごとの入力値を構成するテンプレート。{{ カラム名 }}パターンが該当カラムの値に置き換えられ、設定すると結合区切り文字より優先されます。 |
+| ユーザープロンプトテンプレート | X | 行ごとの入力値構成テンプレート。{{ カラム名 }} パターンが該当カラムの値に置換され、設定すると結合区切り文字より優先して適用されます。カラム名は大文字と小文字を区別します。 |
 | 結合区切り文字 | X | 複数のカラムを1つの入力にまとめるとき、その間に入れる文字列です。 |
 
 <a id="tt-wrapped"></a>
 ### 段落を囲む条件文 { #tt-wrapped }
 
 {% if "gov" not in build_flags %}
-パブリック環境では、コンソールからすぐに設定できます。この段落は開始タグが直上に付いているため、増分翻訳ではタグと1つのユニットになります。
+共有環境では、コンソールから直接設定できます。この段落は開始タグが直上に隣接しており、増分翻訳においてタグと一つのユニットになります。設定は保存後すぐに反映されます。
 {% endif %}
 
 {% if "gov" in build_flags %}政府ネットワーク環境では、担当者に発行手順を問い合わせる必要があります。{% else %}パブリック環境では、コンソールから直接発行できます。{% endif %}
