@@ -45,6 +45,24 @@
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
 #     bash scripts/e2e-template-tags.sh --rounds 5
 #
+# ── 실측 (2026-09-09/10, claude-sonnet-4-6, CLI 엔진, 번역 19회) ───────────
+# 이 e2e 가 실제로 잡은 것은 **프롬프트 결함**이었다. 태그 안 리터럴을 번역하라는
+# 규칙이 없어서, 함수 호출처럼 보이는 매크로 인자를 모델이 코드로 읽고 그대로
+# 돌려줬다:
+#     $[ tt_response_table('interface.', '새로 생성된 ') ]$
+# 규칙 14 (`translator._tag_literal_prompt_section`, 한글 태그가 있는 청크에만
+# 주입) 추가 전후:
+#
+#   | 구간        | 번역 | 재시도 | 최종 실패 | 걸린 모양                  |
+#   |-------------|-----:|-------:|----------:|----------------------------|
+#   | 규칙 14 전  |    9 |      4 |     1     | 매크로 인자 3 · {{ }} 1    |
+#   | 규칙 14 후  |   10 |      1 |     0     | {{ }} 1 (라운드1, 이후 0)  |
+#
+# 최종 실패는 en 3회 시도 모두 매크로 인자를 그대로 돌려준 경우로, 게이트가 한글
+# 커밋은 막았지만 파일이 제외돼 PARTIAL 로 끝났다 (증거: Agent-Test#913). ja 는
+# 같은 태그를 매번 정상 번역했다 — 언어 비대칭이라 한 번 돌려서는 안 보인다.
+# 그래서 이 e2e 는 --rounds 로 반복하는 것이 기본이다.
+#
 # 의존성: git, gh (로그인), python3 (+jinja2), claude CLI
 set -eo pipefail
 set -u
