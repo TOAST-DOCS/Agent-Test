@@ -11,3 +11,5 @@
 - "H1 시작 문서 샘플": h1-start-sample.md
 - "H2 시작 문서 샘플": h2-start-sample.md
 - "릴리스 노트": release-notes.md
+- "링크 테스트": link-test.md
+- "링크 테스트2": child/link-child.md
