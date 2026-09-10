@@ -90,9 +90,21 @@ bash scripts/restore-alpha-origin.sh >/dev/null
 # concurrent e2e 와 같은 정규화 — 스냅샷 ko 의 `###제목`(공백 없음) 이 splice 경계로
 # 안 잡혀 표가 이웃 유닛에 흡수되는 것을 막는다.
 sed -i -E 's/^(#{1,6})([^ #])/\1 \2/' ko/*.md en/*.md ja/*.md
+# en/ja 에 `<!-- machine_translated: true -->` 헤더를 미리 둔다 — 사건의 문서
+# (nhn-cloud-foundry en/api-guide.md) 가 그 모양이다. 없으면 B·A 두 번역 PR 이 모두
+# 맨 위에 그 줄을 새로 넣고 B 는 바로 아래 pre-align 마커의 sig 까지 갱신하므로,
+# 내용은 같아도 같은 자리를 건드린 두 hunk 로 git 이 충돌을 낸다 (2026-09-10 실측).
+# 그 충돌은 "헤더 없는 문서의 첫 번역이 창 안에서 겹친" 별건이고 사람이 푸는 것이라
+# 이 e2e 의 대상이 아니다.
+for lang in en ja; do
+  if ! head -1 "$lang/$DOC" | grep -q "machine_translated"; then
+    printf '<!-- machine_translated: true -->\n\n%s' "$(cat "$lang/$DOC")" > "$lang/$DOC"
+    echo >> "$lang/$DOC"
+  fi
+done
 if ! git diff --quiet; then
   git add ko en ja
-  git commit --quiet -m "e2e(lag-order): normalize heading syntax after restore"
+  git commit --quiet -m "e2e(lag-order): normalize heading syntax + machine_translated header after restore"
   git push --quiet origin "$SESSION"
 fi
 
