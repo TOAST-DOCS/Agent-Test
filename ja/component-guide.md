@@ -179,13 +179,13 @@ SQL Server構成管理者のSQL Server構成管理者(ローカル) > SQL Server
 ### MySQL起動/停止方法
 
 ```
-#mysqlサービス起動
+# mysqlサービス起動
 shell> service mysqld start
 
-#mysqlサービス停止
+# mysqlサービス停止
 shell> service mysqld stop
 
-#mysqlサービス再起動
+# mysqlサービス再起動
 shell> service mysqld restart
 ```
 
@@ -220,21 +220,21 @@ MySQL基本validate\_password\_policyは下記の通りです。
 shell> vi /etc/my.cnf
 
 
-#my.cnfファイルに使用するポートを明示します。
+# my.cnfファイルに使用するポートを明示します。
 
 port =使用するポート名
 
 
-#vi エディタ保存
+# vi エディタ保存
 
 
-#mysqlサービス再起動
+# mysqlサービス再起動
 
 
 shell> service mysqld restart
 
 
-#変更されたポートに下記のように接続
+# 変更されたポートに下記のように接続
 
 
 shell> mysql -uroot -P[変更されたポート番号]
@@ -275,7 +275,7 @@ MySQLディレクトリおよびファイル説明は下記の通りです。
 ### PostgreSQL開始/停止方法
 
 ```
-##Ubuntuの場合
+## Ubuntuの場合
 # postgresqlサービス開始
 shell> sudo systemctl start postgresql
 # postgresqlサービス停止
@@ -289,7 +289,7 @@ shell> sudo systemctl restart postgresql
 イメージ作成後、最初は下記のように接続します。
 <br>
 ```
-#postgresにアカウント切り替え後、接続
+# postgresにアカウント切り替え後、接続
 shell> sudo su - postgres
 shell> psql
 ```
@@ -304,18 +304,18 @@ shell> psql
 
 shell> vi postgresql.conf
 
-#postgresql.confファイルに使用するポートを明記します。
+# postgresql.confファイルに使用するポートを明記します。
 
 port =使用するポート名
 
-#viエディタ保存
+# viエディタ保存
 
-#postgresqlサービス再起動
+# postgresqlサービス再起動
 
-##Ubuntuの場合
+## Ubuntuの場合
 shell> sudo systemctl restart postgresql
 
-#変更されたポートに下記のように接続
+# 変更されたポートに下記のように接続
 
 shell> psql -p[変更されたポート番号]
 ```
@@ -328,26 +328,26 @@ shell> psql -p[変更されたポート番号]
 shell> vi postgresql.conf
 
 
-#postgresql.confファイルに使用するタイムゾーンを明記します。
+# postgresql.confファイルに使用するタイムゾーンを明記します。
 
 log_timezone =使用するタイムゾーン
 
 
-#viエディタ保存
+# viエディタ保存
 
 
-#postgresqlサービス再起動
+# postgresqlサービス再起動
 
-##Ubuntuの場合
+## Ubuntuの場合
 shell> sudo systemctl restart postgresql
 
 
-#postgresql接続
+# postgresql接続
 
 shell> psql
 
 
-#変更した設定を確認
+# 変更した設定を確認
 
 postgres=# SHOW log_timezone;
 ```
@@ -357,12 +357,12 @@ postgres=# SHOW log_timezone;
 基本的にすべてのユーザーにpublicスキーマのCREATEおよびUSAGE権限を付与しているため、データベースに接続できるユーザーはpublicスキーマからオブジェクトを作成できます。すべてのユーザーがpublicスキーマからオブジェクトを作成できないように権限を削除すことを推奨します。
 <br>
 ```
-#postgresql接続
+# postgresql接続
 
 shell> psql
 
 
-#権限削除コマンド実行
+# 権限削除コマンド実行
 
 postgres=# REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 ```
@@ -375,22 +375,22 @@ postgres=# REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 shell> vi postgresql.conf
 
 
-#postgresql.confファイルに許可するアドレスを明記します。
-#IPv4アドレスを全て許可する場合0.0.0.0
-#IPv6アドレスを全て許可する場合::
-#すべてのアドレスを許可する場合 *
+# postgresql.confファイルに許可するアドレスを明記します。
+# IPv4アドレスを全て許可する場合0.0.0.0
+# IPv6アドレスを全て許可する場合::
+# すべてのアドレスを許可する場合 *
 
 listen_addresses =許可するアドレス
 
 
-#viエディタ保存
+# viエディタ保存
 
 
 shell> vi pg_hba.conf
 
 
-#IPアドレス形式ごとにクライアント認証制御
-#古いクライアントライブラリはscram-sha-256方式がサポートされていないため、md5に変更必要
+# IPアドレス形式ごとにクライアント認証制御
+# 古いクライアントライブラリはscram-sha-256方式がサポートされていないため、md5に変更必要
 
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 # IPv4 local connections:
@@ -401,9 +401,9 @@ host    all             all             ::1/128                 scram-sha-256
 host    許可DB           許可ユーザー         許可アドレス                  scram-sha-256
 
 
-#postgresqlサービス再起動
+# postgresqlサービス再起動
 
-##Ubuntuの場合
+## Ubuntuの場合
 shell> pg_ctl reload -D /var/lib/postgresql/${version}/main
 
 ```
