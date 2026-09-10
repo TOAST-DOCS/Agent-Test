@@ -148,3 +148,8 @@ Links inside a code fence are not links, so they must survive untouched as well.
 [broken link inside a fence](./no-such-doc-e2e.md#nowhere)
 [self-path inside a fence](./fix-links/#fix-links-controls)
 ```
+
+<a id="lag-order-b-added"></a>
+## Translation lag order test section { #lag-order-b-added }
+
+This section was added by PR B. PR A's translation job must not touch this section, and when PR B's translation PR is merged, it should exist only once in en/ja.
