@@ -1,7 +1,5 @@
-<!-- pre-align:aligned sig=21f8e4b6814c -->
-
 <a id="compute-instance-release-notes"></a>
-## Compute > Instance > リリースノート { #compute-instance-release-notes }
+## Compute > Instance > リリースノート
 
 インスタンスサービスの各リリースで変更された内容を新しい順にまとめたドキュメントです。リリース番号は `メジャー.マイナー.パッチ` 形式に従い、リリース日と主な変更内容を併記します。
 
