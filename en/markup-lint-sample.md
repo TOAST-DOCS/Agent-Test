@@ -9,20 +9,20 @@
 `\]` 가 라벨을 닫지 못해 링크가 아예 만들어지지 않는다. 독자는 대괄호와 URL 을 본문
 그대로 본다.
 
-* See the [console guide\](./console-guide.md) for the console walkthrough.
-* See the [Kubernetes documentation\](https://kubernetes.io/docs/home/) for how to write **Manifest**.
+* See the [console guide](./console-guide.md) for the console walkthrough.
+* See the [Kubernetes documentation](https://kubernetes.io/docs/home/) for how to write **Manifest**.
 
 ## 2. M2 — `**` 강조 안쪽의 공백 (자동 수정)
 
 여는 `**` 뒤 또는 닫는 `**` 앞에 공백이 있으면 강조로 짝지어지지 않아 별표가 그대로
 보인다.
 
-* You can modify only templates in ** Approval/Return ** state.
-* Click ** + Add** to enter HTTP headers.
-* Default of ** Monthly Delivery Count ** is 1,000 per month.
-* You can set the **Start Condition** and **End Condition** of ** Artifact**.
+* You can modify only templates in **Approval/Return** state.
+* Click **+ Add** to enter HTTP headers.
+* Default of **Monthly Delivery Count** is 1,000 per month.
+* You can set the **Start Condition** and **End Condition** of **Artifact**.
 
-**User **
+**User**
 
 ## 3. 고치면 안 되는 것 — 정상 렌더 (변경 없음)
 
