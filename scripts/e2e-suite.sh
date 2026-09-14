@@ -44,6 +44,13 @@
 #                 브랜치에서 만든다(alpha 에 두면 그 가이드 빌드가 멈춘다).
 #                 기존 검수 리뷰가 그대로 남고 섞이지 않는지도 함께 본다.
 #                 e2e-korean-review-mkdocs.sh 를 실행. 기대: exit 0. ~3분.
+#   korean-review-markup — 한글 검수 **후속 조치**(markup lint). 검수 다음에
+#                 도는 별도 리뷰가 PR 이 건드린 문단을 사이트와 같은 python-markdown
+#                 으로 렌더해 `**`·`](` 노출 · 빈 admonition 상자를 잡는지, 대조군이
+#                 침묵하는지, 그리고 **base 에 심어 둔 기존 결함**이 PR 이 다른
+#                 문단만 고쳤을 때 침묵하는지(diff 위주 스코프) 검증. 결정적 판정이라
+#                 기대값이 정확히 4건이고 어느 파일 어느 줄인지까지 박혀 있다.
+#                 e2e-korean-review-markup.sh 를 실행. 기대: exit 0. ~3분.
 #   korean-review — dashboard /api/ko-review 잡의 산출물(요약 리뷰 본문 규격,
 #                 인라인 코멘트, ```suggestion``` 블록) 을 검증. e2e-align-and-
 #                 translate.sh 가 아니라 e2e-korean-review.sh 를 실행.
@@ -249,7 +256,7 @@
 # 별칭:
 #   all         — round2 / row-drop-repro-noreconcile / preserve 를 제외한 plan 전체
 #                 = webhook korean-review korean-review-no-targets korean-review-mkdocs
-#                   anchor-audit round1 table-suite
+#                   korean-review-markup anchor-audit round1 table-suite
 #                   row-drop-repro llm-patch markup-churn retranslate concurrent lag-order
 #                   fill-stubs split-docs fix-links fix-tables table-malformed
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
@@ -346,7 +353,7 @@ while [[ $# -gt 0 ]]; do
       FT_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|korean-review-no-targets|korean-review-mkdocs|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
+    webhook|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -358,7 +365,7 @@ while [[ $# -gt 0 ]]; do
       # preserve 도 all 에서 제외 (2026-09-04) — 판정 (4)(5) 가 CLI preserve
       # 섹션 슬라이스(cloud-translate #811/#817, 닫힘) 를 전제로 해 main 에서
       # 항상 실패한다. 스크립트는 남겨 두고 명시 지정으로만 실행.
-      PLANS+=(webhook korean-review korean-review-no-targets korean-review-mkdocs anchor-audit round1 table-suite row-drop-repro
+      PLANS+=(webhook korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
               split-docs fix-links fix-tables table-malformed jinja-mask); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
@@ -551,6 +558,14 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^KO_REVIEW_MKDOCS: (OK|FAIL)' "$log" | tail -n1 || true)"
     ko_pr="$(grep -oE '  ko PR        : https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${ko_pr:-<no-pr>}")
+  elif [[ "$plan" == "korean-review-markup" ]]; then
+    # 한글 검수 **후속 조치** — markup lint. PR 이 건드린 문단의 렌더 결과 판정.
+    # LLM 을 안 쓰므로 기대값이 정확히 하나(4건, 어느 파일 어느 줄) — exit 3 여지 없음.
+    bash "$REPO_ROOT/scripts/e2e-korean-review-markup.sh" "${KR_ARGS[@]}" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^KO_REVIEW_MARKUP: (OK|FAIL)' "$log" | tail -n1 || true)"
+    ko_pr="$(grep -oE '  ko PR        : https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${ko_pr:-<no-pr>}")
   elif [[ "$plan" == "korean-review-no-targets" ]]; then
     # 삭제만 있는 PR = 검수 대상 0건. korean-review plan 과 기대값이 정반대다
     # (리뷰가 없는 것이 정상이고, 코멘트·라벨은 남아야 한다) — 그래서 별도 plan.
@@ -685,6 +700,7 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" == "korean-review" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "korean-review-no-targets" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "korean-review-mkdocs" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "korean-review-markup" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "anchor-audit" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "round1" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "concurrent" && $ec -ne 0 ]]; then overall=1; fi
@@ -710,6 +726,7 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
         && "$plan" != "korean-review-no-targets" \
         && "$plan" != "korean-review-mkdocs" \
+        && "$plan" != "korean-review-markup" \
         && "$plan" != "anchor-audit" \
         && "$plan" != "concurrent" && "$plan" != "lag-order" && "$plan" != "fill-stubs" \
         && "$plan" != "fix-tables" \
