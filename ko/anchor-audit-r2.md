@@ -2,7 +2,7 @@
 # Anchor Audit R2
 
 <a id="overview"></a>
-## 개요 { #overview }
+## 개요 { #intro }
 
 이 문서는 anchor id 후속 검증 e2e 픽스처입니다.
 
