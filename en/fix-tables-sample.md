@@ -23,7 +23,13 @@ The table in this section is translated with the same identifier rows as ko. It 
 <a id="fix-tables-missing"></a>
 ## Section Whose Table Went Missing { #fix-tables-missing }
 
-The same section in en/ja has no table below. Because the table count inside the section differs from ko, a fix run must rebuild this section body from ko.
+The same section in en/ja does not have the table below. Since the number of tables in the section differs from ko, the maintenance run must regenerate the body of this section based on ko.
+
+| Name | Type | Format | Description |
+|---|---|---|---|
+| clusterId | Body | UUID | Cluster UUID |
+| clusterName | Body | String | Cluster name |
+| nodeCount | Body | Integer | Node count |
 
 <a id="fix-tables-shifted"></a>
 ## Section Whose First Column Was Overwritten { #fix-tables-shifted }
@@ -32,9 +38,9 @@ The same section in en/ja has a table with ko's row and column count, but the id
 
 | Name | Type | Format | Description |
 |---|---|---|---|
-| UUID | Body | UUID | Instance type UUID |
-| UUID | Body | UUID | Image UUID |
-| String | Body | String | Key pair name |
+| flavorId | Body | UUID | Instance flavor UUID |
+| imageId | Body | UUID | Image UUID |
+| keyName | Body | String | Key pair name |
 
 <a id="fix-tables-rows"></a>
 ## Section Missing a Row { #fix-tables-rows }
@@ -44,6 +50,7 @@ The same section in en/ja lost one identifier row from its table. The remaining 
 | Name | Type | Format | Description |
 |---|---|---|---|
 | volumeId | Body | UUID | Block storage UUID |
+| volumeSize | Body | Integer | Size (GB) |
 | volumeType | Body | String | Storage type |
 
 <a id="fix-tables-prose-keys"></a>
@@ -65,6 +72,7 @@ The table below is missing one identifier row in en/ja. But this heading has no 
 | Name | Type | Format | Description |
 |---|---|---|---|
 | metricName | Body | String | Metric name |
+| thresholdValue | Body | Integer | Threshold |
 | duration | Body | Integer | Duration (minutes) |
 
 <a id="fix-tables-tail"></a>
