@@ -23,7 +23,13 @@ en/ja のコピーには、ko と表が食い違うセクションが意図的�
 <a id="fix-tables-missing"></a>
 ## 表が消えたセクション { #fix-tables-missing }
 
-en/ja の同じセクションには下の表がありません。セクション内の表の数が ko と異なるため、整備の実行はこのセクションの本文を ko 基準で作り直す必要があります。
+en/ja の同じセクションには以下の表がありません。セクション内の表の数が ko と異なるため、メンテナンス実行がこのセクションの本文を ko 基準で再構築する必要があります。
+
+| 名前 | 種類 | 形式 | 説明 |
+|---|---|---|---|
+| clusterId | Body | UUID | クラスタ UUID |
+| clusterName | Body | String | クラスタ名 |
+| nodeCount | Body | Integer | ノード数 |
 
 <a id="fix-tables-shifted"></a>
 ## 最初の列が上書きされたセクション { #fix-tables-shifted }
@@ -32,9 +38,9 @@ en/ja の同じセクションは、表の行数と列数が ko と同じです�
 
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
-| UUID | Body | UUID | インスタンスタイプ UUID |
-| UUID | Body | UUID | イメージ UUID |
-| String | Body | String | キーペア名 |
+| flavorId | Body | UUID | インスタンスタイプ UUID |
+| imageId | Body | UUID | イメージ UUID |
+| keyName | Body | String | キーペア名 |
 
 <a id="fix-tables-rows"></a>
 ## 行が抜けたセクション { #fix-tables-rows }
@@ -44,6 +50,7 @@ en/ja の同じセクションは、表から識別子行が 1 つ抜けてい�
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
 | volumeId | Body | UUID | ブロックストレージ UUID |
+| volumeSize | Body | Integer | 容量(GB) |
 | volumeType | Body | String | ストレージの種類 |
 
 <a id="fix-tables-prose-keys"></a>
@@ -65,6 +72,7 @@ en/ja の同じセクションは、表から識別子行が 1 つ抜けてい�
 | 名前 | 種類 | 形式 | 説明 |
 |---|---|---|---|
 | metricName | Body | String | 指標名 |
+| thresholdValue | Body | Integer | しきい値 |
 | duration | Body | Integer | 継続時間(分) |
 
 <a id="fix-tables-tail"></a>
