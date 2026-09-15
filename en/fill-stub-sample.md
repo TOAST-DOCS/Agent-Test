@@ -18,27 +18,46 @@ If even one character changes, the fill touched something outside a stub, which 
 <a id="fill-stub-body"></a>
 ## Section With an Empty Body { #fill-stub-body }
 
-<!-- TODO: translate body -->
+In the same section in en/ja, the heading is already translated and only the body is empty as a stub.
+When filling, keep the heading line as is and translate only this paragraph.
+
+When you create an instance, it may take a few minutes for the console status to change to **Running**.
+If the status does not change for a long time, first verify that the combination of the image and instance flavor is correct.
 
 <a id="fill-stub-table"></a>
 ## Section With a Table { #fill-stub-table }
 
-<!-- TODO: translate body -->
+This is a body stub containing a table. When filled, the table must have the same number of columns and rows as the Korean version.
+
+| Item | Description | Default Value |
+|---|---|---|
+| Instance Type | CPU/memory specifications of instance to create | m2.c1m2 |
+| Block Storage | Root volume size (GB) | 20 |
+| Boot Script | Script to run when instance first boots | None |
 
 <a id="fill-stub-code"></a>
 ## Section With a Code Block { #fill-stub-code }
 
-<!-- TODO: translate body -->
+Code blocks are not translation targets. The block below must remain unchanged even after it is filled.
+
+```bash
+# fill-stub-test: this line must be copied verbatim
+curl -X GET "https://api.example.com/v2.0/servers" \
+  -H "X-Auth-Token: ${TOKEN}"
+```
+
+Only this sentence outside the block is a translation target, and command and comment lines are not modified.
 
 <a id="fill-stub-heading"></a>
-## 제목까지 비어 있는 섹션 { #fill-stub-heading }
+## Section where even the heading is untranslated { #fill-stub-heading }
 
-<!-- TODO: translate -->
+In en/ja, the corresponding section is a heading stub where the heading is still in Korean.
+When filling, translate both the heading and the body together, but the heading level and `{ #id }` must follow the Korean version as the authoritative source.
 
 <a id="fill-stub-heading-child"></a>
-### 하위 제목도 비어 있는 경우 { #fill-stub-heading-child }
+### When child headings are also empty { #fill-stub-heading-child }
 
-<!-- TODO: translate -->
+This is a case where heading stubs appear consecutively. Each should be filled independently from the parent section, and the `###` level should not be promoted to `##` or demoted.
 
 ## 앵커가 없는 섹션
 
