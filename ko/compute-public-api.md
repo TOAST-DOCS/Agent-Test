@@ -19,7 +19,7 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 {#
   방식 1 예시 — region 을 인자로 받는 macro 로 URL 을 조립합니다.
   이 섹션에서 필요한 변수/매크로를 자체적으로 정의합니다.
-#}
+# }
 
 {%- set kr4_host_map = {
       "ngoic": "kr4-api-instance-infrastructure.ngoic.com",
@@ -98,7 +98,7 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 {#
   방식 2 예시 — 이 섹션에서 hosts dict 를 자체적으로 정의합니다.
   macro 는 필요 없습니다.
-#}
+# }
 
 {%- set kr4_host_map = {
       "ngoic": "kr4-api-instance-infrastructure.ngoic.com",
