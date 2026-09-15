@@ -296,16 +296,26 @@ check("차단 항목은 없고, **4건**이 확인 대상입니다" in body,
 
 item_re = re.compile(
     r"^- `(?P<file>[^`]+)` L(?P<line>\d+) `\[(?P<label>[^\]]+)\]`.*?"
-    r"\((?P<tag>빌드 실패|확인 필요)\)\s*$", re.M)
+    r"\((?P<tag>빌드 실패|확인 필요|확정)\)\s*$", re.M)
 items = {(m.group("file"), m.group("label"), int(m.group("line")))
          for m in item_re.finditer(body)}
-tags = {m.group("tag") for m in item_re.finditer(body)}
+tag_of = {(m.group("file"), int(m.group("line"))): m.group("tag")
+          for m in item_re.finditer(body)}
 
 for want in sorted(EXPECTED):
     check(want in items, f"검출: {want[0]} L{want[2]} [{want[1]}]")
 extra = items - EXPECTED
 check(not extra, "기대 밖 검출 없음", ", ".join(map(str, sorted(extra))) or "없음")
-check(tags == {"확인 필요"}, "모든 검출이 '확인 필요' 로 라벨링", ", ".join(sorted(tags)))
+# 꼬리표 — M1·M2 는 증명된 치환이 있어 '확정', M3·M4 는 '확인 필요'. 빌드 실패는 없다.
+EXPECTED_TAGS = {
+    ("ko/markup-followup-leak.md", 4): "확정",        # M2 안쪽 공백
+    ("ko/markup-followup-leak.md", 6): "확정",        # M1 escaped 대괄호
+    ("ko/markup-followup-leak.md", 8): "확인 필요",   # M3 수정 없음
+    ("ko/markup-followup-adm.md", 4): "확인 필요",    # M4 여러 줄 들여쓰기
+}
+for key, want in sorted(EXPECTED_TAGS.items()):
+    check(tag_of.get(key) == want, f"꼬리표: {key[0]} L{key[1]} = {want}", tag_of.get(key, "없음"))
+check("빌드 실패" not in set(tag_of.values()), "'빌드 실패' 꼬리표 없음 — 마크업은 빌드를 멈추지 않는다")
 
 # 메시지 — 독자가 보는 렌더 결과를 인용하고, 증명된 수정만 제안한다.
 lines = {int(m.group("line")): m.group(0) for m in item_re.finditer(body)
@@ -337,6 +347,22 @@ check(all(p not in SILENT for p, _ in anchored), "침묵 문서에 인라인 없
       ", ".join(sorted({p for p, _ in anchored})))
 check(all("빌드가 실패" not in (c.get("body") or "") for c in fu_inline),
       "인라인 코멘트가 빌드 실패를 주장하지 않음")
+
+# 클릭형 suggestion — 증명된 한 줄 치환(M1·M2)만, 줄 전체를 그대로.
+print()
+print("클릭형 suggestion")
+body_at = {(c.get("path"), c.get("line") or c.get("original_line")): (c.get("body") or "")
+           for c in fu_inline}
+EXPECTED_SUGGESTION = {
+    ("ko/markup-followup-leak.md", 4): "강조 안쪽에 공백이 있는 **볼드** 입니다.",
+    ("ko/markup-followup-leak.md", 6): "링크 라벨을 [잘못 닫은](https://example.com) 링크입니다.",
+}
+for key, fixed in sorted(EXPECTED_SUGGESTION.items()):
+    check(f"```suggestion\n{fixed}\n```" in body_at.get(key, ""),
+          f"클릭형 suggestion: {key[0]} L{key[1]} → 증명된 치환 줄")
+for key in (("ko/markup-followup-leak.md", 8), ("ko/markup-followup-adm.md", 4)):
+    check("```suggestion" not in body_at.get(key, ""),
+          f"suggestion 없음: {key[0]} L{key[1]} (수정본을 지어내지 않음)")
 
 print()
 print("기존 검수 무간섭")
