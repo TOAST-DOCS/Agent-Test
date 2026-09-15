@@ -260,6 +260,7 @@ from urllib.parse import parse_qs, urlparse
 
 d = os.environ["TMPDIR_PATH"]
 MARKER = "<!-- korean-review:followup -->"
+# 예전에 PR 본문 맨 위에 박히던 헤더 마커 — 지금은 본문에 없어야 한다.
 PREVIEW_MARKER = "<!-- korean-review:preview -->"
 
 reviews = json.load(open(os.path.join(d, "reviews.json")))
@@ -376,16 +377,18 @@ check(all("| 마크업 누출 |" not in (r.get("body") or "") for r in ko_review
       "검수 9차원 표에 markup lint 행이 끼지 않음")
 check("🔍 한글 검수 결과" not in body, "후속 조치 리뷰가 검수 요약을 되풀이하지 않음")
 
-# PR 본문 — 검수가 맨 위에 뷰어 미리보기 링크를 한 번 넣는다 (app/preview_link.py).
-# 검수 결과가 아니라 내비게이션이라 이 e2e 에 얹어 함께 본다.
+# 미리보기 링크 — 검수 **결과 코멘트** 머리에 한 줄 (app/preview_link.py).
+# 검수 결과가 아니라 내비게이션이라 이 e2e 에 얹어 함께 본다. PR 본문은 개발팀
+# 자리라 무접촉이어야 한다(예전엔 본문 맨 위 헤더였다) — 둘을 함께 본다.
 print()
-print("PR 본문 미리보기 링크")
-pr = json.load(open(os.path.join(d, "pr.json")))
-pr_body = pr.get("body") or ""
-check(pr_body.count(PREVIEW_MARKER) == 1, "미리보기 마커가 정확히 1개",
-      f"{pr_body.count(PREVIEW_MARKER)}개")
-check(pr_body.startswith(PREVIEW_MARKER), "헤더가 본문 맨 위에")
-m = re.search(r"\*\*\[📖 Preview in viewer\]\((?P<url>[^)]+)\)\*\*", pr_body)
+print("미리보기 링크 (검수 결과 코멘트)")
+ko_body = (ko_reviews[0].get("body") or "") if ko_reviews else ""
+check(ko_body.count("📖 Preview in viewer") == 1, "검수 결과에 미리보기 링크가 정확히 1개",
+      f"{ko_body.count('📖 Preview in viewer')}개")
+head_lines = [ln for ln in ko_body.splitlines() if ln.strip()]
+check(len(head_lines) > 1 and head_lines[1].startswith("**[📖 Preview in viewer]"),
+      "헤더(## 🔍 …) 바로 아래 줄", head_lines[1] if len(head_lines) > 1 else "(없음)")
+m = re.search(r"\*\*\[📖 Preview in viewer\]\((?P<url>[^)]+)\)\*\*", ko_body)
 check(bool(m), "📖 Preview in viewer 링크가 있음")
 q = parse_qs(urlparse(m.group("url")).query) if m else {}
 check(urlparse(m.group("url")).path.endswith("/view") if m else False, "링크가 뷰어 /view 로 감")
@@ -394,6 +397,12 @@ check(q.get("ko_ref") == [os.environ["HEAD_BRANCH"]], "ko_ref 가 head 브랜치
 check(q.get("ko_pr") == [os.environ["KO_PR_NUMBER"]], "ko_pr 가 이 PR 번호")
 check(q.get("lang") == ["ko"] and q.get("path") == ["markup-followup-adm.md"],
       "lang=ko · path 가 경로순 첫 ko 문서", f"{q.get('lang')} {q.get('path')}")
+
+# PR 본문 — 도구가 한 글자도 안 건드린다.
+pr = json.load(open(os.path.join(d, "pr.json")))
+pr_body = pr.get("body") or ""
+check(PREVIEW_MARKER not in pr_body and "📖 Preview in viewer" not in pr_body,
+      "PR 본문에는 미리보기 헤더가 없음 (본문은 개발팀 자리)")
 check("한글 검수 **후속 조치** e2e 픽스처" in pr_body or "e2e 픽스처" in pr_body,
       "개발팀이 쓴 본문이 그대로 남아 있음")
 
