@@ -54,7 +54,7 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 | compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ api_host("kr1") ]$<br>https://$[ api_host("kr2") ]$<br>https://$[ api_host("kr3") ]$<br>https://$[ api_host("jp1") ]$ |
 {% endif %}
 
-방식 1 소스 ([GitHub code view](https://github.com/TOAST-DOCS/Agent-Test/blob/mkdocs-test/ko/public-api.md?plain=1)):
+방식 1 소스 ([GitHub code view](./public-api/)):
 
 {% raw %}
 ```jinja
@@ -132,7 +132,7 @@ Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니�
 | compute | 한국(판교) 리전<br>한국(평촌) 리전<br>한국(광주) 리전<br>일본 리전 | https://$[ hosts.kr1 ]$<br>https://$[ hosts.kr2 ]$<br>https://$[ hosts.kr3 ]$<br>https://$[ hosts.jp1 ]$ |
 {% endif %}
 
-방식 2 소스 ([GitHub code view](https://github.com/TOAST-DOCS/Agent-Test/blob/mkdocs-test/ko/public-api.md?plain=1)):
+방식 2 소스 ([GitHub code view](./public-api/)):
 
 {% raw %}
 ```jinja
