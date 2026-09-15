@@ -21,18 +21,29 @@
 #
 # ── 픽스처 ────────────────────────────────────────────────────────────────
 # `{ko,en,ja}/fix-tables-sample.md` (alpha 에 상주, `archive/fix-tables/` 에 원본).
-# 언어당 다시 만들어야 할 section 3개 + 부정 대조군 3개:
+# 언어당 고쳐야 할 section 4개 + 부정 대조군 2개. **수리 단위가 둘이고, 어느
+# 쪽이 되는지는 "어느 표가 어느 ko 표의 번역인지 확정할 수 있는가" 로 갈린다** —
+# 확정되면 그 표만(표 수리), 확정할 수 없으면 section 본문 전체(재구성):
 #
-#   count  #fix-tables-missing      ko 표 1 ↔ en/ja 표 0 (표가 사라짐)
-#   keys   #fix-tables-shifted      행·열 수 같음, 첫 열의 식별자가 형식명으로 덮임
-#   keys   #fix-tables-rows         식별자 행 하나 누락
+#   재구성 #fix-tables-missing      ko 표 1 ↔ en/ja 표 0 — 짝지을 표가 없다
+#   표수리 #fix-tables-shifted      행·열 수 같음, 첫 열의 식별자가 형식명으로 덮임
+#   표수리 #fix-tables-rows         식별자 행 하나 누락 → 그 행만 삽입
+#   표수리 #fix-tables-prose-keys   section 자신의 표는 식별자가 없고 개수도 같아
+#            손대면 안 된다. 그 아래 `### 앵커가 없는 하위 섹션` 의 표에 식별자
+#            행 하나가 빠져 있고, 그 표는 **식별자 키로 짝이 확정되므로** 도구가
+#            그 행만 삽입한다 — 위 section 을 다시 만들지 않고 PR 본문에
+#            '행 삽입' 으로 공개해야 한다.
 #   (대조군) #fix-tables-untouched   정상 표 — 바이트 동일해야 한다
-#   (대조군) #fix-tables-prose-keys  식별자 없는 표 + 개수 같음 — 손대면 안 된다.
-#            그 아래 `### 앵커가 없는 하위 섹션` 에 식별자 행이 빠진 표가 있다:
-#            anchor map 은 그 표를 위 section 소유로 보지만 재구성 단위는 그
-#            heading 에서 끊기므로, 도구는 위 section 을 **다시 만들지 않고**
-#            PR 본문에 '건너뜀' 으로 보고해야 한다.
 #   (대조군) #fix-tables-tail        마지막 section — 바이트 동일
+#
+# 2026-09-15 까지 이 픽스처는 prose-keys 를 "건너뛰고 보고해야 하는 대조군" 으로
+# 기대했다. 그때는 수리 단위가 재구성 하나뿐이라, 재구성 단위가 앵커 없는 하위
+# heading 에서 끊기면 도구가 손을 뗄 수밖에 없었기 때문이다. cloud-translate
+# #851(빠진 행만 넣는 행 단위 수리)/#870(캡션·키 짝짓기) 이 들어오면서 그 표는
+# **고칠 수 있는 표**가 됐고, 기대치를 그에 맞춰 옮겼다. 그래서 skip 경로
+# (`skipped_child` · PR 본문의 '확정할 수 없음') 는 이 픽스처로 더 이상 밟히지
+# 않는다 — 그 경로를 검증하려면 식별자 열이 아예 없는 표를 가진 하위 heading
+# 픽스처가 따로 필요하다.
 #
 # 재구성이 성공해도 alpha 의 픽스처는 그대로다 — 세션 브랜치에서만 돌리고 브랜치를
 # 폐기한다. (`scripts/restore-fix-tables-sample.sh` 는 alpha 픽스처가 손상됐을 때.)
@@ -40,24 +51,29 @@
 # ── 흐름 ──────────────────────────────────────────────────────────────────
 #   1) alpha 에서 세션 브랜치 생성
 #   2) 픽스처 인벤토리 — 무엇이 깨졌는지 파일에서 **독립 구현으로** 읽는다
-#   3) dry-run 탐지 (모델 호출 0 · PR 생성 없음)        [--translate local 전용]
+#   3) dry-run 리허설 — 수리는 실제로 돌고 PR 은 sandbox 리포로 [local 전용]
 #   4) 실제 정비 → Fix-tables PR
 #   5) 판정 (아래 규칙, 전부 바이트/구조 비교)
 #   6) 결과 (FIX_TABLES: OK|FAIL)
 #   7) cleanup
 #
 # ── 판정 규칙 ─────────────────────────────────────────────────────────────
-#   (1) dry-run 이 깨진 section 3개를 언어마다 탐지하고, 앵커 없는 하위 heading 의
-#       표는 skip 으로 보고하며, 브랜치/PR 을 만들지 않음   [local 전용, api=SKIP]
+#   (1) dry-run 이 깨진 section 4개를 언어마다 **수리 단위(표/section)까지 맞게**
+#       탐지하고, 대상 리포에는 한 바이트도 쓰지 않으며 PR 을 sandbox 리포
+#       (`TRANSLATE_FIXTABLES_DRYRUN_REPO`, 기본 `TOAST-DOCS/translate-test`) 에
+#       연다. dry-run 은 2026-08 (#838) 부터 탐지-only 가 아니라 **리허설**이다 —
+#       수리가 실제로 돌아야 "수리가 맞는가" 에 답할 수 있기 때문  [local 전용]
 #   (2) 실제 실행이 Fix-tables PR 을 생성 (`Fix-tables PR:` / head=fix-tables/…)
-#   (3) 다시 만든 section — 표 개수 == ko · 표마다 (열 수, 행 수) == ko ·
+#   (3) 고친 section — 표 개수 == ko · 표마다 (열 수, 행 수) == ko ·
 #       ko 식별자 첫 셀이 전부 있음 · 한글 잔류 0 (en) · 본문 비어있지 않음
 #   (3b) 블록 구조(문단·표(행 수)·펜스·리스트(항목 수))가 ko 와 같음
-#   (4) 다시 만든 section 의 `<a id>` 줄과 heading 줄이 base 와 **바이트 동일**
-#   (5) 다시 만든 section **밖**은 base 와 바이트 동일 (대조군 셋 + 인트로, en/ja 각각)
-#   (6) PR 본문이 다시 만든 id 를 사유와 함께 나열 · 앵커 없는 하위 heading 의
-#       section 을 '건너뜀' 으로 보고 · section 마다 before/after Docs Preview 링크
-#       (섹션 앵커 + 커밋 SHA)
+#   (4) 고친 section 의 `<a id>` 줄과 heading 줄이 base 와 **바이트 동일**
+#   (5a) 고친 section **밖**은 base 와 바이트 동일 (대조군 + 인트로, en/ja 각각)
+#   (5b) **표 수리 section 은 바뀐 곳이 표 안에 머문다** — 표 밖 바이트 동일 ·
+#        표 개수 유지 · 행 삭제 0 · 식별자 없는 표는 바이트 동일.
+#        수리 단위가 둘이 된 뒤로 "section 밖" 만으로는 범위를 못 재는다
+#   (6) PR 본문이 고친 id 를 사유와 함께 나열 · 하위 heading 표의 '행 삽입' 을
+#       공개 · section 마다 ko↔변경 전/후 Docs Preview 링크 (앵커 + 커밋 SHA)
 #
 # Usage:
 #   source ./load_env.sh
@@ -120,7 +136,7 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --model 은 haiku|sonnet|opus|default (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
-    -h|--help) sed -n '1,75p' "$0"; exit 0 ;;
+    -h|--help) sed -n '1,90p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -139,14 +155,31 @@ cd "$REPO_ROOT"
 tmpdir="$(mktemp -d)"; LOG="$tmpdir/fix.log"; DRYLOG="$tmpdir/dryrun.log"
 
 fix_pr_url=""
+dry_pr_url=""            # dry-run 리허설 PR — sandbox 리포에 열린다
+dry_target_branches=0    # dry-run 직후 대상 리포의 fix-tables/* 브랜치 수 (기대 0)
+
+# dry-run 리허설이 sandbox 리포에 남긴 PR·브랜치를 지운다. 리허설은 base 브랜치
+# (수리 전 상태) 와 head 브랜치 두 개를 만들므로 PR 닫기만으로는 base 가 남는다.
+cleanup_dry_run() {
+  [[ -n "$dry_pr_url" ]] || return 0
+  local repo="${dry_pr_url#https://github.com/}"; repo="${repo%%/pull/*}"
+  local base
+  base="$(gh pr view "$dry_pr_url" --repo "$repo" --json baseRefName --jq .baseRefName 2>/dev/null || true)"
+  gh pr close "$dry_pr_url" --repo "$repo" --delete-branch >/dev/null 2>&1 || true
+  [[ "$base" == fix-tables-dryrun/* ]] && \
+    gh api -X DELETE "repos/$repo/git/refs/heads/$base" >/dev/null 2>&1 || true
+}
+
 cleanup() {
   local rc=$?
   if (( KEEP )); then
     echo; echo "--keep: 보존 — 세션 $SESSION_BRANCH / PR ${fix_pr_url:-<none>}"
+    echo "  dry-run 리허설 PR (sandbox): ${dry_pr_url:-<none>}"
     echo "  정리: gh pr close <n> --repo $REPO --delete-branch; git push origin :$SESSION_BRANCH"
     return $rc
   fi
-  echo; echo "[cleanup] Fix-tables PR · 브랜치 정리"
+  echo; echo "[cleanup] Fix-tables PR · 브랜치 · dry-run sandbox 정리"
+  cleanup_dry_run
   [[ -n "$fix_pr_url" ]] && gh pr close "$fix_pr_url" --repo "$REPO" --delete-branch >/dev/null 2>&1 || true
   local b
   while read -r b; do
@@ -244,14 +277,15 @@ ko = sections(read(f"ko/{doc}"))
 expect = {}
 for lang in ("en", "ja"):
     tg = sections(read(f"{lang}/{doc}"))
-    rebuild, skip = [], []
+    rebuild, repair, child = [], [], []
     for aid, kraw in ko.items():
         if aid == "__pre__" or aid not in tg:
             continue
         kt, tt = tables(kraw), tables(tg[aid])
         if not kt:
             continue
-        broken = len(kt) != len(tt)
+        count_differs = len(kt) != len(tt)
+        broken = count_differs
         if not broken:
             for (kh, krows), (th, trows) in zip(kt, tt):
                 keys = [r[0] for r in krows if r and is_key(r[0])]
@@ -260,39 +294,55 @@ for lang in ("en", "ja"):
                     broken = True
         if not broken:
             continue
-        (skip if has_anchorless_heading(kraw) else rebuild).append(aid)
-    expect[lang] = (rebuild, skip)
+        # 수리 단위는 "짝을 확정할 수 있는가" 로 갈린다 — 표 개수가 같으면 그 표만
+        # 고치고(표 수리), 다르면 짝지을 표가 없어 section 본문을 다시 만든다(재구성).
+        (rebuild if count_differs else repair).append(aid)
+        if not count_differs and has_anchorless_heading(kraw):
+            child.append(aid)
+    expect[lang] = (rebuild, repair, child)
 
 if expect["en"] != expect["ja"]:
     raise SystemExit(f"error: en/ja 의 깨진 section 이 다르다: {expect}")
-rebuild, skip = expect["en"]
-if not rebuild or not skip:
-    raise SystemExit(f"error: 픽스처에서 깨진 section/대조군을 찾지 못함: {expect}")
+rebuild, repair, child = expect["en"]
+if not rebuild or not repair or not child:
+    raise SystemExit(
+        f"error: 픽스처에서 기대한 세 갈래(재구성/표수리/하위heading)를 찾지 못함: {expect}")
 print("REBUILD_IDS=" + ",".join(rebuild))
-print("SKIP_IDS=" + ",".join(skip))
+print("REPAIR_IDS=" + ",".join(repair))
+print("CHILD_IDS=" + ",".join(child))
 PY
 )" || { echo "error: 픽스처 인벤토리 실패" >&2; exit 2; }
 echo "$inv" | sed 's/^/  /'
 REBUILD_IDS="$(sed -n 's/^REBUILD_IDS=//p' <<<"$inv")"
-SKIP_IDS="$(sed -n 's/^SKIP_IDS=//p' <<<"$inv")"
-n_rebuild=$(awk -F, '{print NF}' <<<"$REBUILD_IDS")
+REPAIR_IDS="$(sed -n 's/^REPAIR_IDS=//p' <<<"$inv")"
+CHILD_IDS="$(sed -n 's/^CHILD_IDS=//p' <<<"$inv")"
+FIXED_IDS="$REBUILD_IDS,$REPAIR_IDS"
+n_fixed=$(awk -F, '{print NF}' <<<"$FIXED_IDS")
 
 # ── 3) dry-run 탐지 ──────────────────────────────────────────────────────
 dry_skipped=0
 if [[ "$TRANSLATE_MODE" == "local" ]]; then
   echo
-  echo "[3/7] dry-run 탐지 (모델 호출 0)"
+  echo "[3/7] dry-run 리허설 (수리는 실제로 돌고 PR 은 sandbox 리포로)"
   [[ -f "$CLOUD_TRANSLATE_DIR/.env" ]] || { echo "error: $CLOUD_TRANSLATE_DIR/.env 없음" >&2; exit 2; }
+  # 다른 실행이 --keep 으로 남긴 fix-tables/* 가 있을 수 있으므로 절대 개수가
+  # 아니라 dry-run 전후의 **증가분**을 센다.
+  dry_branches_before="$(git ls-remote --heads origin 'refs/heads/fix-tables/*' 2>/dev/null | wc -l)"
   set +e
   (cd "$CLOUD_TRANSLATE_DIR" && \
     "$CLOUD_TRANSLATE_PY" translate/translate_fix_tables.py "$REPO" "$SESSION_BRANCH" \
       --only "en/$DOC,ja/$DOC" --dry-run \
   ) > "$DRYLOG" 2>&1
   set -e
-  grep -E '^  (en|ja)/|^      #|탐지만' "$DRYLOG" | sed 's/^/  /' || true
+  grep -E '^  (en|ja)/|^      \[|^DRY-RUN:|Fix-tables PR:' "$DRYLOG" | sed 's/^/  /' || true
+  dry_pr_url="$(sed -n 's|^  Fix-tables PR: *||p' "$DRYLOG" | tail -n1)"
+  # 대상 리포에 브랜치를 만들지 않았는지는 **실제 실행 전에** 세어야 한다
+  # (4단계가 fix-tables/… 를 만들고 나면 구별할 수 없다).
+  dry_branches_after="$(git ls-remote --heads origin 'refs/heads/fix-tables/*' 2>/dev/null | wc -l)"
+  dry_target_branches=$(( dry_branches_after - dry_branches_before ))
 else
   echo
-  echo "[3/7] dry-run 탐지 — SKIP (--translate api)"
+  echo "[3/7] dry-run 리허설 — SKIP (--translate api)"
   dry_skipped=1
 fi
 
@@ -352,21 +402,29 @@ ok()   { echo "  PASS  $1"; }
 bad()  { echo "  FAIL  $1"; fails=$((fails + 1)); }
 skip() { echo "  SKIP  $1"; }
 
-# (1) dry-run
+# (1) dry-run — 리허설: 수리는 실제로 돌지만 대상 리포에는 쓰지 않는다
 if (( dry_skipped )); then
-  skip "(1) dry-run 탐지 — api 모드"
+  skip "(1) dry-run 리허설 — api 모드"
 else
   d_ok=1
   for id in ${REBUILD_IDS//,/ }; do
-    (( $(grep -c "#$id " "$DRYLOG") >= 2 )) || { d_ok=0; echo "        dry-run 에 #$id 가 en/ja 양쪽에 없음"; }
+    (( $(grep -c "^      \[section\] #$id " "$DRYLOG") >= 2 )) \
+      || { d_ok=0; echo "        dry-run 이 #$id 를 en/ja 양쪽에서 '재구성' 으로 잡지 않음"; }
   done
-  for id in ${SKIP_IDS//,/ }; do
-    grep -q "skip: #$id" "$DRYLOG" || { d_ok=0; echo "        앵커 없는 하위 heading 의 skip 보고 없음 (#$id)"; }
-    grep -q "^      #$id " "$DRYLOG" && { d_ok=0; echo "        대조군 #$id 가 재구성 대상으로 잡힘"; }
+  for id in ${REPAIR_IDS//,/ }; do
+    (( $(grep -c "^      \[표\] #$id " "$DRYLOG") >= 2 )) \
+      || { d_ok=0; echo "        dry-run 이 #$id 를 en/ja 양쪽에서 '표 수리' 로 잡지 않음"; }
   done
-  grep -q "탐지만 수행" "$DRYLOG" || { d_ok=0; echo "        dry-run 종료 문구 없음"; }
-  if grep -q "Fix-tables PR:" "$DRYLOG"; then d_ok=0; echo "        dry-run 이 PR 을 만들었다"; fi
-  (( d_ok )) && ok "(1) dry-run 이 section ${n_rebuild}개×2언어 탐지 · 앵커 없는 하위 heading skip · PR 미생성" \
+  grep -q "^DRY-RUN: .*Nothing is written to $REPO" "$DRYLOG" \
+    || { d_ok=0; echo "        dry-run 배너(대상 리포에 쓰지 않음)가 없음"; }
+  if [[ -z "$dry_pr_url" ]]; then
+    d_ok=0; echo "        dry-run 이 sandbox PR 을 열지 않았다 (리허설은 리뷰 가능한 diff 가 목적)"
+  elif [[ "$dry_pr_url" == *"/$REPO/"* ]]; then
+    d_ok=0; echo "        dry-run PR 이 대상 리포에 열렸다: $dry_pr_url"
+  fi
+  (( dry_target_branches == 0 )) \
+    || { d_ok=0; echo "        dry-run 이 대상 리포에 fix-tables/* 브랜치를 ${dry_target_branches}개 늘렸다"; }
+  (( d_ok )) && ok "(1) dry-run 이 section ${n_fixed}개×2언어를 수리 단위까지 맞게 탐지 · 대상 리포 무기록 · sandbox PR ($dry_pr_url)" \
               || bad "(1) dry-run 결과가 기대와 다름 (로그: $DRYLOG)"
 fi
 
@@ -390,12 +448,14 @@ git show "$base_sha:ko/$DOC" > "$tmpdir/ko.md"
 gh pr view "$fix_pr_url" --repo "$REPO" --json body --jq .body > "$tmpdir/pr_body.md"
 
 # (3)~(6) 구조/바이트 검사 — LLM 판정 없음.
-python3 - "$tmpdir" "$REBUILD_IDS" "$SKIP_IDS" <<'PY' || fails=$((fails + 1))
+python3 - "$tmpdir" "$REBUILD_IDS" "$REPAIR_IDS" "$CHILD_IDS" <<'PY' || fails=$((fails + 1))
 import io, re, sys
 
-tmp, rebuild_csv, skip_csv = sys.argv[1:4]
-rebuild_ids = [s for s in rebuild_csv.split(",") if s]
-skip_ids = [s for s in skip_csv.split(",") if s]
+tmp, rebuild_csv, repair_csv, child_csv = sys.argv[1:5]
+rebuild_ids = [s for s in rebuild_csv.split(",") if s]   # section 본문 재구성
+repair_ids = [s for s in repair_csv.split(",") if s]     # 표만 수리
+child_ids = [s for s in child_csv.split(",") if s]       # 그중 하위 heading 표
+fixed_ids = rebuild_ids + repair_ids
 
 HANGUL = re.compile(r"[가-힣]")
 ANCHOR = re.compile(r'^<a id="([^"]+)"></a>\s*$')
@@ -530,9 +590,10 @@ langs = {lang: (sections(read(f"{tmp}/{lang}.base.md")),
                 sections(read(f"{tmp}/{lang}.fixed.md")))
          for lang in ("en", "ja")}
 
-# (3) 다시 만든 section — 표 모양 · 식별자 · 한글 · 비어있지 않음
+# (3) 고친 section — 표 모양 · 식별자 · 한글 · 비어있지 않음
+#     수리 단위(표/section)와 무관하게 결과는 ko 와 같은 모양이어야 한다.
 for lang, (base, new) in langs.items():
-    for aid in rebuild_ids:
+    for aid in fixed_ids:
         sec = new.get(aid, "")
         kt, nt = tables(ko.get(aid, "")), tables(sec)
         if not sec.strip():
@@ -566,51 +627,132 @@ for lang, (base, new) in langs.items():
 
 # (4) 다시 만든 section 의 <a id>/heading 줄은 바이트 동일
 for lang, (base, new) in langs.items():
-    drift = [aid for aid in rebuild_ids
+    drift = [aid for aid in fixed_ids
              if head_lines(base.get(aid, "")) != head_lines(new.get(aid, ""))]
     if drift:
-        bad(f"(4) {lang} 의 재구성 section heading/anchor 가 변경됨: {', '.join(drift)}",
+        bad(f"(4) {lang} 의 고친 section heading/anchor 가 변경됨: {', '.join(drift)}",
             *[f"{a}: {head_lines(base.get(a,''))!r} → {head_lines(new.get(a,''))!r}"
               for a in drift[:2]])
     else:
-        ok(f"(4) {lang} 재구성 section {len(rebuild_ids)}개의 <a id>/heading 바이트 보존")
+        ok(f"(4) {lang} 고친 section {len(fixed_ids)}개의 <a id>/heading 바이트 보존")
 
-# (5) 재구성 section 밖은 바이트 동일 (대조군 셋 + 인트로 + 앵커 없는 하위 섹션)
+def table_spans(raw):
+    """[(start, end)] — 표(헤더+구분줄+행)가 차지하는 줄 구간, end 는 배타."""
+    lines = raw.splitlines()
+    out, i = [], 0
+    while i < len(lines) - 1:
+        if lines[i].strip().startswith("|") and TBL_SEP.match(lines[i + 1]):
+            j = i + 2
+            while j < len(lines) and lines[j].strip().startswith("|"):
+                j += 1
+            out.append((i, j))
+            i = j
+        else:
+            i += 1
+    return out
+
+
+def outside_tables(raw):
+    """표 구간을 자리표시자로 접은 나머지 — '표 밖' 이 그대로인지 재는 축."""
+    lines, keep, prev = raw.splitlines(), [], 0
+    for st, en in table_spans(raw):
+        keep.extend(lines[prev:st]); keep.append("<<TABLE>>"); prev = en
+    keep.extend(lines[prev:])
+    return keep
+
+
+def first_cells(raw, span):
+    out = []
+    for ln in raw.splitlines()[span[0] + 2:span[1]]:
+        cells = [c.strip().replace("**", "").replace("`", "")
+                 for c in ln.strip().strip("|").split("|")]
+        if cells:
+            out.append(cells[0])
+    return out
+
+
+# (5a) 고친 section 밖은 바이트 동일 (대조군 + 인트로)
+# (5b) 표 수리 section 은 바뀐 곳이 표 안에 머문다
+#      — 수리 단위가 둘이 된 뒤로 (5a) 만으로는 범위를 재지 못한다. 표 수리라고
+#        하고서 section 을 통째로 다시 쓰면 (5a) 는 통과해 버린다.
 for lang, (base, new) in langs.items():
     diffs = [k for k in set(base) | set(new)
-             if k not in rebuild_ids and base.get(k) != new.get(k)]
+             if k not in fixed_ids and base.get(k) != new.get(k)]
     if diffs:
-        bad(f"(5) {lang} 의 다른 section 이 변경됨: {', '.join(sorted(map(str, diffs))[:5])}",
-            "정비는 깨진 section 밖을 한 바이트도 건드리면 안 된다 — "
-            "대조군(정상 표 · 식별자 없는 표 · 앵커 없는 하위 섹션)이 여기 든다")
+        bad(f"(5a) {lang} 의 손대지 않아야 할 section 이 변경됨: "
+            f"{', '.join(sorted(map(str, diffs))[:5])}",
+            "정비는 고친 section 밖을 한 바이트도 건드리면 안 된다 — "
+            "대조군(정상 표 · 마지막 section · 인트로)이 여기 든다")
     else:
-        ok(f"(5) {lang} 는 재구성 section 밖이 base 와 바이트 동일 ({len(base)}개 구간, "
-           f"대조군 {', '.join('#' + s for s in skip_ids)} 포함)")
+        ok(f"(5a) {lang} 는 고친 section 밖이 base 와 바이트 동일 ({len(base)}개 구간)")
+
+    for aid in repair_ids:
+        b, n = base.get(aid, ""), new.get(aid, "")
+        ob, on = outside_tables(b), outside_tables(n)
+        bt, nt2 = table_spans(b), table_spans(n)
+        tail = " (하위 heading 의 표)" if aid in child_ids else ""
+        if ob != on:
+            i = next((i for i, (x, y) in enumerate(zip(ob, on)) if x != y), min(len(ob), len(on)))
+            bad(f"(5b) {lang} #{aid} 는 표 수리인데 표 **밖**이 바뀌었다{tail}",
+                f"base: {(ob[i] if i < len(ob) else '<없음>')!r}",
+                f"new : {(on[i] if i < len(on) else '<없음>')!r}")
+            continue
+        if len(bt) != len(nt2):
+            bad(f"(5b) {lang} #{aid} 표 개수가 base {len(bt)} → new {len(nt2)} 로 바뀌었다")
+            continue
+        shrunk = [i for i, ((s0, e0), (s1, e1)) in enumerate(zip(bt, nt2), 1)
+                  if (e1 - s1) < (e0 - s0)]
+        if shrunk:
+            bad(f"(5b) {lang} #{aid} 표 {shrunk} 의 줄 수가 줄었다 — 행이 사라졌다")
+            continue
+        # 식별자가 없는 표는 짝을 확정할 근거가 없다 — 그대로여야 한다.
+        # 기준은 **ko** 다. 대상의 base 로 재면 안 된다 — #fix-tables-shifted 는
+        # 첫 열이 형식명으로 덮여 base 에 식별자가 없는 것이 결함 그 자체라,
+        # base 로 재면 수리해야 할 표를 '손대면 안 되는 표' 로 오판한다.
+        kt_spans = table_spans(ko.get(aid, ""))
+        bl, nl = b.splitlines(), n.splitlines()
+        moved = [i + 1 for i, span in enumerate(bt)
+                 if i < len(kt_spans)
+                 and not any(is_key(c) for c in first_cells(ko.get(aid, ""), kt_spans[i]))
+                 and bl[span[0]:span[1]] != nl[nt2[i][0]:nt2[i][1]]]
+        if moved:
+            bad(f"(5b) {lang} #{aid} 식별자 없는 표 {moved} 가 변경됨 — "
+                "짝을 확정할 근거가 없는 표다")
+        else:
+            ok(f"(5b) {lang} #{aid} 수리가 표 안에 머물렀다{tail} "
+               f"(표 {len(bt)}개 · 표 밖 {len(ob)}줄 바이트 동일)")
 
 # (6) PR 본문
 pr_body = read(f"{tmp}/pr_body.md")
-missing = [i for i in rebuild_ids if f"`#{i}`" not in pr_body]
+missing = [i for i in fixed_ids if f"`#{i}`" not in pr_body]
 if missing:
-    bad(f"(6a) PR 본문에 다시 만든 id 가 없음: {', '.join(missing)}")
+    bad(f"(6a) PR 본문에 고친 id 가 없음: {', '.join(missing)}")
 else:
-    ok(f"(6a) PR 본문이 다시 만든 section id {len(rebuild_ids)}개를 나열")
+    ok(f"(6a) PR 본문이 고친 section id {len(fixed_ids)}개를 나열")
 if "표 개수 ko" in pr_body and "식별자" in pr_body:
     ok("(6a) PR 본문이 사유(표 개수 / 식별자 누락)를 함께 적음")
 else:
     bad("(6a) PR 본문에 재구성 사유가 없음")
-if "건너뜀" in pr_body and all(f"`#{s}`" in pr_body for s in skip_ids):
-    ok(f"(6b) PR 본문이 앵커 없는 하위 heading 의 section 을 '건너뜀' 으로 보고 ({', '.join(skip_ids)})")
+if "행 삽입" in pr_body and all(f"`#{c}`" in pr_body for c in child_ids):
+    ok("(6b) PR 본문이 하위 heading 표의 '행 삽입' 을 공개 "
+       f"({', '.join('#' + c for c in child_ids)})")
 else:
-    bad("(6b) PR 본문에 앵커 없는 하위 heading 의 건너뜀 보고가 없음 — 조용히 빠지면 아무도 모른다")
+    bad("(6b) PR 본문에 하위 heading 표의 '행 삽입' 공개가 없음 — 조용히 고치면 아무도 모른다",
+        "앵커가 없는 하위 heading 아래 표라도 식별자 키로 짝이 확정되면 그 행만 "
+        "삽입한다 (cloud-translate #851). 그 사실이 본문에 남아야 리뷰어가 "
+        "section 밖으로 번진 diff 를 설명할 수 있다")
 
 links = {}
-for anchor in rebuild_ids:
-    pat = (r"\[before\]\((?P<b>[^)]*?/view\?[^)]*?#" + re.escape(anchor) + r")\)"
-           r"[^\n]*?\[after\]\((?P<a>[^)]*?/view\?[^)]*?#" + re.escape(anchor) + r")\)")
+for anchor in fixed_ids:
+    # 링크는 2026-08 (#843) 부터 단일 언어 `/view` before/after 가 아니라
+    # ko 를 왼쪽에 둔 `/compare` 두 장이다 — 리뷰 질문이 "이전과 무엇이 다른가"
+    # 가 아니라 "ko 를 정본으로 볼 때 맞는가" 이기 때문.
+    pat = (r"\[ko↔변경 후\]\((?P<a>[^)]*?/compare\?[^)]*?#" + re.escape(anchor) + r")\)"
+           r"[^\n]*?\[ko↔변경 전\]\((?P<b>[^)]*?/compare\?[^)]*?#" + re.escape(anchor) + r")\)")
     m = re.search(pat, pr_body)
     links[anchor] = m
     if not m:
-        bad(f"(6c) #{anchor} 의 before/after 프리뷰 링크가 PR 본문에 없음")
+        bad(f"(6c) #{anchor} 의 ko↔변경 전/후 프리뷰 링크가 PR 본문에 없음")
 if all(links.values()):
     sha40 = re.compile(r"tx_ref=[0-9a-f]{40}")
     bad_ref = [a for a, m in links.items()
@@ -618,9 +760,9 @@ if all(links.values()):
     if bad_ref:
         bad("(6c) 프리뷰 링크가 커밋 SHA 가 아님: " + ", ".join(bad_ref))
     elif any(m.group("b") == m.group("a") for m in links.values()):
-        bad("(6c) before 와 after 링크가 동일 — 두 상태를 가리키지 못한다")
+        bad("(6c) 변경 전/후 링크가 동일 — 두 상태를 가리키지 못한다")
     else:
-        ok(f"(6c) 재구성 section {len(links)}개에 before/after 프리뷰 링크 (앵커 + 커밋 SHA)")
+        ok(f"(6c) 고친 section {len(links)}개에 ko↔변경 전/후 프리뷰 링크 (앵커 + 커밋 SHA)")
 
 raise SystemExit(rc)
 PY
