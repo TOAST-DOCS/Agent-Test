@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
@@ -242,20 +244,23 @@ $ sudo update-grub
 <a id="e2e-table-malformed"></a>
 ### Table selection guard fixture
 
-The tables below are e2e fixtures.
+The tables below are e2e fixtures. These are for selection guard validation (20260915-103840).
 
 | Number | Item | Example |
 |---|---|---|
 | 1 | Request rate limit | http {<BR>   limit_req_zone $binary_remote_addr zone=z:10m;<BR>} |
-| 2 | Connection limit | limit_conn z 10; |
-| 3 | Request body size limit | client_max_body_size 1m; |
+
+limit_req_zone $binary_remote_addr zone=z:10m;
+}
+| 2 | Concurrent connection limit | limit_conn z 10; |
+| 3 | Body size limit | client_max_body_size 1m; |
 
 The second table.
 
 | Name | Type | Required | Description |
 |---|---|---|---|
 | fileType | String | Y | File extension. |
-| resolution | String | N  Recommended resolution. |
+| resolution | String | N | Recommended resolution. |
 | idType | String | Y | ID type. |
 
 The third table.
@@ -265,3 +270,4 @@ The third table.
 | SVC-101 | Basic | Basic service. |
 | SVC-102 | Standard | Standard service. |
 | SVC-103 | Advanced | Advanced service. |
+| SVC-104 | Dedicated | This is a dedicated service. |
