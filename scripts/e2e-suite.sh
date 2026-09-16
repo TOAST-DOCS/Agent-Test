@@ -232,6 +232,10 @@
 #                 기본 --translate local; --translate api 는 dashboard
 #                 /api/fix-tables → Jenkins 경로를 태운다 (그 모드에선 dry-run
 #                 규칙 1건이 SKIP). 기대: exit 0 / FIX_TABLES: OK.
+#   notation    — 표기 후처리 (e2e-notation.sh). ja 라틴↔가나 공백 정규화와
+#                 en/ja 한글 잔존 검사. Part A 는 스크래치 픽스처로 규칙을
+#                 바이트 비교(모델 없음), Part B 는 실제 번역 잡을 돌려 연결부가
+#                 도는지 본다. 기대: exit 0 / NOTATION: OK.
 #   fix-links   — 링크 정정 (e2e-fix-links.sh). alpha 상주 픽스처
 #                 {ko,en,ja}/fix-links.md 의 규칙 6종을 정정하고 대조군·펜스·
 #                 확인 불가 링크는 보존/보고하는지 바이트로 판정.
@@ -367,7 +371,7 @@ while [[ $# -gt 0 ]]; do
       FT_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
+    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -381,7 +385,8 @@ while [[ $# -gt 0 ]]; do
       # 항상 실패한다. 스크립트는 남겨 두고 명시 지정으로만 실행.
       PLANS+=(webhook workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
-              split-docs fix-links fix-tables table-malformed jinja-mask); shift ;;
+              split-docs fix-links fix-tables table-malformed jinja-mask
+              notation); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -524,6 +529,15 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^SPLIT_DOCS: (OK|FAIL)' "$log" | tail -n1 || true)"
     split_pr="$(grep -oE 'Split PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${split_pr:-<no-pr>}")
+  elif [[ "$plan" == "notation" ]]; then
+    # 표기 후처리 — Part A(규칙, 모델 없음) + Part B(실제 번역 잡). 옵션 없이
+    # 기본값으로 돌린다: 이 plan 의 위험 지점은 "연결부가 실제로 도는가" 라
+    # 반드시 실번역 경로를 지나가야 한다.
+    bash "$REPO_ROOT/scripts/e2e-notation.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^NOTATION: (OK|FAIL)' "$log" | tail -n1 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|-")
+
   elif [[ "$plan" == "fix-links" ]]; then
     # 링크 정정 — 자체 스크립트. ⭐ 권장 옵션(문서 전체 · 실제 PR · engine=env ·
     # 검증 두 축)이 스크립트 기본값이라 여기서 옵션을 넘기지 않는다. --engine 을
