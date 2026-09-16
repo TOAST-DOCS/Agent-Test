@@ -1,0 +1,4 @@
+# .docs-workflow — e2e 픽스처 (scripts/e2e-workflow-ignore.sh, 20260916-055341)
+# 이 세션 브랜치에서만 존재한다. alpha 에는 없다.
+ignore:
+  - ko/wfi-excluded.md
