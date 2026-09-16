@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=9b1876e3ba07 -->
+
 ## 개요
 
 이 문서는 `.docs-workflow` ignore 게이트 e2e 픽스처입니다 (20260916-055341).
