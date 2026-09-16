@@ -49,6 +49,13 @@
 #   bash scripts/e2e-workflow-ignore.sh --no-merge      # 케이스 A 의 merge 이후 생략
 #   bash scripts/e2e-workflow-ignore.sh --timeout 900   # webhook task 폴링 상한
 #   bash scripts/e2e-workflow-ignore.sh --keep          # 세션 브랜치·PR 유지
+#   bash scripts/e2e-workflow-ignore.sh --pipeline-branch PR-844
+#
+# `--pipeline-branch` — webhook 이 트리거할 Jenkins multibranch **자식 잡** 이름
+# (`content_deploy/{ko-review,translate}/job/<이름>/`). 미머지 브랜치의 게이트를
+# 검증하려면 반드시 준다: 빈 값이면 기본 브랜치(= main) 코드로 돌아 "게이트가
+# 아직 없다" 를 측정하게 되고, 그 실패는 회귀와 구분되지 않는다. webhook 대상
+# repo 행의 `pipeline_branch` 를 임시로 바꿨다가 trap 에서 원복한다.
 #
 # 엔진: 지정하지 않는다 — webhook 이 recommended preset 으로 트리거하므로 운영과
 # 같은 Claude Code CLI 로 돈다 (CLAUDE.md 「e2e 는 api 엔진으로 실행하지 않는다」).
@@ -68,6 +75,10 @@ POLL_INTERVAL=5
 BUILD_TIMEOUT=1800
 DO_MERGE=1
 KEEP=0
+# webhook 이 트리거할 Jenkins multibranch 자식 잡 (= 어느 코드로 도는가).
+# 빈 값이면 dashboard 기본 브랜치. **미머지 기능을 검증하려면 반드시 준다** —
+# 안 주면 main 코드로 돌아 "게이트가 없다" 를 측정하게 된다.
+PIPELINE_BRANCH=""
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/e2e-label.sh"
@@ -84,6 +95,7 @@ while [[ $# -gt 0 ]]; do
     --timeout)       POLL_TIMEOUT="$2"; shift 2 ;;
     --build-timeout) BUILD_TIMEOUT="$2"; shift 2 ;;
     --keep)          KEEP=1; shift ;;
+    --pipeline-branch) PIPELINE_BRANCH="$2"; shift 2 ;;
     -h|--help)       sed -n '2,58p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
@@ -154,6 +166,52 @@ with urllib.request.urlopen(put, timeout=15) as r2:
 PY
 }
 
+ORIG_PIPELINE_BRANCH=""
+PIPELINE_BRANCH_SET=0
+
+_set_pipeline_branch() {   # $1 = 자식 잡 이름 ("" = 기본 브랜치)
+  python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$REPO" "$1" <<'PYBR'
+import json, sys, urllib.request
+base_url, token, repo, branch = sys.argv[1:5]
+hdr = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+req = urllib.request.Request(f"{base_url}/api/webhooks/repos", headers=hdr)
+with urllib.request.urlopen(req, timeout=15) as r:
+    rows = (json.load(r).get("repos") or [])
+row = next((x for x in rows if (x.get("repo") or "").lower() == repo.lower()), {})
+payload = {
+    "repo": repo,
+    # 현재 on/off 상태는 보존한다 — 이 헬퍼의 책임은 브랜치뿐이다.
+    "translate_enabled": bool(row.get("translate_enabled")),
+    "ko_review_enabled": bool(row.get("ko_review_enabled")),
+    "pipeline_branch": branch,
+}
+post = urllib.request.Request(
+    f"{base_url}/api/webhooks/repos", data=json.dumps(payload).encode(),
+    method="POST", headers=hdr)
+with urllib.request.urlopen(post, timeout=15) as r2:
+    json.load(r2)
+print(f"  webhook repo {repo}: pipeline_branch = '{branch or '(기본)'}'")
+PYBR
+}
+
+_read_pipeline_branch() {
+  curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+    "$DASHBOARD_BASE_URL/api/webhooks/repos" \
+    | python3 -c "
+import json, sys
+rows = (json.load(sys.stdin).get('repos') or [])
+row = next((x for x in rows if (x.get('repo') or '').lower() == '$REPO'.lower()), {})
+print(row.get('pipeline_branch') or '')"
+}
+
+restore_pipeline_branch() {
+  (( PIPELINE_BRANCH_SET )) || return 0
+  echo "  [cleanup] restoring pipeline_branch = '${ORIG_PIPELINE_BRANCH:-(기본)}'"
+  _set_pipeline_branch "$ORIG_PIPELINE_BRANCH" >/dev/null || \
+    echo "  [cleanup] WARN: pipeline_branch 원복 실패 — 어드민에서 수동 확인" >&2
+  PIPELINE_BRANCH_SET=0
+}
+
 restore_filters() {
   (( FILTER_EXTENDED )) || return 0
   for job in translate ko-review; do
@@ -174,11 +232,14 @@ cleanup_branches() {
   done
 }
 
-trap 'ec=$?; rm -rf "$tmpdir"; restore_filters; set_webhook_repo_enabled false; cleanup_branches; exit $ec' EXIT INT TERM
+# 원복 순서 주의: `set_webhook_repo_enabled false` 는 **현재** pipeline_branch 를
+# 보존하므로, 그 앞에서 되돌리지 않으면 PR 브랜치 값이 남은 채 꺼진다.
+trap 'ec=$?; rm -rf "$tmpdir"; restore_filters; restore_pipeline_branch; set_webhook_repo_enabled false; cleanup_branches; exit $ec' EXIT INT TERM
 
 echo "==================================================================="
 echo "  .docs-workflow ignore × webhook e2e — Agent-Test"
 echo "  session base : $BASE_BRANCH"
+echo "  pipeline     : ${PIPELINE_BRANCH:-(dashboard 기본 브랜치)}"
 echo "  excluded     : $EXCLUDED_DOC"
 echo "  control      : $CONTROL_DOC"
 echo "==================================================================="
@@ -187,6 +248,16 @@ echo "==================================================================="
 echo
 echo "[0/8] webhook 대상 활성화: $REPO"
 set_webhook_repo_enabled true
+ORIG_PIPELINE_BRANCH="$(_read_pipeline_branch)"
+if [[ "$PIPELINE_BRANCH" != "$ORIG_PIPELINE_BRANCH" ]]; then
+  echo "  pipeline_branch: '${ORIG_PIPELINE_BRANCH:-(기본)}' → '${PIPELINE_BRANCH:-(기본)}'"
+  _set_pipeline_branch "$PIPELINE_BRANCH"
+  PIPELINE_BRANCH_SET=1
+fi
+if [[ -z "$PIPELINE_BRANCH" ]]; then
+  echo "  NOTE: --pipeline-branch 미지정 — 기본 브랜치 코드로 돕니다."
+  echo "        미머지 게이트를 검증하려면 PR 의 자식 잡 이름을 주세요 (예: PR-844)."
+fi
 
 # ── 1) 세션 base 브랜치 + 픽스처 (`.docs-workflow` 포함) ─────────────
 echo
@@ -263,7 +334,7 @@ echo
 echo "[4/8] A: webhook opened → ko-review task 대기 (최대 ${POLL_TIMEOUT}s)"
 A_TRIGGER="FAIL"
 task_json="$(wait_for_webhook_task "$pr_a" "$pr_a_num" "opened" "ko-review" \
-             "$POLL_TIMEOUT" "$POLL_INTERVAL" || echo '{}')"
+             "$POLL_TIMEOUT" "$POLL_INTERVAL" || true)"
 if [[ "$(task_present "$task_json")" == "y" ]]; then
   A_TRIGGER="PASS"
   wait_for_build_finish "$(task_field "$task_json" job_id)" \
@@ -299,7 +370,7 @@ echo
 echo "[6/8] B: webhook opened → ko-review task 대기 (최대 ${POLL_TIMEOUT}s)"
 B_TRIGGER="FAIL"
 task_json="$(wait_for_webhook_task "$pr_b" "$pr_b_num" "opened" "ko-review" \
-             "$POLL_TIMEOUT" "$POLL_INTERVAL" || echo '{}')"
+             "$POLL_TIMEOUT" "$POLL_INTERVAL" || true)"
 if [[ "$(task_present "$task_json")" == "y" ]]; then
   B_TRIGGER="PASS"
   wait_for_build_finish "$(task_field "$task_json" job_id)" \
@@ -317,7 +388,7 @@ if (( DO_MERGE )); then
   echo "[7/8] A: PR merge → webhook closed → translate task 대기"
   gh pr merge "$pr_a" --repo "$REPO" --merge --delete-branch
   task_json="$(wait_for_webhook_task "$pr_a" "$pr_a_num" "closed" "translate" \
-               "$POLL_TIMEOUT" "$POLL_INTERVAL" || echo '{}')"
+               "$POLL_TIMEOUT" "$POLL_INTERVAL" || true)"
   if [[ "$(task_present "$task_json")" == "y" ]]; then
     A_MERGE="PASS"
     wait_for_build_finish "$(task_field "$task_json" job_id)" \
@@ -437,6 +508,7 @@ echo "==================================================================="
 echo "  PR A (섞인 PR)        : $pr_a"
 echo "  PR B (제외 문서만)    : $pr_b"
 [[ -n "$TRANSLATE_PR" ]] && echo "  번역 PR               : $TRANSLATE_PR"
+echo "  pipeline_branch       : ${PIPELINE_BRANCH:-(기본)}"
 echo "  세션 base             : $BASE_BRANCH$( ((KEEP)) && echo ' (--keep — 수동 정리 필요)' )"
 echo "==================================================================="
 exit $verdict

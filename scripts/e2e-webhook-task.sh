@@ -119,9 +119,11 @@ print(json.dumps(hit or {}))
 PY
 }
 
-# task_json 에 task 가 들어 있는지 — "y" / "n"
+# task_json 에 task 가 들어 있는지 — "y" / "n".
+# 파싱 실패도 "n" 이다: 이 함수의 질문은 "task 를 확실히 찾았는가" 이고, 망가진
+# 입력에 대한 답은 '아니오' 다 (호출부가 FAIL 로 읽는다).
 task_present() {
-  printf '%s' "${1:-{\}}" | python3 -c \
+  printf '%s' "${1:-}" | python3 -c \
     'import json,sys
 try:
     print("y" if (json.load(sys.stdin) or {}).get("task") else "n")
