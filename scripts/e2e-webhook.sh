@@ -83,115 +83,12 @@ if [[ ! -f "$KO_FILE" ]]; then
   exit 1
 fi
 
-# ── helper: dashboard /api/jobs 스캔 ─────────────────────────────────
-# stdout: JSON — {"job_id": "...", "task": {...}} 또는 빈 dict {}
-#
-# 라벨 패턴이 여러 가지 (parent job type=webhook 이면 "X#N (opened)",
-# type=ko-review 면 "한글 검수 (webhook): X#N (opened)", type=translate 면
-# "번역: <pr_url>") 이므로 세 가지 신호 중 하나라도 걸리는 job 후보를 모으고
-# task 상세로 확정한다.
-#   신호 A: label 에 "#<PR> (<action>)" 포함
-#   신호 B: label 에 우리 PR URL 포함 (translate 처럼 URL 만 있는 케이스)
-# 각 후보 job 의 tasks 중 label 이 "<kind>:" 로 시작하고 result_url 이
-# 우리 PR URL 이면 hit. webhook 이 붙인 params (webhook_action / webhook_pr_number)
-# 도 있으면 함께 활용 (신·구 파이프라인 양쪽 대응).
-find_webhook_task() {
-  # args:
-  #   $1 = pr_url
-  #   $2 = pr_number
-  #   $3 = action label ('opened' | 'closed'/'merged')
-  #   $4 = task kind ('ko-review' | 'translate')
-  local pr_url="$1" pr_number="$2" action="$3" kind="$4"
-  # 주의: `curl | python3 - args <<'PY'` 형태로 하면 heredoc 이 stdin 을 덮어써
-  # curl 출력이 python 에 도달하지 못한다 (실측: JSONDecodeError). HTTP 호출을
-  # python 안에서 urllib 로 직접 수행한다.
-  python3 - "$REPO" "$pr_url" "$pr_number" "$action" "$kind" \
-             "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" <<'PY'
-import json, sys, urllib.request
-
-repo, pr_url, pr_number, action, kind, base_url, token = sys.argv[1:8]
-
-def _get(path):
-    # 폴링 중 dashboard LB 가 idle keep-alive 를 잠깐 닫는 등 일시적 네트워크
-    # 에러가 발생할 수 있음 (실측: RemoteDisconnected). 스크립트 전체가
-    # 죽으면 leftover PR 만 남으므로 소규모 재시도.
-    import time
-    last_err = None
-    for _ in range(3):
-        try:
-            req = urllib.request.Request(
-                f"{base_url}{path}",
-                headers={"Authorization": f"Bearer {token}"},
-            )
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                return json.load(resp)
-        except Exception as e:
-            last_err = e
-            time.sleep(1)
-    raise last_err
-
-_data = _get("/api/jobs?limit=200")
-
-action_needle = f"#{pr_number} ({action})"
-cand = []
-for j in _data.get("jobs", []):
-    label = j.get("label") or ""
-    if action_needle in label or pr_url in label:
-        cand.append(j)
-
-if not cand:
-    print(json.dumps({}))
-    raise SystemExit(0)
-
-# 가장 최근 (created_at 큰) job 부터 확인 — 같은 PR 에 대해 여러 delivery /
-# retry 가 있을 수 있음. task 매칭이 걸리는 첫 job 을 채택.
-cand.sort(key=lambda x: x.get("created_at") or 0, reverse=True)
-
-def _parse_params(raw):
-    if isinstance(raw, dict):
-        return raw
-    try:
-        return json.loads(raw or "{}")
-    except Exception:
-        return {}
-
-hit = None
-for job in cand:
-    detail = _get(f"/api/jobs/{job['id']}")
-    tasks = (detail.get("job") or {}).get("tasks") or []
-    for t in tasks:
-        lab = (t.get("label") or "").lower()
-        if not lab.startswith(f"{kind}:") and not lab.startswith(kind + " "):
-            # translate 잡의 task label 은 순수 PR URL 만 (kind prefix 없음) —
-            # result_url 로 매칭 가능한지 아래서 다시 본다.
-            if kind == "translate" and (t.get("result_url") or "") == pr_url:
-                pass
-            else:
-                continue
-        # 우리 PR 이 맞는지 재확인 — result_url 또는 params 의 webhook_pr_url
-        result_url = (t.get("result_url") or "").rstrip("/")
-        params = _parse_params(t.get("params"))
-        pr_match = (
-            result_url == pr_url.rstrip("/")
-            or params.get("webhook_pr_url", "").rstrip("/") == pr_url.rstrip("/")
-            or str(params.get("webhook_pr_number") or "") == str(pr_number)
-        )
-        if not pr_match:
-            continue
-        # action 도 params 가 있으면 재확인 (신 파이프라인)
-        wa = str(params.get("webhook_action") or "").lower()
-        if wa and wa != action.lower():
-            # merged 를 closed 로도 표기하므로 완만하게 허용
-            if not (action == "closed" and wa == "merged"):
-                continue
-        hit = {"job_id": job["id"], "task": t}
-        break
-    if hit:
-        break
-
-print(json.dumps(hit or {}))
-PY
-}
+# ── webhook 딜리버리 → task 되짚기 (공용 helper) ─────────────────────
+# `find_webhook_task` / `wait_for_webhook_task` / `task_present` /
+# `task_field` / `wait_for_build_finish`. label 모양이 잡마다 다르고 그 예외
+# 목록이 스크립트마다 복사되면 한쪽만 낡는데, 낡은 쪽은 "트리거 안 됨" 이라는
+# 거짓 실패로 나타난다 — 그래서 한 벌만 둔다.
+source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-task.sh"
 
 # ── webhook 대상 repo 활성화 토글 ──────────────────────────────────
 # webhook e2e 는 시작 시 Agent-Test 를 webhook 대상으로 활성화하고, 종료 시
@@ -253,43 +150,6 @@ with urllib.request.urlopen(put, timeout=15) as r2:
     result = json.load(r2)
 print(json.dumps(result))
 PY
-}
-
-wait_for_build_finish() {
-  # task 큐잉 확인 후 실제 Jenkins 빌드가 성공/실패/취소 등 terminal 상태로
-  # 굳을 때까지 폴링. task 큐잉 성공만 확인하고 곧바로 cleanup 하면 세션
-  # 브랜치가 지워진 뒤 Jenkins 가 빌드를 시작해 base ref 404 로 죽는다
-  # (실측: translate-20260803-2, Jenkins #223). 이 헬퍼가 그 race 를 없앰.
-  #
-  # args:
-  #   $1 = job_id (예: translate-20260804-1)
-  #   $2 = task_id (task JSON 의 'id' 필드)
-  # returns: 0 (build 완료; 결과 상태 로그), 1 (timeout)
-  local job_id="$1" task_id="$2"
-  local deadline=$(( $(date +%s) + BUILD_TIMEOUT ))
-  echo "  waiting for Jenkins build to reach terminal state (jobs/${job_id}, task=${task_id}, max ${BUILD_TIMEOUT}s)"
-  local status="" build_url=""
-  while (( $(date +%s) < deadline )); do
-    local snapshot
-    snapshot="$(curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-      "$DASHBOARD_BASE_URL/api/jobs/$job_id" 2>/dev/null || echo '{}')"
-    read -r status build_url < <(printf '%s' "$snapshot" | python3 -c "
-import json, sys
-d = json.load(sys.stdin)
-tasks = (d.get('job') or {}).get('tasks', [])
-t = next((x for x in tasks if x.get('id') == '$task_id'), None) or {}
-print(t.get('status', '') or '-', t.get('build_url', '') or '-')
-" 2>/dev/null || echo "- -")
-    case "$status" in
-      success|failure|cancelled|aborted)
-        echo "  build finished: status=$status  build_url=$build_url"
-        return 0
-        ;;
-    esac
-    sleep 5
-  done
-  echo "  WARN: build did not finish within ${BUILD_TIMEOUT}s (last status=$status build_url=$build_url) — cleanup may race" >&2
-  return 1
 }
 
 restore_filters() {

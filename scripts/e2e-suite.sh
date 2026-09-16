@@ -19,6 +19,12 @@
 #       뒤에는 자지 않는다.
 #
 # plan 미지정 시 기본: webhook round1 table-suite markup-churn
+#   workflow-ignore
+#               — `.docs-workflow` 의 ignore 가 **webhook 트리거 경로**에서 먹는지.
+#                 세션 base 에 ignore 파일과 픽스처 두 개(제외/대조군)를 심고,
+#                 (A) 섞인 PR 은 대조군만 검수·번역되는지, (B) 제외 문서만 바꾼
+#                 PR 은 ko-review 가 **돌되** 아무것도 게시하지 않고 검수 라벨도
+#                 안 붙는지 본다. 기대: exit 0.
 #   webhook     — GitHub webhook 라우팅 검증. base=alpha 로 PR 을 열어
 #                 pull_request/opened → Jenkins ko-review, PR merge →
 #                 pull_request/closed → Jenkins translate 트리거를 dashboard
@@ -361,7 +367,7 @@ while [[ $# -gt 0 ]]; do
       FT_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
+    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -373,7 +379,7 @@ while [[ $# -gt 0 ]]; do
       # preserve 도 all 에서 제외 (2026-09-04) — 판정 (4)(5) 가 CLI preserve
       # 섹션 슬라이스(cloud-translate #811/#817, 닫힘) 를 전제로 해 main 에서
       # 항상 실패한다. 스크립트는 남겨 두고 명시 지정으로만 실행.
-      PLANS+=(webhook korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links anchor-audit round1 table-suite row-drop-repro
+      PLANS+=(webhook workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
               split-docs fix-links fix-tables table-malformed jinja-mask); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
@@ -468,6 +474,15 @@ for plan in "${PLANS[@]}"; do
     ec=$?
     verdict="$(grep -oE '(opened → ko-review triggered.*|merged → translate triggered.*)$' "$log" | tr '\n' ';' | sed 's/;$//' || true)"
     trans_pr="$(grep -oE '^\s*PR\s+:\s+https://[^ ]+' "$log" | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "workflow-ignore" ]]; then
+    # `.docs-workflow` ignore × webhook 경로. webhook plan 과 같은 이유로
+    # PASS_ARGS (translate/engine/model 계열) 를 전달하지 않는다 — 엔진은
+    # webhook 이 보내는 recommended preset 이 정한다.
+    bash "$REPO_ROOT/scripts/e2e-workflow-ignore.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^WORKFLOW_IGNORE_WEBHOOK: (PASS|FAIL).*' "$log" | tail -n1 || true)"
+    trans_pr="$(grep -oE '^\s*번역 PR\s+:\s+https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
   elif [[ "$plan" == "concurrent" ]]; then
     # 동시 PR 시나리오 — dashboard 를 쓰지 않고 로컬 translate_pr.py 로만
@@ -713,6 +728,9 @@ for plan in "${PLANS[@]}"; do
   # webhook / korean-review / round1 은 전부 통과(exit 0)가 기대값 — 실패면 suite 실패
   # table-suite 는 번역 로직에 따라 기대값이 다르므로 exit 3 도 정상 허용
   if [[ "$plan" == "webhook" && $ec -ne 0 ]]; then overall=1; fi
+  # workflow-ignore: 판정이 전부 결정적이다 (제외 문서를 읽었는가 / 안 읽었는가)
+  # — 모델 편차가 끼어들 여지가 없으므로 exit 3 같은 여지도 없다.
+  if [[ "$plan" == "workflow-ignore" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "korean-review" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "korean-review-no-targets" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "korean-review-mkdocs" && $ec -ne 0 ]]; then overall=1; fi
@@ -741,6 +759,7 @@ for plan in "${PLANS[@]}"; do
   # preserve 도 기대값이 하나다 — 반영됐거나 안 됐거나이고, exit 3 여지가 없다.
   if [[ "$plan" == "preserve" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
+        && "$plan" != "workflow-ignore" \
         && "$plan" != "korean-review-no-targets" \
         && "$plan" != "korean-review-mkdocs" \
         && "$plan" != "korean-review-markup" \
