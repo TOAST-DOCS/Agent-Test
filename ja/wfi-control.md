@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=9b1876e3ba07 -->
+
 ## 概要
 
 このドキュメントは `.docs-workflow` ignore ゲート e2e フィクスチャです (20260916-055341)。
