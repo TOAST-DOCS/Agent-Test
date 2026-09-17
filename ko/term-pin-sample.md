@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=da513a62b82d -->
+
 ## 단변량 시계열 이상탐지 개요 { #term-pin-overview }
 
 이 문서는 단변량 시계열 이상탐지 기능을 설명합니다.
