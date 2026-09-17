@@ -4,7 +4,7 @@
 #
 # 검증 대상 두 가지. 둘 다 **판단이 필요 없는** 축이라 모델이 아니라 코드가 맡는다.
 #   (a) ja 라틴↔가나 공백 — 그 문서가 이미 무공백으로 쓰는 토큰에 공백을 넣지 않는다
-#   (b) en/ja 산출물에 남은 한글 — 막지는 않고 기록한다
+#   (b) en/ja 산출물에 남은 한글 — 그 줄만 다시 번역해 고치고, 검증을 못 넘긴 줄만 기록한다
 #
 # ── 배경 ──────────────────────────────────────────────────────────────────
 # 2026-09 번역 PR 전수 검토(52 PR · en/ja 272 파일)에서 나온 결함이 근거다.
@@ -47,10 +47,11 @@ HEAD_BRANCH="translate-test-notation/$TS"
 DOC="notation-sample.md"
 CT_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 SCRATCH="$(mktemp -d)"
-UNIT_ONLY=0; KEEP=0
+UNIT_ONLY=0; KEEP=0; NO_JOB=0
 for a in "$@"; do
   case "$a" in
     --unit-only) UNIT_ONLY=1 ;;
+    --no-job) NO_JOB=1 ;;          # Part B(실제 잡) 는 건너뛰고 Part C(재번역) 만
     --keep) KEEP=1 ;;
     *) echo "unknown arg: $a" >&2; exit 2 ;;
   esac
@@ -144,6 +145,7 @@ if [ "$UNIT_ONLY" = "1" ]; then
 fi
 
 # ─────────────────────────────────────────────────────────────────────────
+if [ "$NO_JOB" = "0" ]; then
 step "Part B — 실제 번역 잡 (연결부가 도는가)"
 WORK="$SCRATCH/repo"
 git clone -q --depth 1 --branch "$BASE_SOURCE" \
@@ -244,13 +246,89 @@ EOF
 else
   bad "번역 PR 을 찾지 못했다"
 fi
+fi  # NO_JOB
+
+# ─────────────────────────────────────────────────────────────────────────
+# Part C — 한글이 남은 줄을 **그 줄만 다시 번역해 고치는** 경로. Part B 는 모델이
+# 한글을 남길 때만 이 경로를 태우므로(대개 안 남긴다) 기다려서는 검증이 안 된다.
+# 그래서 9월에 실제로 배포본에 남았던 세 모양을 산출물로 직접 심고, 실제 CLI 모델로
+# `worker._repair_hangul_residue` 를 돌린다. GitHub 는 쓰지 않는다.
+# 판정은 산출물의 성질이다 — 한글 0 · anchor attr / 인라인 코드 / 깨끗한 줄 보존 ·
+# 보고에 재번역 줄 수. 어떤 역어를 골랐는지는 묻지 않는다 (모델 몫).
+step "Part C — 한글 잔존 줄 재번역 (실제 모델 · GitHub 없음)"
+cd "$CT_DIR"
+REPAIR_OUT="$SCRATCH/repair.json"
+set +e
+TRANSLATE_TRANSLATE_ENGINE=claude-code \
+TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
+TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
+TRANSLATE_LOG_LEVEL=warning \
+  "$PY" - "$REPAIR_OUT" <<'EOF' 2>"$SCRATCH/repair.log"
+import asyncio, json, sys
+sys.path.insert(0, "translate"); sys.path.insert(0, ".")
+from app.translator import create_translator
+from app.worker import _repair_hangul_residue
+from app.notation import hangul_residue
+tr = create_translator()
+cases = {
+    # Compute-Auto-Scale#29 — 인라인 코드 안 UI 라벨
+    "en": "# Auto Scale\n\nOn the details screen, select `변경` to change the value.\n\nThis clean line must stay.\n",
+    # appguard-docs#11 heading 혼종 + pipeline#327 인라인 혼종
+    "ja": "# AppGuard\n\n### 自体차단処理 { #custom-block-processing }\n\n**[배포 상세 설定]**では、条件を追加できます。\n",
+}
+res = {}
+for lang, content in cases.items():
+    report = {}
+    out = asyncio.run(_repair_hangul_residue(tr, content, lang, lang, scope=None,
+                                             notation_report=report))
+    res[lang] = {"out": out, "report": report, "residue": hangul_residue(out)}
+json.dump(res, open(sys.argv[1], "w"), ensure_ascii=False, indent=1)
+EOF
+RC=$?
+set -e
+if [ "$RC" != "0" ]; then
+  bad "재번역 하네스 실행 실패 (exit $RC)"; tail -15 "$SCRATCH/repair.log"
+else
+  grep -q 'api\.anthropic\.com' "$SCRATCH/repair.log" && bad "api 엔진으로 돌았다 (CLI 여야 한다)" \
+                                                        || ok "CLI 엔진으로 실행됨"
+  # 판정은 파일로 받아 **현재 셸**에서 센다 — 파이프 뒤 while 은 서브셸이라 ok/bad 의
+  # PASS/FAIL 증가가 사라져, Part C 가 전부 실패해도 run 이 성공으로 끝난다 (실측).
+  "$PY" - "$REPAIR_OUT" > "$SCRATCH/repair.verdict" <<'EOF'
+import json, sys
+r = json.load(open(sys.argv[1]))
+def check(cond, msg): print(("PASS " if cond else "FAIL ") + msg)
+en, ja = r["en"], r["ja"]
+check(en["residue"] == [], f"en: 재번역 후 한글 0 (잔존 {len(en['residue'])})")
+check("This clean line must stay." in en["out"], "en: 한글 없는 줄은 그대로")
+check(len(en["report"].get("hangul_repaired", [])) == 1, f"en: 보고에 재번역 1줄 (={len(en['report'].get('hangul_repaired', []))})")
+check(en["out"].count("`") == 2, "en: 인라인 코드 백틱 쌍 보존")
+check(ja["residue"] == [], f"ja: 재번역 후 한글 0 (잔존 {len(ja['residue'])})")
+check("{ #custom-block-processing }" in ja["out"], "ja: heading anchor attr 바이트 보존")
+check(ja["out"].splitlines()[2].startswith("### "), "ja: heading 레벨 보존")
+check(len(ja["report"].get("hangul_repaired", [])) == 2, f"ja: 보고에 재번역 2줄 (={len(ja['report'].get('hangul_repaired', []))})")
+for lang in ("en", "ja"):
+    for h in r[lang]["report"].get("hangul_repaired", []):
+        print(f"  {lang} L{h['line']}: {h['before'][:60]}  →  {h['after'][:60]}")
+    for h in r[lang]["report"].get("hangul_repair_failed", []):
+        print(f"  {lang} L{h['line']} 기각: {h['reason']}")
+EOF
+  while IFS= read -r line; do
+    case "$line" in
+      PASS*) ok "${line#PASS }" ;;
+      FAIL*) bad "${line#FAIL }" ;;
+      *) echo "  $line" ;;
+    esac
+  done < "$SCRATCH/repair.verdict"
+fi
 
 # ─────────────────────────────────────────────────────────────────────────
 if [ "$KEEP" = "0" ]; then
   step "cleanup"
-  [ -n "${TR_PR:-}" ] && gh pr close "$TR_PR" --repo "$REPO" --delete-branch >/dev/null 2>&1 || true
-  gh pr close "$PR_URL" --repo "$REPO" --delete-branch >/dev/null 2>&1 || true
-  git -C "$WORK" push -q origin ":$SESSION_BRANCH" >/dev/null 2>&1 || true
+  if [ "$NO_JOB" = "0" ]; then
+    [ -n "${TR_PR:-}" ] && gh pr close "$TR_PR" --repo "$REPO" --delete-branch >/dev/null 2>&1 || true
+    gh pr close "$PR_URL" --repo "$REPO" --delete-branch >/dev/null 2>&1 || true
+    git -C "$WORK" push -q origin ":$SESSION_BRANCH" >/dev/null 2>&1 || true
+  fi
   rm -rf "$SCRATCH"
 fi
 
