@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=da513a62b82d -->
+
 ## 単変量時系列異常検出概要 { #term-pin-overview }
 
 このドキュメントは単変量時系列異常検出機能について説明します。
