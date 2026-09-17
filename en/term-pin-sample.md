@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=da513a62b82d -->
+
 ## Univariate Time Series Anomaly Detection Overview { #term-pin-overview }
 
 This document describes the univariate time series anomaly detection feature.
