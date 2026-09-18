@@ -1076,9 +1076,9 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| tokenId | Header | String | O | 토큰 ID |
-| name | Body | String | O | 엔드포인트 이름 |
+| tenantId | URL | String | Y | 테넌트 ID |
+| tokenId | Header | String | Y | 토큰 ID |
+| name | Body | String | Y | 엔드포인트 이름 |
 
 <a id="test-added-response"></a>
 #### 응답 { #test-added-response }
