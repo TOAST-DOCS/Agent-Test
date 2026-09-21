@@ -255,6 +255,14 @@
 #                 engine=env · lang-parity+cross-context)으로 돌린다 — 이 잡의
 #                 유일한 위험 지점이 DRY-RUN 해제라, e2e 가 반드시 그 경로를
 #                 지나가야 한다. 기대: exit 0 / FIX_LINKS: OK.
+#   list-items  — 목록 항목 splice (e2e-list-items-pipeline.sh). alpha 상주 픽스처
+#                 {ko,en,ja}/list-items-sample.md 의 마지막 불릿 하나를 고친 ko PR 을
+#                 실제 번역 잡(기본 dashboard /api/translate, list_items 명시)에
+#                 태워, 형제 불릿(en `Settings by Feature` · ja `認証方式の概要`)이
+#                 en/ja 에서 **바이트 그대로** 남고 편집한 불릿만 새 번역인지
+#                 판정. 응답 jenkins_params.LIST_ITEMS 로 플래그 전달도 확인.
+#                 기대: exit 0 / LIST_ITEMS: OK. (e2e-list-items.sh 는 모델 없는
+#                 전송 하네스라 별개 — 그쪽은 마커 조건 때문에 exit 3 이 현행.)
 #   preserve    — preserve-existing 반영 검증 (e2e-preserve-existing.sh).
 #                 full 재번역 + --preserve-existing 이 실제로 걸렸는지를 로그가
 #                 아니라 **산출물**로 본다: 한 섹션의 ko 산문만 바꾼 뒤 나머지
@@ -369,6 +377,7 @@ FS_ARGS=()   # fill-stubs 로 넘길 인자 (--translate/--engine/--model)
 SD_ARGS=()   # split-docs 로 넘길 인자 (--translate 만 의미 있음 — 모델을 안 쓴다)
 FL_ARGS=()   # fix-links 로 넘길 인자 (--translate 만; 옵션은 ⭐ 권장 옵션 고정)
 FT_ARGS=()   # fix-tables 로 넘길 인자 (--translate/--engine/--model)
+LI_ARGS=()   # list-items 로 넘길 인자 (--translate 만; 옵션은 운영 recommended 고정)
 PLANS=()
 SLEEP_BETWEEN=0
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
@@ -397,10 +406,10 @@ while [[ $# -gt 0 ]]; do
       # 검증하는 plan 이라 로컬 대응물이 없다). 세 스크립트에 모두 전달.
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2")
       FS_ARGS+=("$1" "$2"); SD_ARGS+=("$1" "$2"); FL_ARGS+=("$1" "$2")
-      FT_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
+      FT_ARGS+=("$1" "$2"); LI_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation)
+    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -421,7 +430,7 @@ while [[ $# -gt 0 ]]; do
       PLANS+=(webhook workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
               split-docs fix-links fix-tables jinja-mask
-              notation); shift ;;
+              notation list-items); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -583,6 +592,15 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^FIX_LINKS: (OK|FAIL)' "$log" | tail -n1 || true)"
     fix_pr="$(grep -oE 'Fix PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fix_pr:-<no-pr>}")
+  elif [[ "$plan" == "list-items" ]]; then
+    # 목록 항목 splice — 자체 스크립트. 편집한 불릿 하나 외 형제 불릿이 en/ja 에서
+    # 바이트 그대로 남는지 산출물로 판정. api 모드가 기본 — /api/translate 는
+    # 프리셋을 서버에서 적용하지 않아 스크립트 본문이 운영 recommended 를 옮긴다.
+    bash "$REPO_ROOT/scripts/e2e-list-items-pipeline.sh" "${LI_ARGS[@]}" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^LIST_ITEMS: (OK|FAIL)' "$log" | tail -n1 || true)"
+    tx_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${tx_pr:-<no-pr>}")
   elif [[ "$plan" == "preserve" ]]; then
     # preserve-existing 반영 — 자체 스크립트. --engine/--model 은 넘기지 않는다:
     # 이 plan 이 검증하는 결함은 CLI 엔진의 @file 한도라서 엔진이 고정이어야

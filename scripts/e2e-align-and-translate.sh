@@ -941,6 +941,7 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
       --workers 2 --chunk-workers 2 --tm-top-k 1 \
       --table-rows --skip-full-table --skip-anchor-only \
       --assign-anchors --align-headings --llm-patch-fallback \
+      --list-items \
       --fix-korean-leftover "${reconcile_opt[@]}" \
   ) 2>&1 | tee "$local_log"
   # ↑ --fix-korean-leftover: 표 헤더/짧은 조각 재번역 시 간헐적으로 남는 한글
@@ -995,7 +996,11 @@ fi
 # 권장 preset flags:
 #   --diff-granularity block --glossary-mode service --max-load-ratio 2
 #   --workers 2 --table-rows --skip-full-table --skip-anchor-only
-#   --assign-anchors --align-headings
+#   --assign-anchors --align-headings --list-items
+# --list-items (cloud-translate #924/#984, 운영 프리셋 2026-09-21 부터): /api/translate
+# 는 프리셋을 서버에서 적용하지 않으므로 여기서 명시해야 잡에 간다. 산출물
+# 판정은 e2e-list-items-pipeline.sh 가 맡고, 여기서는 켠 상태로 파이프라인이
+# 도는지만 본다.
 # PR#207/#211 (within/cross-opcode batching) 은 자동 활성 — 별도 설정 없음.
 # PR#220 (api-guide dedup) 은 파일명 substring 매치 (기본 "api-guide"). Agent-Test
 # 는 "public-api.md" 라 자동 미매치 — 대시보드에 dedup path override API 는 없음.
@@ -1026,7 +1031,8 @@ translate_body=$(cat <<JSON
   "skip_full_table": true,
   "skip_anchor_only": true,
   "assign_anchors": true,
-  "align_headings": true
+  "align_headings": true,
+  "list_items": true
 }
 JSON
 )
