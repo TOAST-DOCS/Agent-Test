@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e00ba5e11 -->
 
 <a id="up-drift"></a>
@@ -13,6 +15,16 @@
 
 <a id="up-drift-2"></a>
 ## セクション 2 { #up-drift-2 }
+
+
+<a id="up-drift-3"></a>
+
+セクション2に新しく追加した段落です。翻訳本にはこのセクションの本文がありませんでした。この文が3番目です。
+
+<a id="up-drift-2-sub"></a>
+### 新しく追加されたサブセクション { #up-drift-2-sub }
+
+このサブセクションは新しく追加されました。翻訳版にはまだ存在しません。
 
 
 <a id="up-drift-3"></a>
