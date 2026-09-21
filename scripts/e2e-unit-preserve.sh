@@ -33,7 +33,8 @@
 #   [A] 결정적 층 — `scripts/check_unit_baselines.py` 가 (유닛, 베이스라인) 짝을
 #       전수로 보고 네 규칙(foreign-anchor · body-injected · body-dropped · stub)
 #       으로 판정한다. 모델도 네트워크도 쓰지 않는다.
-#   [B] 산출물 층 — 실제 ko PR 을 로컬 `translate_pr.py --unit-preserve` 로 돌려
+#   [B] 산출물 층 — 실제 ko PR 을 배포된 번역 잡(`--translate api`, 기본) 또는
+#       로컬 `translate_pr.py --unit-preserve` 로 돌려
 #       anchor 복제·본문 복제를 실측하고, 안 바뀐 문장의 바이트 보존을 **플래그를
 #       끈 대조군**과 비교한다 (대조군이 없으면 "바이트 동일" 이 preserve 덕인지
 #       그냥 모델 운인지 구분할 수 없다).
@@ -87,8 +88,16 @@
 # Usage:
 #   source ./load_env.sh          # webhook 토글에만 필요
 #   bash scripts/e2e-unit-preserve.sh                       # [A]+[B], 대조군 포함
+#   bash scripts/e2e-unit-preserve.sh --translate local     # 로컬 translate_pr.py
 #   bash scripts/e2e-unit-preserve.sh --dry                 # [A] 만 (모델·네트워크 없음)
 #   bash scripts/e2e-unit-preserve.sh --no-control --keep
+#
+# **[B] 의 기본은 `--translate api`** — dashboard `/api/translate` → Jenkins, 즉
+# 운영이 실제로 도는 경로다. `/api/translate` 는 프리셋을 서버에서 적용하지 않고
+# 클라이언트가 보낸 필드만 Jenkins 파라미터로 옮기므로, 플래그가 잡까지 갔는지는
+# 응답의 `jenkins_params.UNIT_PRESERVE` 로만 확인할 수 있다 — 규칙 (3a). 로컬
+# 실행은 그 구간이 통째로 없다. `--translate local` 은 아직 배포되지 않은
+# 체크아웃(워크트리 포함)을 검증할 때 쓴다.
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
 #     bash scripts/e2e-unit-preserve.sh
 #
@@ -109,6 +118,10 @@ KEEP=0
 CONTROL=1
 DRY=0
 PR_TIMEOUT=1800
+# 기본은 **배포된 경로**다 — dashboard `/api/translate` → Jenkins. 운영이 실제로
+# 도는 곳이 거기이고, 플래그가 잡까지 갔는지는 응답의 `jenkins_params` 로만
+# 확인할 수 있다 (로컬 실행은 그 구간을 통째로 건너뛴다).
+TRANSLATE_MODE=api
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
@@ -118,6 +131,7 @@ while [[ $# -gt 0 ]]; do
     --keep)       KEEP=1; shift ;;
     --no-control) CONTROL=0; shift ;;
     --dry)        DRY=1; shift ;;
+    --translate)  TRANSLATE_MODE="$2"; shift 2 ;;
     --timeout)    PR_TIMEOUT="$2"; shift 2 ;;
     -h|--help)    sed -n '2,84p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
@@ -346,6 +360,52 @@ ko_pr_url="$(gh pr create --repo "$REPO" --base "$SESSION_BRANCH" --head "$HEAD_
   --label "$E2E_LABEL")"
 echo "  ko PR: $ko_pr_url"
 
+# `/api/translate` 는 프리셋을 서버에서 적용하지 않고 **클라이언트가 보낸 필드만**
+# Jenkins 파라미터로 옮긴다 (dashboard/api/jenkins.py `translate_params_from_opts`).
+# 그래서 본문은 운영 recommended 프리셋을 그대로 옮긴 것이어야 하고, 플래그가
+# 실제로 잡에 갔는지는 응답의 `jenkins_params.UNIT_PRESERVE` 로 확인한다.
+api_translate() {   # $1=PR URL  $2=true|false (unit_preserve)  → stdout: 받은 파라미터 값
+  local pr="$1" up="$2" body resp
+  body="$(cat <<JSON
+{
+  "pr_url": "$pr",
+  "base_branch": "$SESSION_BRANCH",
+  "diff_granularity": "block",
+  "glossary_mode": "service",
+  "max_load_ratio": "4",
+  "table_rows": true,
+  "skip_full_table": false,
+  "skip_anchor_only": true,
+  "assign_anchors": true,
+  "align_headings": true,
+  "load_exclude_tables": true,
+  "list_items": true,
+  "unit_preserve": $up
+}
+JSON
+)"
+  resp="$(curl -sS -X POST -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+    -H "Content-Type: application/json" -d "$body" "$DASHBOARD_BASE_URL/api/translate")"
+  printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get("queued") else 1)' \
+    2>/dev/null || { echo "error: /api/translate 가 큐에 넣지 못함: $resp" >&2; return 2; }
+  printf '%s' "$resp" | python3 -c 'import json,sys; print((json.load(sys.stdin).get("jenkins_params") or {}).get("UNIT_PRESERVE",""))' \
+    2>/dev/null || true
+}
+
+# 번역 PR 은 **head 접두**로 찾는다 — `--base-branch <세션>` 을 넘기면 번역 PR 의
+# base 는 ko head 가 아니라 세션 브랜치라, base 로 거르면 영영 못 찾는다.
+poll_tx_pr() {   # $1=ko head 브랜치 → stdout: 번역 PR URL (없으면 빈 문자열)
+  local head="$1" left=$(( PR_TIMEOUT / 20 )) url=""
+  while (( left-- > 0 )); do
+    url="$(gh pr list --repo "$REPO" --state open --limit 50 --json url,headRefName \
+      --jq ".[] | select(.headRefName | startswith(\"translate/$head\")) | .url" \
+      | sort -u | head -n1 || true)"
+    [[ -n "$url" ]] && break
+    sleep 20
+  done
+  printf '%s' "$url"
+}
+
 run_translate() {   # $1=로그 $2=PR URL $3...=추가 플래그
   local log="$1" pr="$2"; shift 2
   set +e
@@ -366,27 +426,52 @@ run_translate() {   # $1=로그 $2=PR URL $3...=추가 플래그
 }
 
 echo
-echo "[4] local translate_pr.py --unit-preserve (engine=claude-code, model=haiku)"
-[[ -f "$CLOUD_TRANSLATE_DIR/.env" ]] || { echo "error: $CLOUD_TRANSLATE_DIR/.env 없음" >&2; exit 1; }
-set +e
-run_translate "$LOG" "$ko_pr_url" --unit-preserve
-tx_rc=$?
-set -e
+echo "[4] 번역 실행 ($TRANSLATE_MODE, unit-preserve ON)"
+up_param=""
+if [[ "$TRANSLATE_MODE" == "api" ]]; then
+  : "${DASHBOARD_BASE_URL:?load_env.sh 를 source 하라}"
+  : "${DASHBOARD_API_TOKEN:?load_env.sh 를 source 하라}"
+  up_param="$(api_translate "$ko_pr_url" true)" || { echo "error: 큐 실패" >&2; KEEP=1; exit 2; }
+  echo "  jenkins_params.UNIT_PRESERVE='$up_param'"
+  tx_rc=0
+else
+  [[ -f "$CLOUD_TRANSLATE_DIR/.env" ]] || { echo "error: $CLOUD_TRANSLATE_DIR/.env 없음" >&2; exit 1; }
+  set +e
+  run_translate "$LOG" "$ko_pr_url" --unit-preserve
+  tx_rc=$?
+  set -e
+fi
 
-if (( tx_rc == 0 )) && ! grep -qE '^[[:space:]]*PARTIAL:' "$LOG"; then
+if [[ "$TRANSLATE_MODE" == "api" ]]; then
+  # 플래그가 잡까지 갔는지는 **Jenkins 가 받은 파라미터**로만 알 수 있다. 로컬
+  # 실행은 이 구간이 없어 늘 참이라, 배포 경로에서만 묻는 규칙이다.
+  if [[ "$up_param" == "true" ]]; then
+    ok "(3a) /api/translate → Jenkins 파라미터 UNIT_PRESERVE=true"
+  else
+    bad "(3a) jenkins_params.UNIT_PRESERVE='$up_param' — 플래그가 잡에 가지 않았다"
+  fi
+elif (( tx_rc == 0 )) && ! grep -qE '^[[:space:]]*PARTIAL:' "$LOG"; then
   ok "(3) 번역 성공 (exit 0, PARTIAL 없음)"
 else
   bad "(3) 번역 실패/부분 (exit $tx_rc)"
 fi
-grep -c "Existing .* translation" "$LOG" >/dev/null 2>&1 || true
 
 echo
 echo "[5] 번역 PR 감지"
-# 로그의 `Translation PR:` 줄에서 읽는다. `gh pr list --base <ko head>` 로
-# 폴링하면 안 된다 — `--base-branch <세션>` 으로 돌리면 번역 PR 의 base 는 ko
-# head 가 아니라 **세션 브랜치**다 (worker 가 base 에서 가지를 뜬다).
-tx_pr_url="$(grep -oE 'Translation PR: https://[^ ]+' "$LOG" | tail -1 | awk '{print $NF}')"
-[[ -n "$tx_pr_url" ]] || { echo "error: 번역 PR 미생성 (로그: $LOG)" >&2; exit 2; }
+if [[ "$TRANSLATE_MODE" == "api" ]]; then
+  tx_pr_url="$(poll_tx_pr "$HEAD_BRANCH")"
+else
+  # 로그의 `Translation PR:` 줄에서 읽는다. `gh pr list --base <ko head>` 로
+  # 폴링하면 안 된다 — `--base-branch <세션>` 으로 돌리면 번역 PR 의 base 는 ko
+  # head 가 아니라 **세션 브랜치**다 (worker 가 base 에서 가지를 뜬다).
+  tx_pr_url="$(grep -oE 'Translation PR: https://[^ ]+' "$LOG" | tail -1 | awk '{print $NF}')"
+fi
+if [[ -z "$tx_pr_url" ]]; then
+  echo "error: 번역 PR 미감지 — 브랜치·PR 은 보존한다 (조사용)" >&2; KEEP=1; exit 2
+fi
+if [[ "$TRANSLATE_MODE" == "api" ]]; then
+  ok "(3) 번역 PR 생성됨"
+fi
 echo "  번역 PR: $tx_pr_url"
 e2e_label_pr "$REPO" "$tx_pr_url" || true
 tx_head="$(gh pr view "$tx_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
@@ -405,11 +490,18 @@ if (( CONTROL )); then
   ctl_pr_url="$(gh pr create --repo "$REPO" --base "$SESSION_BRANCH" --head "$CTRL_BRANCH" \
     --title "e2e(unit-preserve): 대조군 — 플래그 없이 ($TS)" \
     --body "UNIT_PRESERVE 대조군." --label "$E2E_LABEL")"
-  set +e
-  run_translate "$CTRL_LOG" "$ctl_pr_url"
-  ctl_rc=$?
-  set -e
-  tx_ctl_url="$(grep -oE 'Translation PR: https://[^ ]+' "$CTRL_LOG" | tail -1 | awk '{print $NF}' || true)"
+  ctl_rc=0
+  if [[ "$TRANSLATE_MODE" == "api" ]]; then
+    ctl_up="$(api_translate "$ctl_pr_url" false)" || ctl_rc=2
+    echo "  대조군 jenkins_params.UNIT_PRESERVE='$ctl_up'"
+    tx_ctl_url="$(poll_tx_pr "$CTRL_BRANCH")"
+  else
+    set +e
+    run_translate "$CTRL_LOG" "$ctl_pr_url"
+    ctl_rc=$?
+    set -e
+    tx_ctl_url="$(grep -oE 'Translation PR: https://[^ ]+' "$CTRL_LOG" | tail -1 | awk '{print $NF}' || true)"
+  fi
   if [[ -n "$tx_ctl_url" ]]; then
     ctl_head="$(gh pr view "$tx_ctl_url" --repo "$REPO" --json headRefName --jq .headRefName)"
     git fetch -q origin "$ctl_head"
