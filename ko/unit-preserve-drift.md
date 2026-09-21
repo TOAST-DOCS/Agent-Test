@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=e2e00ba5e11 -->
+<!-- pre-align:aligned sig=d4b59c16f069 -->
 
 <a id="up-drift"></a>
 # unit-preserve e2e 픽스처 (drift)
@@ -13,6 +13,13 @@
 
 <a id="up-drift-2"></a>
 ## 섹션 2 { #up-drift-2 }
+
+2번 섹션에 새로 넣은 문단입니다. 번역본에는 이 섹션의 본문이 없었습니다. 이 문장이 세 번째입니다.
+
+<a id="up-drift-2-sub"></a>
+### 새로 넣은 하위 섹션 { #up-drift-2-sub }
+
+이 하위 섹션은 ko 가 새로 추가했습니다. 번역본에는 아직 없습니다.
 
 
 <a id="up-drift-3"></a>
