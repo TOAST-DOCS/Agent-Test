@@ -26,7 +26,7 @@
 * [기능별 설정](./feature-settings/)
     * [DEX 암호화 대상 지정](./dex-encryption/)
 * [서비스 API](./service-api/)
-* [릴리스 노트](./release-notes/)
+* [릴리스 노트 및 변경 이력](./release-notes/)
 
 두 개의 고정 표현은 실제로 관측된 드리프트에서 가져왔다.
 
