@@ -25,11 +25,6 @@ The API host is `$[ api_host ]$`.
 <a id="auth"></a>
 ### Authentication { #auth }
 
-{% if "ngsc" in build_flags -%}
-The NGSC environment follows a separate authentication procedure. Contact your representative for the issuance process.
-{% else -%}
-Issue a token and include it in the request header. Tokens have an expiration time.
-{% endif %}
 
 <a id="reference"></a>
 ### References { #reference }

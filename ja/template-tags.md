@@ -75,7 +75,7 @@ $[ tt_response_table('volume.') ]$
 <a id="tt-wrapped"></a>
 ### 段落を囲む条件文 { #tt-wrapped }
 
-{% if "gov" not in build_flags %}
+{% if "gov" in build_flags %}
 パブリック環境では、コンソールからすぐに設定できます。この段落は開始タグが直上に付いているため、増分翻訳ではタグと1つのユニットになります。
 {% endif %}
 

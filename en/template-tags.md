@@ -77,7 +77,6 @@ $[ tt_response_table('volume.') ]$
 
 {% if "gov" not in build_flags %}
 In the public environment you can configure this directly in the console. This paragraph has its opening tag right above it, so incremental translation puts the tag and the paragraph in one unit.
-{% endif %}
 
 {% if "gov" in build_flags %}In the government environment, ask your contact person about the issuance procedure.{% else %}In the public environment you can issue it directly in the console.{% endif %}
 
