@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2eunitpreserve -->
 
 <a id="up-drift"></a>
@@ -24,8 +26,8 @@ sentence of section 3, describing how instance 3 behaves. This is the third and 
 <a id="up-drift-4"></a>
 ## Section 4 { #up-drift-4 }
 
-This is the first sentence of section 4. The Korean side never touches it. This is the second
-sentence of section 4, describing how instance 4 behaves. This is the third and last sentence of section 4.
+This is the first sentence of section 4. The Korean side never touches it. I changed the second sentence of section 4.
+It describes the new behavior of Instance 4. This is the third and last sentence of section 4.
 
 <a id="up-drift-5"></a>
 ## Section 5 { #up-drift-5 }
