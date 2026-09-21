@@ -62,8 +62,9 @@
 #   1) 리포 워킹 트리에서 ko/en/ja list-items-sample.md 를 읽는다
 #   2) 메모리에서 ko 의 **마지막 불릿 하나만** 바꾼다 (head ko)
 #   3) `Translator._section_diff_splice` 를 mock 번역기로 돌려 전송분을 수집
-#   4) 같은 것을 **대조군**(en/ja 첫 줄 마커만 제거)으로 한 번 더
-#   5) 판정
+#      — 플래그 on/off 양쪽
+#   4) 같은 2×2 를 **대조군**(en/ja 첫 줄 마커만 제거)으로 한 번 더
+#   5) 판정 (아래 7개)
 #
 # ── 판정 규칙 ─────────────────────────────────────────────────────────────
 #   (1) 픽스처가 조건을 유지하고 있다 — en/ja 첫 줄이 마커, ko 첫 줄은 아니다
@@ -71,16 +72,46 @@
 #   (3) LIST_ITEMS=on 에서 고정 형제 불릿이 **전송되지 않는다**       <- 본체
 #   (4) 대조군(마커 제거)에서는 (2)(3) 이 성립한다 — 원인 격리
 #   (5) LIST_ITEMS=off 에서는 전송된다 (플래그가 실제로 일을 하는지)
+#   (6) 대조군+on 은 **편집한 유닛 하나만** 전송한다 — 이 픽스처의 바닥값
+#   (7) 마커 arm 의 **잔여**(편집 외 유닛 전송)가 예산을 넘지 않는다
 #
 # **(2)(3) 이 다시 FAIL 이면 회귀다.** 마커 오프셋 허용이 사라졌거나, 판정이
 # `_maybe_expand_lists` 가 아닌 사본을 보고 있다는 뜻이다 — 실제로 이 스크립트가
 # 한 번 그랬다: 규칙을 `k == t` 로 베껴 적어 두어, 파이프라인이 고쳐지고 전송량이
 # 줄어든 뒤에도 "거절" 이라고 계속 답했다. 판정은 반드시 그 함수에게 묻는다.
 #
+# ── (6)(7) — 목록 확장이 켜졌다는 것과 잔여가 0 이라는 것은 다른 말이다 ────
+# 2×2(마커 × 플래그) 로 재면 채택되고도 남는 구간이 보인다 (실측 2026-09-21,
+# `_marker_offset` 수정 후):
+#
+#     마커  플래그  en 전송        ja 전송
+#     있음  on      5콜  696자     3콜  353자
+#     있음  off     5콜  889자     3콜  546자
+#     없음  on      1콜   36자     1콜   36자     <- 편집한 불릿 하나
+#     없음  off     1콜  229자     1콜  229자     <- 목록 블록 통째
+#
+# 플래그는 두 arm 에서 모두 일한다 (889->696 · 546->353 · 229->36, 고정 불릿
+# 누출 2건->0). 하지만 마커가 있으면 **편집과 무관한 산문 문단**까지 함께
+# 전송된다 — en 4개 660자 · ja 2개 317자. 원인은 플래그가 아니라 정렬 경로다:
+# 마커 한 줄 때문에 유닛 개수가 21:22 로 어긋나 `_section_diff_splice` 가 위치
+# 짝짓기 대신 `_structural_alignment` 로 떨어지고, 그 시그니처가 `volume_aware`
+# 에서 **content 줄 수**를 포함하기 때문에 ko 3줄 ↔ en 4줄처럼 줄바꿈만 다른
+# 문단이 `replace`(=donor) 로 분류돼 재번역된다. 마커가 없으면 개수가 21:21 로
+# 맞아 위치 짝짓기가 쓰이고 그 검사를 아예 지나지 않는다.
+#
+# 즉 `_marker_offset` 은 목록 확장의 **채택**을 되살렸지만 정렬 경로 자체는
+# 여전히 structural fallback 이다. 잔여는 플래그와 독립이라 (6) 은 대조군에서만
+# 성립하고, 마커 arm 은 (7) 의 **예산**으로 현 상태를 못 박는다 — 줄어들면
+# 예산을 내리고, 늘어나면 FAIL 이다. 고칠 자리는 cloud-translate
+# `_section_diff_splice`: `_maybe_expand_lists` 가 마커 오프셋으로 채택했다면
+# 짝은 이미 (개수 + landmark + structural 수용) 증명된 것이므로, 대상 쪽 마커
+# 유닛을 떼고 위치 짝짓기를 쓰면 대조군과 같아진다.
+#
 # ── exit code ─────────────────────────────────────────────────────────────
-#   0  (1)~(5) 전부 통과 — **현행 기대값**
+#   0  (1)~(7) 전부 통과 — **현행 기대값**
 #   3  결함이 재현됐다 — (2)(3) 만 실패하고 대조군 (4) 는 통과 (수정 전 기대값)
-#   1  스크립트/환경 오류, 또는 대조군까지 실패 (픽스처가 깨졌다는 뜻)
+#   1  스크립트/환경 오류, 또는 대조군까지 실패 (픽스처가 깨졌다는 뜻),
+#      또는 잔여 예산 초과 (7)
 #
 # Usage:
 #   bash scripts/e2e-list-items.sh
@@ -102,7 +133,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --verbose|-v) VERBOSE=1; shift ;;
     --doc) DOC="$2"; shift 2 ;;
-    -h|--help) sed -n '1,80p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,121p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -219,33 +250,49 @@ def leaked(units):
     return sorted({p for p in PINNED for u in units if p in u})
 
 
+# 편집한 유닛 외에 전송된 것 = 잔여. 헤더의 (6)(7) 설명 참고 — 원인은 플래그가
+# 아니라 마커 한 줄이 강제하는 structural fallback 이다.
+def residual(units):
+    return [u for u in units if EDIT_TO not in u]
+
+
+# 마커 arm 의 잔여 예산 (실측 2026-09-21, `_marker_offset` 수정 후). 줄어들면
+# 이 값을 내리고, **늘어나면 FAIL** — 정렬 경로가 더 나빠졌다는 뜻이다.
+RESIDUAL_BUDGET = {"en": (4, 660), "ja": (2, 317)}
+
+
 async def arm(tag, en_t, ja_t, list_items):
     rows = {}
     for lang, tgt in (("en", en_t), ("ja", ja_t)):
         k, t, adopt = counts(ko, tgt, list_items)
         units = await sent_units(tgt, lang, list_items)
+        res = residual(units)
         rows[lang] = dict(ko_units=k, tgt_units=t, adopt=adopt,
                           calls=len(units), chars=sum(len(u) for u in units),
-                          leak=leaked(units), units=units)
+                          leak=leaked(units), units=units,
+                          res_units=len(res), res_chars=sum(len(u) for u in res))
     for lang, r in rows.items():
         print(f"      {tag} {lang}: 유닛 ko={r['ko_units']} 대상={r['tgt_units']}"
               f" -> 채택={'예' if r['adopt'] else '아니오'}"
               f" · 전송 {r['calls']}콜 {r['chars']}자"
+              f" · 편집 외 잔여 {r['res_units']}개 {r['res_chars']}자"
               f" · 고정 불릿 누출={r['leak'] or '없음'}")
         if VERBOSE:
             for u in r["units"]:
                 head = (u.splitlines() or [""])[0]
-                print(f"          - {len(u):4}자  {head[:76]}")
+                tick = "EDIT" if EDIT_TO in u else "res "
+                print(f"          - {tick} {len(u):4}자  {head[:70]}")
     return rows
 
 
 async def main():
-    print("\n[2/4] 실측 — 픽스처 그대로 (마커 있음)")
+    print("\n[2/4] 실측 — 2×2 (마커 × 플래그) · 픽스처 그대로 (마커 있음)")
     on = await arm("on ", en, ja, True)
     off = await arm("off", en, ja, False)
 
     print("\n[3/4] 대조군 — 마커 한 줄만 제거")
     con_on = await arm("on ", strip(en), strip(ja), True)
+    con_off = await arm("off", strip(en), strip(ja), False)
 
     print("\n[4/4] 판정")
     check(2, all(r["adopt"] for r in on.values()),
@@ -258,11 +305,41 @@ async def main():
            and not any(r["leak"] for r in con_on.values()))
     check(4, ctl, "대조군(마커 제거)에서는 (2)(3) 이 성립한다 — 원인 격리")
     check(5, any(r["leak"] for r in off.values()),
-          "LIST_ITEMS=off 에서는 전송된다 (플래그가 실제로 일을 한다)")
+          "LIST_ITEMS=off 에서는 전송된다 (플래그가 실제로 일을 한다)",
+          "off 누출: " + str({l: r["leak"] for l, r in off.items() if r["leak"]}))
+
+    # (6) 바닥값 — 마커가 없으면 편집한 불릿 하나만 나간다. 대조군의 off arm 과
+    #     나란히 찍어, 플래그가 그 arm 에서도 일한다는 것을 숫자로 남긴다.
+    floor_ok = all(r["res_units"] == 0 and r["calls"] == 1
+                   for r in con_on.values())
+    check(6, floor_ok,
+          "대조군+on 은 편집한 유닛 하나만 전송한다 (잔여 0)",
+          " · ".join(f"{l}: on {r['calls']}콜 {r['chars']}자"
+                     f" vs off {con_off[l]['calls']}콜 {con_off[l]['chars']}자"
+                     for l, r in con_on.items()))
+
+    # (7) 잔여 예산 — 마커 arm 은 정렬이 structural fallback 으로 떨어져 편집과
+    #     무관한 산문 문단까지 전송한다. 플래그와 독립이므로(off arm 도 같은
+    #     유닛을 보낸다) 여기서는 **현 상태를 못 박고 악화만 잡는다.**
+    over = []
+    for lang, r in on.items():
+        mu, mc = RESIDUAL_BUDGET[lang]
+        if r["res_units"] > mu or r["res_chars"] > mc:
+            over.append(f"{lang} {r['res_units']}개 {r['res_chars']}자 > 예산 {mu}개 {mc}자")
+    check(7, not over,
+          "마커 arm 의 잔여가 예산 이내 (정렬 경로가 더 나빠지지 않았다)",
+          "; ".join(over) if over
+          else " · ".join(f"{l}: 잔여 {r['res_units']}개 {r['res_chars']}자"
+                          f" (off {off[l]['res_units']}개 {off[l]['res_chars']}자)"
+                          for l, r in on.items()))
 
     print()
     if not fail:
         print("RESULT: OK — 마커가 있어도 목록이 항목 단위로 splice 된다.")
+        print("        잔여(편집 외 전송): "
+              + " · ".join(f"{l} {r['res_units']}개 {r['res_chars']}자"
+                           for l, r in on.items())
+              + "  <- 마커 없는 대조군은 0. 헤더 (6)(7) 참고.")
         sys.exit(0)
     if set(fail) <= {2, 3} and ctl:
         print("RESULT: REPRO — 마커 오프셋 허용이 회귀했다.")

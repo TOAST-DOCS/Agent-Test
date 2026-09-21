@@ -101,6 +101,16 @@
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
 #     bash scripts/e2e-unit-preserve.sh
 #
+# **미머지 개선을 배포 경로로 검증하려면 `--pipeline-branch <자식 잡>`** 을 준다.
+# `/api/translate` 본문의 `pipeline_branch` 로 넘어가 dashboard 가 multibranch
+# 자식 잡 `…/job/translate/job/<이름>/` 을 빌드한다 (`multibranch_job_url`). 안
+# 주면 `JENKINS_JOB_DEFAULT_BRANCH`(=`main`) 이라 **머지된 코드만** 검증된다 —
+# 즉 `--translate api` 는 기본적으로 [A] 층이 보는 체크아웃과 **다른 코드**를
+# 돌린다. 그 차이를 없애려면 그 PR 의 자식 잡 이름(`PR-<번호>`)을 준다:
+#   bash scripts/e2e-unit-preserve.sh --pipeline-branch PR-997
+# 한 번도 빌드되지 않은 자식 잡은 파라미터가 등록돼 있지 않아
+# `buildWithParameters` 가 400 이다 — 빈 `/build` 한 번으로 등록한 뒤 쓴다.
+#
 # e2e 는 **CLI 엔진으로 돈다** (`--engine api` 를 쓰지 않는다 — CLAUDE.md).
 # 의존성: git, gh(로그인), python3, cloud-translate 체크아웃(+ .env, venv).
 set -eo pipefail
@@ -122,6 +132,9 @@ PR_TIMEOUT=1800
 # 도는 곳이 거기이고, 플래그가 잡까지 갔는지는 응답의 `jenkins_params` 로만
 # 확인할 수 있다 (로컬 실행은 그 구간을 통째로 건너뛴다).
 TRANSLATE_MODE=api
+# `/api/translate` 의 `pipeline_branch` — cloud-translate 의 Jenkins multibranch
+# 자식 잡 이름. 빈 값이면 dashboard 기본(=main).
+PIPELINE_BRANCH=""
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
@@ -132,8 +145,9 @@ while [[ $# -gt 0 ]]; do
     --no-control) CONTROL=0; shift ;;
     --dry)        DRY=1; shift ;;
     --translate)  TRANSLATE_MODE="$2"; shift 2 ;;
+    --pipeline-branch) PIPELINE_BRANCH="$2"; shift 2 ;;
     --timeout)    PR_TIMEOUT="$2"; shift 2 ;;
-    -h|--help)    sed -n '2,84p' "$0"; exit 0 ;;
+    -h|--help)    sed -n '2,96p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -181,6 +195,7 @@ echo "  cloud-translate : $CLOUD_TRANSLATE_DIR"
 echo "  session         : $SESSION_BRANCH"
 echo "  픽스처          : {ko,en,ja}/$ALIGNED · {ko,en,ja}/$DRIFT"
 echo "  모드            : $( ((DRY)) && echo '[A] 결정적 층만 (--dry)' || echo "[A]+[B] (대조군 $( ((CONTROL)) && echo 포함 || echo 제외 ))" )"
+echo "  잡 브랜치       : ${PIPELINE_BRANCH:-<dashboard 기본 = main>}"
 echo
 
 [[ -x "$CLOUD_TRANSLATE_PY" ]] || { echo "error: python 없음: $CLOUD_TRANSLATE_PY" >&2; exit 1; }
@@ -365,11 +380,15 @@ echo "  ko PR: $ko_pr_url"
 # 그래서 본문은 운영 recommended 프리셋을 그대로 옮긴 것이어야 하고, 플래그가
 # 실제로 잡에 갔는지는 응답의 `jenkins_params.UNIT_PRESERVE` 로 확인한다.
 api_translate() {   # $1=PR URL  $2=true|false (unit_preserve)  → stdout: 받은 파라미터 값
-  local pr="$1" up="$2" body resp
+  local pr="$1" up="$2" body resp pb=""
+  # 값이 있을 때만 키를 넣는다 — 빈 문자열도 dashboard 는 기본 브랜치로 폴백하지만,
+  # 키를 생략해 "지정 안 함" 이 보낸 본문에도 드러나게 한다.
+  [[ -n "$PIPELINE_BRANCH" ]] && pb="  \"pipeline_branch\": \"$PIPELINE_BRANCH\","
   body="$(cat <<JSON
 {
   "pr_url": "$pr",
   "base_branch": "$SESSION_BRANCH",
+$pb
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "4",

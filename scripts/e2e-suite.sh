@@ -393,7 +393,8 @@ FS_ARGS=()   # fill-stubs 로 넘길 인자 (--translate/--engine/--model)
 SD_ARGS=()   # split-docs 로 넘길 인자 (--translate 만 의미 있음 — 모델을 안 쓴다)
 FL_ARGS=()   # fix-links 로 넘길 인자 (--translate 만; 옵션은 ⭐ 권장 옵션 고정)
 FT_ARGS=()   # fix-tables 로 넘길 인자 (--translate/--engine/--model)
-LI_ARGS=()   # list-items 로 넘길 인자 (--translate 만; 옵션은 운영 recommended 고정)
+LI_ARGS=()   # list-items 로 넘길 인자 (--translate/--pipeline-branch; 옵션은 운영 recommended 고정)
+UP_ARGS=()   # unit-preserve 로 넘길 인자 (--translate/--pipeline-branch)
 PLANS=()
 SLEEP_BETWEEN=0
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
@@ -415,14 +416,18 @@ while [[ $# -gt 0 ]]; do
     --no-reuse-align)
       REUSE_ALIGN=0; shift ;;
     --translate-pipeline-branch)
-      # translate 잡만 특정 cloud-translate 브랜치에서 — align/retranslate 양쪽에 전달
-      PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); shift 2 ;;
+      # translate 잡만 특정 cloud-translate 브랜치에서 — align/retranslate 양쪽에 전달.
+      # list-items·unit-preserve 의 전용 스크립트는 플래그 이름이 `--pipeline-branch`
+      # 다 (그 스크립트에는 translate 잡 하나만 있어 'translate-' 접두가 의미 없다).
+      PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2")
+      LI_ARGS+=(--pipeline-branch "$2"); UP_ARGS+=(--pipeline-branch "$2"); shift 2 ;;
     --translate)
       # local = 모든 단계를 로컬 실행 (webhook plan 만 예외 — 배포 경로 자체를
       # 검증하는 plan 이라 로컬 대응물이 없다). 세 스크립트에 모두 전달.
       PASS_ARGS+=("$1" "$2"); EM_ARGS+=("$1" "$2"); KR_ARGS+=("$1" "$2")
       FS_ARGS+=("$1" "$2"); SD_ARGS+=("$1" "$2"); FL_ARGS+=("$1" "$2")
-      FT_ARGS+=("$1" "$2"); LI_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
+      FT_ARGS+=("$1" "$2"); LI_ARGS+=("$1" "$2"); UP_ARGS+=("$1" "$2")
+      TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
     webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve)
@@ -630,8 +635,10 @@ for plan in "${PLANS[@]}"; do
   elif [[ "$plan" == "unit-preserve" ]]; then
     # 유닛별 preserve — 자체 스크립트. 엔진·모델은 넘기지 않는다: 이 plan 이
     # 보는 것은 "모델이 미끼를 물었나" 이전에 "짝이 맞나" 이고, 결정적 층 [A] 는
-    # 엔진과 무관하다. 산출물 층 [B] 는 로컬 translate_pr.py 고정 (CLI 엔진).
-    bash "$REPO_ROOT/scripts/e2e-unit-preserve.sh" > "$log" 2>&1
+    # 엔진과 무관하다. 산출물 층 [B] 는 그 스크립트의 기본인 `--translate api`
+    # (dashboard → Jenkins) 로 돌고, `--translate` / `--translate-pipeline-branch`
+    # 를 준 경우에만 그 값이 전달된다.
+    bash "$REPO_ROOT/scripts/e2e-unit-preserve.sh" "${UP_ARGS[@]}" > "$log" 2>&1
     ec=$?
     verdict="$(grep -oE '^UNIT_PRESERVE: (OK|REPRO|FAIL)' "$log" | tail -n1 || true)"
     pairs="$(grep -oE '위반: .*' "$log" | tail -n1 || true)"

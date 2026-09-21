@@ -31,8 +31,9 @@
 #   1) 세션 브랜치 e2e-listitems/<ts> ← origin/alpha. 픽스처 3벌·고정 줄 존재 확인
 #   2) head 브랜치에서 ko/list-items-sample.md 의 **마지막 불릿 하나**만 변경 → ko PR
 #   3) 번역 — api: POST /api/translate (recommended + list_items) / local: translate_pr.py --list-items
-#   4) 번역 PR 감지 (base = ko head, head = translate/*)
-#   5) 판정 (아래) → 6) 결과. 종료 시 브랜치·PR 정리 (--keep 이면 보존)
+#   4) 번역 PR 감지 (head 접두 translate/<ko head>)
+#   5) **대조군** — 같은 ko 편집을 LIST_ITEMS 없이 한 번 더 (`--no-control` 로 생략)
+#   6) 판정 (아래) → 7) 대조군 대비 보존 → 8) 결과. 종료 시 정리 (--keep 이면 보존)
 #
 # ── 판정 규칙 ─────────────────────────────────────────────────────────────
 #   (1) [api] 응답 jenkins_params.LIST_ITEMS == "true"        ← 플래그가 잡까지 갔다
@@ -41,6 +42,17 @@
 #   (4) 편집한 불릿(릴리스 노트)은 en/ja 에서 실제로 바뀌었고 링크·마커 유지
 #   (5) 목록이 끊기지 않았다 — 6줄이 빈 줄 없이 연속 (_append_list_unit)
 #   (6) 고정 목록 블록 안에서 바뀐 줄은 편집한 불릿 하나뿐 (블록 밖 변경은 WARN)
+#   (7) **대조군(LIST_ITEMS off)보다 고정 불릿 보존이 많거나 같다**  ← 플래그 기여
+#
+# ── 왜 대조군이 필요한가 ──────────────────────────────────────────────────
+# (2)(3) 만으로는 "바이트 동일" 이 플래그 덕인지 그날 모델이 우연히 같은 표현을
+# 낸 것인지 구분할 수 없다. 실제 사고에서도 **en 만 갈리고 ja 는 우연히 같은
+# 표현을 냈다** (AppGuard#446) — 즉 노출된 불릿이 매번 다시 쓰이는 것은 아니다.
+# 그래서 같은 ko 편집을 `list_items` 없이 한 번 더 돌려 보존 개수를 나란히 잰다
+# (`e2e-unit-preserve.sh` 의 (7) 과 같은 설계). 대조군이 더 많이 보존했다면 그
+# 실행에서는 플래그가 아무 일도 하지 않은 것이므로 FAIL 이다. 같은 수면 PASS —
+# 노출이 곧 재작성은 아니므로 대조군이 운 좋게 살아남는 것은 정상이다.
+# `--no-control` 로 끄면 (7) 은 WARN 으로 건너뛴다 (번역 잡 하나를 아낀다).
 #
 # ── exit code ─────────────────────────────────────────────────────────────
 #   0  전부 통과 (마지막 줄 `LIST_ITEMS: OK`)
@@ -50,7 +62,19 @@
 # Usage:
 #   bash scripts/e2e-list-items-pipeline.sh                    # --translate api (기본)
 #   bash scripts/e2e-list-items-pipeline.sh --translate local  # 로컬 translate_pr.py --list-items
+#   bash scripts/e2e-list-items-pipeline.sh --no-control       # 대조군 없이 (잡 1개)
 #   bash scripts/e2e-list-items-pipeline.sh --keep --timeout 2400
+#
+#   # cloud-translate 의 특정 Jenkins 자식 잡(미머지 PR)으로 돌린다
+#   bash scripts/e2e-list-items-pipeline.sh --pipeline-branch PR-997
+#
+# `--pipeline-branch <자식 잡>` — `/api/translate` 본문의 `pipeline_branch` 로
+# 넘어가 dashboard 가 multibranch **자식 잡** `…/job/translate/job/<이름>/` 을
+# 빌드한다 (`dashboard/api/jenkins.py` `multibranch_job_url`). 안 주면
+# `JENKINS_JOB_DEFAULT_BRANCH`(=`main`) 이므로 **머지된 코드만** 검증된다 —
+# 미머지 개선을 배포 경로로 확인하려면 그 PR 의 자식 잡 이름(`PR-<번호>`)을 준다.
+# 자식 잡은 한 번도 안 빌드됐으면 파라미터가 등록돼 있지 않아 `buildWithParameters`
+# 가 400 이다. 빈 `/build` 한 번으로 등록한 뒤 쓴다 (dashboard-api.md 참고).
 #
 # 의존성: git, gh(로그인), python3. api 모드는 load_env.sh 의 DASHBOARD_BASE_URL /
 # DASHBOARD_API_TOKEN. local 모드는 $CLOUD_TRANSLATE_DIR/.env 와 claude CLI 인증.
@@ -63,9 +87,12 @@ BASE_SOURCE="alpha"
 TS="$(date -u +%Y%m%d-%H%M%S)"
 SESSION_BRANCH="e2e-listitems/$TS"
 HEAD_BRANCH="translate-test-listitems/$TS"
+CTRL_BRANCH="translate-test-listitems-ctl/$TS"
 DOC="list-items-sample.md"
 TRANSLATE_MODE="api"
 KEEP=0
+CONTROL=1
+PIPELINE_BRANCH=""
 PR_TIMEOUT=1800
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
@@ -77,9 +104,11 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --translate) TRANSLATE_MODE="$2"; shift 2 ;;
     --keep)      KEEP=1; shift ;;
+    --no-control) CONTROL=0; shift ;;
+    --pipeline-branch) PIPELINE_BRANCH="$2"; shift 2 ;;
     --timeout)   PR_TIMEOUT="$2"; shift 2 ;;
     --doc)       DOC="$2"; shift 2 ;;
-    -h|--help)   sed -n '2,60p' "$0"; exit 0 ;;
+    -h|--help)   sed -n '2,80p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -93,18 +122,30 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 tmpdir="$(mktemp -d)"; LOG="$tmpdir/translate.log"
 
-ko_pr_url=""; tx_pr_url=""
+ko_pr_url=""; tx_pr_url=""; ctl_pr_url=""; tx_ctl_url=""
 cleanup() {
   local rc=$?
-  if (( KEEP )); then echo; echo "--keep: 보존 — $SESSION_BRANCH (ko PR: ${ko_pr_url:-없음}, 번역 PR: ${tx_pr_url:-없음})"; return $rc; fi
+  local wt
+  for wt in "$tmpdir/tx" "$tmpdir/txctl"; do
+    [[ -d "$wt" ]] && git worktree remove --force "$wt" >/dev/null 2>&1 || true
+  done
+  if (( KEEP )); then echo; echo "--keep: 보존 — $SESSION_BRANCH (ko PR: ${ko_pr_url:-없음}, 번역 PR: ${tx_pr_url:-없음}, 대조군: ${tx_ctl_url:-없음})"; return $rc; fi
   echo; echo "[cleanup] PR 닫기 · 브랜치 정리"
-  [[ -n "$tx_pr_url" ]] && gh pr close "$tx_pr_url" --repo "$REPO" --delete-branch >/dev/null 2>&1 || true
-  [[ -n "$ko_pr_url" ]] && gh pr close "$ko_pr_url" --repo "$REPO" >/dev/null 2>&1 || true
-  local b
-  while read -r b; do
-    [[ -n "$b" ]] && git push origin ":$b" >/dev/null 2>&1 || true
-  done < <(git ls-remote --heads origin "refs/heads/translate/$HEAD_BRANCH*" 2>/dev/null | sed 's|.*refs/heads/||')
+  local u
+  for u in "$tx_pr_url" "$tx_ctl_url"; do
+    [[ -n "$u" ]] && gh pr close "$u" --repo "$REPO" --delete-branch >/dev/null 2>&1 || true
+  done
+  for u in "$ko_pr_url" "$ctl_pr_url"; do
+    [[ -n "$u" ]] && gh pr close "$u" --repo "$REPO" >/dev/null 2>&1 || true
+  done
+  local b prefix
+  for prefix in "translate/$HEAD_BRANCH" "translate/$CTRL_BRANCH"; do
+    while read -r b; do
+      [[ -n "$b" ]] && git push origin ":$b" >/dev/null 2>&1 || true
+    done < <(git ls-remote --heads origin "refs/heads/${prefix}*" 2>/dev/null | sed 's|.*refs/heads/||')
+  done
   git push origin ":$HEAD_BRANCH"    >/dev/null 2>&1 || true
+  git push origin ":$CTRL_BRANCH"    >/dev/null 2>&1 || true
   git push origin ":$SESSION_BRANCH" >/dev/null 2>&1 || true
   git checkout -q "$BASE_SOURCE" 2>/dev/null || true
   return $rc
@@ -132,16 +173,17 @@ TARGET_EN="* [Release Notes](./release-notes/)"
 TARGET_JA="* [リリースノート](./release-notes/)"
 
 echo "=== 목록 항목 splice — 파이프라인 e2e ==="
-echo "  mode    : --translate $TRANSLATE_MODE"
+echo "  mode    : --translate $TRANSLATE_MODE (대조군 $( ((CONTROL)) && echo 포함 || echo 제외 ))"
+echo "  잡 브랜치: ${PIPELINE_BRANCH:-<dashboard 기본 = main>}"
 echo "  session : $SESSION_BRANCH"
 echo "  doc     : $DOC"
 echo
 
 source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-toggle.sh"
-echo "[0/6] webhook 비활성화"
+echo "[0/8] webhook 비활성화"
 set_webhook_repo_enabled false
 
-echo "[1/6] 세션 브랜치 생성 + 픽스처 확인"
+echo "[1/8] 세션 브랜치 생성 + 픽스처 확인"
 git fetch -q origin "$BASE_SOURCE"
 git checkout -q -B "$SESSION_BRANCH" "origin/$BASE_SOURCE"
 for lang in ko en ja; do
@@ -153,7 +195,7 @@ for l in "${PINNED_JA[@]}" "$TARGET_JA"; do grep -qxF -- "$l" "ja/$DOC" || { ech
 git push -q origin "$SESSION_BRANCH"
 echo "  픽스처 3벌 · 고정 줄 en 6 / ja 6 확인"
 
-echo "[2/6] ko 변경 — 마지막 불릿 하나"
+echo "[2/8] ko 변경 — 마지막 불릿 하나"
 git checkout -q -B "$HEAD_BRANCH" "$SESSION_BRANCH"
 python3 - "ko/$DOC" "$EDIT_FROM" "$EDIT_TO" <<'PY'
 import io, sys
@@ -179,14 +221,20 @@ ok()  { echo "  PASS  $1"; }
 bad() { echo "  FAIL  $1"; fails=$((fails + 1)); }
 warn(){ echo "  WARN  $1"; }
 
-echo "[3/6] 번역 실행 ($TRANSLATE_MODE)"
-if [[ "$TRANSLATE_MODE" == "api" ]]; then
-  # 운영 recommended 프리셋을 그대로 옮긴 본문 + list_items. /api/translate 는
-  # 프리셋을 서버에서 적용하지 않으므로 여기 없는 플래그는 잡에 가지 않는다.
-  translate_body="$(cat <<JSON
+# `/api/translate` 는 프리셋을 서버에서 적용하지 않고 **클라이언트가 보낸 필드만**
+# Jenkins 파라미터로 옮긴다 (dashboard/api/jenkins.py `translate_params_from_opts`).
+# 그래서 본문은 운영 recommended 프리셋을 그대로 옮긴 것이어야 하고, 플래그가
+# 실제로 잡에 갔는지는 응답의 `jenkins_params.LIST_ITEMS` 로만 확인할 수 있다.
+# `pipeline_branch` 는 값이 있을 때만 넣는다 — 빈 문자열로 넘기면 dashboard 가
+# 기본 브랜치로 폴백하지만, 키를 생략해 "지정 안 함" 이 파라미터에도 드러나게 한다.
+api_translate() {   # $1=PR URL  $2=true|false (list_items)  → stdout: LIST_ITEMS 파라미터 값
+  local pr="$1" li="$2" body resp pb=""
+  [[ -n "$PIPELINE_BRANCH" ]] && pb="  \"pipeline_branch\": \"$PIPELINE_BRANCH\","
+  body="$(cat <<JSON
 {
-  "pr_url": "$ko_pr_url",
+  "pr_url": "$pr",
   "base_branch": "$SESSION_BRANCH",
+$pb
   "diff_granularity": "block",
   "glossary_mode": "service",
   "max_load_ratio": "4",
@@ -196,53 +244,110 @@ if [[ "$TRANSLATE_MODE" == "api" ]]; then
   "assign_anchors": true,
   "align_headings": true,
   "load_exclude_tables": true,
-  "list_items": true
+  "list_items": $li
 }
 JSON
 )"
   resp="$(curl -sS -X POST -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-    -H "Content-Type: application/json" -d "$translate_body" "$DASHBOARD_BASE_URL/api/translate")"
-  echo "$resp" | python3 -m json.tool | sed 's/^/    /' | head -30
+    -H "Content-Type: application/json" -d "$body" "$DASHBOARD_BASE_URL/api/translate")"
+  echo "$resp" | python3 -m json.tool 2>/dev/null | sed 's/^/    /' | head -30 >&2
   printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get("queued") else 1)' 2>/dev/null \
-    || { echo "error: /api/translate 가 큐에 넣지 못함" >&2; KEEP=1; exit 2; }
-  li_param="$(printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); print((d.get("jenkins_params") or {}).get("LIST_ITEMS",""))' 2>/dev/null || true)"
-else
-  [[ -f "$CLOUD_TRANSLATE_DIR/.env" ]] || { echo "error: $CLOUD_TRANSLATE_DIR/.env 없음" >&2; exit 1; }
+    || { echo "error: /api/translate 가 큐에 넣지 못함" >&2; return 2; }
+  # list_items=false 는 Jenkins 파라미터를 아예 안 보낸다 (기본 false) — 그래서
+  # 대조군의 기대값은 "true 가 아님" 이고, 빈 문자열이 정상이다.
+  printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); print((d.get("jenkins_params") or {}).get("LIST_ITEMS",""))' 2>/dev/null || true
+}
+
+run_translate_local() {   # $1=로그 $2=PR URL $3...=추가 플래그
+  local log="$1" pr="$2"; shift 2
   set +e
   (cd "$CLOUD_TRANSLATE_DIR" && \
     TRANSLATE_TRANSLATE_ENGINE=claude-code \
     TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
     TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
-    "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" \
+    "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$pr" \
       --base-branch "$SESSION_BRANCH" \
       --diff-granularity block --glossary-mode service --max-load-ratio 4 \
       --workers 2 --chunk-workers 2 --tm-top-k 1 \
       --table-rows --no-skip-full-table --skip-anchor-only \
       --assign-anchors --align-headings --load-exclude-tables \
-      --list-items \
-  ) 2>&1 | tee "$LOG"
-  tx_rc=${PIPESTATUS[0]}
+      "$@" \
+  ) 2>&1 | tee "$log"
+  local rc=${PIPESTATUS[0]}
+  set -e
+  return $rc
+}
+
+# 번역 PR 은 **head 접두**로 찾는다 — `--base-branch <세션>` 을 넘기면 번역 PR 의
+# base 는 ko head 가 아니라 세션 브랜치라, base 로 거르면 영영 못 찾는다. 번역기는
+# `translate/<ko head>-<sha>-<ts>` 로 연다.
+poll_tx_pr() {   # $1=ko head 브랜치 → stdout: 번역 PR URL (없으면 빈 문자열)
+  local head="$1" left=$(( PR_TIMEOUT / 20 )) url=""
+  while (( left-- > 0 )); do
+    url="$(gh pr list --repo "$REPO" --state open --limit 50 --json url,headRefName \
+      --jq ".[] | select(.headRefName | startswith(\"translate/$head\")) | .url" | sort -u | head -n1 || true)"
+    [[ -n "$url" ]] && break
+    sleep 20
+  done
+  printf '%s' "$url"
+}
+
+echo "[3/8] 번역 실행 ($TRANSLATE_MODE${PIPELINE_BRANCH:+, pipeline_branch=$PIPELINE_BRANCH})"
+if [[ "$TRANSLATE_MODE" == "api" ]]; then
+  li_param="$(api_translate "$ko_pr_url" true)" \
+    || { echo "error: 큐 실패" >&2; KEEP=1; exit 2; }
+else
+  [[ -f "$CLOUD_TRANSLATE_DIR/.env" ]] || { echo "error: $CLOUD_TRANSLATE_DIR/.env 없음" >&2; exit 1; }
+  set +e
+  run_translate_local "$LOG" "$ko_pr_url" --list-items
+  tx_rc=$?
   set -e
   (( tx_rc == 0 )) || { echo "error: translate_pr.py 실패 (exit $tx_rc)" >&2; exit 2; }
   li_param="local"
 fi
 
-echo "[4/6] 번역 PR 감지 (최대 ${PR_TIMEOUT}s)"
-poll_left=$(( PR_TIMEOUT / 20 ))
-while (( poll_left-- > 0 )); do
-  # base 로 거르지 않는다 — base_branch 를 API 로 넘겼으므로 번역 PR 의 base 는
-  # 세션 브랜치다 (align e2e 는 base_branch 를 안 넘겨 ko head 가 base). head 접두가
-  # 유일한 불변 신호다: 번역기는 `translate/<ko head>-<sha>-<ts>` 로 연다.
-  tx_pr_url="$(gh pr list --repo "$REPO" --state open --limit 50 --json url,headRefName \
-    --jq ".[] | select(.headRefName | startswith(\"translate/$HEAD_BRANCH\")) | .url" | sort -u | head -n1 || true)"
-  [[ -n "$tx_pr_url" ]] && break
-  sleep 20
-done
+echo "[4/8] 번역 PR 감지 (최대 ${PR_TIMEOUT}s)"
+tx_pr_url="$(poll_tx_pr "$HEAD_BRANCH")"
 [[ -n "$tx_pr_url" ]] || { echo "error: ${PR_TIMEOUT}s 내 번역 PR 미감지 — 브랜치·PR 은 보존한다 (조사용)" >&2; KEEP=1; exit 2; }
 echo "  detected translation PR: $tx_pr_url"
 e2e_label_pr "$REPO" "$tx_pr_url" || true
 
-echo "[5/6] 판정"
+# ── 대조군 — 같은 ko 편집을 LIST_ITEMS 없이 ───────────────────────────────
+echo "[5/8] 대조군 (LIST_ITEMS off)"
+ctl_wt=""
+if (( CONTROL )); then
+  git checkout -q -B "$CTRL_BRANCH" "$SESSION_BRANCH"
+  git checkout -q "$HEAD_BRANCH" -- "ko/$DOC"
+  git commit -q -m "e2e(list-items): 대조군 — 같은 ko 편집, 플래그 없이 ($TS)"
+  git push -q origin "$CTRL_BRANCH"
+  ctl_pr_url="$(gh pr create --repo "$REPO" --base "$SESSION_BRANCH" --head "$CTRL_BRANCH" \
+    --title "e2e(list-items): 대조군 — LIST_ITEMS 없이 ($TS)" \
+    --body "LIST_ITEMS 대조군 — 같은 불릿 하나 편집을 플래그 없이 번역한다. 형제 불릿 보존 개수를 ON arm 과 나란히 잰다." \
+    --label "$E2E_LABEL")"
+  echo "  대조군 ko PR: $ctl_pr_url"
+  ctl_li=""
+  if [[ "$TRANSLATE_MODE" == "api" ]]; then
+    ctl_li="$(api_translate "$ctl_pr_url" false)" || warn "대조군 큐 실패"
+    echo "  대조군 jenkins_params.LIST_ITEMS='$ctl_li' (기대: 빈 문자열)"
+  else
+    run_translate_local "$tmpdir/control.log" "$ctl_pr_url" || warn "대조군 translate_pr.py 실패"
+  fi
+  tx_ctl_url="$(poll_tx_pr "$CTRL_BRANCH")"
+  if [[ -n "$tx_ctl_url" ]]; then
+    echo "  대조군 번역 PR: $tx_ctl_url"
+    e2e_label_pr "$REPO" "$tx_ctl_url" || true
+    ctl_head="$(gh pr view "$tx_ctl_url" --repo "$REPO" --json headRefName --jq .headRefName)"
+    git fetch -q origin "$ctl_head"
+    git worktree add -q --detach "$tmpdir/txctl" "origin/$ctl_head"
+    ctl_wt="$tmpdir/txctl"
+  else
+    warn "대조군 번역 PR 미감지 — (7) 은 건너뛴다"
+  fi
+else
+  echo "  --no-control: 건너뜀"
+fi
+
+echo "[6/8] 판정"
 if [[ "$TRANSLATE_MODE" == "api" ]]; then
   if [[ "$li_param" == "true" ]]; then ok "(1) /api/translate → Jenkins 파라미터 LIST_ITEMS=true"
   else bad "(1) jenkins_params.LIST_ITEMS='$li_param' — 플래그가 잡에 가지 않았다"; fi
@@ -326,6 +431,50 @@ for lang in en ja; do
   fails=$(( fails + $(printf '%s\n' "$jout" | grep -c '^__FAIL__$' || true) ))
 done
 
+# ── (7) 대조군 대비 — "바이트 동일" 이 플래그 덕인지 모델 운인지 가른다 ─────
+echo
+echo "[7/8] 대조군 대비 — 고정 불릿 보존"
+if [[ -n "$ctl_wt" ]]; then
+  keep_counts="$(python3 - "$tx_wt" "$ctl_wt" "$DOC" "${#PINNED_EN[@]}" "${PINNED_EN[@]}" "${PINNED_JA[@]}" <<'KEEPPY'
+import io, os, sys
+on_wt, ctl_wt, doc, n = sys.argv[1:5]
+n = int(n)
+pinned = {"en": sys.argv[5:5 + n], "ja": sys.argv[5 + n:5 + 2 * n]}
+
+
+def kept(root, lang):
+    """고정 불릿 중 **정확히 한 번** 그대로 남은 줄 수 (없는 파일은 0)."""
+    try:
+        lines = io.open(os.path.join(root, lang, doc),
+                        encoding="utf-8", newline="").read().split("\n")
+    except OSError:
+        return 0
+    return sum(1 for l in pinned[lang] if lines.count(l) == 1)
+
+
+vals = {tag: {lang: kept(root, lang) for lang in ("en", "ja")}
+        for tag, root in (("on", on_wt), ("ctl", ctl_wt))}
+tot = {tag: sum(v.values()) for tag, v in vals.items()}
+print(tot["on"], tot["ctl"], n * 2,
+      "en %d/%d ja %d/%d" % (vals["on"]["en"], vals["ctl"]["en"],
+                             vals["on"]["ja"], vals["ctl"]["ja"]))
+KEEPPY
+)"
+  read -r n_on n_ctl n_tot detail <<<"$keep_counts"
+  echo "  보존 — ON $n_on/$n_tot · 대조군 $n_ctl/$n_tot  (on/off 쌍: $detail)"
+  if (( n_on >= n_ctl )); then
+    if (( n_ctl < n_tot )); then
+      ok "(7) 대조군이 $(( n_tot - n_ctl ))줄을 잃었고 ON 은 $(( n_tot - n_on ))줄 — 플래그가 실제로 일한다"
+    else
+      ok "(7) 양쪽 다 보존 ($n_on/$n_tot) — 노출이 곧 재작성은 아니므로 정상. 전송 여부는 e2e-list-items.sh 가 결정적으로 본다"
+    fi
+  else
+    bad "(7) 대조군이 더 많이 보존했다 (off $n_ctl/$n_tot > on $n_on/$n_tot) — 이 실행에서 플래그가 한 일이 없다"
+  fi
+else
+  warn "(7) 대조군 없음 — 건너뜀 (--no-control 또는 대조군 PR 미감지)"
+fi
+
 # (선택) Jenkins 콘솔의 splice 로그 — 증거 보강용, 판정에는 안 쓴다
 if [[ -n "${JENKINS_USER:-}" && -n "${JENKINS_TOKEN:-}" ]]; then
   burl="$(gh pr view "$tx_pr_url" --repo "$REPO" --json body --jq .body 2>/dev/null \
@@ -338,13 +487,15 @@ if [[ -n "${JENKINS_USER:-}" && -n "${JENKINS_TOKEN:-}" ]]; then
 fi
 
 echo
-echo "[6/6] 결과"
+echo "[8/8] 결과"
 if (( fails == 0 )); then
-  echo "  PASS — 형제 불릿은 바이트 그대로, 편집한 불릿만 새로 번역됐다 (번역 PR: $tx_pr_url)"
+  echo "  PASS — 형제 불릿은 바이트 그대로, 편집한 불릿만 새로 번역됐다"
+  echo "         번역 PR: $tx_pr_url${tx_ctl_url:+  · 대조군: $tx_ctl_url}"
   echo "LIST_ITEMS: OK"
   exit 0
 fi
-echo "  FAIL — $fails 개 규칙 실패 (번역 PR: $tx_pr_url)"
+echo "  FAIL — $fails 개 규칙 실패"
+echo "         번역 PR: $tx_pr_url${tx_ctl_url:+  · 대조군: $tx_ctl_url}"
 echo "LIST_ITEMS: FAIL"
 KEEP=1
 exit 1
