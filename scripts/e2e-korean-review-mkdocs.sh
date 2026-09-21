@@ -5,8 +5,8 @@
 #   1) alpha 로부터 세션 브랜치 e2e-komkdocs/<ts> 생성
 #   2) head 브랜치에 픽스처 5종 **신규 생성** (alpha 에는 두지 않는다 — 아래 참고)
 #   3) ko PR 생성 → 검수 실행 (기본 local review_pr.py)
-#   4) 후속 조치 리뷰를 **결정적으로** 판정: 검출 4건이 정확히 어느 파일 어느
-#      줄에 어느 check 로 떠야 하는지, 그리고 대조군이 **침묵**하는지
+#   4) 후속 조치 리뷰를 **결정적으로** 판정: 검출 1건이 정확히 어느 파일 어느
+#      줄에 어느 check 로 떠야 하는지, 그리고 **나머지 넷이 침묵**하는지
 #   5) 기존 한글 검수 리뷰가 **그대로** 남아 있고 후속 조치와 섞이지 않았는지
 #
 # 왜 이 e2e 가 따로 있나 — `e2e-korean-review.sh` 는 *검수 자체*(9차원 요약 규격·
@@ -26,6 +26,27 @@
 # 게 아니라 우리가 일으킨다**. 그래서 픽스처는 이 스크립트가 세션 head 브랜치에서
 # 만들고, 토픽 브랜치는 빌드되지 않으므로 안전하다. (`fill-stub-sample.md` 처럼
 # alpha 상주 픽스처를 쓰지 않는 유일한 이유가 이것이다.)
+#
+# **이 안건의 계약 — check 는 `syntax` 하나다** (2026-09-21 현행화). 처음 이 e2e 를
+# 쓸 때는 안건이 넷(Jinja 문법 · include 대상 · 미정의 변수 · 변수 구분자)이었고
+# 기대 검출도 4건이었다. 그 뒤 안건이 **하나로 줄었다** — `korean-review/app/
+# mkdocs_check.py` 의 `CHECK_LABELS = {"syntax": "템플릿 문법 오류"}` 가 정본이고,
+# 판정은 `shared/mkdocs_syntax.syntax_error()` 의 **컴파일 통과 여부** 하나다.
+# 그래서 지금 기대 검출은 1건이고 나머지 픽스처 넷은 **침묵 대조군**이다. 넷이
+# 침묵하는 이유가 각각 다르고, 그것이 이 안건의 경계선이라 픽스처를 지우지 않고
+# 남겨 둔다:
+#
+#   * `mkdocs-followup-vars.md`      — 태그는 있지만 문법이 온전하다
+#   * `mkdocs-followup-include.md`   — `include-markdown` 지시자는 macros 보다
+#     먼저 도는 별개 플러그인이라 판정 전에 지워진다. **대상이 실재하는지는 보지
+#     않는다** (렌더하지 않으므로)
+#   * `mkdocs-followup-vars-use.md`  — 미정의 변수는 렌더 단계라 안 보이고,
+#     `{{ }}` 는 이 빌드의 변수 구분자(`$[ ]$`)가 아니라 **그냥 글자**여서 문법
+#     오류가 아니다. 코드 펜스와 `{% raw %}` 안의 예시도 지워진다
+#   * `mkdocs-followup-control.md`   — 전부 올바른 매크로
+#
+# 즉 "안 잡혔다" 가 아니라 "여기까지가 이 점검의 스코프다" 를 못 박는 넷이다.
+# 반대로 점검이 스코프를 넘어 이 중 하나라도 지적하기 시작하면 이 e2e 가 실패한다.
 #
 # 세션 브랜치와 PR 은 debug 를 위해 남긴다 (정리 지침은 CLAUDE.md).
 # alpha 는 절대 오염되지 않는다.
@@ -115,6 +136,7 @@ echo "  E2E_BASE_BRANCH=$BASE_BRANCH"
 # 기대 검출은 아래 파일들의 줄번호에 **그대로 박혀 있다** (판정 python 의
 # EXPECTED). 파일을 편집하면 그 표도 같이 고쳐야 한다 — 픽스처와 기대값이
 # 어긋나면 이 e2e 는 실패로 알려 준다(조용히 통과하지 않는다).
+# 다섯 중 검출은 (b) 하나뿐이고 나머지 넷은 침묵 대조군이다 (위 「이 안건의 계약」).
 head_branch="translate-test-komkdocs/$TS"
 echo
 echo "[2/6] 픽스처 생성 → $head_branch"
@@ -139,7 +161,8 @@ cat > ko/mkdocs-followup-syntax.md <<'EOF'
 닫는 태그가 없어 이 문서 한 장이 아니라 가이드 전체 빌드가 멈춥니다.
 EOF
 
-# (c) include — 대상이 이 브랜치에 없다. L4 에 1건.
+# (c) include — 대상이 이 브랜치에 없다. **침묵**: include 지시자는 판정 전에
+#     지워지고, 대상의 실재는 렌더 단계라 이 점검이 보지 않는다.
 cat > ko/mkdocs-followup-include.md <<'EOF'
 <a id="mkdocs-followup-include"></a>
 ## Sample > 없는 include 대상 { #mkdocs-followup-include }
@@ -149,8 +172,9 @@ cat > ko/mkdocs-followup-include.md <<'EOF'
 위 include 대상은 이 브랜치에 존재하지 않습니다.
 EOF
 
-# (d) undefined-var(L8) + delimiter(L10). 나머지 중괄호는 전부 **침묵**해야 한다 —
-#     코드 펜스 안(L15)·셸 표기 ${{ }}(L18)·{% raw %} 시연(L21).
+# (d) 변수 사용 — **전부 침묵**해야 한다. 미정의 변수(L8)는 렌더 단계라 안 보이고,
+#     `{{ }}`(L10)·코드 펜스 안(L15)·셸 표기 ${{ }}(L18) 은 이 빌드의 변수
+#     구분자(`$[ ]$`)가 아니라 그냥 글자다. {% raw %} 시연(L21)도 지워진다.
 cat > ko/mkdocs-followup-vars-use.md <<'EOF'
 <a id="mkdocs-followup-vars-use"></a>
 ## Sample > 변수 사용 { #mkdocs-followup-vars-use }
@@ -198,8 +222,9 @@ EOF
 git add ko/mkdocs-followup-*.md
 git commit -q -m "e2e(ko-review 후속 조치): mkdocs 문법 픽스처 5종
 
-syntax(짝 없는 {% if %}) · include(없는 대상) · undefined-var · delimiter
-각 1건 + 대조군. 깨진 템플릿이라 alpha 에는 두지 않는다(빌드가 멈춘다)."
+검출은 syntax(짝 없는 {% if %}) 1건. include(없는 대상) · 미정의 변수 ·
+{{ }} 구분자 · 정상 매크로 넷은 이 점검의 스코프 밖이라 침묵 대조군이다.
+깨진 템플릿이라 alpha 에는 두지 않는다(빌드가 멈춘다)."
 git push -q -u origin "$head_branch"
 
 e2e_ensure_label "$REPO"
@@ -207,8 +232,8 @@ ko_pr_url="$(gh pr create --repo "$REPO" --base "$BASE_BRANCH" --head "$head_bra
   --title "e2e(후속 조치): mkdocs 문법 픽스처" \
   --body "한글 검수 **후속 조치**(mkdocs 문법 점검) e2e 픽스처입니다.
 
-기대: 후속 조치 리뷰에 **4건**(빌드 실패 2 · 확인 필요 2), 대조군
-\`ko/mkdocs-followup-control.md\` 와 include 대상 \`ko/mkdocs-followup-vars.md\` 는 **침묵**." \
+기대: 후속 조치 리뷰에 **1건** — \`ko/mkdocs-followup-syntax.md\` L6 \`[템플릿 문법 오류]\` (빌드 실패).
+나머지 넷(\`-include\` · \`-vars-use\` · \`-vars\` · \`-control\`)은 이 점검의 스코프 밖이라 **침묵**." \
   --label "$E2E_LABEL")"
 ko_pr_number="${ko_pr_url##*/}"
 echo "  ko PR: $ko_pr_url"
@@ -289,27 +314,32 @@ def check(ok, label, detail=""):
 
 
 # 기대 검출 — 픽스처의 줄번호에 박혀 있다 (스크립트 [2/6] 의 heredoc 참고).
-# (파일, 점검 라벨, 줄번호). 이 넷이 전부여야 하고, 하나라도 더/덜 나오면 실패.
+# (파일, 점검 라벨, 줄번호). 이 **하나**가 전부여야 하고, 더 나와도 덜 나와도 실패.
+# 라벨은 `mkdocs_check.CHECK_LABELS` 가 정본이다 (`syntax` → "템플릿 문법 오류").
 EXPECTED = {
-    ("ko/mkdocs-followup-syntax.md", "Jinja 문법", 6),
-    ("ko/mkdocs-followup-include.md", "include 대상", 4),
-    ("ko/mkdocs-followup-vars-use.md", "미정의 변수", 8),
-    ("ko/mkdocs-followup-vars-use.md", "변수 구분자", 10),
+    ("ko/mkdocs-followup-syntax.md", "템플릿 문법 오류", 6),
 }
-# 침묵해야 하는 문서 — 대조군과 include 대상.
-SILENT = {"ko/mkdocs-followup-control.md", "ko/mkdocs-followup-vars.md"}
+# 침묵해야 하는 문서 넷 — 이유는 파일마다 다르고 그것이 이 점검의 경계선이다
+# (스크립트 머리말 「이 안건의 계약」). 여기 하나라도 지적이 붙으면 스코프가
+# 넘친 것이므로 실패다.
+SILENT = {
+    "ko/mkdocs-followup-control.md",    # 전부 올바른 매크로
+    "ko/mkdocs-followup-vars.md",       # 문법이 온전한 set 정의
+    "ko/mkdocs-followup-include.md",    # include 대상의 실재는 보지 않는다
+    "ko/mkdocs-followup-vars-use.md",   # 미정의 변수·`{{ }}`·펜스·raw 는 스코프 밖
+}
 
 followup = [r for r in reviews if MARKER in (r.get("body") or "")]
 print("후속 조치 리뷰")
 check(len(followup) == 1, "후속 조치 리뷰가 정확히 1건", f"{len(followup)}건")
 body = (followup[0].get("body") or "") if followup else ""
 
-check("## 🧩 한글 검수 후속 조치 — 4건" in body, "헤더의 총 건수가 4건",
+check("## 🧩 한글 검수 후속 조치 — 1건" in body, "헤더의 총 건수가 1건",
       (re.search(r"후속 조치 — \S+", body) or [""])[0] if body else "(본문 없음)")
-check("**2건은 그대로 머지되면 가이드 빌드가 실패**" in body,
-      "빌드를 멈추는 2건을 따로 셈")
+check("**1건은 그대로 머지되면 가이드 빌드가 실패**" in body,
+      "빌드를 멈추는 1건을 따로 셈")
 
-# 검출 항목 — `- `ko/x.md` L6 `[Jinja 문법]` … (빌드 실패|확인 필요)`
+# 검출 항목 — `- `ko/x.md` L6 `[템플릿 문법 오류]` … (빌드 실패|확인 필요)`
 item_re = re.compile(
     r"^- `(?P<file>[^`]+)` L(?P<line>\d+) `\[(?P<label>[^\]]+)\]`.*?"
     r"\((?P<tag>빌드 실패|확인 필요)\)\s*$", re.M)
@@ -323,22 +353,25 @@ for want in sorted(EXPECTED):
 extra = items - EXPECTED
 check(not extra, "기대 밖 검출 없음", ", ".join(map(str, sorted(extra))) or "없음")
 
-check(tags.get(("ko/mkdocs-followup-syntax.md", "Jinja 문법")) == "빌드 실패",
-      "Jinja 문법은 '빌드 실패' 로 라벨링")
-check(tags.get(("ko/mkdocs-followup-include.md", "include 대상")) == "빌드 실패",
-      "include 대상은 '빌드 실패' 로 라벨링")
-check(tags.get(("ko/mkdocs-followup-vars-use.md", "미정의 변수")) == "확인 필요",
-      "미정의 변수는 '확인 필요' 로 라벨링")
-check(tags.get(("ko/mkdocs-followup-vars-use.md", "변수 구분자")) == "확인 필요",
-      "변수 구분자는 '확인 필요' 로 라벨링")
+# `syntax` 는 `BLOCKING_CHECKS` 라 항상 '빌드 실패' 다 — 이 안건에 '확인 필요'
+# 는 없다 (mkdocs_check.BLOCKING_CHECKS == {"syntax"}).
+check(tags.get(("ko/mkdocs-followup-syntax.md", "템플릿 문법 오류")) == "빌드 실패",
+      "템플릿 문법 오류는 '빌드 실패' 로 라벨링")
+mk_tags = {k: v for k, v in tags.items() if k[0].startswith("ko/mkdocs-followup-")}
+check(all(t == "빌드 실패" for t in mk_tags.values()),
+      "이 안건에 '확인 필요' 태그가 없음", ", ".join(sorted(set(mk_tags.values()))) or "없음")
 
 for doc in sorted(SILENT):
     check(doc not in body, f"침묵: {doc} 가 후속 조치 리뷰에 없음")
 
-# 점검 표 — 네 행이 모두 있어야 한다(통과한 점검도 행으로 남는 것이 계약).
-for label in ("Jinja 문법", "include 대상", "미정의 변수", "변수 구분자"):
-    check(bool(re.search(rf"^\|\s*{re.escape(label)}\s*\|", body, re.M)),
-          f"점검 표에 '{label}' 행")
+# 점검 표 — 이 안건의 행은 하나다. 표에는 다른 안건(markup lint·링크 점검)의
+# 행도 함께 오지만 그건 각자의 e2e 가 본다. 여기서는 (a) 우리 행이 있고
+# (b) 그 행이 통과가 아니라 **검출한 자리**를 가리키는지만 본다.
+row = re.search(r"^\|\s*템플릿 문법 오류\s*\|(?P<result>[^|]*)\|", body, re.M)
+check(bool(row), "점검 표에 '템플릿 문법 오류' 행")
+check(bool(row) and "mkdocs-followup-syntax.md L6" in row.group("result"),
+      "그 행이 검출 자리(ko/mkdocs-followup-syntax.md L6)를 가리킴",
+      (row.group("result").strip() if row else "(행 없음)"))
 
 # 인라인 — 픽스처가 전부 신규 파일이라 모든 줄이 diff 의 추가 줄이다.
 # 따라서 기대 4건 전부 그 줄에 앵커돼야 한다.
@@ -361,7 +394,7 @@ check(len(ko_reviews) >= 1, "기존 한글 검수 요약 리뷰가 여전히 게
       f"{len(ko_reviews)}건")
 check(all(MARKER not in (r.get("body") or "") for r in ko_reviews),
       "검수 요약에 후속 조치 마커가 섞이지 않음")
-check(all("| Jinja 문법 |" not in (r.get("body") or "") for r in ko_reviews),
+check(all("| 템플릿 문법 오류 |" not in (r.get("body") or "") for r in ko_reviews),
       "검수 9차원 표에 mkdocs 점검 행이 끼지 않음")
 check("🔍 한글 검수 결과" not in body, "후속 조치 리뷰가 검수 요약을 되풀이하지 않음")
 
