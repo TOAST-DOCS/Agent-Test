@@ -32,10 +32,16 @@
 # 맵으로 걸러낸다 (#418 §6). 문구를 미리 박아 두고 grep 하는 방식은 모델이 어떤
 # 말로 옮길지 모르기 때문에 "갈리지 않았다" 와 "못 찾았다" 를 구별하지 못한다.
 #
-# ── 픽스처가 커야 하는 이유 ───────────────────────────────────────────────
-# 갈림은 **chunk 경계**에서 생긴다. 10,000자를 넘겨야 `_translate_by_sections`
-# 로 쪼개지므로 픽스처를 그 위로 만든다. 작은 문서로 재면 한 번의 모델 호출로
-# 끝나 갈릴 자리가 없다.
+# ── 픽스처가 커야 하는 이유, 그리고 크기는 **글자**로 잰다 ────────────────
+# 갈림은 **chunk 경계**에서 생긴다. `_split_into_chunks` 의 `max_chars` 는
+# 10,000 **자**이고, 그 아래면 문서 전체가 한 번의 모델 호출로 끝나 갈릴 자리가
+# 아예 없다.
+#
+# 그래서 `wc -c` 로 재면 안 된다. 한글은 UTF-8 에서 3바이트라 14,546**바이트**
+# 문서가 6,656**자** 다 — 옛 판본이 정확히 그것을 "10000 초과" 로 통과시켰고,
+# 로그에는 `Translating chunk (6656 chars …)` 가 언어당 한 줄씩만 찍혔다.
+# 대조군이 갈리지 않은 것은 term-pin 이 필요 없어서가 아니라 **한 번에 번역돼서**
+# 였다. 지금은 python 으로 글자 수를 세고, 최소 두 chunk 가 되게 절 수를 잡는다.
 #
 # ── 픽스처에 기존 번역본이 없다 (의도) ────────────────────────────────────
 # 새 파일이라 en/ja 가 없고, 그래서 `propose_terms` 는 "기존 표기를 따르라" 는
@@ -139,7 +145,7 @@ cd "$WORK"; git checkout -q -b "$SESSION"
   echo "| $T2 | 예측값과 실제값의 차이가 머무르는 폭입니다. |"
   echo "| $T3 | 오차가 커지면 학습 일정을 스스로 바꾸는 동작입니다. |"
   echo
-  for i in $(seq 1 10); do
+  for i in $(seq 1 24); do
     echo "<a id=\"tp-$i\"></a>"
     echo
     echo "## $i. 앱 설정 $i"
@@ -162,12 +168,12 @@ cd "$WORK"; git checkout -q -b "$SESSION"
   done
 } > "ko/$DOC"
 
-CHARS=$(wc -c < "ko/$DOC")
-echo "  ko/$DOC — ${CHARS}바이트 · 표 11개 · 측정 용어 3개"
+CHARS=$("$PY" -c "import sys;print(len(open(sys.argv[1],encoding='utf-8').read()))" "ko/$DOC")
+echo "  ko/$DOC — ${CHARS}자 · 표 25개 · 측정 용어 3개"
 if [ "$CHARS" -gt 10000 ]; then
-  ok "픽스처가 chunk 경계를 넘는다 (${CHARS} > 10000)"
+  ok "픽스처가 chunk 경계를 넘는다 (${CHARS}자 > 10000자)"
 else
-  bad "픽스처가 너무 작다 (${CHARS}) — 갈릴 자리가 없다"; INFRA=1
+  bad "픽스처가 너무 작다 (${CHARS}자) — 한 번에 번역돼 갈릴 자리가 없다"; INFRA=1
 fi
 git add "ko/$DOC"
 git -c user.email=e2e@local -c user.name=e2e commit -q -m "e2e(term-pin): 픽스처"
@@ -196,7 +202,11 @@ run_one() {   # $1=on|off  $2=round  → stdout 없음, 파일로 남긴다
     fi
     bad "번역 실패 (term_pin=$pin, round=$round)"; tail -12 "$log"; return 1
   }
-  echo "  round $round · term_pin=$pin · $((SECONDS - t0))초" >> "$SCRATCH/timing"
+  local nchunk
+  nchunk="$(grep -c 'Translating chunk' "$log" || true)"
+  echo "  round $round · term_pin=$pin · $((SECONDS - t0))초 · 모델 호출 ${nchunk}회" \
+    >> "$SCRATCH/timing"
+  [ "${nchunk:-0}" -ge 4 ] || bad "모델 호출이 ${nchunk}회뿐 — 언어당 chunk 가 하나면 갈릴 자리가 없다"
   if [ "$pin" = on ]; then
     local pinline
     pinline="$(grep -o 'term-pin .*제안 [0-9]* → 채택 [0-9]* (기각 [0-9]*)' "$log" | head -2 | tr '\n' ' ')"

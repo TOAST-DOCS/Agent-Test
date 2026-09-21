@@ -97,7 +97,7 @@ cd "$WORK"; git checkout -q -b "$SESSION"
   echo
   echo "이 문서는 로드 밸런서의 동작을 설명하고, 절마다 $TERM 상자로 주의할 점을 덧붙입니다."
   echo
-  for i in $(seq 1 7); do
+  for i in $(seq 1 16); do
     echo "<a id=\"tpe-$i\"></a>"
     echo
     echo "## $i. 리스너 설정 $i"
@@ -132,7 +132,7 @@ gen_target() {   # $1=lang  $2=상자 제목  $3=본문 언어 표식
       echo "This document explains how the load balancer works and adds a $conv box in each section."
     fi
     echo
-    for i in $(seq 1 7); do
+    for i in $(seq 1 16); do
       echo "<a id=\"tpe-$i\"></a>"
       echo
       if [ "$lang" = ja ]; then
@@ -169,10 +169,13 @@ gen_target() {   # $1=lang  $2=상자 제목  $3=본문 언어 표식
 gen_target en "$EN_CONV"
 gen_target ja "$JA_CONV"
 
-CHARS=$(wc -c < "ko/$DOC")
-echo "  ko/$DOC ${CHARS}바이트 · 상자 7개 · ja 관례='$JA_CONV' · en 관례='$EN_CONV'"
-[ "$CHARS" -gt 10000 ] && ok "픽스처가 chunk 경계를 넘는다 (${CHARS} > 10000)" \
-                       || { bad "픽스처가 너무 작다 (${CHARS})"; INFRA=1; }
+# 크기는 **글자**로 잰다 — `_split_into_chunks` 의 max_chars 가 10,000자이고,
+# 한글은 UTF-8 3바이트라 `wc -c` 로 재면 3배로 부풀어 한 chunk 짜리 문서를
+# "경계를 넘었다" 로 통과시킨다 (e2e-term-pin.sh 가 그 실수를 했다).
+CHARS=$("$PY" -c "import sys;print(len(open(sys.argv[1],encoding='utf-8').read()))" "ko/$DOC")
+echo "  ko/$DOC ${CHARS}자 · 상자 16개 · ja 관례='$JA_CONV' · en 관례='$EN_CONV'"
+[ "$CHARS" -gt 10000 ] && ok "픽스처가 chunk 경계를 넘는다 (${CHARS}자 > 10000자)" \
+                       || { bad "픽스처가 너무 작다 (${CHARS}자)"; INFRA=1; }
 git add "ko/$DOC" "en/$DOC" "ja/$DOC"
 git -c user.email=e2e@local -c user.name=e2e commit -q -m "e2e(term-pin): 기존 표기 픽스처"
 git push -q origin "$SESSION"
