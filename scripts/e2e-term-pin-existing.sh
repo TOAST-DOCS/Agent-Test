@@ -52,6 +52,11 @@ DOC="term-pin-existing.md"
 TERM="알아두기"
 JA_CONV="ポイント"               # 문서가 쓰는 말 (가이드라인의 ヒント 가 아니다)
 EN_CONV="Good to know"           # en 쪽 같은 축
+# 절 수는 **10,000자를 넘기려고** 정한 값이다 (430자/절, 실측). 16 이던 시절의
+# 픽스처는 6,876자여서 자기 크기 검사에 걸렸다 — 이 스크립트가 `local` 확장 버그로
+# 한 번도 끝까지 돈 적이 없어(2026-09-21 수정) 헤더의 "10,000자" 주장이 검증된 적이
+# 없었다.
+SECTIONS=24
 CT_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 SCRATCH="$(mktemp -d)"
 KEEP=0
@@ -101,7 +106,7 @@ cd "$WORK"; git checkout -q -b "$SESSION"
   echo
   echo "이 문서는 로드 밸런서의 동작을 설명하고, 절마다 $TERM 상자로 주의할 점을 덧붙입니다."
   echo
-  for i in $(seq 1 16); do
+  for i in $(seq 1 "$SECTIONS"); do
     echo "<a id=\"tpe-$i\"></a>"
     echo
     echo "## $i. 리스너 설정 $i"
@@ -136,7 +141,7 @@ gen_target() {   # $1=lang  $2=상자 제목  $3=본문 언어 표식
       echo "This document explains how the load balancer works and adds a $conv box in each section."
     fi
     echo
-    for i in $(seq 1 16); do
+    for i in $(seq 1 "$SECTIONS"); do
       echo "<a id=\"tpe-$i\"></a>"
       echo
       if [ "$lang" = ja ]; then

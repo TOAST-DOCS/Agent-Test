@@ -124,6 +124,16 @@ cloud-translate 쪽 조치는 셋이다 — 프롬프트에 "대상 언어의 �
 380 → 1), `validate_unregistered` 의 문자 게이트·배포본 게이트, `propose_terms` 의
 `temperature=0`. 자세한 근거는 그쪽 `translate/CLAUDE.md`.
 
+**그리고 splice e2e 가 네 번째를 찾아냈다 — 물어보는 범위.** 프롬프트가 *"recurring
+domain terms (product features, UI labels, technical concepts)"* 만 물었을 때 #417 이
+걸린 바로 그 낱말(`!!! tip "알아두기"` 의 상자 제목)이 제안 목록에 **한 번도 오르지
+않았다**: ON 팔이 고정한 8개는 전부 `리스너`·`대상 그룹` 류였고, 삽입된 상자는 OFF
+대조군과 **똑같이** `Tip`/`ヒント` 로 갈렸다. term-pin 이 자기가 맡기로 한 결함을 보지도
+못하고 있었던 것이고, 산출물만 보는 e2e 로는 "고정했는데 모델이 안 따랐다" 와 구별되지
+않는다 — `check_term_pin.py` 로 제안 목록을 직접 찍어 보고서야 갈렸다. 낱말이 아니라
+**반복되는 고정 라벨**(안내 상자 제목 · 표 헤더 · 버튼/메뉴 이름)도 함께 묻도록 넓히니
+`알아두기 → ポイント` 가 배포본 표기 그대로 올라온다.
+
 `scripts/e2e-term-pin-existing.sh` (standalone) is the **두 번째 축**: 고정한 말이 *기존 번역본이 이미 쓰던 말* 인가. 재현하는 사고는 cloud-user-guide-agent#417 / TOAST-DOCS/Network-Load-Balancer#141 — ko 가 `!!! tip "알아두기"` 를 하나 더했는데 ja 가 그 제목을 `ヒント` 로 써서, `ポイント` 를 12번 쓰는 문서에 두 이름이 생겼다. 이 자리에 답이 셋 있었다는 것이 핵심이다 (통합 가이드라인 `팁 → ヒント` · `_common_glossary` `알아두기 → 注意` · 그 문서가 실제로 쓰는 `ポイント` 28:1). 전문 재번역으로 재는 이유는 `preserve_existing` 이 기본 꺼짐이라 **모델이 기존 번역본을 아예 보지 못하고**, 그래서 두 팔의 차이가 오롯이 term-pin 의 몫이 되기 때문이다 (splice 로 재면 "안 바뀐 유닛을 그대로 가져왔다" 와 섞인다).
 
 `scripts/e2e-term-pin-splice.sh` (standalone) 는 **운영 경로**다. 위 둘은 전문 재번역인데, webhook 이 부르는 번역은 거의 전부 splice 다. 그리고 #417 이 미해결로 남은 이유가 splice 의 모양이다 — ko 가 상자를 **순수 삽입**(`+3/-0`)하면 그 유닛에는 `baseline_by_j[j] = None`, 즉 붙여 줄 기존 번역이 **없다**. `--unit-preserve` 도 `--list-items` 도 이 자리에 닿지 못한다 (붙일 짝이 아예 없다); 기존 번역본 **전체**를 읽고 표기를 정하는 장치는 term-pin 뿐이다. 픽스처는 정렬된 ko/en/ja 16절에 절 17 을 삽입하고 절 5 문장 하나를 고친 두 번째 커밋이고, `translate_file.py --diff` 로 돈다. 판정이 둘인 것이 중요하다: **(가) 이득** — 삽입된 상자가 문서 관례를 따랐는가, **(나) 무해** — ko 가 안 건드린 줄을 ON 이 대조군보다 더 많이 다시 쓰지 않았는가. (나) 없이 (가) 만 보면 "문서를 통째로 다시 써서 제목을 맞추는" 것도 통과한다. splice 가 정렬에 실패해 전문 재번역으로 떨어지면 `preserve_existing` 이 켜져 모델이 기존 번역본을 보게 되므로 두 팔의 차이가 term-pin 의 몫이 아니게 된다 — 로그의 `Diff-based translation` 을 확인하고 없으면 INFRA 로 끊는다.
