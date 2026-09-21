@@ -79,6 +79,18 @@
 #                 달리는지(diff 밖이면 가장 가까운 변경 줄로) · 재실행에 요약·
 #                 인라인 어느 쪽도 쌓이지 않는지를 21개 규칙으로 판정. 결정적
 #                 점검이라 기대값은 하나 — exit 0 + 21/21. ~3분(검수 LLM 포함).
+#                 **all 에서 제외 (2026-09-21)** — 검증 대상인 `anchor_audit.py`
+#                 가 미머지 브랜치(GHE cloud-translate#750, 2026-08-28 OPEN)에만
+#                 있어 main 에 대해 항상 실패한다. 그 PR 은 main 보다 216 커밋
+#                 뒤졌고 지금은 `korean-review/README.md`·`review_pr.py`·
+#                 `shared/config.py` 3파일이 충돌해 rebase 없이는 머지되지 않는다.
+#                 실패 모양이 조용하다 — 검수 자체는 `exit=0` 으로 정상 완료하고
+#                 (`Followup: 0 finding(s)`) 마커 코멘트만 없어서 규칙 (1) 에서
+#                 멈춘다("마커 코멘트가 없어 이후 판정 불가"). 즉 나머지 20개는
+#                 판정되지 않은 채, 검수 LLM 3패스를 태운 뒤 빨강만 남는다.
+#                 #750 이 rebase 되어 머지되면 여기에 다시 넣는다. 그때까지는
+#                 명시 지정(`scripts/e2e-suite.sh anchor-audit`)으로만 실행하되,
+#                 그 브랜치 워크트리를 CLOUD_TRANSLATE_DIR 로 지정해야 의미가 있다.
 #   row-drop-repro — cloud-translate PR #283 회귀 최소 재현. version-guide.md 의
 #                 en/ja 가 `1.202602.1` 행을 결여한 stale 상태를 base 브랜치에
 #                 stale-ify 커밋으로 조성한 뒤, 이웃 문단만 짧게 수정해
@@ -286,16 +298,17 @@
 #
 # 별칭:
 #   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
-#                 를 제외한 plan 전체
+#                 / anchor-audit 를 제외한 plan 전체
 #                 = webhook workflow-ignore korean-review korean-review-no-targets
 #                   korean-review-mkdocs korean-review-markup korean-review-links
-#                   anchor-audit round1 table-suite row-drop-repro llm-patch
+#                   round1 table-suite row-drop-repro llm-patch
 #                   markup-churn retranslate concurrent lag-order fill-stubs
 #                   split-docs fix-links fix-tables jinja-mask notation
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #                 preserve 는 전제(CLI 섹션 슬라이스)가 폐기되어 제외 — 위 plan 설명 참고.
 #                 table-malformed 는 가드가 미머지(#697)라 제외 — 위 plan 설명 참고.
+#                 anchor-audit 도 대상이 미머지(#750)라 제외 — 위 plan 설명 참고.
 #
 # 각 plan 은 자체 e2e 세션 브랜치(e2e/<ts>)에서 돌므로 서로 간섭하지 않지만,
 # 같은 작업 트리를 쓰므로 반드시 순차 실행 (이 러너가 보장). 개별 실행 로그는
@@ -402,7 +415,10 @@ while [[ $# -gt 0 ]]; do
       # table-malformed 도 all 에서 제외 (2026-09-21) — 검증 대상인 선정 가드가
       # 미머지 브랜치(#697)에만 있어 main 에 대해 항상 실패하는데, 판정 전에
       # 실번역을 한 번 태운다. #697 이 머지되면 되돌린다 (위 plan 설명).
-      PLANS+=(webhook workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links anchor-audit round1 table-suite row-drop-repro
+      # anchor-audit 도 같은 이유로 제외 (2026-09-21) — `anchor_audit.py` 가
+      # 미머지 브랜치(#750)에만 있다. 이쪽은 검수 LLM 3패스를 태운 뒤 마커
+      # 코멘트가 없어 규칙 (1) 에서 멈춘다. #750 이 머지되면 되돌린다.
+      PLANS+=(webhook workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
               split-docs fix-links fix-tables jinja-mask
               notation); shift ;;
