@@ -268,18 +268,34 @@
 #                 · ja 16행이 결정적으로 삭제될 상태) / OCR#177 빌드 #370
 #                 (B — 최소값 비교가 열 동기화를 오선정, 호출 4회 낭비).
 #                 기대: exit 0 / RESULT: OK.
+#                 **all 에서 제외 (2026-09-21)** — 검증 대상인 가드가 미머지
+#                 브랜치(GHE cloud-translate#697, 2026-08-26 OPEN)에만 있어
+#                 main 에 대해 항상 실패한다. 그 PR 은 main 보다 261 커밋
+#                 뒤졌고 지금은 `CLAUDE.md`·`translator.py`·`worker.py` 3파일이
+#                 충돌해 rebase 없이는 머지되지도 않는다. 그동안 매 suite 실행이
+#                 실번역 1회(약 3분 + Claude 한도)를 태워 **알고 있는 빨강**을
+#                 만들고, 그 빨강이 진짜 회귀의 신호를 덮는다.
+#                 2026-09-15 실측(15규칙 중 10 PASS)이 남긴 것: (A) 끊긴 표의
+#                 세 행은 **살아남았다** — 빨간 (4)(10)은 가드가 넣는 로그·공지
+#                 문구가 없어서다. (B) 는 스키마가 같은데 `column-synced` 가
+#                 선정돼 표가 재작성됐다 — **재현된 제품 결함은 이 하나**.
+#                 #697 이 rebase 되어 머지되면 여기에 다시 넣는다. 그때까지는
+#                 명시 지정(`scripts/e2e-suite.sh table-malformed`)으로만 실행.
 #   round2      — 전제 조건(직전 round1 의 ko/번역 PR 이 base 에 머지되어 있음)이
 #                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
 #
 # 별칭:
-#   all         — round2 / row-drop-repro-noreconcile / preserve 를 제외한 plan 전체
-#                 = webhook korean-review korean-review-no-targets korean-review-mkdocs
-#                   korean-review-markup korean-review-links anchor-audit round1 table-suite
-#                   row-drop-repro llm-patch markup-churn retranslate concurrent lag-order
-#                   fill-stubs split-docs fix-links fix-tables table-malformed
+#   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
+#                 를 제외한 plan 전체
+#                 = webhook workflow-ignore korean-review korean-review-no-targets
+#                   korean-review-mkdocs korean-review-markup korean-review-links
+#                   anchor-audit round1 table-suite row-drop-repro llm-patch
+#                   markup-churn retranslate concurrent lag-order fill-stubs
+#                   split-docs fix-links fix-tables jinja-mask notation
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #                 preserve 는 전제(CLI 섹션 슬라이스)가 폐기되어 제외 — 위 plan 설명 참고.
+#                 table-malformed 는 가드가 미머지(#697)라 제외 — 위 plan 설명 참고.
 #
 # 각 plan 은 자체 e2e 세션 브랜치(e2e/<ts>)에서 돌므로 서로 간섭하지 않지만,
 # 같은 작업 트리를 쓰므로 반드시 순차 실행 (이 러너가 보장). 개별 실행 로그는
@@ -383,9 +399,12 @@ while [[ $# -gt 0 ]]; do
       # preserve 도 all 에서 제외 (2026-09-04) — 판정 (4)(5) 가 CLI preserve
       # 섹션 슬라이스(cloud-translate #811/#817, 닫힘) 를 전제로 해 main 에서
       # 항상 실패한다. 스크립트는 남겨 두고 명시 지정으로만 실행.
+      # table-malformed 도 all 에서 제외 (2026-09-21) — 검증 대상인 선정 가드가
+      # 미머지 브랜치(#697)에만 있어 main 에 대해 항상 실패하는데, 판정 전에
+      # 실번역을 한 번 태운다. #697 이 머지되면 되돌린다 (위 plan 설명).
       PLANS+=(webhook workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links anchor-audit round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
-              split-docs fix-links fix-tables table-malformed jinja-mask
+              split-docs fix-links fix-tables jinja-mask
               notation); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
