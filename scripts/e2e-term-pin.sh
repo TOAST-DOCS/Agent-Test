@@ -207,13 +207,20 @@ run_one() {   # $1=on|off  $2=round  → stdout 없음, 파일로 남긴다
       grep -i "term-pin" "$log" | head -3
     fi
   fi
-  # 산출물을 받아 둔다
+  # 산출물을 받아 둔다. **`origin/<br>` 이 아니라 `FETCH_HEAD` 로 읽는다** —
+  # 이 클론은 `--depth 1 --branch alpha` 라 refspec 이
+  # `+refs/heads/alpha:refs/remotes/origin/alpha` 하나뿐이고, `git fetch origin
+  # <br>` 는 원격 추적 ref 를 만들지 않는다. 옛 판본이 `origin/<br>` 를 읽고
+  # 실패를 `2>/dev/null` 로 삼켜 "(브랜치 없음)" 한 줄만 남기는 바람에, 측정이
+  # 한 번도 산출물을 보지 못한 채 초록이었다.
   git fetch -q origin "$br"
   local d="$SCRATCH/out/$pin-$round"; mkdir -p "$d"
-  git show "origin/$br:ko/$DOC" > "$d/ko.md" 2>/dev/null || true
+  git show "FETCH_HEAD:ko/$DOC" > "$d/ko.md" 2>/dev/null || true
   for lang in en ja; do
-    git show "origin/$br:$lang/$DOC" > "$d/$lang.md" 2>/dev/null \
-      || { bad "$lang 산출물이 없다 (term_pin=$pin, round=$round)"; return 1; }
+    if ! git show "FETCH_HEAD:$lang/$DOC" > "$d/$lang.md" 2>/dev/null; then
+      bad "$lang 산출물이 없다 (term_pin=$pin, round=$round)"
+      rm -f "$d/$lang.md"; return 1
+    fi
   done
   return 0
 }
