@@ -141,6 +141,12 @@
 #                                전용**이며, api 모드와 함께 주면 하드 실패한다 (조용히
 #                                reconcile ON 으로 돌아 통과하는 것이 최악이므로).
 #
+#   --unit-preserve              translate 잡에 UNIT_PRESERVE 를 켠다 (local:
+#                                --unit-preserve, api: "unit_preserve": true).
+#                                **기본 off** — 운영 recommended 프리셋에 없다.
+#                                켠 채로 파이프라인이 도는지만 본다; 산출물
+#                                판정은 scripts/e2e-unit-preserve.sh 의 일이다.
+#
 #   --ko-review / --no-ko-review 12~14단계(한글 검수 + suggestion accept) 실행 여부.
 #                                기본값은 plan 별로 갈린다 — table-suite /
 #                                row-drop-repro / markup-churn 은 **생략**, 그 외
@@ -213,6 +219,12 @@ KO_REVIEW_MODE="auto"                     # auto = plan 기본값 | on | off
 # 의 reconcile-off 변형이 그 경로를 검증한다. dashboard /api/translate 에는 이
 # 필드가 없으므로 **local 모드 전용**이다.
 TABLE_RECONCILE=1
+# UNIT_PRESERVE (cloud-translate #924). **opt-in** — `--list-items` 와 달리
+# 운영 recommended 프리셋에 들어 있지 않다 (밀린 짝을 베이스라인으로 넘겨
+# anchor 가 복제되는 결함이 열려 있어 기본 off). 그래서 e2e 도 명시할 때만
+# 켠다 — 켜고 싶으면 `--unit-preserve`. 산출물 판정은 이 스크립트가 아니라
+# `e2e-unit-preserve.sh` 가 한다 (여기서는 "켠 상태로 파이프라인이 도는가" 만).
+UNIT_PRESERVE=0
 VERIFY_MODE="py"                          # py = check_docs_align.py (기본, 결정적·<1초) | fable = 예전 claude -p 검증
 TRANSLATE_PIPELINE_BRANCH=""              # translate 잡을 돌릴 cloud-translate multibranch child (빈 값=main)
 FROM_ALIGNED=""                            # 이미 align 이 끝난 브랜치에서 세션을 갈라내고 2~9단계를 건너뛴다
@@ -290,6 +302,8 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --translate-pipeline-branch)
       TRANSLATE_PIPELINE_BRANCH="$2"; shift 2 ;;   # /api/translate 를 이 cloud-translate 브랜치로 실행
+    --unit-preserve)      UNIT_PRESERVE=1; shift ;;    # 유닛별 preserve 베이스라인 (기본 off)
+    --no-unit-preserve)   UNIT_PRESERVE=0; shift ;;
     --table-reconcile)    TABLE_RECONCILE=1; shift ;;   # (기본) 표 행 reconcile 켜기
     --no-table-reconcile) TABLE_RECONCILE=0; shift ;;   # reconcile 끄기 → LLM-patch 경로 노출 (local 전용)
     --ko-review)     KO_REVIEW_MODE="on"; shift ;;       # plan 기본값을 무시하고 ko-review 실행
@@ -920,6 +934,8 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   # 하려다 LLM-patch fallback 을 태운다 — 그 경로가 이 변형의 검증 대상이다.
   reconcile_opt=()
   if (( ! TABLE_RECONCILE )); then reconcile_opt=(--no-table-reconcile); fi
+  unit_preserve_opt=()
+  if (( UNIT_PRESERVE )); then unit_preserve_opt=(--unit-preserve); fi
   set +e
   # e2e 는 **CLI 엔진으로 돈다** — 배포 잡의 .env 가
     # TRANSLATE_TRANSLATE_ENGINE=claude-code 이므로 프로덕션과 같은 엔진을 태우는
@@ -941,7 +957,7 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
       --workers 2 --chunk-workers 2 --tm-top-k 1 \
       --table-rows --skip-full-table --skip-anchor-only \
       --assign-anchors --align-headings --llm-patch-fallback \
-      --list-items \
+      --list-items "${unit_preserve_opt[@]}" \
       --fix-korean-leftover "${reconcile_opt[@]}" \
   ) 2>&1 | tee "$local_log"
   # ↑ --fix-korean-leftover: 표 헤더/짧은 조각 재번역 시 간헐적으로 남는 한글
@@ -1013,6 +1029,13 @@ if [[ -n "$TRANSLATE_PIPELINE_BRANCH" ]]; then
   echo "  translate pipeline_branch: $TRANSLATE_PIPELINE_BRANCH"
 fi
 
+# UNIT_PRESERVE 는 운영 프리셋에 없다 — --unit-preserve 로 명시했을 때만 보낸다.
+# /api/translate 는 프리셋을 서버에서 적용하지 않고 본문의 필드만 Jenkins
+# 파라미터로 옮기므로, 여기 없으면 잡에 가지 않는다.
+unit_preserve_json=""
+if (( UNIT_PRESERVE )); then unit_preserve_json=',
+  "unit_preserve": true'; fi
+
 translate_body=$(cat <<JSON
 {
   "pr_url": "$ko_pr_url",
@@ -1032,7 +1055,7 @@ translate_body=$(cat <<JSON
   "skip_anchor_only": true,
   "assign_anchors": true,
   "align_headings": true,
-  "list_items": true
+  "list_items": true$unit_preserve_json
 }
 JSON
 )

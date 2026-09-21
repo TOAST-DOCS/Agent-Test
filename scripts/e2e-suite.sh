@@ -263,6 +263,16 @@
 #                 판정. 응답 jenkins_params.LIST_ITEMS 로 플래그 전달도 확인.
 #                 기대: exit 0 / LIST_ITEMS: OK. (e2e-list-items.sh 는 모델 없는
 #                 전송 하네스라 별개 — 그쪽은 마커 조건 때문에 exit 3 이 현행.)
+#   unit-preserve — 유닛별 preserve 베이스라인 (e2e-unit-preserve.sh). 층이 둘이다:
+#                 [A] `check_unit_baselines.py` 가 **무엇이 베이스라인으로 붙는지**를
+#                 모델 없이 결정적으로 보고, [B] 실제 ko PR 을 로컬
+#                 `translate_pr.py --unit-preserve` 로 돌려 산출물에서 anchor 복제와
+#                 안 바뀐 문장의 바이트 보존을 (플래그를 끈 대조군과 함께) 본다.
+#                 픽스처는 실행 시점에 생성한다 — 조건이 "번역본이 ko 와 어긋나
+#                 있다" 라서 alpha 에 두면 다른 정비 e2e 가 조용히 고쳐 버린다.
+#                 **all 에서 제외** — UNIT_PRESERVE 는 아직 기본 off 이고
+#                 (밀린 짝이 베이스라인으로 넘어가 anchor 가 복제되는 결함),
+#                 그 결함이 닫히기 전의 기대값은 exit 3 / UNIT_PRESERVE: REPRO 다.
 #   preserve    — preserve-existing 반영 검증 (e2e-preserve-existing.sh).
 #                 full 재번역 + --preserve-existing 이 실제로 걸렸는지를 로그가
 #                 아니라 **산출물**로 본다: 한 섹션의 ko 산문만 바꾼 뒤 나머지
@@ -409,7 +419,7 @@ while [[ $# -gt 0 ]]; do
       FT_ARGS+=("$1" "$2"); LI_ARGS+=("$1" "$2"); TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items)
+    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -601,6 +611,15 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^LIST_ITEMS: (OK|FAIL)' "$log" | tail -n1 || true)"
     tx_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${tx_pr:-<no-pr>}")
+  elif [[ "$plan" == "unit-preserve" ]]; then
+    # 유닛별 preserve — 자체 스크립트. 엔진·모델은 넘기지 않는다: 이 plan 이
+    # 보는 것은 "모델이 미끼를 물었나" 이전에 "짝이 맞나" 이고, 결정적 층 [A] 는
+    # 엔진과 무관하다. 산출물 층 [B] 는 로컬 translate_pr.py 고정 (CLI 엔진).
+    bash "$REPO_ROOT/scripts/e2e-unit-preserve.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^UNIT_PRESERVE: (OK|REPRO|FAIL)' "$log" | tail -n1 || true)"
+    pairs="$(grep -oE '위반: .*' "$log" | tail -n1 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${pairs:-<no-pairs>}")
   elif [[ "$plan" == "preserve" ]]; then
     # preserve-existing 반영 — 자체 스크립트. --engine/--model 은 넘기지 않는다:
     # 이 plan 이 검증하는 결함은 CLI 엔진의 @file 한도라서 엔진이 고정이어야
