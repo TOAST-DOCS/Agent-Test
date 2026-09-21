@@ -203,12 +203,9 @@ JSON
   resp="$(curl -sS -X POST -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
     -H "Content-Type: application/json" -d "$translate_body" "$DASHBOARD_BASE_URL/api/translate")"
   echo "$resp" | python3 -m json.tool | sed 's/^/    /' | head -30
+  printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get("queued") else 1)' 2>/dev/null \
+    || { echo "error: /api/translate 가 큐에 넣지 못함" >&2; KEEP=1; exit 2; }
   li_param="$(printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); print((d.get("jenkins_params") or {}).get("LIST_ITEMS",""))' 2>/dev/null || true)"
-  if printf '%s' "$resp" | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get("queued") else 1)' 2>/dev/null; then
-    :
-  else
-    echo "error: /api/translate 가 큐에 넣지 못함" >&2; exit 2
-  fi
 else
   [[ -f "$CLOUD_TRANSLATE_DIR/.env" ]] || { echo "error: $CLOUD_TRANSLATE_DIR/.env 없음" >&2; exit 1; }
   set +e
@@ -233,12 +230,15 @@ fi
 echo "[4/6] 번역 PR 감지 (최대 ${PR_TIMEOUT}s)"
 poll_left=$(( PR_TIMEOUT / 20 ))
 while (( poll_left-- > 0 )); do
-  tx_pr_url="$(gh pr list --repo "$REPO" --base "$HEAD_BRANCH" --state open --json url,headRefName \
-    --jq '.[] | select(.headRefName | startswith("translate/")) | .url' | sort -u | head -n1 || true)"
+  # base 로 거르지 않는다 — base_branch 를 API 로 넘겼으므로 번역 PR 의 base 는
+  # 세션 브랜치다 (align e2e 는 base_branch 를 안 넘겨 ko head 가 base). head 접두가
+  # 유일한 불변 신호다: 번역기는 `translate/<ko head>-<sha>-<ts>` 로 연다.
+  tx_pr_url="$(gh pr list --repo "$REPO" --state open --limit 50 --json url,headRefName \
+    --jq ".[] | select(.headRefName | startswith(\"translate/$HEAD_BRANCH\")) | .url" | sort -u | head -n1 || true)"
   [[ -n "$tx_pr_url" ]] && break
   sleep 20
 done
-[[ -n "$tx_pr_url" ]] || { echo "error: ${PR_TIMEOUT}s 내 번역 PR 미감지" >&2; exit 2; }
+[[ -n "$tx_pr_url" ]] || { echo "error: ${PR_TIMEOUT}s 내 번역 PR 미감지 — 브랜치·PR 은 보존한다 (조사용)" >&2; KEEP=1; exit 2; }
 echo "  detected translation PR: $tx_pr_url"
 e2e_label_pr "$REPO" "$tx_pr_url" || true
 
