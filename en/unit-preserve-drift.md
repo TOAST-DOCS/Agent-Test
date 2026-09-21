@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e00ba5e11 -->
 
 <a id="up-drift"></a>
@@ -13,6 +15,14 @@ sentence of section 1, describing how instance 1 behaves. This is the third and 
 
 <a id="up-drift-2"></a>
 ## Section 2 { #up-drift-2 }
+
+
+This is a new paragraph added to Section 2. The translated version did not have any body text for this section. This is the third sentence.
+
+<a id="up-drift-2-sub"></a>
+### New subsection added { #up-drift-2-sub }
+
+This subsection was newly added in the Korean source. It does not yet exist in the translation.
 
 
 <a id="up-drift-3"></a>
