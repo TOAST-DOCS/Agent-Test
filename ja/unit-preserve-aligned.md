@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=e2e00ba5e11 -->
+<!-- pre-align:aligned sig=ae24033aa92a -->
 
 <a id="up-aligned"></a>
 # unit-preserve e2e フィクスチャ (aligned)
