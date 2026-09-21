@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e00ba5e11 -->
 
 <a id="up-aligned"></a>
@@ -26,8 +28,8 @@ sentence of section 3, describing how instance 3 behaves. This is the third and 
 <a id="up-aligned-4"></a>
 ## Section 4 { #up-aligned-4 }
 
-This is the first sentence of section 4. The Korean side never touches it. This is the second
-sentence of section 4, describing how instance 4 behaves. This is the third and last sentence of section 4.
+This is the first sentence of section 4. This sentence is not modified by ko. The second sentence of section 4 has been revised.
+This describes the new behavior of Instance 4. This is the third and final sentence of section 4.
 
 <a id="up-aligned-5"></a>
 ## Section 5 { #up-aligned-5 }
