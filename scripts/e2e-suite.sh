@@ -270,9 +270,11 @@
 #                 안 바뀐 문장의 바이트 보존을 (플래그를 끈 대조군과 함께) 본다.
 #                 픽스처는 실행 시점에 생성한다 — 조건이 "번역본이 ko 와 어긋나
 #                 있다" 라서 alpha 에 두면 다른 정비 e2e 가 조용히 고쳐 버린다.
-#                 **all 에서 제외** — UNIT_PRESERVE 는 아직 기본 off 이고
-#                 (밀린 짝이 베이스라인으로 넘어가 anchor 가 복제되는 결함),
-#                 그 결함이 닫히기 전의 기대값은 exit 3 / UNIT_PRESERVE: REPRO 다.
+#                 기대: exit 0 / UNIT_PRESERVE: OK (2026-09-21 cloud-translate
+#                 의 짝 가드 + anchor 중복 게이트로 결함이 닫혔다 — 그 전에는
+#                 exit 3 / REPRO 가 기대값이었다). **all 에는 아직 넣지 않는다**:
+#                 UNIT_PRESERVE 는 운영 recommended 프리셋에 없어서 이 plan 만
+#                 켜고 도는데, all 은 프리셋대로 도는 조합을 보는 자리다.
 #   preserve    — preserve-existing 반영 검증 (e2e-preserve-existing.sh).
 #                 full 재번역 + --preserve-existing 이 실제로 걸렸는지를 로그가
 #                 아니라 **산출물**로 본다: 한 섹션의 ko 산문만 바꾼 뒤 나머지

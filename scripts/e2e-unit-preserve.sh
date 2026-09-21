@@ -65,13 +65,22 @@
 #       (4) anchor id 다중집합이 ko == en == ja — 복제 0              ← 결함(증상)
 #       (5) 베이스라인으로 붙었던 남의 heading 이 본문에 나타나지 않는다  ← 결함(증상)
 #       (6) aligned: ko 가 안 건드린 문장 2개가 en/ja 에서 바이트 동일   ← 기능
+#           (4개 중 2개 이상이면 WARN — 모델 편차를 허용한다. 절대 판정은 (7))
 #       (7) 대조군(플래그 off)보다 (6) 의 보존이 많거나 같다            ← 기능
 #
+# ── 결함은 닫혔다 (cloud-translate, 2026-09-21) ────────────────────────────
+# 두 가지가 들어갔고, 이 e2e 는 그 둘을 각각 본다.
+#   * `_unit_baseline_refusal` — 밀린 짝을 베이스라인으로 내주지 않는다.
+#     (2) 가 그것을 본다. 이 실행의 로그에 `Per-unit baseline: refused 1
+#     implausible pairing(s) (markup-shape 1)` 이 en·ja 에 하나씩 찍힌다.
+#   * `anchor_dup_gate` — 그래도 중복이 나오면 커밋 전에 파일 단위로 막는다.
+#     (4) 가 그것을 본다 (게이트가 막았으면 그 언어가 산출물에 없다).
+# 실측 (2026-09-21, 수정 후): (1)~(5)(7) 통과, (6) 3/4 (대조군 0/4).
+#
 # ── exit code ─────────────────────────────────────────────────────────────
-#   0  전부 통과 — 결함이 닫혔다 (`UNIT_PRESERVE: OK`)
+#   0  전부 통과 (`UNIT_PRESERVE: OK`) — **현행 기대값**
 #   3  결함 재현 — (2) 가 실패하고 기능 규칙 (6) 은 통과 (`UNIT_PRESERVE: REPRO`).
-#      파이프라인이 고쳐지기 전의 기대값이라 `e2e-suite.sh` 의 `all` 에 넣지 않는다
-#      (list-items(전송 하네스)·preserve·llm-patch 가 같은 이유로 빠져 있다).
+#      수정 전의 기대값이었다. 다시 이 값이 나오면 짝 가드가 회귀한 것이다.
 #   1  기능 규칙 실패 또는 픽스처가 조건을 잃음 (`UNIT_PRESERVE: FAIL`)
 #   2  인프라 — 번역 PR 미감지 · translate_pr.py 비정상 종료
 #
@@ -485,7 +494,9 @@ leak = sum(len(v) for v in d["leak"].values())
 keep = sum(len(v) for v in d["keep"].values())
 keep_ctl = sum(len(v) for v in d["keep_ctl"].values())
 have_ctl = 1 if d["keep_ctl"] else 0
-print(f"DUP={dup}; MISSING={missing}; LEAK={leak}; KEEP={keep}; KEEP_CTL={keep_ctl}; HAVE_CTL={have_ctl}")
+# 이름 주의: `KEEP` 은 --keep 플래그 변수다. eval 이 그걸 덮으면
+# cleanup 이 브랜치를 남긴다 — 그래서 N_ 접두사를 쓴다.
+print(f"DUP={dup}; MISSING={missing}; LEAK={leak}; N_KEEP={keep}; N_KEEP_CTL={keep_ctl}; HAVE_CTL={have_ctl}")
 PY
 )"
 
@@ -501,18 +512,18 @@ if (( LEAK == 0 )); then
 else
   defect "(5) 베이스라인의 남의 anchor 가 본문에 실려 왔다 ($LEAK 건)"
 fi
-if (( KEEP == 4 )); then
+if (( N_KEEP == 4 )); then
   ok "(6) 안 바뀐 문장 4개(en 2 · ja 2)가 바이트 동일 — 기능이 약속대로 동작"
-elif (( KEEP >= 2 )); then
-  warn "(6) 안 바뀐 문장 $KEEP/4 만 바이트 동일 (모델 편차)"
+elif (( N_KEEP >= 2 )); then
+  warn "(6) 안 바뀐 문장 $N_KEEP/4 만 바이트 동일 (모델 편차)"
 else
-  bad "(6) 안 바뀐 문장이 $KEEP/4 만 보존됐다 — 기능이 동작하지 않는다"
+  bad "(6) 안 바뀐 문장이 $N_KEEP/4 만 보존됐다 — 기능이 동작하지 않는다"
 fi
 if (( HAVE_CTL )); then
-  if (( KEEP >= KEEP_CTL )); then
-    ok "(7) 대조군(플래그 off) 보존 $KEEP_CTL/4 ≤ ON $KEEP/4 — 플래그가 실제로 일한다"
+  if (( N_KEEP >= N_KEEP_CTL )); then
+    ok "(7) 대조군(플래그 off) 보존 $N_KEEP_CTL/4 ≤ ON $N_KEEP/4 — 플래그가 실제로 일한다"
   else
-    bad "(7) 대조군이 더 많이 보존했다 (off $KEEP_CTL/4 > on $KEEP/4)"
+    bad "(7) 대조군이 더 많이 보존했다 (off $N_KEEP_CTL/4 > on $N_KEEP/4)"
   fi
 else
   warn "(7) 대조군 없음 — 건너뜀"
