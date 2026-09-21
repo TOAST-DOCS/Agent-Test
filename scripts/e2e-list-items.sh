@@ -19,7 +19,14 @@
 # 같은 모양의 선례가 TOAST-DOCS/AppGuard#446 (2026-09-11) 이고, #924 는 바로 그
 # 사고를 막으려고 들어왔다.
 #
-# ── 그런데 #924 가 이 파일에서는 안 걸린다 ────────────────────────────────
+# ── 닫혔다 (cloud-translate, 2026-09-21) ──────────────────────────────────
+# `_maybe_expand_lists` 가 **마커 한 줄만큼의 오프셋**을 허용한다 — 개수도
+# landmark 열도 그 한 줄을 뺀 채로 비교하고, 그 경로에서만 `_structural_alignment`
+# 가 받아 주는지 한 번 더 확인한다. 코퍼스 채택 1,728 → 1,858 / 2,702
+# (64.0% → 68.8%), 재사용을 잃은 쌍 0. 그래서 이 e2e 의 기대값은 **exit 0** 이다.
+# 아래 서사는 무엇이 닫혔는지 남겨 둔 것이다.
+#
+# ── 무엇이 걸려 있었나 ────────────────────────────────────────────────────
 # `LIST_ITEMS=on/off` 의 결과가 **바이트 단위로 같다** (실측: 둘 다 목록 6줄
 # 228자 전송). 원인은 `_maybe_expand_lists` 의 채택 조건이 문서 전체 유닛 개수의
 # **엄격 일치**(`len(fine_old) != len(fine_en)` -> 거절)인데, 번역본 첫 줄
@@ -65,13 +72,14 @@
 #   (4) 대조군(마커 제거)에서는 (2)(3) 이 성립한다 — 원인 격리
 #   (5) LIST_ITEMS=off 에서는 전송된다 (플래그가 실제로 일을 하는지)
 #
-# **(2)(3) 은 지금 FAIL 이 정상이다.** 파이프라인이 고쳐지기 전에는 이 e2e 가
-# 빨간 것이 "아직 안 닫혔다" 의 기계 판독 신호다. 그래서 `e2e-suite.sh` 의 `all`
-# 목록에 넣지 않는다 (llm-patch · preserve 가 같은 이유로 빠져 있다).
+# **(2)(3) 이 다시 FAIL 이면 회귀다.** 마커 오프셋 허용이 사라졌거나, 판정이
+# `_maybe_expand_lists` 가 아닌 사본을 보고 있다는 뜻이다 — 실제로 이 스크립트가
+# 한 번 그랬다: 규칙을 `k == t` 로 베껴 적어 두어, 파이프라인이 고쳐지고 전송량이
+# 줄어든 뒤에도 "거절" 이라고 계속 답했다. 판정은 반드시 그 함수에게 묻는다.
 #
 # ── exit code ─────────────────────────────────────────────────────────────
-#   0  결함이 닫혔다 — (1)~(5) 전부 통과
-#   3  결함이 재현됐다 — (2)(3) 만 실패하고 대조군 (4) 는 통과 (현행 기대값)
+#   0  (1)~(5) 전부 통과 — **현행 기대값**
+#   3  결함이 재현됐다 — (2)(3) 만 실패하고 대조군 (4) 는 통과 (수정 전 기대값)
 #   1  스크립트/환경 오류, 또는 대조군까지 실패 (픽스처가 깨졌다는 뜻)
 #
 # Usage:
@@ -121,8 +129,8 @@ CT = pathlib.Path(os.environ["CT_DIR"])
 sys.path[:0] = [str(CT / "translate"), str(CT)]
 
 from app.translator import (Translator, _expand_list_blocks,
-                            _expand_table_blocks, _split_paragraphs,
-                            _split_paragraphs_raw)
+                            _expand_table_blocks, _maybe_expand_lists,
+                            _split_paragraphs, _split_paragraphs_raw)
 from shared.config import settings
 from tests.test_translator import _splice_mock
 
@@ -169,12 +177,23 @@ ko_head = ko.replace(EDIT_FROM, EDIT_TO)
 strip = lambda t: re.sub(r"\A" + re.escape(MARK) + r"\n+", "", t)
 
 
-def counts(ko_text, tgt_text):
-    """`_maybe_expand_lists` 가 비교하는 바로 그 두 숫자."""
-    k = _expand_list_blocks(_expand_table_blocks(_split_paragraphs(ko_text)))
-    t = _expand_list_blocks(
-        _expand_table_blocks(_split_paragraphs_raw(tgt_text), raw=True), raw=True)
-    return len(k), len(t)
+def counts(ko_text, tgt_text, list_items):
+    """유닛 수와 **실제 채택 여부**.
+
+    채택 규칙을 여기에 베껴 적지 않는다 — 옛 판본이 `k == t` 로 베껴 적고 있었고,
+    파이프라인이 마커 오프셋을 허용하도록 고쳐진 뒤에도 이 e2e 만 옛 규칙으로
+    "거절" 이라고 계속 답했다 (전송량은 이미 줄어 있었는데도). 규칙은 한 군데,
+    `_maybe_expand_lists` 에만 있어야 한다.
+    """
+    ko_u = _expand_table_blocks(_split_paragraphs(ko_text))
+    tgt_u = _expand_table_blocks(_split_paragraphs_raw(tgt_text), raw=True)
+    # 플래그는 호출자(`_section_diff_splice`)가 본다 — 끈 팔에서 함수만 부르면
+    # "채택" 이라고 답해 표가 거짓말을 한다.
+    adopted = list_items and _maybe_expand_lists(
+        ko_u, ko_u, tgt_u, ko_u, volume_aware=True)[4]
+    k = _expand_list_blocks(ko_u)
+    t = _expand_list_blocks(tgt_u, raw=True)
+    return len(k), len(t), adopted
 
 
 async def sent_units(existing, lang, list_items):
@@ -203,9 +222,9 @@ def leaked(units):
 async def arm(tag, en_t, ja_t, list_items):
     rows = {}
     for lang, tgt in (("en", en_t), ("ja", ja_t)):
-        k, t = counts(ko, tgt)
+        k, t, adopt = counts(ko, tgt, list_items)
         units = await sent_units(tgt, lang, list_items)
-        rows[lang] = dict(ko_units=k, tgt_units=t, adopt=k == t,
+        rows[lang] = dict(ko_units=k, tgt_units=t, adopt=adopt,
                           calls=len(units), chars=sum(len(u) for u in units),
                           leak=leaked(units), units=units)
     for lang, r in rows.items():
@@ -243,12 +262,12 @@ async def main():
 
     print()
     if not fail:
-        print("RESULT: OK — 결함이 닫혔다. e2e-suite.sh 의 all 목록에 넣을 때다.")
+        print("RESULT: OK — 마커가 있어도 목록이 항목 단위로 splice 된다.")
         sys.exit(0)
     if set(fail) <= {2, 3} and ctl:
-        print("RESULT: REPRO — 결함이 재현됐다 (파이프라인 미수정 상태의 기대값).")
+        print("RESULT: REPRO — 마커 오프셋 허용이 회귀했다.")
         print("        마커 한 줄 때문에 LIST_ITEMS 가 이 파일에서 꺼진다.")
-        print("        고칠 자리: cloud-translate `_maybe_expand_lists` 의 개수 엄격 일치 조건.")
+        print("        볼 자리: cloud-translate `_maybe_expand_lists` 의 `_marker_offset`.")
         sys.exit(3)
     print(f"RESULT: BROKEN — 실패한 규칙 {sorted(fail)} (대조군까지 깨졌다면 픽스처 문제)")
     sys.exit(1)

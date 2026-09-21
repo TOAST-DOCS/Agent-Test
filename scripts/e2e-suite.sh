@@ -261,8 +261,12 @@
 #                 태워, 형제 불릿(en `Settings by Feature` · ja `認証方式の概要`)이
 #                 en/ja 에서 **바이트 그대로** 남고 편집한 불릿만 새 번역인지
 #                 판정. 응답 jenkins_params.LIST_ITEMS 로 플래그 전달도 확인.
-#                 기대: exit 0 / LIST_ITEMS: OK. (e2e-list-items.sh 는 모델 없는
-#                 전송 하네스라 별개 — 그쪽은 마커 조건 때문에 exit 3 이 현행.)
+#                 기대: exit 0 / LIST_ITEMS: OK. 이 plan 은 앞에 **결정적 층**을
+#                 하나 더 태운다 — `e2e-list-items.sh` 가 모델 없이 "무엇이
+#                 전송되는가" 를 보고, 특히 번역본 첫 줄의 machine_translated
+#                 마커가 있어도 목록이 항목 단위로 쪼개지는지 본다 (그 한 줄
+#                 때문에 코퍼스 130쌍에서 확장이 꺼져 있었다). 둘 중 하나라도
+#                 실패하면 plan 이 실패한다.
 #   unit-preserve — 유닛별 preserve 베이스라인 (e2e-unit-preserve.sh). 층이 둘이다:
 #                 [A] `check_unit_baselines.py` 가 **무엇이 베이스라인으로 붙는지**를
 #                 모델 없이 결정적으로 보고, [B] 실제 ko PR 을 로컬
@@ -605,14 +609,24 @@ for plan in "${PLANS[@]}"; do
     fix_pr="$(grep -oE 'Fix PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fix_pr:-<no-pr>}")
   elif [[ "$plan" == "list-items" ]]; then
-    # 목록 항목 splice — 자체 스크립트. 편집한 불릿 하나 외 형제 불릿이 en/ja 에서
-    # 바이트 그대로 남는지 산출물로 판정. api 모드가 기본 — /api/translate 는
-    # 프리셋을 서버에서 적용하지 않아 스크립트 본문이 운영 recommended 를 옮긴다.
-    bash "$REPO_ROOT/scripts/e2e-list-items-pipeline.sh" "${LI_ARGS[@]}" > "$log" 2>&1
+    # 목록 항목 splice — 층이 둘이다.
+    #   [A] 결정적: `e2e-list-items.sh` 가 모델 없이 **무엇이 전송되는가**를 본다.
+    #       마커 한 줄 때문에 확장이 꺼지던 자리를 지킨다 (코퍼스 130쌍). 몇 초.
+    #   [B] 산출물: `e2e-list-items-pipeline.sh` 가 실제 번역 잡에 태워 형제
+    #       불릿이 바이트 그대로 남는지 본다. api 모드가 기본 — /api/translate 는
+    #       프리셋을 서버에서 적용하지 않아 스크립트 본문이 운영 recommended 를 옮긴다.
+    # [A] 가 실패하면 [B] 는 돌리지 않는다 — 전송 자체가 틀린 상태에서 산출물을
+    # 재면 모델 편차와 구분되지 않는다.
+    bash "$REPO_ROOT/scripts/e2e-list-items.sh" > "$log" 2>&1
     ec=$?
+    det="$(grep -oE '^RESULT: (OK|REPRO|BROKEN)' "$log" | tail -n1 || true)"
+    if [[ $ec -eq 0 ]]; then
+      bash "$REPO_ROOT/scripts/e2e-list-items-pipeline.sh" "${LI_ARGS[@]}" >> "$log" 2>&1
+      ec=$?
+    fi
     verdict="$(grep -oE '^LIST_ITEMS: (OK|FAIL)' "$log" | tail -n1 || true)"
     tx_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
-    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${tx_pr:-<no-pr>}")
+    RESULTS+=("$plan|exit=$ec|${det:-<no-det>} ${verdict:-<no-verdict>}|${tx_pr:-<no-pr>}")
   elif [[ "$plan" == "unit-preserve" ]]; then
     # 유닛별 preserve — 자체 스크립트. 엔진·모델은 넘기지 않는다: 이 plan 이
     # 보는 것은 "모델이 미끼를 물었나" 이전에 "짝이 맞나" 이고, 결정적 층 [A] 는
