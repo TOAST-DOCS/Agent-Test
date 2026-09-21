@@ -61,57 +61,69 @@
 # ── 흐름 ──────────────────────────────────────────────────────────────────
 #   1) 리포 워킹 트리에서 ko/en/ja list-items-sample.md 를 읽는다
 #   2) 메모리에서 ko 의 **마지막 불릿 하나만** 바꾼다 (head ko)
-#   3) `Translator._section_diff_splice` 를 mock 번역기로 돌려 전송분을 수집
-#      — 플래그 on/off 양쪽
-#   4) 같은 2×2 를 **대조군**(en/ja 첫 줄 마커만 제거)으로 한 번 더
+#   3) **운영 경로** — `translate_diff` (anchor splice 포함) 를 probe 번역기로
+#      돌려 전송분을 수집. 플래그 on/off × 마커 유/무 = 2×2
+#   4) **폴백 경로** — `_section_diff_splice` 를 문서 통째로 직접. 같은 2×2
 #   5) 판정 (아래 7개)
 #
 # ── 판정 규칙 ─────────────────────────────────────────────────────────────
 #   (1) 픽스처가 조건을 유지하고 있다 — en/ja 첫 줄이 마커, ko 첫 줄은 아니다
-#   (2) LIST_ITEMS=on 에서 `_maybe_expand_lists` 가 **채택**한다      <- 본체
-#   (3) LIST_ITEMS=on 에서 고정 형제 불릿이 **전송되지 않는다**       <- 본체
+#   (2) **폴백 경로**에서 `_maybe_expand_lists` 가 **채택**한다       <- 마커 오프셋
+#   (3) **운영 경로**·on 에서 고정 형제 불릿이 **전송되지 않는다**    <- 본체
 #   (4) 대조군(마커 제거)에서는 (2)(3) 이 성립한다 — 원인 격리
-#   (5) LIST_ITEMS=off 에서는 전송된다 (플래그가 실제로 일을 하는지)
-#   (6) 대조군+on 은 **편집한 유닛 하나만** 전송한다 — 이 픽스처의 바닥값
-#   (7) 마커 arm 의 **잔여**(편집 외 유닛 전송)가 예산을 넘지 않는다
+#   (5) off 에서는 **두 경로 모두** 전송된다 (플래그가 실제로 일을 하는지)
+#   (6) 운영 경로는 **편집한 유닛 하나만** 전송한다 (마커 유무 무관)
+#   (7) 폴백 경로의 **잔여**(편집 외 유닛 전송)가 예산을 넘지 않는다
 #
 # **(2)(3) 이 다시 FAIL 이면 회귀다.** 마커 오프셋 허용이 사라졌거나, 판정이
 # `_maybe_expand_lists` 가 아닌 사본을 보고 있다는 뜻이다 — 실제로 이 스크립트가
 # 한 번 그랬다: 규칙을 `k == t` 로 베껴 적어 두어, 파이프라인이 고쳐지고 전송량이
 # 줄어든 뒤에도 "거절" 이라고 계속 답했다. 판정은 반드시 그 함수에게 묻는다.
 #
-# ── (6)(7) — 목록 확장이 켜졌다는 것과 잔여가 0 이라는 것은 다른 말이다 ────
-# 2×2(마커 × 플래그) 로 재면 채택되고도 남는 구간이 보인다 (실측 2026-09-21,
-# `_marker_offset` 수정 후):
+# ── 경로가 둘이고, 둘을 섞으면 안 된다 ────────────────────────────────────
+# 이 스크립트는 처음에 `_section_diff_splice` 를 **문서 통째로** 직접 불렀다.
+# 그런데 번역 잡은 `translate_diff` 로 들어가고, 거기서 **anchor splice**
+# (`_splice_by_anchors`) 가 먼저 돌아 `_section_diff_splice` 를 anchor 섹션
+# **안에서** 다시 부른다 (`--align-headings` 가 권장 프리셋에 있으므로 anchor
+# splice 는 늘 먼저 시도된다). 그래서 두 경로의 전송량이 다르다 — 실측
+# 2026-09-21, `_marker_offset` 수정 후:
 #
-#     마커  플래그  en 전송        ja 전송
-#     있음  on      5콜  696자     3콜  353자
-#     있음  off     5콜  889자     3콜  546자
-#     없음  on      1콜   36자     1콜   36자     <- 편집한 불릿 하나
-#     없음  off     1콜  229자     1콜  229자     <- 목록 블록 통째
+#                 마커  플래그  en 전송        ja 전송
+#   운영 경로     있음  on      1콜   36자     1콜   36자   <- 편집한 불릿 하나
+#   (translate_   있음  off     1콜  229자     1콜  229자   <- 목록 블록 통째
+#    diff)        없음  on/off  같음           같음         <- 마커 무관
+#   폴백 경로     있음  on      5콜  696자     3콜  353자
+#   (_section_    있음  off     5콜  889자     3콜  546자
+#    diff_splice) 없음  on      1콜   36자     1콜   36자
 #
-# 플래그는 두 arm 에서 모두 일한다 (889->696 · 546->353 · 229->36, 고정 불릿
-# 누출 2건->0). 하지만 마커가 있으면 **편집과 무관한 산문 문단**까지 함께
-# 전송된다 — en 4개 660자 · ja 2개 317자. 원인은 플래그가 아니라 정렬 경로다:
-# 마커 한 줄 때문에 유닛 개수가 21:22 로 어긋나 `_section_diff_splice` 가 위치
-# 짝짓기 대신 `_structural_alignment` 로 떨어지고, 그 시그니처가 `volume_aware`
-# 에서 **content 줄 수**를 포함하기 때문에 ko 3줄 ↔ en 4줄처럼 줄바꿈만 다른
-# 문단이 `replace`(=donor) 로 분류돼 재번역된다. 마커가 없으면 개수가 21:21 로
-# 맞아 위치 짝짓기가 쓰이고 그 검사를 아예 지나지 않는다.
+# 운영 경로가 정본이고, 그 값이 배포 실측과 맞는다 — 같은 픽스처의 Jenkins
+# 로그가 `Section-diff (block): re-translated 1 of 14 units` 다. 플래그의 효과는
+# 두 경로에서 모두 확인된다 (229->36 · 889->696 · 546->353, 고정 불릿 누출 2->0).
 #
-# 즉 `_marker_offset` 은 목록 확장의 **채택**을 되살렸지만 정렬 경로 자체는
-# 여전히 structural fallback 이다. 잔여는 플래그와 독립이라 (6) 은 대조군에서만
-# 성립하고, 마커 arm 은 (7) 의 **예산**으로 현 상태를 못 박는다 — 줄어들면
-# 예산을 내리고, 늘어나면 FAIL 이다. 고칠 자리는 cloud-translate
-# `_section_diff_splice`: `_maybe_expand_lists` 가 마커 오프셋으로 채택했다면
-# 짝은 이미 (개수 + landmark + structural 수용) 증명된 것이므로, 대상 쪽 마커
-# 유닛을 떼고 위치 짝짓기를 쓰면 대조군과 같아진다.
+# **폴백 경로에는 잔여가 있다** — 편집과 무관한 산문 문단까지 전송된다 (en 4개
+# 660자 · ja 2개 317자). 원인은 플래그가 아니라 그 경로의 정렬이다: 마커 한 줄
+# 때문에 유닛 개수가 21:22 로 어긋나 위치 짝짓기 대신 `_structural_alignment` 로
+# 떨어지고, 그 시그니처가 `volume_aware` 에서 **content 줄 수**를 포함하므로
+# ko 3줄 ↔ en 4줄처럼 **줄바꿈만 다른** 문단이 `replace`(=donor) 로 분류돼
+# 재번역된다. 마커를 지우면 21:21 이라 그 검사를 아예 지나지 않아 잔여가 0 이다.
+#
+# 즉 `_marker_offset` 이 사는 곳은 폴백 경로다 — 목록 확장의 **채택**을 되살렸고
+# (그것이 (2)), 그 경로의 정렬 자체는 여전히 structural fallback 이다. (7) 의
+# **예산**으로 현 상태를 못 박는다 — 줄어들면 예산을 내리고, 늘어나면 FAIL 이다.
+# 고칠 자리는 `_section_diff_splice`: `_maybe_expand_lists` 가 마커 오프셋으로
+# 채택했다면 짝은 이미 (개수 + landmark + structural 수용) 증명된 것이므로,
+# 대상 쪽 마커 유닛을 떼고 위치 짝짓기를 쓰면 잔여가 0 이 된다.
+#
+# **코퍼스 수치를 읽을 때 주의** — 5a9971df 의 "2,702쌍 중 130쌍" 은
+# `_maybe_expand_lists` 를 **파일쌍 단위**로 부른 측정이라 폴백 경로의 모집단이다.
+# anchor splice 가 정렬을 찾는 문서에서는 그 오프셋이 애초에 발생하지 않으므로,
+# 130쌍이 곧 "운영에서 130쌍이 좋아진다" 는 아니다.
 #
 # ── exit code ─────────────────────────────────────────────────────────────
 #   0  (1)~(7) 전부 통과 — **현행 기대값**
 #   3  결함이 재현됐다 — (2)(3) 만 실패하고 대조군 (4) 는 통과 (수정 전 기대값)
 #   1  스크립트/환경 오류, 또는 대조군까지 실패 (픽스처가 깨졌다는 뜻),
-#      또는 잔여 예산 초과 (7)
+#      또는 폴백 경로 잔여 예산 초과 (7)
 #
 # Usage:
 #   bash scripts/e2e-list-items.sh
@@ -133,7 +145,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --verbose|-v) VERBOSE=1; shift ;;
     --doc) DOC="$2"; shift 2 ;;
-    -h|--help) sed -n '2,121p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,134p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -163,6 +175,7 @@ from app.translator import (Translator, _expand_list_blocks,
                             _expand_table_blocks, _maybe_expand_lists,
                             _split_paragraphs, _split_paragraphs_raw)
 from shared.config import settings
+from shared.github_client import pre_align_marker
 from tests.test_translator import _splice_mock
 
 REPO = pathlib.Path(sys.argv[1])
@@ -193,7 +206,7 @@ def check(num, ok, desc, detail=""):
 
 
 # ── (1) 픽스처가 조건을 유지하고 있는가 ──────────────────────────────────
-print("[1/4] 픽스처 조건")
+print("[1/5] 픽스처 조건")
 cond = en.startswith(MARK) and ja.startswith(MARK) and not ko.startswith(MARK)
 check(1, cond, "en/ja 첫 줄이 machine_translated 마커 · ko 는 아님",
       f"ko={ko.splitlines()[0][:40]!r}")
@@ -227,10 +240,24 @@ def counts(ko_text, tgt_text, list_items):
     return len(k), len(t), adopted
 
 
-async def sent_units(existing, lang, list_items):
+def _apply_settings(list_items):
+    """운영 recommended 프리셋의 관련 스위치 — 두 경로가 같은 값을 본다."""
     settings.diff_list_items = list_items
     settings.diff_table_rows = True
     settings.diff_granularity = "block"
+    settings.diff_align_headings = True
+    settings.diff_mode = "incremental"
+
+
+async def sent_units_fallback(existing, lang, list_items):
+    """**폴백 경로** — `_section_diff_splice` 를 문서 통째로 직접 부른다.
+
+    운영에서 여기에 도달하는 것은 anchor splice 가 정렬을 찾지 못한 문서다
+    (`--align-headings` 가 권장 프리셋에 있으므로 anchor splice 는 늘 먼저
+    시도된다). `_maybe_expand_lists` 가 **문서 전체**의 유닛 수를 비교하는
+    자리이므로, `_marker_offset` 이 실제로 무는 곳도 여기다.
+    """
+    _apply_settings(list_items)
     out = []
     mock = _splice_mock()
 
@@ -244,6 +271,53 @@ async def sent_units(existing, lang, list_items):
     await Translator._section_diff_splice(
         mock, existing, ko_head, ko, None, lang, lang)
     return out
+
+
+class _Probe(Translator):
+    """진짜 Translator — 모델 호출 한 겹만 가로챈다.
+
+    `check_unit_baselines.py` 의 `_Probe` 와 같은 이유로 있다: 운영은
+    `translate_diff` 로 들어가고, 거기서 **anchor splice**(`_splice_by_anchors`)
+    가 먼저 돌아 `_section_diff_splice` 를 anchor 섹션 **안에서** 다시 부른다.
+    `_section_diff_splice` 만 직접 부르면 운영과 다른 짝·다른 전송량을 보게 된다
+    (실측: 이 픽스처에서 폴백 경로는 en 5콜 696자, 운영 경로는 1콜 36자).
+    """
+
+    def __init__(self):
+        super().__init__(glossary=None)
+        self.recs = []
+
+    async def translate(self, content, reference=None, target_lang="en",
+                        target_dir="en", *a, **k):
+        self.recs.append(content)
+        return content
+
+    async def _translate_chunk_uncached(self, content, *a, **k):
+        return content
+
+    async def _verify_chunk_uncached(self, *a, **k):
+        return ""
+
+
+async def sent_units_real(existing, lang, list_items):
+    """**운영 경로** — 번역 잡이 실제로 지나는 `translate_diff`.
+
+    워커와 같은 판단 (`worker._translate_one`): ko 와 대상의 pre-align 마커가
+    같으면 `prealigned`, 그리고 anchor splice 가 도는 경우에는 변경 판정의
+    기준이 되는 base ko 를 `content_baseline_ko` 로 함께 넘긴다 — 안 넘기면
+    anchor 가 맞는 섹션이 전부 "안 바뀜" 으로 읽혀 한 유닛도 재번역되지 않는다.
+    """
+    _apply_settings(list_items)
+    probe = _Probe()
+    sig = pre_align_marker(ko_head)
+    prealigned = bool(sig) and sig == pre_align_marker(existing)
+    use_anchor = prealigned or bool(settings.diff_align_headings)
+    await probe.translate_diff(
+        existing, ko_head, ko, None, lang, lang,
+        prealigned=prealigned,
+        content_baseline_ko=ko if use_anchor else None,
+    )
+    return probe.recs
 
 
 def leaked(units):
@@ -261,11 +335,12 @@ def residual(units):
 RESIDUAL_BUDGET = {"en": (4, 660), "ja": (2, 317)}
 
 
-async def arm(tag, en_t, ja_t, list_items):
+async def arm(tag, en_t, ja_t, list_items, collect=None):
+    collect = collect or sent_units_real
     rows = {}
     for lang, tgt in (("en", en_t), ("ja", ja_t)):
         k, t, adopt = counts(ko, tgt, list_items)
-        units = await sent_units(tgt, lang, list_items)
+        units = await collect(tgt, lang, list_items)
         res = residual(units)
         rows[lang] = dict(ko_units=k, tgt_units=t, adopt=adopt,
                           calls=len(units), chars=sum(len(u) for u in units),
@@ -286,60 +361,76 @@ async def arm(tag, en_t, ja_t, list_items):
 
 
 async def main():
-    print("\n[2/4] 실측 — 2×2 (마커 × 플래그) · 픽스처 그대로 (마커 있음)")
+    print("\n[2/5] 운영 경로 (translate_diff → anchor splice) — 2×2 (마커 × 플래그)")
     on = await arm("on ", en, ja, True)
     off = await arm("off", en, ja, False)
 
-    print("\n[3/4] 대조군 — 마커 한 줄만 제거")
+    print("\n[3/5] 운영 경로 · 대조군 — 마커 한 줄만 제거")
     con_on = await arm("on ", strip(en), strip(ja), True)
     con_off = await arm("off", strip(en), strip(ja), False)
 
-    print("\n[4/4] 판정")
-    check(2, all(r["adopt"] for r in on.values()),
-          "LIST_ITEMS=on 에서 _maybe_expand_lists 가 채택한다",
-          "거절되면 목록 확장이 통째로 꺼진다")
+    print("\n[4/5] 폴백 경로 (_section_diff_splice 직접) — anchor 정렬 실패 시 도달")
+    fb_on = await arm("on ", en, ja, True, sent_units_fallback)
+    fb_off = await arm("off", en, ja, False, sent_units_fallback)
+    fb_con_on = await arm("on ", strip(en), strip(ja), True, sent_units_fallback)
+
+    print("\n[5/5] 판정")
+    # (2) 는 **폴백 경로**의 규칙이다 — `_maybe_expand_lists` 가 문서 전체의 유닛
+    #     수를 비교하는 곳이 거기고, 마커 오프셋이 무는 곳도 거기다. 운영 경로는
+    #     anchor 섹션 안에서 다시 쪼개므로 마커가 애초에 같은 비교에 안 들어온다.
+    check(2, all(r["adopt"] for r in fb_on.values()),
+          "폴백 경로에서 _maybe_expand_lists 가 채택한다 (마커 오프셋 허용)",
+          "거절되면 그 문서의 목록 확장이 통째로 꺼진다")
     check(3, not any(r["leak"] for r in on.values()),
-          "LIST_ITEMS=on 에서 고정 형제 불릿이 전송되지 않는다",
+          "운영 경로 · LIST_ITEMS=on 에서 고정 형제 불릿이 전송되지 않는다",
           "누출: " + str({l: r["leak"] for l, r in on.items() if r["leak"]}))
-    ctl = (all(r["adopt"] for r in con_on.values())
+    ctl = (all(r["adopt"] for r in fb_con_on.values())
            and not any(r["leak"] for r in con_on.values()))
     check(4, ctl, "대조군(마커 제거)에서는 (2)(3) 이 성립한다 — 원인 격리")
-    check(5, any(r["leak"] for r in off.values()),
-          "LIST_ITEMS=off 에서는 전송된다 (플래그가 실제로 일을 한다)",
+    check(5, any(r["leak"] for r in off.values())
+             and any(r["leak"] for r in fb_off.values()),
+          "LIST_ITEMS=off 에서는 두 경로 모두 전송된다 (플래그가 실제로 일을 한다)",
           "off 누출: " + str({l: r["leak"] for l, r in off.items() if r["leak"]}))
 
-    # (6) 바닥값 — 마커가 없으면 편집한 불릿 하나만 나간다. 대조군의 off arm 과
-    #     나란히 찍어, 플래그가 그 arm 에서도 일한다는 것을 숫자로 남긴다.
+    # (6) 운영 경로의 약속 그 자체 — **편집한 유닛 하나만** 나간다. 마커가 있든
+    #     없든 같아야 한다 (anchor splice 가 마커 어긋남을 흡수하므로).
+    floor = {"마커": on, "대조군": con_on}
     floor_ok = all(r["res_units"] == 0 and r["calls"] == 1
-                   for r in con_on.values())
+                   for rows in floor.values() for r in rows.values())
     check(6, floor_ok,
-          "대조군+on 은 편집한 유닛 하나만 전송한다 (잔여 0)",
-          " · ".join(f"{l}: on {r['calls']}콜 {r['chars']}자"
-                     f" vs off {con_off[l]['calls']}콜 {con_off[l]['chars']}자"
-                     for l, r in con_on.items()))
+          "운영 경로는 편집한 유닛 하나만 전송한다 (마커 유무 무관, 잔여 0)",
+          " · ".join(f"{tag} {l}: on {r['calls']}콜 {r['chars']}자"
+                     for tag, rows in floor.items() for l, r in rows.items()))
 
-    # (7) 잔여 예산 — 마커 arm 은 정렬이 structural fallback 으로 떨어져 편집과
-    #     무관한 산문 문단까지 전송한다. 플래그와 독립이므로(off arm 도 같은
-    #     유닛을 보낸다) 여기서는 **현 상태를 못 박고 악화만 잡는다.**
+    # (7) 폴백 경로의 **잔여 예산**. 마커가 있으면 유닛 수가 21:22 로 어긋나
+    #     위치 짝짓기 대신 `_structural_alignment` 로 떨어지고, 그 시그니처가
+    #     content 줄 수를 포함하므로 줄바꿈만 다른 산문 문단이 donor 로 분류돼
+    #     재번역된다. 플래그와 독립이라(off arm 도 같은 유닛을 보낸다) 여기서는
+    #     현 상태를 못 박고 **악화만** 잡는다.
     over = []
-    for lang, r in on.items():
+    for lang, r in fb_on.items():
         mu, mc = RESIDUAL_BUDGET[lang]
         if r["res_units"] > mu or r["res_chars"] > mc:
             over.append(f"{lang} {r['res_units']}개 {r['res_chars']}자 > 예산 {mu}개 {mc}자")
     check(7, not over,
-          "마커 arm 의 잔여가 예산 이내 (정렬 경로가 더 나빠지지 않았다)",
+          "폴백 경로의 잔여가 예산 이내 (그 경로 정렬이 더 나빠지지 않았다)",
           "; ".join(over) if over
           else " · ".join(f"{l}: 잔여 {r['res_units']}개 {r['res_chars']}자"
-                          f" (off {off[l]['res_units']}개 {off[l]['res_chars']}자)"
-                          for l, r in on.items()))
+                          f" (마커 제거 시 {fb_con_on[l]['res_units']}개"
+                          f" {fb_con_on[l]['res_chars']}자)"
+                          for l, r in fb_on.items()))
 
     print()
     if not fail:
-        print("RESULT: OK — 마커가 있어도 목록이 항목 단위로 splice 된다.")
-        print("        잔여(편집 외 전송): "
+        print("RESULT: OK — 목록이 항목 단위로 splice 된다.")
+        print("        운영 경로 전송: "
+              + " · ".join(f"{l} on {r['calls']}콜 {r['chars']}자"
+                           f" / off {off[l]['calls']}콜 {off[l]['chars']}자"
+                           for l, r in on.items()))
+        print("        폴백 경로 잔여: "
               + " · ".join(f"{l} {r['res_units']}개 {r['res_chars']}자"
-                           for l, r in on.items())
-              + "  <- 마커 없는 대조군은 0. 헤더 (6)(7) 참고.")
+                           for l, r in fb_on.items())
+              + "  <- 마커 제거 시 0. 헤더 (6)(7) 참고.")
         sys.exit(0)
     if set(fail) <= {2, 3} and ctl:
         print("RESULT: REPRO — 마커 오프셋 허용이 회귀했다.")
