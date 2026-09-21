@@ -56,11 +56,15 @@ CT_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 SCRATCH="$(mktemp -d)"
 KEEP=0
 ROUNDS=2
+# `e2e-term-pin.sh` 와 같은 이유의 벽시계 상한 (그쪽 주석 참고).
+RUN_TIMEOUT="${TERM_PIN_RUN_TIMEOUT:-1500}"
+ARMS="off,on"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --keep)   KEEP=1; shift ;;
     --rounds) ROUNDS="$2"; shift 2 ;;
+    --arms)   ARMS="$2"; shift 2 ;;
     -h|--help) sed -n '1,46p' "$0"; exit 0 ;;
     *) echo "unknown: $1" >&2; exit 2 ;;
   esac
@@ -186,7 +190,11 @@ titles() {   # $1=파일 → 상자 제목들
 }
 
 run_one() {   # $1=on|off $2=round
-  local pin="$1" round="$2" br="e2e-termpinex-$pin-$round-$TS" log="$SCRATCH/$pin-$round.log"
+  # `local a=.. b=$a` 는 bash 가 **한 번에** 확장하므로 `$a` 가 아직 없다
+  # (`set -u` 에서 `unbound variable`). 두 문장으로 나눈다 — 이 한 줄 때문에
+  # 이 스크립트는 첫 팔에서 바로 죽어 한 번도 끝까지 돌지 못했다.
+  local pin="$1" round="$2"
+  local br="e2e-termpinex-$pin-$round-$TS" log="$SCRATCH/$pin-$round.log"
   echo "$br" >> "$SCRATCH/branches"
   git push -q origin "$SESSION:$br"
   ( cd "$CT_DIR" && \
@@ -195,6 +203,7 @@ run_one() {   # $1=on|off $2=round
     TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
     TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
     TRANSLATE_LOG_LEVEL=info \
+    timeout "$RUN_TIMEOUT" \
     "$PY" translate/translate_file.py "$BLOB" --commit-to-branch "$br" \
   ) > "$log" 2>&1 || {
     grep -qi "usage limit\|사용량 한도\|HTTP 429" "$log" && {
@@ -211,9 +220,10 @@ run_one() {   # $1=on|off $2=round
   done
 }
 
+IFS=',' read -r -a ARM_LIST <<< "$ARMS"
 for r in $(seq 1 "$ROUNDS"); do
   echo "=== 2단계 번역 · round $r/$ROUNDS ==="
-  for arm in off on; do
+  for arm in "${ARM_LIST[@]}"; do
     echo "  --- term_pin=$arm ---"
     run_one "$arm" "$r" || true
   done
@@ -223,7 +233,7 @@ echo
 echo "=== 3단계 판정 ==="
 declare -A ONBAD=()
 for r in $(seq 1 "$ROUNDS"); do
-  for arm in off on; do
+  for arm in "${ARM_LIST[@]}"; do
     for lang in en ja; do
       f="$SCRATCH/out/$arm-$r/$lang.md"
       [ -f "$f" ] || { echo "  $arm r$r $lang: (산출물 없음)"; continue; }

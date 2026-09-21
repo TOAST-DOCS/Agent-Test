@@ -88,11 +88,18 @@ CT_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 SCRATCH="$(mktemp -d)"
 KEEP=0
 ROUNDS=2
+ARMS="off,on"
+# 한 번역의 **벽시계** 상한. `claude_code_call_timeout`(600초) 은 CLI 호출 하나를
+# 재지만 그 바깥에서도 멈출 수 있다 — 2026-09-21 실측: chunk 두 개를 띄운 뒤
+# 자식이 좀비로 남아 660초 바깥 상한이 도는 데 12분이 걸렸고, 그 사이 판 하나가
+# 통째로 멈춰 있었다. 여러 판을 도는 A/B 에서는 그것이 실행 전체를 잡아먹는다.
+RUN_TIMEOUT="${TERM_PIN_RUN_TIMEOUT:-1500}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --keep)   KEEP=1; shift ;;
     --rounds) ROUNDS="$2"; shift 2 ;;
+    --arms)   ARMS="$2"; shift 2 ;;
     -h|--help) sed -n '1,60p' "$0"; exit 0 ;;
     *) echo "unknown: $1" >&2; exit 2 ;;
   esac
@@ -194,6 +201,7 @@ run_one() {   # $1=on|off  $2=round  → stdout 없음, 파일로 남긴다
     TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
     TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
     TRANSLATE_LOG_LEVEL=info \
+    timeout "$RUN_TIMEOUT" \
     "$PY" translate/translate_file.py "$BLOB" --commit-to-branch "$br" \
   ) > "$log" 2>&1 || {
     if grep -qi "usage limit\|사용량 한도\|HTTP 429" "$log"; then
@@ -236,9 +244,10 @@ run_one() {   # $1=on|off  $2=round  → stdout 없음, 파일로 남긴다
 }
 
 echo
+IFS=',' read -r -a ARM_LIST <<< "$ARMS"
 for r in $(seq 1 "$ROUNDS"); do
   echo "=== 2단계 번역 · round $r/$ROUNDS ==="
-  for arm in off on; do
+  for arm in "${ARM_LIST[@]}"; do
     echo "  --- term_pin=$arm ---"
     run_one "$arm" "$r" || true
   done
@@ -294,7 +303,7 @@ for arm in ("off", "on"):
 
 summary = {}
 for arm in ("off", "on"):
-    diverged = stable_break = measured = 0
+    diverged = stable_break = measured = prose = 0
     for lang in ("en", "ja"):
         for t in terms:
             majors = set()
@@ -304,18 +313,24 @@ for arm in ("off", "on"):
                 measured += 1
                 if info["diverged"]:
                     diverged += 1
+                # (다) 산문 축 — 표에서 확정한 역어가 ko 출현 수만큼 본문에
+                # 나오지 않으면 나머지 자리는 다른 표기다 (#418 §4(b)). 표
+                # 슬롯보다 잡음이 많아 **보고만** 한다: 산문은 대명사·복수형·
+                # 어순으로 같은 말을 다르게 적는 것이 정상일 수 있다.
+                prose += info["prose_gap"]
                 majors.add(info["major"])
             if len(majors) > 1:
                 stable_break += 1
     summary[arm] = dict(measured=measured, diverged=diverged,
-                        cross_run_unstable=stable_break)
+                        cross_run_unstable=stable_break, prose_gap=prose)
 
 print()
 print("## 집계")
-print(f"  {'팔':4} {'측정':>4} {'문서안 갈림':>10} {'판 사이 흔들림(용어×언어)':>24}")
+print(f"  {'팔':4} {'측정':>4} {'문서안 갈림':>10} {'판 사이 흔들림(용어×언어)':>24} {'산문차(보고)':>12}")
 for arm in ("off", "on"):
     s = summary[arm]
-    print(f"  {arm:4} {s['measured']:>4} {s['diverged']:>10} {s['cross_run_unstable']:>24}")
+    print(f"  {arm:4} {s['measured']:>4} {s['diverged']:>10} "
+          f"{s['cross_run_unstable']:>24} {s['prose_gap']:>12}")
 print()
 print("VERDICT_JSON " + json.dumps({"summary": summary, "missing": missing},
                                    ensure_ascii=False))
@@ -338,7 +353,13 @@ else
   else
     bad "(가) ON: 문서 안 갈림 $ON_DIV 건 — 계약 위반이므로 켜면 안 된다"
   fi
-  if [ "$ON_UNS" -le "$OFF_UNS" ] 2>/dev/null; then
+  OFF_MEAS="$(echo "$VJ" | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["off"]["measured"])')"
+  ON_PROSE="$(echo "$VJ"  | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["on"]["prose_gap"])')"
+  OFF_PROSE="$(echo "$VJ" | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["off"]["prose_gap"])')"
+  info "(다) 산문차 — ON $ON_PROSE · 대조군 $OFF_PROSE (보고만: 표 슬롯보다 잡음이 많다)"
+  if [ "$OFF_MEAS" = "0" ]; then
+    info "(나) 대조군을 돌리지 않아 판 사이 흔들림은 판정하지 않는다 (--arms)"
+  elif [ "$ON_UNS" -le "$OFF_UNS" ] 2>/dev/null; then
     ok "(나) ON 의 판 사이 흔들림이 대조군 이하 ($ON_UNS ≤ $OFF_UNS)"
   else
     bad "(나) ON 이 판마다 다른 역어로 고정한다 ($ON_UNS > $OFF_UNS) — 리포 전체 일관성은 나빠진다"

@@ -100,7 +100,37 @@ Common flags for both e2e scripts: `--engine api|cli`, `--model haiku|sonnet|opu
 
 `scripts/e2e-term-pin.sh` (standalone — **`e2e-suite.sh` 의 `all` 에 넣지 않는다**) measures **미등록 용어 고정** — cloud-translate `app/term_table.py` 의 ⓒ 경로 (`settings.term_pin`). 용어집에 있는 용어는 모든 chunk 프롬프트에 같은 줄로 실려 일관되지만, 없는 용어는 즉흥의 단위가 문서가 아니라 **chunk(모델 호출)** 이라 한 문서 안에서도 갈린다 — chunk 들은 system prompt 를 공유하지만 서로의 출력을 못 본다. 실증이 `nhn-cloud-foundry` 의 `단변량 시계열 이상탐지` 로, 전용 용어집이 없던 시절 번역돼 alpha 의 **네 문서 각각의 안에서** `time series` 와 `time-series` 로 갈렸다 (#375). 같은 ko 문서를 **두 번** 번역하는데 `TRANSLATE_TERM_PIN` 만 바꾸고 나머지는 고정한다: OFF 는 대조군(갈릴 수 있는 상황인지 보여 준다 — 우연히 안 갈릴 수도 있다), ON 이 판정으로 표기가 **반드시 한 가지**여야 한다. 대조군이 우연히 한 가지여도 ON 판정은 유효하다 — 지키는 것이 "모델이 운 좋게 일관됐다" 가 아니라 "표기가 하나로 고정된다" 이기 때문이다. 픽스처를 런타임에 **10,000자 넘게** 생성하는 것이 설계의 핵심이다 (갈림은 `_translate_by_sections` 의 chunk 경계에서 생기므로, 그 아래면 모델 호출 한 번으로 끝나 갈릴 자리가 없다 — 스크립트가 크기를 재고 작으면 FAIL 로 낸다). 세는 규칙도 기대 문구를 박지 않는다: `anomaly detection` 으로 끝나는 명사구를 **전부** 모아 대소문자·하이픈만 접어 같은 말끼리 묶고 그 묶음 안의 가짓수를 센다 — 한 문구로 박으면 모델이 다른 말로 옮겼을 때 0건이 나와 *"갈리지 않았다"* 와 *"못 찾았다"* 가 구별되지 않는다 (첫 실행이 정확히 그랬다). 브랜치 이름에 **슬래시를 쓰지 않는다** — `translate_file.py` 는 blob URL 의 첫 세그먼트를 ref 로 끊으므로 `e2e-termpin/<ts>` 는 404 가 된다 (PR 을 쓰는 다른 e2e 에는 없는 제약). 발굴 호출은 `llm_patch.judge_patches` 와 같은 모양이라 **CLI 엔진으로 도는 잡에서도 이 단계만은 API 를 타므로** `ANTHROPIC_API_KEY` 가 필요하다.
 
-**아직 한 번도 돌지 않았다** (2026-09-21 alpha 반입 시점). 이 스크립트는 2026-09-18 에 쓰여 `1997db49` 로 세션 브랜치 `e2e-markuptable/20260918-072053` 에 마크업 정정 픽스처와 **같은 커밋에 딸려 갔고**, 그 브랜치는 재현 증거라 머지하지 않으므로 alpha 에 닿지 못했다 (픽스처는 남기고 도구는 alpha 에 올린다는 규약이 도구 쪽에만 적용되지 않은 것이다). 그 사이 cloud-translate 의 daily-webhook-review 커맨드는 `term-drift`·`style-drift` 를 "이 스크립트가 본다" 고 적고 있었다 — 2026-09-18 검토 재실행에서 alpha 에 없다는 것이 드러나 cloud-translate #991 이 그 행을 고쳤다. `term_pin` 은 지금 **기본 꺼짐이고 켜는 곳이 없다** (`.env.prod.cli`/`.env.prod.api` 포함). 설정 주석의 *"효과를 재고 켠다"* 에서 **재는 단계가 이 스크립트**이므로, 먼저 한 번 돌려 OFF/ON 을 보고 그 결과로 적용 여부를 정한다. 돌기 전까지는 PASS/FAIL 이 미지라 `all` 에 넣지 않는다.
+**2026-09-21 에 처음 돌았다.** 그 전에는 alpha 에 없었다 — 이 스크립트는 2026-09-18 에 쓰여
+`1997db49` 로 세션 브랜치 `e2e-markuptable/20260918-072053` 에 마크업 정정 픽스처와 **같은 커밋에
+딸려 갔고**, 그 브랜치는 재현 증거라 머지하지 않으므로 alpha 에 닿지 못했다 (픽스처는 남기고
+도구는 alpha 에 올린다는 규약이 도구 쪽에만 적용되지 않은 것이다). 그 사이 cloud-translate 의
+daily-webhook-review 커맨드는 `term-drift`·`style-drift` 를 "이 스크립트가 본다" 고 적고 있었고,
+2026-09-18 검토 재실행에서 alpha 에 없다는 것이 드러나 cloud-translate #991 이 그 행을 고쳤다.
+
+`term_pin` 은 지금도 **기본 꺼짐**이다 (`.env.prod.cli`/`.env.prod.api` 포함). 2026-09-21 의
+A/B 는 **켤 수 없다**는 답을 냈고, 무엇이 문제인지도 냈다 — 산출물이 아니라 **고정 단계**에서
+갈렸다. 그래서 그날 층이 하나 늘었다: `scripts/check_term_pin.py` 가
+`build_term_table → propose_terms → validate_unregistered` 만 떼어 돌린다. 번역을 태우지 않아
+(문서 × 언어)당 모델 호출이 **한 번**이고, 그래서 같은 문서를 N판 돌려 분포를 보고 운영 코퍼스
+수십 개에 그대로 걸 수 있다. 로컬 체크아웃 18문서 × en/ja × 3판(haiku-4.5)의 실측:
+
+| | 고침 전 | 고침 후 |
+|---|---:|---:|
+| 표 슬롯으로 대조 가능한 고정 중 **배포본과 모순** | 90/232 (38%) | 8/239 (3%) |
+| **ja 인데 역어가 라틴 문자뿐** (`설명 → description`) | 380/706 (54%) | 1 |
+| 3판 내내 나오고 역어까지 같은 용어 | 88 | 369 |
+
+cloud-translate 쪽 조치는 셋이다 — 프롬프트에 "대상 언어의 문자로 쓰라" 명시(이것만으로
+380 → 1), `validate_unregistered` 의 문자 게이트·배포본 게이트, `propose_terms` 의
+`temperature=0`. 자세한 근거는 그쪽 `translate/CLAUDE.md`.
+
+`scripts/e2e-term-pin-existing.sh` (standalone) is the **두 번째 축**: 고정한 말이 *기존 번역본이 이미 쓰던 말* 인가. 재현하는 사고는 cloud-user-guide-agent#417 / TOAST-DOCS/Network-Load-Balancer#141 — ko 가 `!!! tip "알아두기"` 를 하나 더했는데 ja 가 그 제목을 `ヒント` 로 써서, `ポイント` 를 12번 쓰는 문서에 두 이름이 생겼다. 이 자리에 답이 셋 있었다는 것이 핵심이다 (통합 가이드라인 `팁 → ヒント` · `_common_glossary` `알아두기 → 注意` · 그 문서가 실제로 쓰는 `ポイント` 28:1). 전문 재번역으로 재는 이유는 `preserve_existing` 이 기본 꺼짐이라 **모델이 기존 번역본을 아예 보지 못하고**, 그래서 두 팔의 차이가 오롯이 term-pin 의 몫이 되기 때문이다 (splice 로 재면 "안 바뀐 유닛을 그대로 가져왔다" 와 섞인다).
+
+`scripts/e2e-term-pin-splice.sh` (standalone) 는 **운영 경로**다. 위 둘은 전문 재번역인데, webhook 이 부르는 번역은 거의 전부 splice 다. 그리고 #417 이 미해결로 남은 이유가 splice 의 모양이다 — ko 가 상자를 **순수 삽입**(`+3/-0`)하면 그 유닛에는 `baseline_by_j[j] = None`, 즉 붙여 줄 기존 번역이 **없다**. `--unit-preserve` 도 `--list-items` 도 이 자리에 닿지 못한다 (붙일 짝이 아예 없다); 기존 번역본 **전체**를 읽고 표기를 정하는 장치는 term-pin 뿐이다. 픽스처는 정렬된 ko/en/ja 16절에 절 17 을 삽입하고 절 5 문장 하나를 고친 두 번째 커밋이고, `translate_file.py --diff` 로 돈다. 판정이 둘인 것이 중요하다: **(가) 이득** — 삽입된 상자가 문서 관례를 따랐는가, **(나) 무해** — ko 가 안 건드린 줄을 ON 이 대조군보다 더 많이 다시 쓰지 않았는가. (나) 없이 (가) 만 보면 "문서를 통째로 다시 써서 제목을 맞추는" 것도 통과한다. splice 가 정렬에 실패해 전문 재번역으로 떨어지면 `preserve_existing` 이 켜져 모델이 기존 번역본을 보게 되므로 두 팔의 차이가 term-pin 의 몫이 아니게 된다 — 로그의 `Diff-based translation` 을 확인하고 없으면 INFRA 로 끊는다.
+
+`scripts/e2e-term-pin-guards.sh` (standalone) 는 **안전 축**이다. 이득이 아니라 "켜서 나빠지지 않는가" 를 본다: (G1) 등재 용어(`인스턴스`)를 고정이 덮지 않는다 · (G2) 겹침쌍(`시계열` ⊂ `시계열 이상탐지`)의 표기가 어긋나지 않는다 · (G3) **fail-open** — `TRANSLATE_ANTHROPIC_API_KEY` 를 비우고 돌려도 번역이 그대로 끝나고 `term-pin skipped` 만 남는다 (고정 단계는 CLI 잡에서도 API 를 타므로 이 경로가 실재한다) · (G4) 같은 미등록 용어를 두 문서가 같은 말로 옮기는가 — 고정은 **문서마다 따로** 정해지므로 문서 안 갈림을 고치면서 리포 갈림을 만들 수 있다. G4 는 term-pin 이 약속한 적 없는 축이라 대조군보다 나쁠 때만 FAIL 이다.
+
+네 스크립트 모두 `e2e-suite.sh` 의 plan 으로 등록돼 있지만(`term-pin` · `term-pin-existing` · `term-pin-splice` · `term-pin-guards`) **`all` 에는 넣지 않는다** — `TRANSLATE_TERM_PIN` 이 운영 프리셋에 없고(all 은 프리셋대로 도는 조합을 보는 자리), 팔마다 번역을 한 번씩 더 태워 비싸다. 넷 다 `TERM_PIN_RUN_TIMEOUT`(기본 1500초)으로 한 번역의 **벽시계** 상한을 건다: `claude_code_call_timeout`(600초) 은 CLI 호출 하나를 재지만 그 바깥에서도 멈춘다 — 2026-09-21 실측으로 chunk 두 개를 띄운 뒤 자식이 좀비로 남아 660초 바깥 상한이 도는 데 12분이 걸렸고, 여러 판을 도는 A/B 에서는 그것이 실행 전체를 잡아먹는다.
 
 `scripts/e2e-retranslate-align-and-translate.sh` is a variant of round1 that appends a full re-translation of `public-api.md` to the align PR (using `/api/translate/file` and a 40%-reduced fixture for speed).
 

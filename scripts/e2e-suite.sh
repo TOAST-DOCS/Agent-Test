@@ -279,6 +279,24 @@
 #                 exit 3 / REPRO 가 기대값이었다). **all 에는 아직 넣지 않는다**:
 #                 UNIT_PRESERVE 는 운영 recommended 프리셋에 없어서 이 plan 만
 #                 켜고 도는데, all 은 프리셋대로 도는 조합을 보는 자리다.
+#   term-pin            — 미등록 용어 고정 A/B (e2e-term-pin.sh). 같은 픽스처를
+#                 OFF/ON 두 팔로 N판 돌려 (가) 문서 안 갈림과 (나) 판 사이 흔들림을
+#                 **분포**로 판정한다. 기대: exit 0 / TERM_PIN: OK.
+#   term-pin-existing   — 그 두 번째 축 (e2e-term-pin-existing.sh): 고정한 말이
+#                 **기존 번역본이 쓰던 말**인가 (#417 `ヒント` vs `ポイント`).
+#   term-pin-splice     — 운영 경로 (e2e-term-pin-splice.sh): ko 가 안내 상자를
+#                 **순수 삽입**했을 때 그 상자만 문서 관례를 벗어나는가. #417 이
+#                 미해결로 남은 자리이고, `--unit-preserve`·`--list-items` 는
+#                 붙일 짝이 없어 닿지 못한다. 무해 축(변경 줄 수)도 함께 본다.
+#   term-pin-guards     — 안전 축 (e2e-term-pin-guards.sh): 용어집 우선 · 겹침쌍 ·
+#                 fail-open(API 키 없음) · 문서 사이 일관성.
+#
+#   네 plan 모두 **all 에서 제외**한다 — `TRANSLATE_TERM_PIN` 이 기본 꺼짐이라
+#   운영 프리셋에 없고(all 은 프리셋대로 도는 조합을 보는 자리), 팔마다 번역을
+#   한 번씩 더 태워 비싸다. 켤지 말지를 정하는 실험이므로 명시 지정으로 돌린다.
+#   `TERM_PIN_RUN_TIMEOUT` (기본 1500초) 로 한 번역의 벽시계 상한을 준다 — CLI
+#   subprocess 가 멈추면 `claude_code_call_timeout` 바깥에서 매달릴 수 있다
+#   (2026-09-21 실측: 660초 상한이 도는 데 12분, 그 사이 판 하나가 통째로 멈춤).
 #   preserve    — preserve-existing 반영 검증 (e2e-preserve-existing.sh).
 #                 full 재번역 + --preserve-existing 이 실제로 걸렸는지를 로그가
 #                 아니라 **산출물**로 본다: 한 섹션의 ko 산문만 바꾼 뒤 나머지
@@ -430,7 +448,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve)
+    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -643,6 +661,22 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^UNIT_PRESERVE: (OK|REPRO|FAIL)' "$log" | tail -n1 || true)"
     pairs="$(grep -oE '위반: .*' "$log" | tail -n1 || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${pairs:-<no-pairs>}")
+  elif [[ "$plan" == term-pin* ]]; then
+    # 미등록 용어 고정 — 네 스크립트가 같은 모양이다 (OFF/ON 두 팔, 결정적 판정,
+    # `<NAME>: OK|FAIL|INFRA` 한 줄). 엔진·모델은 넘기지 않는다: 고정 단계는
+    # 엔진과 무관하게 API 를 타고, 번역 쪽은 네 스크립트가 CLI 로 고정한다
+    # (프로덕션과 같은 엔진이어야 의미가 있다 — CLAUDE.md).
+    case "$plan" in
+      term-pin)          _tp_script=e2e-term-pin.sh;          _tp_tag=TERM_PIN ;;
+      term-pin-existing) _tp_script=e2e-term-pin-existing.sh; _tp_tag=TERM_PIN_EXISTING ;;
+      term-pin-splice)   _tp_script=e2e-term-pin-splice.sh;   _tp_tag=TERM_PIN_SPLICE ;;
+      term-pin-guards)   _tp_script=e2e-term-pin-guards.sh;   _tp_tag=TERM_PIN_GUARDS ;;
+    esac
+    bash "$REPO_ROOT/scripts/$_tp_script" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE "^${_tp_tag}: (OK|FAIL|INFRA)" "$log" | tail -n1 || true)"
+    counts="$(grep -oE '^결과: PASS=[0-9]+ FAIL=[0-9]+' "$log" | tail -n1 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${counts:-<no-counts>}")
   elif [[ "$plan" == "preserve" ]]; then
     # preserve-existing 반영 — 자체 스크립트. --engine/--model 은 넘기지 않는다:
     # 이 plan 이 검증하는 결함은 CLI 엔진의 @file 한도라서 엔진이 고정이어야
