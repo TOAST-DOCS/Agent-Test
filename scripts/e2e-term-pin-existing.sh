@@ -237,6 +237,10 @@ done
 echo
 echo "=== 3단계 판정 ==="
 declare -A ONBAD=()
+# 측정한 (판×언어) 수. 0 이면 통과가 아니다 — `ONBAD` 는 위반을 담는 맵이라
+# 산출물이 없으면 비어 있고, 그대로 두면 판정이 공허하게 초록이 된다
+# (2026-09-21 한도 소진 실행에서 산출물 0개에 (1)(2) 가 PASS 로 찍혔다).
+ON_MEASURED=0
 for r in $(seq 1 "$ROUNDS"); do
   for arm in "${ARM_LIST[@]}"; do
     for lang in en ja; do
@@ -250,6 +254,7 @@ for r in $(seq 1 "$ROUNDS"); do
       forms="$(echo "$list" | sort | uniq -c | tr '\n' ' ')"
       echo "  $arm r$r $lang: 표기 ${n_forms}가지 · 관례 '$conv' ${n_conv}/${n_all} · $forms"
       if [ "$arm" = on ]; then
+        ON_MEASURED=$((ON_MEASURED + 1))
         [ "$n_forms" = "1" ] || ONBAD[forms]=1
         [ "$n_conv" = "$n_all" ] && [ "$n_all" != "0" ] || ONBAD[conv]=1
       fi
@@ -257,12 +262,17 @@ for r in $(seq 1 "$ROUNDS"); do
   done
 done
 
-if [ "${ONBAD[forms]:-0}" = "0" ]; then
-  ok "(1) ON: 모든 판에서 상자 제목이 한 가지"
+if [ "$ON_MEASURED" = "0" ]; then
+  bad "ON 산출물이 하나도 없다 — 판정할 것이 없으므로 통과가 아니다"
+  INFRA=2
+elif [ "${ONBAD[forms]:-0}" = "0" ]; then
+  ok "(1) ON: 모든 판에서 상자 제목이 한 가지 (측정 $ON_MEASURED)"
 else
   bad "(1) ON: 한 문서 안에서 상자 제목이 갈렸다"
 fi
-if [ "${ONBAD[conv]:-0}" = "0" ]; then
+if [ "$ON_MEASURED" = "0" ]; then
+  :
+elif [ "${ONBAD[conv]:-0}" = "0" ]; then
   ok "(2) ON: 그 한 가지가 기존 번역본이 쓰던 말이다 — #417 이 닫힌다"
 else
   bad "(2) ON: 기존 번역본의 표기를 따르지 않았다 — #417 이 닫히지 않는다"

@@ -271,6 +271,12 @@ echo
 echo "=== 3단계 판정 ==="
 declare -A ONBAD=()
 declare -A CHANGED=()
+# 측정한 (팔×언어) 수. **0 인데 통과시키면 안 된다** — `ONBAD` 는 "위반을 찾았다"
+# 를 담으므로 산출물이 하나도 없으면 비어 있고, 그대로 두면 판정이 공허하게
+# 초록이 된다. 2026-09-21 실측: 한도 소진(429)으로 네 산출물이 전부 없는데
+# "(가) ON: 삽입된 상자가 문서 관례를 따랐다 — PASS" 가 찍혔다 (그 실행은
+# INFRA 가 따로 서서 exit 2 였지만, 산출물이 다른 이유로 비면 exit 0 이 된다).
+ON_MEASURED=0
 for r in $(seq 1 "$ROUNDS"); do
   for arm in "${ARM_LIST[@]}"; do
     for lang in en ja; do
@@ -287,6 +293,7 @@ for r in $(seq 1 "$ROUNDS"); do
       CHANGED[$arm-$lang-$r]=$ch
       echo "  $arm r$r $lang: 상자 ${n_all}개 · 관례 ${n_conv}/${n_all} · 삽입된 상자='$last' · 변경 줄 $ch"
       if [ "$arm" = on ]; then
+        ON_MEASURED=$((ON_MEASURED + 1))
         [ "$last" = "$conv" ] || ONBAD[insert]=1
         [ "$n_conv" = "$n_all" ] || ONBAD[all]=1
       fi
@@ -294,15 +301,20 @@ for r in $(seq 1 "$ROUNDS"); do
   done
 done
 
-if [ "${ONBAD[insert]:-0}" = "0" ]; then
-  ok "(가) ON: 삽입된 상자가 문서 관례를 따랐다 — #417 이 splice 경로에서 닫힌다"
+if [ "$ON_MEASURED" = "0" ]; then
+  bad "ON 산출물이 하나도 없다 — 판정할 것이 없으므로 통과가 아니다"
+  INFRA=2
 else
-  bad "(가) ON: 삽입된 상자가 문서 관례와 다르다 — #417 이 그대로다"
-fi
-if [ "${ONBAD[all]:-0}" = "0" ]; then
-  ok "(가') ON: 문서의 모든 상자 제목이 한 가지"
-else
-  bad "(가') ON: 문서 안에서 상자 제목이 갈렸다"
+  if [ "${ONBAD[insert]:-0}" = "0" ]; then
+    ok "(가) ON: 삽입된 상자가 문서 관례를 따랐다 — #417 이 splice 경로에서 닫힌다 (측정 $ON_MEASURED)"
+  else
+    bad "(가) ON: 삽입된 상자가 문서 관례와 다르다 — #417 이 그대로다"
+  fi
+  if [ "${ONBAD[all]:-0}" = "0" ]; then
+    ok "(가') ON: 문서의 모든 상자 제목이 한 가지"
+  else
+    bad "(가') ON: 문서 안에서 상자 제목이 갈렸다"
+  fi
 fi
 
 # (나) 무해 — ON 이 대조군보다 더 많은 줄을 다시 쓰지 않았는가.
