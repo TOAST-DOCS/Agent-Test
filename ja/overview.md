@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
@@ -245,3 +247,10 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
+
+<a id="webhook-e2e-20260921-082706"></a>
+## webhook e2e marker (20260921-082706) { #webhook-e2e-20260921-082706 }
+
+このセクションは scripts/e2e-webhook.sh が挿入した一時マーカーです。
+webhook がこの PR を ko-review / translate ジョブにルーティングするかどうかを検証した後、
+マーカーは定期的な restore-alpha-origin によって削除されます。
