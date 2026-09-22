@@ -11,6 +11,16 @@
 #      ko-review task 가 큐잉/실행되었는지 확인 → "PR 등록 → 한글 검수" 검증
 #   4) PR merge → closed(merged=true) 전송
 #   5) /api/jobs 에서 translate task 감지 → "머지 → 번역" 검증
+#   5b) 그 translate task 가 받은 파라미터를 **운영 프리셋과 대조** →
+#      "트리거됐다" 와 "믿는 조건으로 돌았다" 는 다른 질문이다. 프리셋을
+#      Jenkins 파라미터로 옮기는 코드(`dashboard/api/jenkins.py`)는 대시보드와
+#      webhook **두 이미지에 사본으로** 살아서, 대시보드만 재배포하면 webhook 은
+#      낡은 매핑으로 새 플래그를 조용히 떨어뜨린다 (Jenkinsfile 기본값이 들어간다).
+#      실측 2026-09-21: `--list-items` 를 프리셋 ConfigMap 에 넣은 뒤 첫 webhook
+#      번역 (TOAST-DOCS/RDS#390 → Jenkins translate #717, 14:18 KST) 이
+#      `list_items` 없이 돌았다. 같은 시각 대시보드 경로 (#716·#718) 는
+#      LIST_ITEMS=true 였다 — 즉 기존 e2e (dashboard 경로만 보는
+#      e2e-list-items-pipeline.sh) 로는 원리상 안 잡히는 자리다.
 #   6) 세션 브랜치 삭제 (남아 있는 translate PR 은 base 사라짐과 함께 자동
 #      closed) + 필터 base_branches 원복
 #
@@ -30,6 +40,7 @@
 #   bash scripts/e2e-webhook.sh --base alpha       # 세션 브랜치 대신 alpha 를 base 로 (구 동작)
 #   bash scripts/e2e-webhook.sh --no-wait-build    # task 큐잉만 확인하고 즉시 cleanup (빠른 스모크)
 #   bash scripts/e2e-webhook.sh --build-timeout 1500  # 각 Jenkins 빌드 완료 대기 상한 (기본 900s)
+#   bash scripts/e2e-webhook.sh --no-preset-check  # 5b) 프리셋 대조를 건너뜀
 #
 # 의존성: git, gh (로그인), curl, python3
 set -eo pipefail
@@ -53,6 +64,8 @@ DO_MERGE=1
 # 방지 (실측: translate-20260803-2, Jenkins #223). --no-wait-build 로 opt-out.
 WAIT_BUILD=1
 BUILD_TIMEOUT=900    # 초. 각 빌드 (ko-review · translate) 완료 대기 상한.
+# 5b) translate task 가 받은 파라미터 ↔ 운영 프리셋 대조. 기본 ON.
+PRESET_CHECK=1
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -61,6 +74,7 @@ while [[ $# -gt 0 ]]; do
     --base)          BASE_BRANCH="$2"; shift 2 ;;   # ex) --base alpha  (필터 수정 없이 alpha 직접 사용)
     --no-wait-build) WAIT_BUILD=0; shift ;;
     --build-timeout) BUILD_TIMEOUT="$2"; shift 2 ;;
+    --no-preset-check) PRESET_CHECK=0; shift ;;
     -h|--help)  sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
@@ -100,6 +114,7 @@ source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-toggle.sh"
 # 종료 상태 요약용
 OPENED_RESULT="-"
 MERGED_RESULT="-"
+PRESET_RESULT="-"
 
 # ── filter 확장/원복 helper ───────────────────────────────────────
 # webhook 필터의 base_branches 는 dashboard 관리자가 job(translate/ko-review) 별
@@ -308,6 +323,91 @@ if [[ "$OPENED_RESULT" != "PASS" && "$DO_MERGE" == "1" ]]; then
   echo "  (참고) opened 단계 실패지만 --no-merge 가 아니므로 merge 단계도 시도합니다."
 fi
 
+# ── 5b) 프리셋 대조 ───────────────────────────────────────────────────
+# "돌았는가" 와 "무슨 조건으로 돌았는가" 는 다른 질문이다. webhook 은 프리셋
+# (`/api/translate/presets` 의 recommended, 운영은 ConfigMap `toast-docs-presets`)
+# 을 자기 이미지 안의 `dashboard/api/jenkins.py` 사본으로 파라미터에 옮긴다.
+# 그 사본이 낡으면 **새 플래그만 조용히 사라진다** — 잡은 성공하고 PR 도 열리므로
+# 어디에도 실패로 남지 않는다. 그래서 여기서 바이트로 대조한다.
+#
+# 대조는 dashboard job 의 task.params 로 한다 (Jenkins 자격증명이 필요 없다).
+# webhook 이 Jenkins 로 넘긴 opts 가 그대로 들어 있어, 키가 없으면 그 플래그는
+# Jenkinsfile 기본값으로 떨어진 것이다.
+#
+# 판정: 프리셋이 **켜라고 한** 값(true / 비어있지 않은 문자열)만 본다. 끄라고 한
+# 값(false)은 webhook 이 키 자체를 생략하기도 해서 (`--no-skip-full-table`)
+# 있고 없음이 같은 뜻이라 대조 대상이 아니다.
+preset_check() {   # $1 = translate task 의 params JSON 문자열 → 0 OK / 1 drift
+  local task_params="$1"
+  local presets
+  presets="$(curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+               "$DASHBOARD_BASE_URL/api/translate/presets" 2>/dev/null || echo '')"
+  if [[ -z "$presets" ]]; then
+    echo "  WARN: /api/translate/presets 를 읽지 못해 프리셋 대조를 건너뜁니다." >&2
+    return 2
+  fi
+  PRESET_PARAMS="$presets" TASK_PARAMS="$task_params" python3 <<'PY'
+import json, os, sys
+
+# 프리셋 patch 의 UI id → webhook 이 Jenkins 로 넘기는 opts 키.
+# (cloud-translate `dashboard/api/jenkins.py` 의 매핑과 짝이다.)
+UI_TO_OPT = {
+    "tx-granularity":         "diff_granularity",
+    "tx-glossary":            "glossary_mode",
+    "tx-max-load-ratio":      "max_load_ratio",
+    "tx-table-rows":          "table_rows",
+    "tx-skip-anchor-only":    "skip_anchor_only",
+    "tx-assign-anchors":      "assign_anchors",
+    "tx-align-headings":      "align_headings",
+    "tx-skip-full-table":     "skip_full_table",
+    "tx-load-exclude-tables": "load_exclude_tables",
+    "tx-list-items":          "list_items",
+    "tx-unit-preserve":       "unit_preserve",
+    "tx-table-key-align":     "table_key_align",
+    "tx-preserve-existing":   "preserve_existing",
+    "tx-skip-unaligned":      "skip_unaligned",
+    "tx-only-unaligned":      "only_unaligned",
+}
+
+presets = json.loads(os.environ["PRESET_PARAMS"])
+rows = presets.get("presets") if isinstance(presets, dict) else presets
+patch = {}
+for p in rows or []:
+    if p.get("name") in (None, "recommended"):
+        patch = p.get("patch") or {}
+        break
+
+try:
+    task = json.loads(os.environ["TASK_PARAMS"] or "{}")
+except Exception:
+    task = {}
+
+unknown, drift, ok = [], [], []
+for ui, want in (patch or {}).items():
+    opt = UI_TO_OPT.get(ui)
+    if opt is None:
+        unknown.append(ui)
+        continue
+    if want is False or want == "" or want is None:
+        continue                      # 끄라고 한 값은 생략과 구분되지 않는다
+    got = task.get(opt, "<없음>")
+    if want is True:
+        good = got is True
+    else:
+        good = str(got) == str(want)
+    (ok if good else drift).append((opt, want, got))
+
+for opt, want, got in sorted(ok):
+    print("    ok   %-20s = %s" % (opt, want))
+for opt, want, got in sorted(drift):
+    print("    DRIFT %-20s 프리셋=%s  잡이 받은 값=%s" % (opt, want, got))
+if unknown:
+    print("    (주의) 이 스크립트가 모르는 프리셋 키: %s — UI_TO_OPT 에 추가하세요"
+          % ", ".join(sorted(unknown)))
+sys.exit(1 if drift else 0)
+PY
+}
+
 # ── 5) merge (--no-merge 면 skip) ─────────────────────────────────────
 if [[ "$DO_MERGE" != "1" ]]; then
   echo
@@ -341,6 +441,27 @@ else
   else
     echo "$task_json" | python3 -m json.tool
     MERGED_RESULT="PASS"
+
+    # 5b) 이 잡이 **어떤 조건으로** 돌았는지 — 프리셋과 대조
+    if (( PRESET_CHECK )); then
+      echo
+      echo "[5b] translate task 파라미터 ↔ 운영 프리셋 대조"
+      translate_params="$(printf '%s' "$task_json" \
+        | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("params") or "{}")')"
+      if preset_check "$translate_params"; then
+        PRESET_RESULT="PASS"
+      else
+        rc=$?
+        if (( rc == 2 )); then
+          PRESET_RESULT="skipped (프리셋을 읽지 못함)"
+        else
+          PRESET_RESULT="FAIL (preset drift)"
+          echo "  FAIL: webhook 이 넘긴 파라미터가 운영 프리셋과 다릅니다." >&2
+          echo "        webhook 이미지의 dashboard/api/jenkins.py 사본이 낡았을 수 있습니다 —" >&2
+          echo "        이미지 태그의 커밋 해시를 origin/main 의 그 파일 마지막 변경과 대조하세요." >&2
+        fi
+      fi
+    fi
     if (( WAIT_BUILD )); then
       translate_job_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("job_id",""))')"
       translate_task_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("id",""))')"
@@ -358,8 +479,10 @@ echo "==================================================================="
 echo "  PR                              : $pr_url"
 echo "  opened → ko-review triggered    : $OPENED_RESULT"
 echo "  merged → translate triggered    : $MERGED_RESULT"
+echo "  translate params ↔ preset       : $PRESET_RESULT"
 echo "==================================================================="
 
 if [[ "$OPENED_RESULT" != "PASS" ]]; then exit 2; fi
 if [[ "$DO_MERGE" == "1" && "$MERGED_RESULT" != "PASS" ]]; then exit 3; fi
+if [[ "$PRESET_RESULT" == FAIL* ]]; then exit 4; fi
 exit 0
