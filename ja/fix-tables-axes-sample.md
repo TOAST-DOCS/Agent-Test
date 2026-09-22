@@ -10,21 +10,22 @@ A fixture contrasting the detection axes of fix-tables (identifier / row count /
 
 The first column holds lowercase single words, so `_row_key` counts no keys. The `exact` row is missing here.
 
-| Name | Location | Type | Description |
+| 名前 | 場所 | 型 | 説明 |
 |---|---|---|---|
-| name | Query | String | Searches by name |
-| limit | Query | Number | Number of items to fetch at once |
+| name | Query | String | 名前で検索します。 |
+| exact | Query | Boolean | 完全一致検索の有無です。 |
+| limit | Query | Number | 一度に取得する項目数です。 |
 
 <a id="fxaxes-cols"></a>
 ## B. Every Key Present, One Column Gone { #fxaxes-cols }
 
 The `Not Null` column is missing entirely here. Every identifier survives.
 
-| Name | Type | Description |
-|---|---|---|
-| resultCode | Integer | Result code |
-| resultMessage | String | Result message |
-| isSuccessful | Boolean | Whether it succeeded |
+| 名前 | 型 | 必須 | 説明 |
+|---|---|---|---|
+| resultCode | Integer | O | 結果コード |
+| resultMessage | String | O | 結果メッセージ |
+| isSuccessful | Boolean | O | 成功の有無 |
 
 <a id="fxaxes-keys"></a>
 ## C. Control — An Identifier Row Dropped { #fxaxes-keys }
@@ -35,6 +36,7 @@ The shape the existing axis already caught. `pageSize` is missing here. That axi
 |---|---|---|
 | tokenId | Header | Token ID |
 | appKey | Path | App key |
+| pageSize | Query | ページサイズ |
 
 <a id="fxaxes-outlier"></a>
 ## D. Control — A Row Missing One Pipe { #fxaxes-outlier }
