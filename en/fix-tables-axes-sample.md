@@ -35,6 +35,7 @@ The shape the existing axis already caught. `pageSize` is missing here. That axi
 |---|---|---|
 | tokenId | Header | Token ID |
 | appKey | Path | App key |
+| pageSize | Query | Page size |
 
 <a id="fxaxes-outlier"></a>
 ## D. Control — A Row Missing One Pipe { #fxaxes-outlier }
