@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=6c39f4c29b20 -->
 
 <a id="table-parse-sample"></a>
@@ -14,7 +16,7 @@ Three parties count the rows of one table, and they do not agree.
 | Translation pipeline | lines starting with a pipe after `str.splitlines()` | The basis for table repair |
 | Markup fix (M7) | Whether the render holds more rows than the source wrote | What maintenance can fix |
 
-The four sections below are the four shapes of that disagreement. Each section's expected verdict is checked deterministically by `scripts/check_table_parse.py`.
+The four sections below are the four patterns of that divergence. (before/after comparison run 20260922-013952) Each section's expected verdict is checked deterministically by `scripts/check_table_parse.py`.
 
 <a id="table-parse-u2028"></a>
 ## A. A Table Cut Short by U+2028 { #table-parse-u2028 }
@@ -28,8 +30,6 @@ Live case: `TOAST-DOCS/DDoS-Guard` `ko/l7-ddos-settings-guide.md` — three tabl
 | No. | Item | Configuration example |
 |---|---|---|
 | 1 | Header timeout | client_header_timeout 10s<BR>client_body_timeout 10s |
-| 2 | Idle connection cleanup | keepalive_timeout 15s |
-| 3 | Retry limit | proxy_next_upstream_tries 2 |
 
 <a id="table-parse-newline"></a>
 ## B. A Table Cut Short by a Real Line Break { #table-parse-newline }
@@ -41,8 +41,6 @@ So **A and B look the same to the pipeline and different to document maintenance
 | No. | Item | Configuration example |
 |---|---|---|
 | 1 | Header timeout | client_header_timeout 10s<BR>client_body_timeout 10s |
-| 2 | Idle connection cleanup | keepalive_timeout 15s |
-| 3 | Retry limit | proxy_next_upstream_tries 2 |
 
 <a id="table-parse-outlier"></a>
 ## C. A Row Missing One Pipe { #table-parse-outlier }
@@ -69,3 +67,4 @@ en/ja do not have ko's `SVC-104` row. This is a well-aligned keyed table, so it 
 | SVC-101 | The request format is invalid |
 | SVC-102 | Authentication information is missing |
 | SVC-103 | The request quota has been exceeded |
+| SVC-104 | Could not find the target resource. |
