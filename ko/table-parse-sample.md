@@ -14,7 +14,7 @@
 | 번역 파이프라인 | `str.splitlines()` 로 자른 뒤 파이프로 시작하는 줄 | 표 수리의 판단 근거 |
 | 마크업 정정(M7) | 렌더 결과가 원문보다 행이 많은가 | 정비가 고칠 수 있는 범위 |
 
-아래 네 절이 그 어긋남의 네 모양입니다. 각 절의 기대 판정은 `scripts/check_table_parse.py` 가 결정적으로 검사합니다.
+아래 네 절이 그 어긋남의 네 모양입니다. (before/after 대조용 실행 20260922-013952) 각 절의 기대 판정은 `scripts/check_table_parse.py` 가 결정적으로 검사합니다.
 
 <a id="table-parse-u2028"></a>
 ## A. U+2028 로 끊긴 표 { #table-parse-u2028 }
