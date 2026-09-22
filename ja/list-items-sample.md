@@ -1,5 +1,3 @@
-<!-- machine_translated: true -->
-
 # リスト項目splice フィクスチャ — 触っていない兄弟箇条書き
 
 Markdownのリストは項目の間に空行がないため、**1つのブロック**として捉えられます。そのため
@@ -24,11 +22,11 @@ Markdownのリストは項目の間に空行がないため、**1つのブロッ
 露出しなければバイト単位でそのまま残ります — 判定はそれです。
 
 * [認証方式の概要](./auth-method-overview/)
-* [認証方式サポート状況](./supported-authentication-methods/)
+* [認証方式のサポート状況](./supported-authentication-methods/)
 * [機能別設定](./feature-settings/)
     * [DEX暗号化対象の指定](./dex-encryption/)
 * [サービスAPI](./service-api/)
-* [リリースノート](./release-notes/)
+* [リリースノートおよび変更履歴](./release-notes/)
 
 2つの固定表現は実際に観測されたドリフトから取っています。
 
