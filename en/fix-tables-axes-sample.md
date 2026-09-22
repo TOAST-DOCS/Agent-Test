@@ -10,9 +10,10 @@ A fixture contrasting the detection axes of fix-tables (identifier / row count /
 
 The first column holds lowercase single words, so `_row_key` counts no keys. The `exact` row is missing here.
 
-| Name | Location | Type | Description |
+| Name | Category | Type | Description |
 |---|---|---|---|
 | name | Query | String | Searches by name |
+| exact | Query | Boolean | Whether to perform exact match search |
 | limit | Query | Number | Number of items to fetch at once |
 
 <a id="fxaxes-cols"></a>
@@ -20,11 +21,11 @@ The first column holds lowercase single words, so `_row_key` counts no keys. The
 
 The `Not Null` column is missing entirely here. Every identifier survives.
 
-| Name | Type | Description |
-|---|---|---|
-| resultCode | Integer | Result code |
-| resultMessage | String | Result message |
-| isSuccessful | Boolean | Whether it succeeded |
+| Name | Type | Not Null | Description |
+|---|---|---|---|
+| resultCode | Integer | O | Result code |
+| resultMessage | String | O | Result message |
+| isSuccessful | Boolean | O | Whether it succeeded |
 
 <a id="fxaxes-keys"></a>
 ## C. Control — An Identifier Row Dropped { #fxaxes-keys }
@@ -35,6 +36,7 @@ The shape the existing axis already caught. `pageSize` is missing here. That axi
 |---|---|---|
 | tokenId | Header | Token ID |
 | appKey | Path | App key |
+| pageSize | Query | Page size |
 
 <a id="fxaxes-outlier"></a>
 ## D. Control — A Row Missing One Pipe { #fxaxes-outlier }
