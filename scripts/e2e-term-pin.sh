@@ -24,6 +24,14 @@
 #                        term-pin 이 고치겠다고 한 적 없는 축이지만, 문서마다
 #                        따로 고정하므로 **리포 전체 일관성**은 여기에 달렸다.
 #                        ON 이 OFF 보다 나쁘면 한 결함을 다른 결함과 바꾼 것이다.
+#   (라) 산문 대소문자   — 고정한 표기를 **문장 한가운데까지** 끌고 갔는가.
+#                        주입 절이 모든 chunk 에 실리므로 `use exactly` 로 읽히면
+#                        `... exceeds the Prediction error normal range.` 가 된다 —
+#                        판 사이 불일치가 아니라 **틀린 영어**다. 무엇이 옳은지는
+#                        판정하지 않는다(`Instance Template` 은 문장 중간에서도
+#                        대문자가 맞다). 두 팔을 비교해 **ON 에서만 늘어난** 것을
+#                        본다 — 늘 대문자인 이름은 OFF 에서도 대문자라 상쇄된다.
+#                        en 전용 (ja 는 대소문자가 없다).
 #
 # ── 측정은 표의 칸으로 한다 ───────────────────────────────────────────────
 # 픽스처의 절마다 같은 세 ko 용어를 첫 칸에 둔 표를 심는다. 표는 위치로 짝지어
@@ -271,6 +279,8 @@ out = pathlib.Path(os.environ["OUT"])
 data = collections.defaultdict(lambda: collections.defaultdict(
     lambda: collections.defaultdict(list)))
 missing = []
+prose_caps = collections.Counter()
+prose_runs = collections.Counter()
 for arm in ("off", "on"):
     for r in range(1, rounds + 1):
         d = out / f"{arm}-{r}"
@@ -283,10 +293,21 @@ for arm in ("off", "on"):
             if not f.exists():
                 missing.append(f"{arm}-{r}/{lang}")
                 continue
-            res = ctd.divergence(ko, f.read_text(encoding="utf-8", errors="replace"), terms)
+            tgt = f.read_text(encoding="utf-8", errors="replace")
+            res = ctd.divergence(ko, tgt, terms)
             for t in terms:
                 info = res["terms"].get(t)
                 data[arm][lang][t].append((r, info, res["notes"]))
+            # (라) 산문 대소문자 — 그 판이 실제로 쓴 표기들을 forms 로 넘긴다.
+            if lang == "en":
+                forms = sorted({
+                    form
+                    for t in terms
+                    for form in (res["terms"].get(t) or {}).get("forms", {})
+                })
+                if forms:
+                    prose_caps[arm] += ctd.mid_sentence_capitals(tgt, forms)
+                    prose_runs[arm] += 1
 
 print("## 판마다의 역어 (표 슬롯)")
 for arm in ("off", "on"):
@@ -301,9 +322,21 @@ for arm in ("off", "on"):
                 gap = f" · 산문차 {info['prose_gap']}" if info["prose_gap"] else ""
                 print(f"  {arm:3} r{r} {lang} [{flag}] {t} -> {forms}{gap}")
 
+def _fold(x):
+    # 대소문자·하이픈·공백만 접는다. `time series` ↔ `Time-Series` 는 같은 말을
+    # 다르게 적은 것이고, `Normal range of prediction error` ↔ `Normal
+    # prediction error range` 는 다른 말이다 — (나) 를 읽으려면 이 둘을 갈라야
+    # 한다 (2026-09-21 실측: ON 의 흔들림 3건이 **전부** 첫 글자 대소문자뿐이었고
+    # 대조군 2건은 전부 다른 낱말이었는데, 세는 방법이 같아서 "3 > 2, ON 이 더
+    # 나쁘다" 로 읽혔다).
+    import re as _re
+    return _re.sub(r'[-\s]+', ' ', x.lower()).strip()
+
+
 summary = {}
 for arm in ("off", "on"):
     diverged = stable_break = measured = prose = 0
+    case_only = 0
     for lang in ("en", "ja"):
         for t in terms:
             majors = set()
@@ -321,16 +354,26 @@ for arm in ("off", "on"):
                 majors.add(info["major"])
             if len(majors) > 1:
                 stable_break += 1
+                if len({_fold(m) for m in majors}) == 1:
+                    case_only += 1
     summary[arm] = dict(measured=measured, diverged=diverged,
-                        cross_run_unstable=stable_break, prose_gap=prose)
+                        cross_run_unstable=stable_break, prose_gap=prose,
+                        cross_run_case_only=case_only,
+                        prose_caps=prose_caps[arm], prose_runs=prose_runs[arm])
 
 print()
 print("## 집계")
-print(f"  {'팔':4} {'측정':>4} {'문서안 갈림':>10} {'판 사이 흔들림(용어×언어)':>24} {'산문차(보고)':>12}")
+print(f"  {'팔':4} {'측정':>4} {'문서안 갈림':>10} {'판 사이 흔들림':>14} {'└ 표기만':>9} {'산문차(보고)':>12}")
 for arm in ("off", "on"):
     s = summary[arm]
     print(f"  {arm:4} {s['measured']:>4} {s['diverged']:>10} "
-          f"{s['cross_run_unstable']:>24} {s['prose_gap']:>12}")
+          f"{s['cross_run_unstable']:>14} {s['cross_run_case_only']:>9} {s['prose_gap']:>12}")
+print()
+print("## 산문 대소문자 (en · 문장 중간에서 대문자로 시작한 횟수)")
+for arm in ("off", "on"):
+    s = summary[arm]
+    print(f"  {arm:4} {s['prose_caps']:>4}건 / {s['prose_runs']}판")
+
 print()
 print("VERDICT_JSON " + json.dumps({"summary": summary, "missing": missing},
                                    ensure_ascii=False))
@@ -357,12 +400,28 @@ else
   ON_PROSE="$(echo "$VJ"  | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["on"]["prose_gap"])')"
   OFF_PROSE="$(echo "$VJ" | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["off"]["prose_gap"])')"
   info "(다) 산문차 — ON $ON_PROSE · 대조군 $OFF_PROSE (보고만: 표 슬롯보다 잡음이 많다)"
+  ON_CAP="$(echo "$VJ"  | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["on"].get("prose_caps",0))')"
+  OFF_CAP="$(echo "$VJ" | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["off"].get("prose_caps",0))')"
+  ON_PR="$(echo "$VJ"   | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["on"].get("prose_runs",0))')"
+  OFF_PR="$(echo "$VJ"  | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["off"].get("prose_runs",0))')"
+  if [ "${ON_PR:-0}" = "0" ] || [ "${OFF_PR:-0}" = "0" ]; then
+    info "(라) en 산출물이 한 팔에 없어 산문 대소문자는 판정하지 않는다"
+  elif [ "$ON_CAP" -le "$OFF_CAP" ] 2>/dev/null; then
+    ok "(라) ON 이 고정 표기를 문장 중간에 밀어 넣지 않았다 ($ON_CAP ≤ 대조군 $OFF_CAP)"
+  else
+    bad "(라) ON 이 문장 중간에 대문자를 밀어 넣는다 ($ON_CAP > 대조군 $OFF_CAP) — 불일치가 아니라 틀린 영어다"
+  fi
   if [ "$OFF_MEAS" = "0" ]; then
     info "(나) 대조군을 돌리지 않아 판 사이 흔들림은 판정하지 않는다 (--arms)"
   elif [ "$ON_UNS" -le "$OFF_UNS" ] 2>/dev/null; then
     ok "(나) ON 의 판 사이 흔들림이 대조군 이하 ($ON_UNS ≤ $OFF_UNS)"
   else
+    ON_CASE="$(echo "$VJ" | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["on"].get("cross_run_case_only",0))')"
+    OFF_CASE="$(echo "$VJ" | "$PY" -c 'import json,sys;print(json.load(sys.stdin)["summary"]["off"].get("cross_run_case_only",0))')"
     bad "(나) ON 이 판마다 다른 역어로 고정한다 ($ON_UNS > $OFF_UNS) — 리포 전체 일관성은 나빠진다"
+    info "그중 **표기만** 다른 것: ON $ON_CASE · 대조군 $OFF_CASE — 둘의 종류가 다르면"
+    info "위 '판마다의 역어' 를 직접 본다. 같은 말을 다르게 적은 것과 다른 말을 고른 것은"
+    info "같은 무게가 아니지만, #375 가 하이픈 하나로 시작된 사건이라 통과시키지도 않는다."
   fi
 fi
 

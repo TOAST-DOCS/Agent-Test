@@ -124,6 +124,16 @@ cloud-translate 쪽 조치는 셋이다 — 프롬프트에 "대상 언어의 �
 380 → 1), `validate_unregistered` 의 문자 게이트·배포본 게이트, `propose_terms` 의
 `temperature=0`. 자세한 근거는 그쪽 `translate/CLAUDE.md`.
 
+**축 (라) 산문 대소문자 — 표 슬롯만 보면 안 보이는 자리.** 주입 절이 옛 제목
+(`use exactly, do not vary`)으로 읽히면 표 셀에서 고른 표기가 문장 한가운데까지 따라와
+`... exceeds the Prediction error normal range.` 가 된다. 판 사이 불일치가 아니라 **틀린
+영어**인데, 슬롯 측정기는 표 칸만 보므로 이 자리를 통째로 놓친다.
+`check_term_divergence.mid_sentence_capitals` 가 표·펜스·heading·admonition 제목·인라인
+코드를 뺀 **산문 줄**에서 고정 표기가 문장 중간에 대문자로 시작한 횟수를 센다.
+**무엇이 옳은지는 판정하지 않는다** — `Instance Template` 은 문장 중간에서도 대문자가
+맞고 그걸 코드가 가릴 수 없다. 대신 두 팔을 비교한다: 늘 대문자인 이름은 OFF 에서도
+대문자라 상쇄되고, **ON 에서만 늘어난 것**이 고정 표가 민 것이다. en 전용.
+
 **그리고 splice e2e 가 네 번째를 찾아냈다 — 물어보는 범위.** 프롬프트가 *"recurring
 domain terms (product features, UI labels, technical concepts)"* 만 물었을 때 #417 이
 걸린 바로 그 낱말(`!!! tip "알아두기"` 의 상자 제목)이 제안 목록에 **한 번도 오르지
