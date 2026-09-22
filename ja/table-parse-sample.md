@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=6c39f4c29b20 -->
 
 <a id="table-parse-sample"></a>
@@ -13,7 +15,7 @@
 | 翻訳パイプライン | `str.splitlines()` で切った後パイプで始まる行 | 表修復の判断根拠 |
 | マークアップ修正(M7) | レンダー結果が原文より行が多いか | 整備が直せる範囲 |
 
-以下の 4 つの節がその食い違いの 4 つの形です。各節の期待判定は `scripts/check_table_parse.py` が決定的に検査します。
+以下の4つのセクションが、そのズレの4つのパターンです。(before/after 対比用実行 20260922-013952) 各セクションの期待判定は `scripts/check_table_parse.py` が決定的に検査します。
 
 <a id="table-parse-u2028"></a>
 ## A. U+2028 で途切れた表 { #table-parse-u2028 }
@@ -27,8 +29,6 @@
 | 番号 | 項目 | 設定例 |
 |---|---|---|
 | 1 | ヘッダータイムアウト | client_header_timeout 10s<BR>client_body_timeout 10s |
-| 2 | アイドル接続の整理 | keepalive_timeout 15s |
-| 3 | 再試行制限 | proxy_next_upstream_tries 2 |
 
 <a id="table-parse-newline"></a>
 ## B. 実際の改行で途切れた表 { #table-parse-newline }
@@ -40,8 +40,6 @@
 | 番号 | 項目 | 設定例 |
 |---|---|---|
 | 1 | ヘッダータイムアウト | client_header_timeout 10s<BR>client_body_timeout 10s |
-| 2 | アイドル接続の整理 | keepalive_timeout 15s |
-| 3 | 再試行制限 | proxy_next_upstream_tries 2 |
 
 <a id="table-parse-outlier"></a>
 ## C. パイプが 1 つ足りない行 { #table-parse-outlier }
@@ -68,3 +66,4 @@ en/ja に ko の `SVC-104` 行がありません。よく整列した keyed 表�
 | SVC-101 | リクエスト形式が正しくありません |
 | SVC-102 | 認証情報がありません |
 | SVC-103 | リクエスト上限を超えました |
+| SVC-104 | 対象リソースが見つかりません。 |
