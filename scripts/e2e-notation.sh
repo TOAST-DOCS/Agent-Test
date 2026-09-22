@@ -2,9 +2,12 @@
 #
 # 표기 후처리 e2e — cloud-translate `app/notation.py` + worker 연결부 검증.
 #
-# 검증 대상 두 가지. 둘 다 **판단이 필요 없는** 축이라 모델이 아니라 코드가 맡는다.
+# 검증 대상 세 가지. 전부 **판단이 필요 없는** 축이라 모델이 아니라 코드가 맡는다.
 #   (a) ja 라틴↔가나 공백 — 그 문서가 이미 무공백으로 쓰는 토큰에 공백을 넣지 않는다
 #   (b) en/ja 산출물에 남은 한글 — 그 줄만 다시 번역해 고치고, 검증을 못 넘긴 줄만 기록한다
+#   (c) 용어 갈림 — 같은 ko 문자열이 한 문서 안에서 여러 역어로 옮겨졌는지, 그리고 그
+#       차이를 코드가 **단정할 수 있는지**(확정/우선/보류). ko 원문과 짝지어 보는
+#       유일한 축이라 `notation_check.py --source` 로 돈다.
 #
 # ── 배경 ──────────────────────────────────────────────────────────────────
 # 2026-09 번역 PR 전수 검토(52 PR · en/ja 272 파일)에서 나온 결함이 근거다.
@@ -137,6 +140,246 @@ EOF
 RES="$("$PY" -c 'import json,sys; print(len(json.load(open(sys.argv[1]))[0]["hangul_residue"]))' "$SCRATCH/hangul.json")"
 [ "$RES" = "3" ] && ok "한글 잔존 3건 검출 · 경로/주석 3건 제외 (검출=$RES)" \
                  || bad "한글 잔존 검출 수가 3이 아니다 (=$RES)"
+
+# ─────────────────────────────────────────────────────────────────────────
+step "Part A-2 — 용어 갈림과 그 판정 (결정적, 모델 없음)"
+mkdir -p "$SCRATCH/ko"
+
+# 판정은 **결함의 경중이 아니라 "코드가 단정할 수 있는가"** 로 갈린다.
+#   확정 — 같은 종류의 자리에서 같은 낱말이 대소문자만 다르다
+#   우선 — 우세 표기가 3회 이상인데 딱 한 자리만 다르고 바뀐 글자가 2자 이하
+#   보류 — 자리가 다른 대소문자 차이 · 낱말 차이
+# 아래 픽스처는 전부 코퍼스 실측(2026-09-21)에서 온 모양이다.
+cat > "$SCRATCH/ko/terms.md" <<'EOF'
+<a id="t1"></a>
+## 요청 헤더
+
+| 헤더 이름 | 설명 |
+| --- | --- |
+| 템플릿 상태 코드 | 상태 |
+| 국가 번호 | 코드 |
+
+<a id="t2"></a>
+## 응답 헤더
+
+| 헤더 이름 | 설명 |
+| --- | --- |
+| 국가 번호 | 코드 |
+| 국가 번호 | 코드 |
+
+<a id="t3"></a>
+## 목록
+
+| 템플릿 상태 코드 | 설명 |
+| --- | --- |
+| 국가 번호 | 코드 |
+| 국가 번호 | 코드 |
+EOF
+# `헤더 이름` 은 두 표의 **헤더 셀**에서 갈렸다 (API-Gateway/en/console-guide.md).
+# `템플릿 상태 코드` 는 표 헤더 ↔ 데이터 셀이라 자리가 다르다 (Alimtalk/en/…v2.0.md).
+# `국가 번호` 는 낱말 자체가 다르다 — 우세 표기가 있어도 단정하지 않는다.
+cat > "$SCRATCH/en/terms.md" <<'EOF'
+<a id="t1"></a>
+## Request Header
+
+| Header name | Description |
+| --- | --- |
+| Template status code | Status |
+| Country code | Code |
+
+<a id="t2"></a>
+## Response Header
+
+| Header Name | Description |
+| --- | --- |
+| Country code | Code |
+| Country code | Code |
+
+<a id="t3"></a>
+## List
+
+| Template Status Code | Description |
+| --- | --- |
+| Country code | Code |
+| Nation code | Code |
+EOF
+
+# 우세 4회 대 1회, 바뀐 글자 하나 (API-Gateway/ja/api-guide-v1.0.md).
+cat > "$SCRATCH/ko/isolated.md" <<'EOF'
+<a id="j1"></a>
+## 리소스
+
+| 항목 | 설명 |
+| --- | --- |
+| 메서드 리소스 설명 | 값1 |
+| 메서드 리소스 설명 | 값2 |
+| 메서드 리소스 설명 | 값3 |
+| 메서드 리소스 설명 | 값4 |
+| 메서드 리소스 설명 | 값5 |
+EOF
+cat > "$SCRATCH/ja/isolated.md" <<'EOF'
+<a id="j1"></a>
+## リソース
+
+| 項目 | 説明 |
+| --- | --- |
+| メソッドリソース説明 | 値1 |
+| メソッドリソース説明 | 値2 |
+| メソッドリソース説明 | 値3 |
+| メソッドリソース説明 | 値4 |
+| メソッドリソースの説明 | 値5 |
+EOF
+
+# 오탐 대조군 ①: 표 안에서 행이 한 칸 밀렸다. 그 역어가 **다른 ko 의 역어이기도**
+# 하므로 역방향 맵이 걸러내야 한다 (없으면 용어 갈림으로 오인).
+cat > "$SCRATCH/ko/shift.md" <<'EOF'
+<a id="a"></a>
+## 스테이지
+
+| 항목 | 설명 |
+| --- | --- |
+| 스테이지 URL | 주소 |
+
+<a id="b"></a>
+## 도메인
+
+| 항목 | 설명 |
+| --- | --- |
+| 스테이지 URL | 주소 |
+| 스테이지 도메인 목록 영역 | 목록 |
+
+<a id="c"></a>
+## 목록
+
+| 항목 | 설명 |
+| --- | --- |
+| 스테이지 도메인 목록 영역 | 목록 |
+EOF
+cat > "$SCRATCH/ja/shift.md" <<'EOF'
+<a id="a"></a>
+## ステージ
+
+| 項目 | 説明 |
+| --- | --- |
+| ステージURL | アドレス |
+
+<a id="b"></a>
+## ドメイン
+
+| 項目 | 説明 |
+| --- | --- |
+| ステージドメインリスト領域 | リスト |
+| その他 | リスト |
+
+<a id="c"></a>
+## リスト
+
+| 項目 | 説明 |
+| --- | --- |
+| ステージドメインリスト領域 | リスト |
+EOF
+
+# 오탐 대조군 ②: 행 수가 다르면 어느 칸이 어느 칸의 번역인지 모른다 — 증거로 치지
+# 않는다. 그 표에는 대소문자가 갈린 셀이 실제로 들어 있지만 0건이어야 한다.
+cat > "$SCRATCH/ko/uneven.md" <<'EOF'
+<a id="u1"></a>
+## 하나
+
+| 항목 | 설명 |
+| --- | --- |
+| 알림 유형 | 값 |
+
+<a id="u2"></a>
+## 둘
+
+| 항목 | 설명 |
+| --- | --- |
+| 알림 유형 | 값 |
+EOF
+cat > "$SCRATCH/en/uneven.md" <<'EOF'
+<a id="u1"></a>
+## One
+
+| Item | Description |
+| --- | --- |
+| Notification type | Value |
+
+<a id="u2"></a>
+## Two
+
+| Item | Description |
+| --- | --- |
+| Notification Type | Value |
+| Extra row | Value |
+EOF
+
+# `--source` 를 준 실행에서만 이 축이 돈다. 결함이 있으면 exit 1 이라 `|| true`.
+cat > "$SCRATCH/read_terms.py" <<'EOF'
+import json, sys
+entry = json.load(open(sys.argv[1]))[0]
+splits = entry.get("term_split") or []
+if sys.argv[2] == "COUNT":
+    print(len(splits)); raise SystemExit
+for t in splits:
+    if t["ko"] == sys.argv[2]:
+        v = t["variants"]
+        second = v[1] if len(v) > 1 else {}
+        # `tier`/`verdict` 가 없으면 판정을 붙이기 전 판본이다 — traceback 대신
+        # 그 사실이 FAIL 메시지에 그대로 보이게 한다.
+        print(t.get("tier", "(등급없음)"), second.get("verdict") or "-",
+              ",".join(v[0].get("slots") or []),
+              ",".join(second.get("slots") or []) or "-")
+        break
+else:
+    print("(없음) - - -")
+EOF
+terms_json() {
+  "$PY" "$CHECK" "$1" --source "$2" --json > "$3" 2>/dev/null || true
+}
+term_row() { "$PY" "$SCRATCH/read_terms.py" "$1" "$2"; }
+
+terms_json "$SCRATCH/en/terms.md" "$SCRATCH/ko/terms.md" "$SCRATCH/terms.json"
+[ "$(term_row "$SCRATCH/terms.json" COUNT)" = "3" ] \
+  && ok "판정 픽스처에서 갈림 3건 검출" \
+  || bad "갈림 건수가 3이 아니다 (=$(term_row "$SCRATCH/terms.json" COUNT))"
+
+GOT="$(term_row "$SCRATCH/terms.json" '헤더 이름')"
+[ "$GOT" = "확정 case-same-slot th0 th0" ] \
+  && ok "같은 자리(표 헤더)의 대소문자 갈림 → 확정" \
+  || bad "확정이어야 하는데 [$GOT]"
+
+GOT="$(term_row "$SCRATCH/terms.json" '템플릿 상태 코드')"
+[ "$GOT" = "보류 case-other-slot th0 td0" ] \
+  && ok "자리가 다른 대소문자 갈림 → 보류 (리포 관례일 수 있다)" \
+  || bad "보류/case-other-slot 이어야 하는데 [$GOT]"
+
+GOT="$(term_row "$SCRATCH/terms.json" '국가 번호')"
+[ "$GOT" = "보류 wording td0 td0" ] \
+  && ok "낱말이 다른 갈림 → 보류 (정본을 고르지 않는다)" \
+  || bad "보류/wording 이어야 하는데 [$GOT]"
+
+terms_json "$SCRATCH/ja/isolated.md" "$SCRATCH/ko/isolated.md" "$SCRATCH/isolated.json"
+GOT="$(term_row "$SCRATCH/isolated.json" '메서드 리소스 설명')"
+[ "$GOT" = "우선 isolated td0 td0" ] \
+  && ok "우세 4회 대 1회, 한 글자 차이 → 우선 (짧은 CJK 도 걸린다)" \
+  || bad "우선/isolated 여야 하는데 [$GOT]"
+
+terms_json "$SCRATCH/ja/shift.md" "$SCRATCH/ko/shift.md" "$SCRATCH/shift.json"
+[ "$(term_row "$SCRATCH/shift.json" COUNT)" = "0" ] \
+  && ok "행 밀림은 용어 갈림이 아니다 (역방향 맵이 걸러냄)" \
+  || bad "행 밀림을 갈림으로 보고했다 (=$(term_row "$SCRATCH/shift.json" COUNT))"
+
+terms_json "$SCRATCH/en/uneven.md" "$SCRATCH/ko/uneven.md" "$SCRATCH/uneven.json"
+[ "$(term_row "$SCRATCH/uneven.json" COUNT)" = "0" ] \
+  && ok "행 수가 다른 표는 증거로 치지 않는다" \
+  || bad "행 수가 다른 표에서 갈림을 보고했다 (=$(term_row "$SCRATCH/uneven.json" COUNT))"
+
+# `--source` 없이는 이 축이 돌지 않아야 한다 — 기존 호출자(Part A·다른 e2e)의
+# exit code 가 legacy 갈림 때문에 바뀌면 안 된다.
+"$PY" "$CHECK" "$SCRATCH/en/terms.md" --json > "$SCRATCH/nosource.json" 2>/dev/null || true
+"$PY" -c 'import json,sys; sys.exit(0 if "term_split" not in json.load(open(sys.argv[1]))[0] else 1)' \
+  "$SCRATCH/nosource.json" \
+  && ok "--source 없으면 용어 축은 돌지 않는다" || bad "--source 없이도 용어 축이 돌았다"
 
 if [ "$UNIT_ONLY" = "1" ]; then
   echo; echo "Part A 결과: PASS=$PASS FAIL=$FAIL"
