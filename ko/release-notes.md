@@ -3,6 +3,15 @@
 <a id="compute-release-notes"></a>
 ## Compute > 릴리스 노트 { #compute-release-notes }
 
+## 2026. 09. 24.
+### Image
+- Rocky Linux 9.6 이미지를 새로 제공합니다.
+- Ubuntu Server 24.04 LTS 이미지의 커널을 최신 버전으로 갱신했습니다.
+
+## 2026. 09. 10.
+### Instance
+- 인스턴스 목록에서 태그로 필터링하는 기능을 추가했습니다.
+
 <a id="august-20-2026"></a>
 ## 2026. 08. 20.
 ### Image
