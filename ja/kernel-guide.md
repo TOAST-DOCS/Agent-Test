@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=73ceeadcb5ee -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=780643946d52 -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > カーネルバージョンアップガイド { #compute-instance-kernel-version-upgrade-guide }
@@ -11,6 +13,11 @@
 
 <a id="check-the-kernel-version"></a>
 ### カーネルバージョン確認 { #check-the-kernel-version }
+
+| 設定項目 | 説明 | デフォルト値 |
+|---|---|---|
+| 再試行回数 | 失敗したリクエストを再試行する回数です。 | 3 |
+| 待機時間 | 再試行の間に待機する時間(秒)です。 | 5 |
 
 現在インストールされているカーネルバージョンを確認します。
 
@@ -630,3 +637,14 @@ The default is /boot/loader/entries/858382f092494811bf89e090de079ab1-5.14.0-503.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+<a id="test-added-table"></a>
+## テスト用の新しいテーブルセクション { #test-added-table }
+
+このセクションはテーブル翻訳検証のために新しく追加されました。以下の表のヘッダーとセルのテキストがすべて翻訳される必要があります。
+
+| 項目 | 説明 | デフォルト値 |
+|---|---|---|
+| 最大ノード数 | 1つのノードプールで作成できるノードの最大数です。 | 10 |
+| 自動スケーリング | 負荷に応じてノード数を自動的に調整します。 | 無効 |
+| チェック周期 | ノードの状態をチェックする周期です。 | 5分 |

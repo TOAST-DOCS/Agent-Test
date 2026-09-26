@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=73ceeadcb5ee -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=780643946d52 -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
 ## Compute > Instance > Kernel Version Upgrade Guide { #compute-instance-kernel-version-upgrade-guide }
@@ -11,6 +13,11 @@
 
 <a id="check-the-kernel-version"></a>
 ### Check the Kernel Version { #check-the-kernel-version }
+
+| Setting | Description | Default Value |
+|---|---|---|
+| Number of retries | Number of times to retry failed requests | 3 |
+| Wait time | Time to wait between retries (in seconds) | 5 |
 
 Check the currently installed kernel version.
 
@@ -623,3 +630,14 @@ Reboot the OS for the boot order change to take effect.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+<a id="test-added-table"></a>
+## New test table section { #test-added-table }
+
+This section was newly added for table translation validation. All the headers and cell text in the table below must be translated.
+
+| Item | Description | Default Value |
+|---|---|---|
+| Maximum node count | The maximum number of nodes that can be created in a single node pool. | 10 |
+| Auto scaling | Automatically adjusts the number of nodes based on load. | Disabled |
+| Check interval | The period at which the node status is checked. | 5 minutes |
