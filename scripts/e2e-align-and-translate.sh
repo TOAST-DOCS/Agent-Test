@@ -977,22 +977,18 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
     --guidelines-variant-en "${TRANSLATE_GUIDELINES_VARIANT_EN:-}" \
     --guidelines-variant-ja "${TRANSLATE_GUIDELINES_VARIANT_JA:-}")" || exit 1
   eval "$preset_eval"
-  echo "  preset args: ${PRESET_ARGS[*]}"
+  # 실제로 넘기는 argv 를 한 줄로 굳혀 두고 그것을 찍는다 — preset args 만
+  # 찍으면 뒤에 붙는 unit-preserve·reconcile 플래그가 로그에서 빠져, 무엇으로
+  # 돌았는지 로그로 되짚을 수 없다 (api 쪽 body 로깅과 같은 이유).
+  TRANSLATE_ARGV=("${PRESET_ARGS[@]}" "${unit_preserve_opt[@]}" "${reconcile_opt[@]}")
+  echo "  translate argv: ${TRANSLATE_ARGV[*]}"
   set +e
-  # e2e 는 **CLI 엔진으로 돈다** — 배포 잡의 .env 가
-    # TRANSLATE_TRANSLATE_ENGINE=claude-code 이므로 프로덕션과 같은 엔진을 태우는
-    # 것이 e2e 의 목적에 맞다. 모델은 **두 env 모두** 세팅해야 한다:
-    # ClaudeCodeTranslator 는 settings.claude_code_model 을 쓰고
-    # (translator.py:3918) anthropic_model 은 보지 않으므로, CLI 엔진에
-    # ANTHROPIC_MODEL 만 주면 조용히 무시되고 .env 값(sonnet)이 쓰인다 —
-    # 2026-08-24 실측으로 retranslate plan 이 그 함정에 빠져 haiku 로 로그를
-    # 찍으며 sonnet-4-6 으로 돌아 번역 PR 하나가 6.07M 토큰을 먹었다.
-    # ANTHROPIC_MODEL 도 함께 두는 이유: CLI 엔진에서도 llm-patch judge·표
-    # reconcile 등 일부 경로는 API translator 를 타고 그쪽은 anthropic_model 을
-    # 읽는다. translate/Jenkinsfile 의 MODEL_ENV 가 둘을 함께 세팅하는 것과 같다.
-    (cd "$CLOUD_TRANSLATE_DIR" && \
+  # engine·model 은 argv 가 아니라 **env** 로 간다 — 위 `eval "$preset_eval"` 이
+  # 그 export 줄을 이미 실행했다 (어느 플래그가 env 전용인지는 preset 응답의
+  # `env_only_flags` 가 정한다). 이 서브셸이 그 env 를 물려받는다.
+  (cd "$CLOUD_TRANSLATE_DIR" && \
     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" \
-      "${PRESET_ARGS[@]}" "${unit_preserve_opt[@]}" "${reconcile_opt[@]}" \
+      "${TRANSLATE_ARGV[@]}" \
   ) 2>&1 | tee "$local_log"
   # ↑ 플래그는 전부 preset 에서 온다 (`PRESET_ARGS`). 여기 직접 적혀 있던
   #   목록은 배포된 preset 과 어긋나 있었고 (max-load-ratio 2 vs 4 ·
@@ -1040,13 +1036,17 @@ translate_body="$(python3 "$(dirname "$0")/preset_options.py" \
   --workers 2 \
   --guidelines-variant-en "${TRANSLATE_GUIDELINES_VARIANT_EN:-}" \
   --guidelines-variant-ja "${TRANSLATE_GUIDELINES_VARIANT_JA:-}")" || exit 1
-echo "$translate_body" | python3 -m json.tool
 
 # UNIT_PRESERVE 는 preset 이 정한다. `--unit-preserve` 로 명시하면 그 위에 얹는다.
 if (( UNIT_PRESERVE )); then
   translate_body="$(printf '%s' "$translate_body" \
     | python3 -c 'import json,sys; b=json.load(sys.stdin); b["unit_preserve"]=True; print(json.dumps(b, ensure_ascii=False))')"
 fi
+
+# 로그는 **마지막 override 까지 얹은** body 다. 앞에서 찍으면 --unit-preserve 로
+# 돌린 실행의 로그가 그 필드 없이 남아, 무엇으로 돌았는지 로그로 되짚을 수 없다 —
+# 이 변경이 없애려던 결함("권장 preset 으로 돌렸다"는 보고와 실제가 다름)과 같은 부류다.
+echo "$translate_body" | python3 -m json.tool
 
 translate_resp="$(curl -sS -X POST \
   -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
