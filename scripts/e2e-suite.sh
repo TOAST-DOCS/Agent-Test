@@ -202,7 +202,7 @@
 #                 translate_pr.py 로 번역한다.
 #   table-suite — 표 변형 종합 + stale 결함 재현 (stale-ify 커밋 포함).
 #                 기대: 번역 로직에 table-row reconcile(PR #290)이 있으면 exit 0,
-#                 없으면 exit 3 (version-guide/release-notes FAIL).
+#                 없으면 exit 3 (version-guide/release-history-table FAIL).
 #   jinja-mask  — mkdocs 템플릿 태그 마스크. 태그를 품은 유닛이 실제로 모델에
 #                 가도록 두 가지로 변형한다 (블록 안 본문 수정 / 문단을 새 태그로
 #                 감쌈). markup-churn 은 M4 미러가 churn 을 흡수해 태그 유닛이
