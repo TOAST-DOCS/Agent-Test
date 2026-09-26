@@ -172,29 +172,37 @@ merge_pr() {  # $1: PR URL
   gh pr merge "$1" --repo "$REPO" --merge >/dev/null
 }
 
+# ── 번역 옵션의 정본 = 권장 preset (대시보드 카탈로그) ──────────────────
+# 예전에는 아래 호출부가 플래그를 하드코딩했고, 그 목록이 배포된 권장 preset 과
+# 어긋나 있었다 — 실측 2026-09-26 기준 max-load-ratio 2 vs 4, skip-full-table
+# true vs false(정반대), load-exclude-tables·unit-preserve 누락. 즉 이 테스트는
+# 운영이 실제로 쓰는 조건을 한 번도 태우지 않았다.
+#
+# 이 스크립트는 **대시보드 의존이 없다** (헤더 주석 참고 — 로컬 translate_pr.py
+# 전용). 그래서 HTTP 로 묻지 않고 `$CLOUD_TRANSLATE_DIR` 체크아웃의 카탈로그를
+# 직접 읽는다. 로컬 코드를 돌리면서 옵션만 배포본에 물으러 갈 이유도 없다.
+# `--fix-korean-leftover` 와 `--llm-patch-fallback` 은 함께 지웠다 — 전자는
+# 프로덕션에 없는 값이고(=false), 후자는 `.env` 가 이미 켜므로 명시하면 두
+# 경로가 다른 메커니즘으로 켜게 된다.
+preset_eval="$(python3 "$(dirname "$0")/preset_options.py" \
+  --catalog-dir "$CLOUD_TRANSLATE_DIR" --mode local \
+  --engine claude-code --model claude-haiku-4-5 \
+  --tm-top-k 1 --chunk-workers 2 --workers 2)" || exit 1
+eval "$preset_eval"
+echo "translate argv: ${PRESET_ARGS[*]}"
+
 run_translate() {  # $1: PR URL  $2: 로그 이름  → 번역 PR URL 출력
   local log="$LOGDIR/$2.log"
   (cd "$CLOUD_TRANSLATE_DIR" && \
-    # e2e 는 **CLI 엔진으로 돈다** — 배포 잡의 .env 가
-    # TRANSLATE_TRANSLATE_ENGINE=claude-code 이므로 프로덕션과 같은 엔진을 태우는
-    # 것이 e2e 의 목적에 맞다. 모델은 **두 env 모두** 세팅해야 한다:
-    # ClaudeCodeTranslator 는 settings.claude_code_model 을 쓰고
-    # (translator.py:3918) anthropic_model 은 보지 않으므로, CLI 엔진에
-    # ANTHROPIC_MODEL 만 주면 조용히 무시되고 .env 값(sonnet)이 쓰인다 —
-    # 2026-08-24 실측으로 retranslate plan 이 그 함정에 빠져 haiku 로 로그를
-    # 찍으며 sonnet-4-6 으로 돌아 번역 PR 하나가 6.07M 토큰을 먹었다.
-    # ANTHROPIC_MODEL 도 함께 두는 이유: CLI 엔진에서도 llm-patch judge·표
-    # reconcile 등 일부 경로는 API translator 를 타고 그쪽은 anthropic_model 을
-    # 읽는다. translate/Jenkinsfile 의 MODEL_ENV 가 둘을 함께 세팅하는 것과 같다.
-    TRANSLATE_TRANSLATE_ENGINE=claude-code \
-    TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
-    TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
+    # engine·model 은 argv 가 아니라 **env** 로 간다 (`translate_pr.py` 에 그
+    # 이름의 플래그가 없다). 위 `eval "$preset_eval"` 이 그 export 를 이미
+    # 실행했고 이 서브셸이 물려받는다 — 어느 플래그가 env 전용인지는 preset
+    # 의 `env_only_flags` 가 정한다. `--model` 이 env 둘인 것도 거기서 온다:
+    # CLI 엔진은 TRANSLATE_CLAUDE_CODE_MODEL 만, API translator 는
+    # TRANSLATE_ANTHROPIC_MODEL 만 읽어서 하나만 주면 다른 경로가 조용히
+    # .env 기본값(sonnet)으로 돈다 (2026-08-24 에 6.07M 토큰을 먹은 함정).
     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$1" \
-      --diff-granularity block --glossary-mode service --max-load-ratio 2 \
-      --workers 2 --chunk-workers 2 --tm-top-k 1 \
-      --table-rows --skip-full-table --skip-anchor-only \
-      --assign-anchors --align-headings --llm-patch-fallback \
-      --fix-korean-leftover \
+      "${PRESET_ARGS[@]}" \
   ) >"$log" 2>&1 || { echo "error: translate_pr.py 실패 — $log" >&2; tail -30 "$log" >&2; exit 2; }
   grep -oE 'Translation PR: https://[^ ]+' "$log" | tail -1 | sed 's/Translation PR: //'
 }
