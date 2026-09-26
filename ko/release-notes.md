@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=f73105f85d1d -->
+<!-- pre-align:aligned sig=17a62ae542a5 -->
 
 <a id="compute-release-notes"></a>
 ## Compute > 릴리스 노트 { #compute-release-notes }
