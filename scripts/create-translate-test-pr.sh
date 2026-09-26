@@ -582,7 +582,7 @@ elif mutation == "add_repeated_heading_with_table":
 
 elif mutation == "bump_row_date":
     # 첫 표의 '두 번째' 데이터 행에서 날짜(YYYY-MM-DD)를 하루 뒤로 — cosmetic 수정.
-    # release-notes.md 픽스처에서 두 번째 행(2.4.1)은 en/ja 에 없는 stale 행이므로,
+    # release-history-table.md 픽스처에서 두 번째 행(2.4.1)은 en/ja 에 없는 stale 행이므로,
     # "en/ja 가 결여한 행을 ko diff 는 '수정' 으로만 보는" CK 인시던트(cloud-translate
     # PR #283) 원형을 재현한다.
     import datetime as _dt
@@ -923,7 +923,11 @@ declare -a PLAN_LLM_PATCH=(
 #                       행 유실 지속, ja 는 삽입 성공 — 원본 CK 인시던트의 "ja 엔 있고
 #                       en 엔 없음" 비대칭과 동일). 한 언어라도 유실이면 FAIL.
 #                       post-#283 은 결정적 삽입 or raise 로 해소되어야 한다.
-#   release-notes.md  : (결함 B — row-splice positional 손상; #283 범위 밖 별개 결함)
+#   release-history-table.md : (결함 B — row-splice positional 손상; #283 범위 밖 별개 결함)
+#                       원래 release-notes.md 가 이 표를 담았지만 b1b39205(09-16)에서 split-docs
+#                       e2e 가 그 문서를 실제 릴리스 노트(91절 × 11연도, 표 없음)로 가져가면서
+#                       이 plan 이 10단계에서 `bump_row_date: no date` 로 죽었다. 같은 표를
+#                       별도 문서로 되살렸다 — 내용은 b1b39205 직전(f988ccef) 그대로.
 #                       stale 행(2.4.1)의 날짜만 bump. changed load 107자 < floor 500
 #                       → load guard 미작동 → anchor-path row-splice 가 stale 표(4행)에
 #                       positional 매핑되어 2.4.1 번역이 2.4.0 행을 덮어쓰고 고아
@@ -1001,7 +1005,7 @@ declare -a PLAN_TABLE_SUITE=(
   "edit_body|ko/version-guide.md"
   "bump_row_date|ko/version-guide.md"
   "insert_keyed_table_row|ko/version-guide.md"
-  "bump_row_date|ko/release-notes.md"
+  "bump_row_date|ko/release-history-table.md"
   "edit_body|ko/pricing-guide.md"
   "edit_row_desc_cell|ko/spec-guide.md"
   "add_table_column|ko/component-guide.md"
@@ -1140,8 +1144,8 @@ case "$PLAN_NAME" in
     STALE_ROWS=(
       "en/version-guide.md|1.202602.1"
       "ja/version-guide.md|1.202602.1"
-      "en/release-notes.md|2.4.1"
-      "ja/release-notes.md|2.4.1"
+      "en/release-history-table.md|2.4.1"
+      "ja/release-history-table.md|2.4.1"
       "en/pricing-guide.md|Premium plan"
       "ja/pricing-guide.md|プレミアムプラン"
       "en/pricing-guide.md|Restore method"

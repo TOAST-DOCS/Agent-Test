@@ -90,7 +90,7 @@
 #                                의 종합 검증.
 #                                - version-guide: CK 인시던트 동형 (LLM-patch 경로).
 #                                  PR #283 미배포 = FAIL(행 유실), 배포 후 = 해소 기대.
-#                                - release-notes: row-splice positional 손상 (#283 범위 밖
+#                                - release-history-table: row-splice positional 손상 (#283 범위 밖
 #                                  별개 결함). #283 만 배포된 상태에서는 FAIL 이 정상.
 #                                  cloud-translate PR #290 (table-row reconcile, #283 위
 #                                  stacked) 배포 후에는 A·B 둘 다 PASS 가 기대값이다.
