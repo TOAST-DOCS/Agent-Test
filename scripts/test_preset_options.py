@@ -108,6 +108,35 @@ def main():
     check("없는 preset 은 목록과 함께 실패",
           r.returncode != 0 and "recommended" in r.stderr, r.stderr[:120])
 
+    # ── 6) --catalog-dir: 대시보드 없이 체크아웃의 카탈로그를 읽는다 ────
+    # 대시보드 의존이 0 인 스크립트(concurrent-prs · translation-lag-order)가
+    # 쓰는 길. env override 가 없으면 built-in(옛 값)으로 **조용히 떨어지면 안
+    # 된다** — 그게 이 모듈이 없애려는 드리프트 그 자체다.
+    import subprocess as sp
+    import tempfile as tf
+    from pathlib import Path as P
+
+    d = P(tf.mkdtemp()) / "fake-checkout"
+    (d / "dashboard" / "api").mkdir(parents=True)
+    # 카탈로그 모듈만 있고 .env 가 없는 체크아웃 → 실패해야 한다.
+    (d / "dashboard" / "api" / "translate_presets.py").write_text("", encoding="utf-8")
+    r = sp.run([sys.executable, str(HELPER), "--catalog-dir", str(d),
+                "--mode", "local"], capture_output=True, text=True)
+    check(".env 없으면 하드 실패", r.returncode != 0, f"rc={r.returncode}")
+    check("실패 메시지가 옛 값 위험을 짚는다",
+          "max-load-ratio 2" in r.stderr, r.stderr[:160])
+
+    # 카탈로그 자체가 없는 경로 → 역시 실패 (조용한 성공 금지).
+    r = sp.run([sys.executable, str(HELPER), "--catalog-dir", str(d.parent),
+                "--mode", "local"], capture_output=True, text=True)
+    check("카탈로그 없으면 하드 실패", r.returncode != 0, f"rc={r.returncode}")
+
+    # --payload 와 --catalog-dir 은 동시에 못 준다 (어느 쪽이 이겼는지 모르게 된다).
+    r = sp.run([sys.executable, str(HELPER), "--catalog-dir", str(d),
+                "--payload", "x.json", "--mode", "local"],
+               capture_output=True, text=True)
+    check("--payload 와 --catalog-dir 은 배타", r.returncode != 0)
+
     print()
     if FAILED:
         print(f"FAILED {len(FAILED)}건")

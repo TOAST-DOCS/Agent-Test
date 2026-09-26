@@ -54,6 +54,55 @@ def pick_preset(payload, name="recommended"):
         f"error: preset '{name}' 을 찾을 수 없습니다. 대시보드가 준 목록: {have}")
 
 
+def load_from_checkout(catalog_dir):
+    """cloud-translate 체크아웃의 preset 카탈로그를 **직접** 읽어 payload 를 만든다.
+
+    HTTP 대신 이 길이 있는 이유는 **검증 대상이 어디냐** 다. 배포 파이프라인을
+    태우는 스크립트는 배포된 대시보드에 물어야 맞지만, 로컬 `translate_pr.py`
+    를 태우는 스크립트(`e2e-concurrent-prs.sh` · `e2e-translation-lag-order.sh`)
+    는 그 체크아웃의 카탈로그를 읽는 편이 짝이 맞다 — 로컬 코드를 돌리면서
+    옵션만 배포본에 물으러 갈 이유가 없다. 그리고 그 둘은 **대시보드 의존이 0**
+    인 것이 문서화된 성질이라(헤더 주석), HTTP 를 넣으면 대시보드와 무관한
+    머지 순서 테스트가 대시보드가 죽으면 못 돌게 된다.
+
+    운영값은 env override(`TRANSLATE_TRANSLATE_PRESETS`)에 있고 그 출처는
+    `<dir>/dashboard/.env` 다. **없으면 실패한다** — built-in 으로 조용히
+    떨어지면 정확히 옛 값(`--max-load-ratio 2` · `--skip-full-table`)을 쓰게
+    되어, 이 모듈이 없애려던 드리프트를 되살린다. 실측 2026-09-26 기준 그
+    파일의 값은 배포본과 바이트 단위로 같다.
+    """
+    import os
+    import re
+    from pathlib import Path
+
+    d = Path(catalog_dir).expanduser().resolve()
+    dash = d / "dashboard"
+    if not (dash / "api" / "translate_presets.py").exists():
+        raise SystemExit(
+            f"error: preset 카탈로그가 없습니다: {dash}/api/translate_presets.py")
+
+    envf = dash / ".env"
+    raw = None
+    if envf.exists():
+        for line in envf.read_text(encoding="utf-8", errors="replace").splitlines():
+            m = re.match(r"\s*TRANSLATE_TRANSLATE_PRESETS\s*=\s*(.*)$", line)
+            if m:
+                raw = m.group(1).strip()
+                if len(raw) >= 2 and raw[0] == raw[-1] and raw[0] in "'\"":
+                    raw = raw[1:-1]
+                break
+    if not raw:
+        raise SystemExit(
+            f"error: {envf} 에서 TRANSLATE_TRANSLATE_PRESETS 를 찾지 못했습니다.\n"
+            "       그 값이 운영 preset 의 정본이고, 없이 읽으면 built-in(옛 값:\n"
+            "       max-load-ratio 2 · skip-full-table ON)으로 떨어지므로 진행하지 않습니다.")
+
+    sys.path.insert(0, str(dash))
+    os.environ["TRANSLATE_TRANSLATE_PRESETS"] = raw
+    from api.translate_presets import ui_translate_presets  # noqa: E402
+    return {"presets": ui_translate_presets()}
+
+
 def require_new_shapes(preset):
     """`args`/`opts` 가 없으면 **조용히 폴백하지 않고** 실패한다.
 
@@ -115,8 +164,12 @@ def _apply_overrides_to_args(cli_args, overrides):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--payload", required=True,
-                    help="GET /api/translate/presets 응답 JSON 파일 ('-' = stdin)")
+    src = ap.add_mutually_exclusive_group(required=True)
+    src.add_argument("--payload",
+                     help="GET /api/translate/presets 응답 JSON 파일 ('-' = stdin)")
+    src.add_argument("--catalog-dir",
+                     help="cloud-translate 체크아웃 경로 — 대시보드를 거치지 않고 "
+                          "그 카탈로그를 직접 읽는다 (로컬 전용 e2e 용)")
     ap.add_argument("--preset", default="recommended")
     ap.add_argument("--mode", required=True, choices=("api", "local"))
     ap.add_argument("--pr-url", default="", help="api 모드 body 의 pr_url")
@@ -134,8 +187,13 @@ def main(argv=None):
                     help="local 모드 argv 에 그대로 덧붙일 플래그")
     a = ap.parse_args(argv)
 
-    raw = sys.stdin.read() if a.payload == "-" else open(a.payload, encoding="utf-8").read()
-    preset = pick_preset(json.loads(raw), a.preset)
+    if a.catalog_dir:
+        payload = load_from_checkout(a.catalog_dir)
+    else:
+        raw = (sys.stdin.read() if a.payload == "-"
+               else open(a.payload, encoding="utf-8").read())
+        payload = json.loads(raw)
+    preset = pick_preset(payload, a.preset)
     require_new_shapes(preset)
 
     overrides = {

@@ -153,20 +153,32 @@ make_pr() {  # $1: branch  $2: a|b  $3: title  → PR URL
 }
 merge_pr() { gh pr merge "$1" --repo "$REPO" --merge >/dev/null; }
 
+# ── 번역 옵션의 정본 = 권장 preset (대시보드 카탈로그) ──────────────────
+# 예전에는 아래 호출부가 플래그를 하드코딩했고, 그 목록이 배포된 권장 preset 과
+# 어긋나 있었다 — 실측 2026-09-26 기준 max-load-ratio 2 vs 4, skip-full-table
+# true vs false(정반대), load-exclude-tables·unit-preserve 누락. 즉 이 테스트는
+# 운영이 실제로 쓰는 조건을 한 번도 태우지 않았다.
+#
+# 이 스크립트는 **대시보드 의존이 없다** (헤더 주석 참고 — 로컬 translate_pr.py
+# 전용). 그래서 HTTP 로 묻지 않고 `$CLOUD_TRANSLATE_DIR` 체크아웃의 카탈로그를
+# 직접 읽는다. 로컬 코드를 돌리면서 옵션만 배포본에 물으러 갈 이유도 없다.
+# `--fix-korean-leftover` 와 `--llm-patch-fallback` 은 함께 지웠다 — 전자는
+# 프로덕션에 없는 값이고(=false), 후자는 `.env` 가 이미 켜므로 명시하면 두
+# 경로가 다른 메커니즘으로 켜게 된다.
+preset_eval="$(python3 "$(dirname "$0")/preset_options.py" \
+  --catalog-dir "$CLOUD_TRANSLATE_DIR" --mode local \
+  --engine claude-code --model claude-haiku-4-5 \
+  --tm-top-k 1 --chunk-workers 2 --workers 2)" || exit 1
+eval "$preset_eval"
+echo "translate argv: ${PRESET_ARGS[*]}"
+
 run_translate() {  # $1: PR URL  $2: 로그 이름 → 번역 PR URL
   local log="$LOGDIR/$2.log"
   # e2e 는 CLI 엔진으로 돈다 (프로덕션과 같은 경로). 모델은 두 env 모두 세팅 —
   # 이유는 e2e-concurrent-prs.sh 의 같은 자리 주석 참고.
   (cd "$CLOUD_TRANSLATE_DIR" && \
-    TRANSLATE_TRANSLATE_ENGINE=claude-code \
-    TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
-    TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$1" \
-      --diff-granularity block --glossary-mode service --max-load-ratio 2 \
-      --workers 2 --chunk-workers 2 --tm-top-k 1 \
-      --table-rows --skip-full-table --skip-anchor-only \
-      --assign-anchors --align-headings --llm-patch-fallback \
-      --fix-korean-leftover \
+      "${PRESET_ARGS[@]}" \
   ) >"$log" 2>&1 || { echo "error: translate_pr.py 실패 — $log" >&2; tail -30 "$log" >&2; exit 2; }
   grep -oE 'Translation PR: https://[^ ]+' "$log" | tail -1 | sed 's/Translation PR: //'
 }

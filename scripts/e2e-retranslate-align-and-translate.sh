@@ -228,6 +228,24 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
 fi
 
 # local 단계 실행 헬퍼 — cloud-translate 체크아웃에서 python 스크립트를 돌린다.
+# ── 번역 옵션의 정본 = 대시보드의 권장 preset ───────────────────────────
+# 두 모드(local·api)가 플래그 목록을 각자 들고 있었고, 배포된 preset 과도
+# 어긋나 있었다 (실측 2026-09-26: max-load-ratio 2 vs 4 · skip-full-table
+# true vs false · load-exclude-tables·unit-preserve 누락). 이제 둘 다
+# `scripts/preset_options.py` 로 같은 응답에서 자기 인자를 만든다.
+# 이 스크립트는 이미 대시보드 의존이 있으므로 HTTP 로 묻는다 (대시보드 의존이
+# 없는 e2e-concurrent-prs.sh · e2e-translation-lag-order.sh 는 --catalog-dir).
+fetch_translate_preset() {
+  local out="$1" code
+  code="$(curl -sS -o "$out" -w '%{http_code}' \
+    -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+    "$DASHBOARD_BASE_URL/api/translate/presets" || echo 000)"
+  if [[ "$code" != "200" ]]; then
+    echo "error: 권장 preset 조회 실패 (HTTP $code)" >&2
+    exit 1
+  fi
+}
+
 run_local_step() {
   local script="$1"; shift
   echo "    \$ $script $*"
@@ -779,22 +797,25 @@ if (( LOCAL_MODE )); then
   # 한 plan 안에서 조건이 어긋나지 않는다.
   echo
   echo "[12/14] local translate_pr.py (dir=$CLOUD_TRANSLATE_DIR, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default})"
-  tx_env=()
-  [[ -n "$TRANSLATE_ENGINE" ]]        && tx_env+=("TRANSLATE_TRANSLATE_ENGINE=$TRANSLATE_ENGINE")
-  # ANTHROPIC_MODEL 단독으로는 CLI 엔진에 안 먹는다 — 위 7단계 주석 참고.
-  [[ -n "$TRANSLATE_MODEL" ]]         && tx_env+=("TRANSLATE_ANTHROPIC_MODEL=$TRANSLATE_MODEL"
-                                                  "TRANSLATE_CLAUDE_CODE_MODEL=$TRANSLATE_MODEL")
-  [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]] && tx_env+=("TRANSLATE_GUIDELINES_VARIANT_EN=$TRANSLATE_GUIDELINES_VARIANT_EN")
-  [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]] && tx_env+=("TRANSLATE_GUIDELINES_VARIANT_JA=$TRANSLATE_GUIDELINES_VARIANT_JA")
-  tx_opts=(--diff-granularity block --glossary-mode service --max-load-ratio 2
-           --workers 2 --table-rows --skip-full-table --skip-anchor-only
-           --assign-anchors --align-headings --llm-patch-fallback
-           --fix-korean-leftover)
-  [[ -n "$TRANSLATE_CHUNK_WORKERS" ]] && tx_opts+=(--chunk-workers "$TRANSLATE_CHUNK_WORKERS")
-  [[ -n "$TRANSLATE_TM_TOP_K" ]]      && tx_opts+=(--tm-top-k "$TRANSLATE_TM_TOP_K")
+  # 플래그·env 모두 preset 에서 온다. env 전용 플래그(--engine/--model)는
+  # helper 가 `export K=V` 줄로 내보내고 이 셸이 그것을 물려받는다 — 예전의
+  # tx_env 손조립(ANTHROPIC_MODEL 단독이면 CLI 엔진에 안 먹는 함정 포함)이
+  # 여기서 사라진다.
+  PRESET_JSON="$(mktemp)"
+  fetch_translate_preset "$PRESET_JSON"
+  preset_eval="$(python3 "$(dirname "$0")/preset_options.py" \
+    --payload "$PRESET_JSON" --mode local \
+    --engine "${TRANSLATE_ENGINE:-}" --model "${TRANSLATE_MODEL:-}" \
+    --tm-top-k "${TRANSLATE_TM_TOP_K:-}" \
+    --chunk-workers "${TRANSLATE_CHUNK_WORKERS:-}" \
+    --workers 2 \
+    --guidelines-variant-en "${TRANSLATE_GUIDELINES_VARIANT_EN:-}" \
+    --guidelines-variant-ja "${TRANSLATE_GUIDELINES_VARIANT_JA:-}")" || exit 1
+  eval "$preset_eval"
+  echo "  translate argv: ${PRESET_ARGS[*]}"
   set +e
-  (cd "$CLOUD_TRANSLATE_DIR" && env "${tx_env[@]}" \
-     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" "${tx_opts[@]}") 2>&1 | sed 's/^/    /'
+  (cd "$CLOUD_TRANSLATE_DIR" && \
+     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" "${PRESET_ARGS[@]}") 2>&1 | sed 's/^/    /'
   tx_rc=${PIPESTATUS[0]}
   set -e
   if (( tx_rc != 0 )); then
@@ -806,74 +827,24 @@ else
 echo
 echo "[12/14] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default})"
 
-# --engine 옵션이 지정된 경우에만 engine 필드 포함
-engine_json=""
-if [[ -n "$TRANSLATE_ENGINE" ]]; then
-  engine_json="\"engine\": \"$TRANSLATE_ENGINE\","
-fi
-
-# --model 값이 설정된 경우에만 model 필드 포함
-model_json=""
-if [[ -n "$TRANSLATE_MODEL" ]]; then
-  model_json="\"model\": \"$TRANSLATE_MODEL\","
-fi
-
-# --tm-top-k 값이 설정된 경우에만 tm_top_k 필드 포함
-tm_top_k_json=""
-if [[ -n "$TRANSLATE_TM_TOP_K" ]]; then
-  tm_top_k_json="\"tm_top_k\": \"$TRANSLATE_TM_TOP_K\","
-fi
-
-# PR#192/#199 개선: chunk_workers + guidelines_variant
-chunk_workers_json=""
-if [[ -n "$TRANSLATE_CHUNK_WORKERS" ]]; then
-  chunk_workers_json="\"chunk_workers\": \"$TRANSLATE_CHUNK_WORKERS\","
-fi
-gv_en_json=""
-if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]]; then
-  gv_en_json="\"guidelines_variant_en\": \"$TRANSLATE_GUIDELINES_VARIANT_EN\","
-fi
-gv_ja_json=""
-if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]]; then
-  gv_ja_json="\"guidelines_variant_ja\": \"$TRANSLATE_GUIDELINES_VARIANT_JA\","
-fi
-
-# 권장 preset flags:
-#   --diff-granularity block --glossary-mode service --max-load-ratio 2
-#   --workers 2 --table-rows --skip-full-table --skip-anchor-only
-#   --assign-anchors --align-headings
-# PR#207/#211 (within/cross-opcode batching) 은 자동 활성.
+# body 는 preset 에서 만든다 (`opts` = /api/translate 가 받는 필드 이름).
+# e2e 고유의 비용 억제 override 만 위에 얹는다.
 # --translate-pipeline-branch: translate 잡을 cloud-translate 의 특정 Jenkins
 # multibranch child (예: PR-532) 에서 실행 — 미머지 브랜치의 번역 로직을
 # 배포 없이 Jenkins 경로로 검증할 때. 빈 값이면 필드 미전송(=main).
-translate_pipeline_branch_json=""
-if [[ -n "$TRANSLATE_PIPELINE_BRANCH" ]]; then
-  translate_pipeline_branch_json="\"pipeline_branch\": \"$TRANSLATE_PIPELINE_BRANCH\","
-  echo "  translate pipeline_branch: $TRANSLATE_PIPELINE_BRANCH"
-fi
-
-translate_body=$(cat <<JSON
-{
-  "pr_url": "$ko_pr_url",
-  $translate_pipeline_branch_json
-  $engine_json
-  $model_json
-  $tm_top_k_json
-  $chunk_workers_json
-  $gv_en_json
-  $gv_ja_json
-  "diff_granularity": "block",
-  "glossary_mode": "service",
-  "max_load_ratio": "2",
-  "workers": "2",
-  "table_rows": true,
-  "skip_full_table": true,
-  "skip_anchor_only": true,
-  "assign_anchors": true,
-  "align_headings": true
-}
-JSON
-)
+PRESET_JSON="$(mktemp)"
+fetch_translate_preset "$PRESET_JSON"
+translate_body="$(python3 "$(dirname "$0")/preset_options.py" \
+  --payload "$PRESET_JSON" --mode api \
+  --pr-url "$ko_pr_url" \
+  --pipeline-branch "${TRANSLATE_PIPELINE_BRANCH:-}" \
+  --engine "${TRANSLATE_ENGINE:-}" --model "${TRANSLATE_MODEL:-}" \
+  --tm-top-k "${TRANSLATE_TM_TOP_K:-}" \
+  --chunk-workers "${TRANSLATE_CHUNK_WORKERS:-}" \
+  --workers 2 \
+  --guidelines-variant-en "${TRANSLATE_GUIDELINES_VARIANT_EN:-}" \
+  --guidelines-variant-ja "${TRANSLATE_GUIDELINES_VARIANT_JA:-}")" || exit 1
+echo "$translate_body" | python3 -m json.tool
 
 translate_resp="$(curl -sS -X POST \
   -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
