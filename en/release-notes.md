@@ -4,18 +4,23 @@
 
 <a id="compute-release-notes"></a>
 ## Compute > Release Notes { #compute-release-notes }
-## September 24, 2026
-### Image
+<a id="september-24-2026"></a>
+## September 24, 2026 { #september-24-2026 }
+<a id="september-24-2026-image"></a>
+### Image { #september-24-2026-image }
 - Added the Rocky Linux 9.6 image.
 - Updated the kernel of the Ubuntu Server 24.04 LTS image to the latest version.
 
-## September 10, 2026
-### Instance
+<a id="september-10-2026"></a>
+## September 10, 2026 { #september-10-2026 }
+<a id="september-10-2026-instance"></a>
+### Instance { #september-10-2026-instance }
 - Added a feature to filter the instance list by tag.
 
 <a id="august-20-2026"></a>
-## August 20, 2026
-### Image
+## August 20, 2026 { #august-20-2026 }
+<a id="august-20-2026-image"></a>
+### Image { #august-20-2026-image }
 
 * GPU-related (Linux)
     * Updated the NVIDIA driver: 580.105.08 → 580.173.02
@@ -52,7 +57,7 @@
 <a id="april-28-2026"></a>
 ## April 28, 2026 { #april-28-2026 }
 <a id="april-28-2026-image"></a>
-### Image
+### Image { #april-28-2026-image }
 
 * Added new images
     * Ubuntu Server 22.04.5 LTS for Deep Learning v8.0.0(2026.04.28.)
