@@ -1,7 +1,16 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > インストールコンポーネントガイド { #compute-instance-installation-component-guide }
+
+この段落は既存のセクションに追加されたテスト段落です。既存の見出しはそのままにしておく必要があります。
+
+<a id="test-added-subsection"></a>
+### テスト用サブセクション { #test-added-subsection }
+
+このサブセクションは翻訳パイプラインのテストのために追加されました。新規 h3 が翻訳され、3 つの言語に同じアンカーID が付与されるかを確認します。
 
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
