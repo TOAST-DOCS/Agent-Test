@@ -246,4 +246,4 @@ $ sudo update-grub
 <a id="test-added-section"></a>
 ## 테스트용 추가 섹션 { #test-added-section }
 
-이 섹션은 번역 파이프라인 테스트를 위해 새로 추가한 섹션입니다. 신규 섹션이 번역되고 ko/en/ja 에 동일한 anchor id 가 부여되는지 확인합니다.
+이 섹션은 번역 파이프라인 테스트를 위해 새로 추가한 섹션입니다. 신규 섹션이 번역되고 ko/en/ja에 동일한 anchor id가 부여되는지 확인합니다.
