@@ -1,20 +1,25 @@
-<!-- pre-align:aligned sig=f73105f85d1d -->
+<!-- pre-align:aligned sig=17a62ae542a5 -->
 
 <a id="compute-release-notes"></a>
 ## Compute > 릴리스 노트 { #compute-release-notes }
 
-## 2026. 09. 24.
-### Image
+<a id="september-24-2026"></a>
+## 2026. 09. 24. { #september-24-2026 }
+<a id="september-24-2026-image"></a>
+### Image { #september-24-2026-image }
 - Rocky Linux 9.6 이미지를 새로 제공합니다.
 - Ubuntu Server 24.04 LTS 이미지의 커널을 최신 버전으로 갱신했습니다.
 
-## 2026. 09. 10.
-### Instance
+<a id="september-10-2026"></a>
+## 2026. 09. 10. { #september-10-2026 }
+<a id="september-10-2026-instance"></a>
+### Instance { #september-10-2026-instance }
 - 인스턴스 목록에서 태그로 필터링하는 기능을 추가했습니다.
 
 <a id="august-20-2026"></a>
-## 2026. 08. 20.
-### Image
+## 2026. 08. 20. { #august-20-2026 }
+<a id="august-20-2026-image"></a>
+### Image { #august-20-2026-image }
 
 * GPU 관련(Linux)
     * NVIDIA 드라이버 업데이트: 580.105.08 → 580.173.02
@@ -51,7 +56,7 @@
 <a id="april-28-2026"></a>
 ## 2026. 04. 28. { #april-28-2026 }
 <a id="april-28-2026-image"></a>
-### Image
+### Image { #april-28-2026-image }
 
 * 신규 이미지 추가
     * Ubuntu Server 22.04.5 LTS for Deep Learning v8.0.0(2026.04.28.)
