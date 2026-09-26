@@ -352,6 +352,30 @@ if (( ! TABLE_RECONCILE )) && (( ! LOCAL_MODE )); then
   exit 1
 fi
 
+# ── 번역 옵션의 정본 = 대시보드의 권장 preset ───────────────────────────
+# 예전에는 이 스크립트가 "권장 preset" 이라고 말하면서 그 목록을 **두 벌**
+# 하드코딩했다 (local 용 CLI 플래그 · api 용 JSON body). 두 벌이라 서로도
+# 갈리고 배포된 preset 과도 갈렸다 — 실측 2026-09-26 기준 max-load-ratio 2 vs 4,
+# skip-full-table true vs false(정반대), load-exclude-tables·unit-preserve 누락.
+# 즉 두 모드가 사이좋게 운영 조건이 아닌 것을 태우고 있었다.
+#
+# 이제 둘 다 `GET /api/translate/presets` 를 받아 `scripts/preset_options.py`
+# 로 자기 모드의 인자를 만든다. 매핑을 이 스크립트에 적지 않는 것이 요점이다.
+fetch_translate_preset() {
+  local out="$1"
+  local code
+  code="$(curl -sS -o "$out" -w '%{http_code}' \
+    -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
+    "$DASHBOARD_BASE_URL/api/translate/presets" || echo 000)"
+  if [[ "$code" != "200" ]]; then
+    echo "error: 권장 preset 조회 실패 (HTTP $code) — $DASHBOARD_BASE_URL/api/translate/presets" >&2
+    echo "       preset 을 모르면 두 모드가 각자 다른 옵션으로 돌게 되므로 진행하지 않는다." >&2
+    exit 1
+  fi
+}
+
+PRESET_JSON=""   # step 15 에서 채운다 (tmpdir 가 그때 존재)
+
 # PR merge 헬퍼 — "Base branch was modified" 를 재시도로 흡수한다.
 #
 # 왜 필요한가 (2026-09-05 실측, suite 의 round1·markup-churn): 이 스크립트는
@@ -934,36 +958,57 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   # 하려다 LLM-patch fallback 을 태운다 — 그 경로가 이 변형의 검증 대상이다.
   reconcile_opt=()
   if (( ! TABLE_RECONCILE )); then reconcile_opt=(--no-table-reconcile); fi
+  # UNIT_PRESERVE 는 이제 preset 이 정한다 (배포본은 켠다). `--unit-preserve`
+  # 를 명시했을 때만 preset 위에 덧붙인다 — preset 이 이미 켜 두면 중복이지만
+  # argparse 가 같은 store_true 를 두 번 받아도 결과는 같다.
   unit_preserve_opt=()
   if (( UNIT_PRESERVE )); then unit_preserve_opt=(--unit-preserve); fi
+
+  # preset → argv + env. env 전용 플래그(--engine/--model)는 helper 가
+  # `export K=V` 줄로 내보내고, 나머지는 PRESET_ARGS 배열로 온다.
+  PRESET_JSON="$tmpdir/translate_preset.json"
+  fetch_translate_preset "$PRESET_JSON"
+  preset_eval="$(python3 "$(dirname "$0")/preset_options.py" \
+    --payload "$PRESET_JSON" --mode local \
+    --engine "${TRANSLATE_ENGINE:-}" --model "${TRANSLATE_MODEL:-}" \
+    --tm-top-k "${TRANSLATE_TM_TOP_K:-}" \
+    --chunk-workers "${TRANSLATE_CHUNK_WORKERS:-}" \
+    --workers 2 \
+    --guidelines-variant-en "${TRANSLATE_GUIDELINES_VARIANT_EN:-}" \
+    --guidelines-variant-ja "${TRANSLATE_GUIDELINES_VARIANT_JA:-}")" || exit 1
+  eval "$preset_eval"
+  # 실제로 넘기는 argv 를 한 줄로 굳혀 두고 그것을 찍는다 — preset args 만
+  # 찍으면 뒤에 붙는 unit-preserve·reconcile 플래그가 로그에서 빠져, 무엇으로
+  # 돌았는지 로그로 되짚을 수 없다 (api 쪽 body 로깅과 같은 이유).
+  TRANSLATE_ARGV=("${PRESET_ARGS[@]}" "${unit_preserve_opt[@]}" "${reconcile_opt[@]}")
+  echo "  translate argv: ${TRANSLATE_ARGV[*]}"
   set +e
-  # e2e 는 **CLI 엔진으로 돈다** — 배포 잡의 .env 가
-    # TRANSLATE_TRANSLATE_ENGINE=claude-code 이므로 프로덕션과 같은 엔진을 태우는
-    # 것이 e2e 의 목적에 맞다. 모델은 **두 env 모두** 세팅해야 한다:
-    # ClaudeCodeTranslator 는 settings.claude_code_model 을 쓰고
-    # (translator.py:3918) anthropic_model 은 보지 않으므로, CLI 엔진에
-    # ANTHROPIC_MODEL 만 주면 조용히 무시되고 .env 값(sonnet)이 쓰인다 —
-    # 2026-08-24 실측으로 retranslate plan 이 그 함정에 빠져 haiku 로 로그를
-    # 찍으며 sonnet-4-6 으로 돌아 번역 PR 하나가 6.07M 토큰을 먹었다.
-    # ANTHROPIC_MODEL 도 함께 두는 이유: CLI 엔진에서도 llm-patch judge·표
-    # reconcile 등 일부 경로는 API translator 를 타고 그쪽은 anthropic_model 을
-    # 읽는다. translate/Jenkinsfile 의 MODEL_ENV 가 둘을 함께 세팅하는 것과 같다.
-    (cd "$CLOUD_TRANSLATE_DIR" && \
-    TRANSLATE_TRANSLATE_ENGINE=claude-code \
-    TRANSLATE_ANTHROPIC_MODEL=claude-haiku-4-5 \
-    TRANSLATE_CLAUDE_CODE_MODEL=claude-haiku-4-5 \
+  # engine·model 은 argv 가 아니라 **env** 로 간다 — 위 `eval "$preset_eval"` 이
+  # 그 export 줄을 이미 실행했다 (어느 플래그가 env 전용인지는 preset 응답의
+  # `env_only_flags` 가 정한다). 이 서브셸이 그 env 를 물려받는다.
+  (cd "$CLOUD_TRANSLATE_DIR" && \
     "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$ko_pr_url" \
-      --diff-granularity block --glossary-mode service --max-load-ratio 2 \
-      --workers 2 --chunk-workers 2 --tm-top-k 1 \
-      --table-rows --skip-full-table --skip-anchor-only \
-      --assign-anchors --align-headings --llm-patch-fallback \
-      --list-items "${unit_preserve_opt[@]}" \
-      --fix-korean-leftover "${reconcile_opt[@]}" \
+      "${TRANSLATE_ARGV[@]}" \
   ) 2>&1 | tee "$local_log"
-  # ↑ --fix-korean-leftover: 표 헤더/짧은 조각 재번역 시 간헐적으로 남는 한글
-  #   잔류(결함 C — 예: ja 헤더 `판교`)를 커밋 전에 스캔·수정. step 17 의
-  #   rule (5) 한글 잔류 검사와 짝. dashboard API 는 이 옵션을 아직 노출하지
-  #   않으므로 --translate api 실행은 결함 C 로 rule (5) FAIL 이 날 수 있다.
+  # ↑ 플래그는 전부 preset 에서 온다 (`PRESET_ARGS`). 여기 직접 적혀 있던
+  #   목록은 배포된 preset 과 어긋나 있었고 (max-load-ratio 2 vs 4 ·
+  #   skip-full-table true vs false), api 모드의 JSON body 와도 갈렸다.
+  #
+  #   함께 지운 것 둘:
+  #   - `--llm-patch-fallback` — `.env` 가 이미 `TRANSLATE_DIFF_LLM_PATCH_
+  #     FALLBACK=true` 다 (`.env.prod.cli` 와 같은 값). api 모드는 그 env 에만
+  #     의존하므로, 명시 플래그를 빼야 두 모드가 **같은 메커니즘**으로 켠다.
+  #   - `--fix-korean-leftover` — 프로덕션에는 이 값이 없다(=false). local 만
+  #     켜 두면 e2e 가 운영과 다른 조건을 태우고, 그 플래그가 가려 주던 한글
+  #     잔류(결함 C)가 e2e 에서 영영 안 보인다. 드러나는 쪽이 맞다.
+  #
+  #   engine·model 은 argv 가 아니라 env 로 간다 — `translate_pr.py` 에 그
+  #   이름의 플래그가 없기 때문이고, 어느 플래그가 env 전용인지는
+  #   preset 응답의 `env_only_flags` 가 알려 준다 (`preset_options.py`).
+  #   `--model` 이 env 둘인 것도 거기서 온다: CLI 엔진은
+  #   TRANSLATE_CLAUDE_CODE_MODEL 만, API translator 는 TRANSLATE_ANTHROPIC_MODEL
+  #   만 읽어서 하나만 주면 다른 경로가 조용히 .env 기본값(sonnet)으로 돈다 —
+  #   2026-08-24 에 그 함정으로 번역 PR 하나가 6.07M 토큰을 먹었다.
   local_rc=${PIPESTATUS[0]}
   set -e
   if (( local_rc != 0 )); then
@@ -975,90 +1020,33 @@ else
 echo
 echo "[15/17] POST $DASHBOARD_BASE_URL/api/translate (권장 preset, PR=$ko_pr_url, engine=${TRANSLATE_ENGINE:-default}, model=${TRANSLATE_MODEL:-default}, tm_top_k=${TRANSLATE_TM_TOP_K:-default}, chunk_workers=${TRANSLATE_CHUNK_WORKERS:-default}, gv_en=${TRANSLATE_GUIDELINES_VARIANT_EN:-default}, gv_ja=${TRANSLATE_GUIDELINES_VARIANT_JA:-default})"
 
-# --engine 옵션이 지정된 경우에만 engine 필드 포함
-engine_json=""
-if [[ -n "$TRANSLATE_ENGINE" ]]; then
-  engine_json="\"engine\": \"$TRANSLATE_ENGINE\","
+# body 는 preset 에서 만든다 (`opts` = /api/translate 가 받는 필드 이름).
+# 하드코딩했던 목록은 배포된 preset 과 어긋나 있었고 local 모드와도 갈렸다.
+# e2e 고유의 비용 억제 override(model·tm-top-k·chunk-workers·workers)만 위에
+# 얹는다 — preset 이 아니라 이 하네스의 선택이라 한 곳에서 읽혀야 한다.
+PRESET_JSON="$tmpdir/translate_preset.json"
+fetch_translate_preset "$PRESET_JSON"
+translate_body="$(python3 "$(dirname "$0")/preset_options.py" \
+  --payload "$PRESET_JSON" --mode api \
+  --pr-url "$ko_pr_url" \
+  --pipeline-branch "${TRANSLATE_PIPELINE_BRANCH:-}" \
+  --engine "${TRANSLATE_ENGINE:-}" --model "${TRANSLATE_MODEL:-}" \
+  --tm-top-k "${TRANSLATE_TM_TOP_K:-}" \
+  --chunk-workers "${TRANSLATE_CHUNK_WORKERS:-}" \
+  --workers 2 \
+  --guidelines-variant-en "${TRANSLATE_GUIDELINES_VARIANT_EN:-}" \
+  --guidelines-variant-ja "${TRANSLATE_GUIDELINES_VARIANT_JA:-}")" || exit 1
+
+# UNIT_PRESERVE 는 preset 이 정한다. `--unit-preserve` 로 명시하면 그 위에 얹는다.
+if (( UNIT_PRESERVE )); then
+  translate_body="$(printf '%s' "$translate_body" \
+    | python3 -c 'import json,sys; b=json.load(sys.stdin); b["unit_preserve"]=True; print(json.dumps(b, ensure_ascii=False))')"
 fi
 
-# --model 값이 설정된 경우에만 model 필드 포함 (default 는 서버가 결정)
-model_json=""
-if [[ -n "$TRANSLATE_MODEL" ]]; then
-  model_json="\"model\": \"$TRANSLATE_MODEL\","
-fi
-
-# --tm-top-k 값이 설정된 경우에만 tm_top_k 필드 포함
-tm_top_k_json=""
-if [[ -n "$TRANSLATE_TM_TOP_K" ]]; then
-  tm_top_k_json="\"tm_top_k\": \"$TRANSLATE_TM_TOP_K\","
-fi
-
-# PR#192/#199 개선: chunk_workers 로 한 파일 안 chunk 병렬 API 호출 exercise
-chunk_workers_json=""
-if [[ -n "$TRANSLATE_CHUNK_WORKERS" ]]; then
-  chunk_workers_json="\"chunk_workers\": \"$TRANSLATE_CHUNK_WORKERS\","
-fi
-
-# PR#199 개선: guidelines_variant 로 en/ja 가이드라인 크기 조절 (input 토큰 절감)
-gv_en_json=""
-if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_EN" ]]; then
-  gv_en_json="\"guidelines_variant_en\": \"$TRANSLATE_GUIDELINES_VARIANT_EN\","
-fi
-gv_ja_json=""
-if [[ -n "$TRANSLATE_GUIDELINES_VARIANT_JA" ]]; then
-  gv_ja_json="\"guidelines_variant_ja\": \"$TRANSLATE_GUIDELINES_VARIANT_JA\","
-fi
-
-# 권장 preset flags:
-#   --diff-granularity block --glossary-mode service --max-load-ratio 2
-#   --workers 2 --table-rows --skip-full-table --skip-anchor-only
-#   --assign-anchors --align-headings --list-items
-# --list-items (cloud-translate #924/#984, 운영 프리셋 2026-09-21 부터): /api/translate
-# 는 프리셋을 서버에서 적용하지 않으므로 여기서 명시해야 잡에 간다. 산출물
-# 판정은 e2e-list-items-pipeline.sh 가 맡고, 여기서는 켠 상태로 파이프라인이
-# 도는지만 본다.
-# PR#207/#211 (within/cross-opcode batching) 은 자동 활성 — 별도 설정 없음.
-# PR#220 (api-guide dedup) 은 파일명 substring 매치 (기본 "api-guide"). Agent-Test
-# 는 "public-api.md" 라 자동 미매치 — 대시보드에 dedup path override API 는 없음.
-# --translate-pipeline-branch: translate 잡을 cloud-translate 의 특정 Jenkins
-# multibranch child (예: PR-532) 에서 실행 — 미머지 브랜치의 번역 로직을
-# 배포 없이 Jenkins 경로로 검증할 때. 빈 값이면 필드 미전송(=main).
-translate_pipeline_branch_json=""
-if [[ -n "$TRANSLATE_PIPELINE_BRANCH" ]]; then
-  translate_pipeline_branch_json="\"pipeline_branch\": \"$TRANSLATE_PIPELINE_BRANCH\","
-  echo "  translate pipeline_branch: $TRANSLATE_PIPELINE_BRANCH"
-fi
-
-# UNIT_PRESERVE 는 운영 프리셋에 없다 — --unit-preserve 로 명시했을 때만 보낸다.
-# /api/translate 는 프리셋을 서버에서 적용하지 않고 본문의 필드만 Jenkins
-# 파라미터로 옮기므로, 여기 없으면 잡에 가지 않는다.
-unit_preserve_json=""
-if (( UNIT_PRESERVE )); then unit_preserve_json=',
-  "unit_preserve": true'; fi
-
-translate_body=$(cat <<JSON
-{
-  "pr_url": "$ko_pr_url",
-  $translate_pipeline_branch_json
-  $engine_json
-  $model_json
-  $tm_top_k_json
-  $chunk_workers_json
-  $gv_en_json
-  $gv_ja_json
-  "diff_granularity": "block",
-  "glossary_mode": "service",
-  "max_load_ratio": "2",
-  "workers": "2",
-  "table_rows": true,
-  "skip_full_table": true,
-  "skip_anchor_only": true,
-  "assign_anchors": true,
-  "align_headings": true,
-  "list_items": true$unit_preserve_json
-}
-JSON
-)
+# 로그는 **마지막 override 까지 얹은** body 다. 앞에서 찍으면 --unit-preserve 로
+# 돌린 실행의 로그가 그 필드 없이 남아, 무엇으로 돌았는지 로그로 되짚을 수 없다 —
+# 이 변경이 없애려던 결함("권장 preset 으로 돌렸다"는 보고와 실제가 다름)과 같은 부류다.
+echo "$translate_body" | python3 -m json.tool
 
 translate_resp="$(curl -sS -X POST \
   -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
