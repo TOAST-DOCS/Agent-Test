@@ -1,7 +1,17 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f73105f85d1d -->
 
 <a id="compute-release-notes"></a>
 ## Compute > リリースノート { #compute-release-notes }
+## 2026. 09. 24.
+### Image
+- Rocky Linux 9.6 イメージを新たに提供します。
+- Ubuntu Server 24.04 LTS イメージのカーネルを最新バージョンに更新しました。
+
+## 2026. 09. 10.
+### Instance
+- インスタンス一覧でタグによるフィルタリング機能を追加しました。
 
 <a id="august-20-2026"></a>
 ## 2026. 08. 20.
