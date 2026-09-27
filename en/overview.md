@@ -238,3 +238,8 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 ```
 $ sudo update-grub
 ```
+
+<a id="e2e-docs-url-locale"></a>
+### Encryption Key Store Settings
+
+To create an encrypted volume, you must first [create a key store](https://docs.nhncloud.com/en/Security/Secure%20Key%20Manager/en/getting-started/#e2e-old-anchor). For the public sector environment, see the [public sector guide](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/). For Object Storage authentication, see [Authentication and Authorization](/Storage/Object%20Storage/en/api-guide/#auth), and for the YAML format, see the [Yaml homepage](https://yaml.org/). For console usage, see [https://external.example.com/docs](https://docs.nhncloud.com/en/Security/Secure%20Key%20Manager/en/console-guide/), and see https://link.example.com/r?u=https://docs.nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/console-guide/ for the redirector form.
