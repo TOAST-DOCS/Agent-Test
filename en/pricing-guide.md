@@ -12,7 +12,6 @@ This document summarizes the instance pricing plans and the limits each plan pro
 |---|---|---|---|
 | Basic plan | 10 | 1TB | Email support |
 | Standard plan | 50 | 10TB | Email and phone support |
-| Premium plan | 200 | 50TB | Dedicated engineer support |
 
 <a id="billing-notes"></a>
 ### Billing notes { #billing-notes }
@@ -26,4 +25,3 @@ Billing is calculated hourly, and storage charges continue to accrue even when a
 |---|---|
 | Backup cycle | A snapshot is taken automatically once per day. |
 | Retention period | Snapshots that have been created are kept for 30 days. |
-| Restore method | You can perform a restore straight from the console. |
