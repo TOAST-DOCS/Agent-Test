@@ -1,3 +1,5 @@
+<!-- pre-align:aligned sig=cdbc88f0a12c -->
+
 {%- set api_host = "api-jinja.gov-nhncloudservice.com" if "gov" in build_flags else "api-jinja.nhncloudservice.com" -%}
 <a id="sample-jinja-guide"></a>
 ## Sample > Jinja Guide { #sample-jinja-guide }
