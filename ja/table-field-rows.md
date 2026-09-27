@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e0f1e1d00 -->
 
 <a id="tfr"></a>
@@ -8,7 +10,7 @@
 <a id="tfr-overview"></a>
 ## 概要 { #tfr-overview }
 
-サービス設定を修正するAPIです。リクエスト本文には修正するフィールドのみを入れます。
+サービス設定を修正するAPIです。リクエスト本文には修正するフィールドのみを入れ、入れなかったフィールドは既存の値を維持します。
 
 <a id="tfr-fields"></a>
 ## リクエスト本文 { #tfr-fields }
@@ -25,7 +27,6 @@
 | isAllowWhenEmptyReferrer | Boolean | 任意     | true      | true/false             | リファラーヘッダがない場合、コンテンツアクセス許可(true)/拒否(false)             |
 | description           | String  | 任意  |        | 最大255文字                                            | 説明                                                 |
 | domainAlias           | List    | 任意 |        | 最大255文字                                              | ドメインエイリアス(個人または会社が所有しているドメインを使用) |
-| createTime            | String  | 任意 |        |                                                              | 作成日時 |
 | defaultMaxAge         | Integer | 任意 | 0      | 0～2,147,483,647                                            | キャッシュ満了時間(秒)、デフォルト値0は604,800秒です。              |
 | origins               | List    | 必須  |        |                                                              | オリジンサーバー                                            |
 | origins[0].origin     | String  | 必須  |        | 最大255文字                                            | オリジンサーバー(ドメインまたはIP)                                      |
