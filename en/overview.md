@@ -242,6 +242,6 @@ $ sudo update-grub
 ```
 
 <a id="e2e-docs-url-locale"></a>
-### Encryption Key Store Settings
+### Encryption Key Store Settings { #e2e-docs-url-locale }
 
 To create an encrypted volume, you must first [create a key store](https://docs.nhncloud.com/en/Security/Secure%20Key%20Manager/en/getting-started/#create-a-key-store). For the public environment, see [public guide](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/). For Object Storage authentication, see [Authentication and Authorization](/Storage/Object%20Storage/en/api-guide/#auth). For YAML format, see [YAML homepage](https://yaml.org/). This sentence is a translation control sample (20260927-143744). For console usage, see [https://external.example.com/docs](https://docs.nhncloud.com/en/Security/Secure%20Key%20Manager/en/console-guide/). For addresses going through a redirector, see https://link.example.com/r?u=https://docs.nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/console-guide/.
