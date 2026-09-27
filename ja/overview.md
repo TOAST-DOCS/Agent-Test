@@ -249,6 +249,6 @@ $ sudo update-grub
 ```
 
 <a id="e2e-docs-url-locale"></a>
-### 暗号化キーストア設定
+### 暗号化キーストア設定 { #e2e-docs-url-locale }
 
 暗号化ボリュームを作成するには、あらかじめ[キーストアを作成](https://docs.nhncloud.com/ja/Security/Secure%20Key%20Manager/ja/getting-started/#create-a-key-store)する必要があります。公共環境は[公共ガイド](https://docs.gov-nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/getting-started-gov/)を参照してください。オブジェクトストレージ認証は[認証およびアクセス許可](/Storage/Object%20Storage/ja/api-guide/#auth)を、YAML 形式は[YAML ホームページ](https://yaml.org/)を参照してください。この文は翻訳対照群です(20260927-144355)。コンソール使用方法は[https://external.example.com/docs](https://docs.nhncloud.com/ja/Security/Secure%20Key%20Manager/ja/console-guide/)から、リダイレクター経由のアドレスは https://link.example.com/r?u=https://docs.nhncloud.com/ko/Security/Secure%20Key%20Manager/ko/console-guide/ から確認します。
