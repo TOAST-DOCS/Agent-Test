@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=e2e0f1e1d00 -->
+<!-- pre-align:aligned sig=7a202975f1db -->
 
 <a id="tfr"></a>
 # table-field-rows e2e 픽스처
@@ -8,7 +8,7 @@
 <a id="tfr-overview"></a>
 ## 개요 { #tfr-overview }
 
-서비스 설정을 수정하는 API입니다. 요청 본문에는 수정할 필드만 넣습니다.
+서비스 설정을 수정하는 API입니다. 요청 본문에는 수정할 필드만 넣고, 넣지 않은 필드는 기존 값을 유지합니다.
 
 <a id="tfr-fields"></a>
 ## 요청 본문 { #tfr-fields }
