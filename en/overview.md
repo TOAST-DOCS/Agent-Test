@@ -238,3 +238,23 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 ```
 $ sudo update-grub
 ```
+
+<a id="e2e-mirror-reuse"></a>
+### Mirror Case A Reuse
+
+To create an encrypted volume, first [create a key store](/Security/Secure%20Key%20Manager/en/getting-started/#e2e-mirror-new-a) in the console.
+
+<a id="e2e-mirror-substitute"></a>
+### Mirror Case B Substitution
+
+For console usage, see the [console guide](/Security/Secure%20Key%20Manager/en/console-guide/#e2e-mirror-old-b).
+
+<a id="e2e-mirror-giveup"></a>
+### Mirror Case C Unlocatable
+
+For the API, see the [API guide](https://docs.nhncloud.com/en/Security/Secure%20Key%20Manager/en/api-guide/#e2e-mirror-old-c).
+
+<a id="e2e-mirror-control"></a>
+### Mirror Control
+
+This section is a link-free prose control.
