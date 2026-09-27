@@ -1,5 +1,3 @@
-<!-- machine_translated: true -->
-
 # List-item splice fixture — untouched sibling bullets
 
 A Markdown list has no blank line between its items, so it is captured as a **single block**.
@@ -30,7 +28,7 @@ Exposed, they change; not exposed, they stay byte-identical — that is the judg
 * [Settings by Feature](./feature-settings/)
     * [DEX Encryption Target Specification](./dex-encryption/)
 * [Service API](./service-api/)
-* [Release Notes](./release-notes/)
+* [Release Notes and Change History](./release-notes/)
 
 Both pinned renderings come from drift that was actually observed.
 
