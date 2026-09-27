@@ -3,7 +3,7 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 개요 { #compute-instance-overview }
 
-인스턴스는 가상의 CPU, 메모리, 루트 블록 스토리지로 구성된 가상 서버입니다. 이 서버에 고객의 서비스나 애플리케이션을 설치하고 NHN Cloud가 제공하는 다양한 서비스를 조합하여 사용합니다.
+인스턴스는 가상의 CPU, 메모리, 루트 블록 스토리지로 구성된 가상 서버입니다. 이 서버에 고객의 서비스나 애플리케이션을 설치하고 NHN Cloud가 제공하는 다양한 서비스를 조합하여 사용합니다. (fence-noop 대조군 20260927-142923)
 
 <a id="components"></a>
 ## 인스턴스 구성 요소 { #components }
@@ -250,7 +250,7 @@ $ sudo update-grub
 
 ```
 $ curl -X POST -H 'Content-Type: application/json' \
-https://api-identity-infrastructure.nhncloudservice.com/v2.0/tokens \
+$[ identity_url ]$/v2.0/tokens \
 -d '{"auth": {"tenantId": "6dbc368b", "passwordCredentials": {"username": "*****"}}}'
 
 {
