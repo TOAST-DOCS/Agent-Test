@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=73ceeadcb5ee -->
 
 <a id="compute-instance-kernel-version-upgrade-guide"></a>
@@ -11,6 +13,11 @@
 
 <a id="check-the-kernel-version"></a>
 ### Check the Kernel Version { #check-the-kernel-version }
+
+| Setting | Description | Default Value |
+|---|---|---|
+| Number of Retries | Number of times to retry a failed request | 3 |
+| Wait Time | Time to wait between retries (in seconds) | 5 |
 
 Check the currently installed kernel version.
 
@@ -623,3 +630,14 @@ Reboot the OS for the boot order change to take effect.
 ```
 [root@rocky810 ~]# sync; reboot
 ```
+
+<a id="test-added-table"></a>
+## New test table section { #test-added-table }
+
+This section has been newly added to validate table translation. The table headers and cell text below must all be translated.
+
+| Item | Description | Default |
+|---|---|---|
+| Maximum number of nodes | Maximum number of nodes that can be created in a single node pool. | 10 |
+| Auto Scaling | Automatically adjusts the number of nodes based on load. | Disabled |
+| Health check interval | The interval for checking node status. | 5 minutes |
