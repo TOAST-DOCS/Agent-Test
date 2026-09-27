@@ -279,6 +279,20 @@
 #                 exit 3 / REPRO 가 기대값이었다). **all 에는 아직 넣지 않는다**:
 #                 UNIT_PRESERVE 는 운영 recommended 프리셋에 없어서 이 plan 만
 #                 켜고 도는데, all 은 프리셋대로 도는 조합을 보는 자리다.
+#   unit-pairing — replace 런 안의 짝짓기 (e2e-unit-pairing.sh). ko 가 고친
+#                 유닛 **앞에** 유닛을 끼우거나 한 유닛을 둘로 가를 때, 고친 유닛이
+#                 자기 기존 번역과 짝지어지는가. [A] 모델 없이 붙는 기존 번역을 보고,
+#                 [B] 로컬 translate_pr.py (CLI · 권장 preset) 로 상자 제목·안 건드린
+#                 문장의 바이트 보존을 본다. 기대: exit 0 / UNIT_PAIRING: OK
+#                 (cloud-translate `fix/unit-baseline-pairing`, 9월 번역 재생 T22·T28).
+#   table-field-rows — API 필드 표 reconcile (e2e-table-field-rows.sh). ko 가 안
+#                 건드린 필드 표가 번역본과 한 행 어긋나 있을 때 표 전체가 아니라 그
+#                 행만 고치는가. [A] reconcile 경로를 모델 없이, [B] 기존 행 바이트
+#                 보존을 본다. 기대: exit 0 / TABLE_FIELD_ROWS: OK
+#                 (cloud-translate `fix/table-identifier-keys`, 9월 번역 재생 T07).
+#                 **두 plan 모두 all 에서 제외** — 검증 대상 수정이 머지되기 전에는
+#                 main 에 대해 항상 REPRO 다 (table-malformed 와 같은 이유). 머지되면
+#                 all 에 넣는다.
 #   term-pin            — 미등록 용어 고정 A/B (e2e-term-pin.sh). 같은 픽스처를
 #                 OFF/ON 두 팔로 N판 돌려 (가) 문서 안 갈림과 (나) 판 사이 흔들림을
 #                 **분포**로 판정한다. 기대: exit 0 / TERM_PIN: OK.
@@ -448,7 +462,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
+    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -661,6 +675,18 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^UNIT_PRESERVE: (OK|REPRO|FAIL)' "$log" | tail -n1 || true)"
     pairs="$(grep -oE '위반: .*' "$log" | tail -n1 || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${pairs:-<no-pairs>}")
+  elif [[ "$plan" == "unit-pairing" || "$plan" == "table-field-rows" ]]; then
+    # 자체 스크립트 — 번역은 로컬 translate_pr.py 로만 돈다 (검증 대상이 체크아웃의
+    # 코드라서). 엔진은 스크립트가 CLI 로 고정하고 옵션은 권장 preset 에서 받는다.
+    case "$plan" in
+      unit-pairing)     _sc=e2e-unit-pairing.sh;     _tag=UNIT_PAIRING ;;
+      table-field-rows) _sc=e2e-table-field-rows.sh; _tag=TABLE_FIELD_ROWS ;;
+    esac
+    bash "$REPO_ROOT/scripts/$_sc" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE "^${_tag}: (OK|REPRO|FAIL)" "$log" | tail -n1 || true)"
+    tx_pr="$(grep -oE '번역 PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${tx_pr:-<no-pr>}")
   elif [[ "$plan" == term-pin* ]]; then
     # 미등록 용어 고정 — 네 스크립트가 같은 모양이다 (OFF/ON 두 팔, 결정적 판정,
     # `<NAME>: OK|FAIL|INFRA` 한 줄). 엔진·모델은 넘기지 않는다: 고정 단계는
