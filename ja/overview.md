@@ -1,9 +1,11 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 概要 { #compute-instance-overview }
 
-インスタンスは仮想のCPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールしてNHN Cloudが提供する様々なサービスを組み合わせて使用します。
+インスタンスは、仮想 CPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスまたはアプリケーションをインストールし、NHN Cloudが提供するさまざまなサービスを組み合わせて使用します。(fence-noop 対照群 20260927-142923)
 
 <a id="components"></a>
 ## インスタンス構成要素 { #components }
@@ -254,7 +256,7 @@ $ sudo update-grub
 
 ```
 $ curl -X POST -H 'Content-Type: application/json' \
-https://api-identity-infrastructure.nhncloudservice.com/v2.0/tokens \
+$[ identity_url ]$/v2.0/tokens \
 -d '{"auth": {"tenantId": "6dbc368b", "passwordCredentials": {"username": "*****"}}}'
 
 {
