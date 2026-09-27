@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
@@ -254,14 +256,15 @@ $ sudo update-grub
 <a id="e2e-mirror-substitute"></a>
 ### ミラーケースB 置換
 
-コンソールの使い方は[コンソールガイド](/Security/Secure%20Key%20Manager/ja/console-guide/#e2e-mirror-old-b)を参照してください。
+コンソールの使い方は[コンソールガイド](/Security/Secure%20Key%20Manager/ja/console-guide/#e2e-mirror-new-b)を参照してください。
 
 <a id="e2e-mirror-giveup"></a>
 ### ミラーケースC 特定失敗
 
-APIは[APIガイド](https://docs.nhncloud.com/ja/Security/Secure%20Key%20Manager/ja/api-guide/#e2e-mirror-old-c)を参照してください。
+API については [API ガイド](/Security/Secure%20Key%20Manager/ja/api-guide/#e2e-mirror-new-c) を参照してください。
 
 <a id="e2e-mirror-control"></a>
 ### ミラー対照群
 
 このセクションはリンクのない散文の対照群です。
+この文は翻訳対照群です (20260927-143124)。
