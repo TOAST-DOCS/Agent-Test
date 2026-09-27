@@ -245,3 +245,22 @@ GRUB_SERIAL_COMMAND="serial --speed=9600 --unit=0 --word=8 --parity=no --stop=1"
 ```
 $ sudo update-grub
 ```
+
+<a id="e2e-fence-noop"></a>
+### Token issuance sample
+
+<details>
+<summary>cURL</summary>
+
+```
+$ curl -X POST -H 'Content-Type: application/json' \
+https://api-identity-infrastructure.nhncloudservice.com/v2.0/tokens \
+-d '{"auth": {"tenantId": "6dbc368b", "passwordCredentials": {"username": "*****"}}}'
+
+{
+  "access": {
+    "token": { "id": "b587ae461278419da6ecd21a2344c8aa" }
+  }
+}
+```
+</details>
