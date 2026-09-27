@@ -242,7 +242,7 @@ $ sudo update-grub
 ```
 
 <a id="e2e-fence-noop"></a>
-### Token issuance sample
+### Token issuance sample { #e2e-fence-noop }
 
 <details>
 <summary>cURL</summary>
