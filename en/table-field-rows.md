@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e0f1e1d00 -->
 
 <a id="tfr"></a>
@@ -8,7 +10,7 @@ This document is a generated e2e fixture (20260927-143557).
 <a id="tfr-overview"></a>
 ## Overview { #tfr-overview }
 
-This API modifies service settings. Put only the fields to modify in the request body.
+This API modifies service settings. Put only the fields to modify in the request body. Fields not included maintain their existing values.
 
 <a id="tfr-fields"></a>
 ## Request Body { #tfr-fields }
@@ -30,6 +32,7 @@ This API modifies service settings. Put only the fields to modify in the request
 | origins[0].origin     | String  | Required      |        | Up to 255 characters                                                   | Origin server (domain or IP)                                      |
 | origins[0].originPath | String  | Optional      |        | Up to 8192 characters                                                  | Sub-path of origin server                                          |
 | forwardHostHeader     | String  | Required      |        | ORIGIN_HOSTNAME<br/>REQUEST_HOST_HEADER   | Set the host header to be forwarded by the CDN server when requesting content to the origin server ("ORIGIN_HOSTNAME": Set to the host name of the origin server, "REQUEST_HOST_HEADER": Set to the host header of the client request)|
+| useOrigin             | String  | Required  |        | Y/N                                                          | Cache expiration setting (Y: Use the origin server setting, N: User-configured setting)      |
 | rootPathAccessControl  | Object  | Optional |  |  | Set the access control for the CDN service root path | 
 
 - The default value of `forwardHostHeader` is `REQUEST_HOST_HEADER` when `domainAlias` is set.
