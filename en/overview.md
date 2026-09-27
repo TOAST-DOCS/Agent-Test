@@ -242,22 +242,22 @@ $ sudo update-grub
 ```
 
 <a id="e2e-mirror-reuse"></a>
-### Mirror Case A Reuse
+### Mirror Case A Reuse { #e2e-mirror-reuse }
 
 To create an encrypted volume, first [create a key store](/Security/Secure%20Key%20Manager/en/getting-started/#e2e-mirror-new-a) in the console.
 
 <a id="e2e-mirror-substitute"></a>
-### Mirror Case B Substitution
+### Mirror Case B Substitution { #e2e-mirror-substitute }
 
 For console usage, see the [console guide](/Security/Secure%20Key%20Manager/en/console-guide/#e2e-mirror-new-b).
 
 <a id="e2e-mirror-giveup"></a>
-### Mirror Case C Unlocatable
+### Mirror Case C Unlocatable { #e2e-mirror-giveup }
 
 For the API, see [API Guide](/Security/Secure%20Key%20Manager/en/api-guide/#e2e-mirror-new-c).
 
 <a id="e2e-mirror-control"></a>
-### Mirror Control
+### Mirror Control { #e2e-mirror-control }
 
 This section is a link-free prose control.
 This sentence is a translation control group (20260927-143124).
