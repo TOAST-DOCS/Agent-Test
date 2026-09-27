@@ -1,16 +1,20 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=cdbc88f0a12c -->
 
 {%- set api_host = "api-jinja.gov-nhncloudservice.com" if "gov" in build_flags else "api-jinja.nhncloudservice.com" -%}
 <a id="sample-jinja-guide"></a>
 ## Sample > Jinja Guide { #sample-jinja-guide }
 
+{%- if "gov" not in build_flags %}
 This document is a fixture for verifying that mkdocs-macros' Jinja conditionals and variable substitutions stay identical across ko/en/ja. The tags are control syntax, so they are never translated; only the body text differs per language.
+{%- endif %}
 
 <a id="endpoint"></a>
 ### Endpoint { #endpoint }
 
 {% if "gov" in build_flags -%}
-The government environment uses a dedicated endpoint. It cannot be reached over the public domain.
+The government environment uses a dedicated endpoint. It cannot be reached over the public domain. (Content modification inside tag block: this should be reflected when re-translating.)
 {% else -%}
 The public environment uses the default endpoint. Refer to the table below for per-region hosts.
 {% endif %}
