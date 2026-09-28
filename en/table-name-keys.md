@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=e2e0f1e1d01 -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=b55afddf5970 -->
 
 <a id="tnk"></a>
 # Table first-column key e2e fixture
@@ -8,7 +10,7 @@ This document is a generated e2e fixture (20260928-053041).
 <a id="tnk-overview"></a>
 ## Overview { #tnk-overview }
 
-This document describes the response fields and error codes of the message query API.
+This document describes the response fields returned by the message query API and error codes when the request fails.
 
 <a id="tnk-t1"></a>
 ## Nested Fields { #tnk-t1 }
@@ -24,6 +26,7 @@ This document describes the response fields and error codes of the message query
 | -- requestId | String | Request ID |
 | -- plusFriendId | String | Plus Friend ID |
 | -- senderKey | String | Sender key |
+| -- recipientNo | String | Recipient Number |
 | -- resultCode | String | Receiving result code |
 | - totalCount | Integer | Total count |
 
@@ -35,7 +38,6 @@ This document describes the response fields and error codes of the message query
 |-40000| InvalidParam | The parameter contains an error |
 |-40010| InvalidGroupID | Group ID error |
 |-40020| DuplicatedGroupID | Duplicate group ID |
-|-40050| InvalidImageFormat | Unsupported image format |
 |-40070| ServiceQuotaExceededException | Exceeded the maximum number of groups you can create |
 |-41000| UnauthorizedAppKey | Unauthorized Appkey |
 |-50000| InternalServerError | Server error |
@@ -45,10 +47,9 @@ This document describes the response fields and error codes of the message query
 
 | Library       | Usage                            |
 | ---------------- | ------------------------------- |
-| Quasar           | Supports Fiber-based Continuation |
 | ZeroMQ           | Server's IPC                      |
 | Netty            | Communication between server and client            |
-| Protocol Buffers | Parallelization of messages between server and client   |
+| Protocol Buffers | Message serialization between server and client   |
 
 <a id="tnk-t4"></a>
 ## Error Names { #tnk-t4 }
@@ -57,6 +58,7 @@ This document describes the response fields and error codes of the message query
 | --- | --- | --- |
 | NOT\_INITIALIZED | 1 | Gamebase not initialized. |
 | NOT\_LOGGED\_IN | 2 | Login is required. (Only Standalone) |
+| UI\_TERMS\_UNREGISTERED\_SEQ | 6923 | An unregistered terms Seq value has been set. |
 | UI\_TERMS\_ALREADY\_IN\_PROGRESS\_ERROR | 6924 | The Terms API call has not been completed yet.<br/>Please try again later. |
 
 <a id="tnk-c1"></a>
@@ -66,6 +68,7 @@ This document describes the response fields and error codes of the message query
 | --- | --- |
 | Notification settings | Select the channel to receive notifications. |
 | Recipients | Specify the members who receive notifications. |
+| Delivery time | Set the time to send notifications. |
 | Retention period | Period to keep the delivery history. |
 
 <a id="tnk-c2"></a>
@@ -75,4 +78,5 @@ This document describes the response fields and error codes of the message query
 | --- | --- | --- |
 | header.isSuccessful | Boolean | Whether successful |
 | header.resultCode | Integer | Result code |
+| body.data.templateId | String | Template ID |
 | body.data.templateName | String | Template name |
