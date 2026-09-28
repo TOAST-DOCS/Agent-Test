@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=e2e0f1e1d01 -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=b55afddf5970 -->
 
 <a id="tnk"></a>
 # 表の先頭列キー e2e フィクスチャ
@@ -8,7 +10,7 @@
 <a id="tnk-overview"></a>
 ## 概要 { #tnk-overview }
 
-メッセージ照会APIのレスポンスフィールドとエラーコードを説明します。
+メッセージ照会APIが返すレスポンスフィールドと、リクエスト失敗時のエラーコードを説明します。
 
 <a id="tnk-t1"></a>
 ## ネストしたフィールド { #tnk-t1 }
@@ -23,6 +25,7 @@
 | - messages                  | List    | メッセージリスト                            |
 | -- requestId                | String  | リクエストID                                    |
 | -- plusFriendId             | String  | プラスフレンドID                                 |
+|-- senderKey | String |	発信キー |
 | -- recipientNo              | String  | 受信番号                              |
 | -- resultCode               | String  | 受信結果コード                           |
 | - totalCount                | Integer | 総個数                                    |
@@ -35,6 +38,7 @@
 |-40000| InvalidParam | パラメータにエラーがある |
 |-40010| InvalidGroupID | グループIDエラー |
 |-40020| DuplicatedGroupID | 重複したグループID |
+|-40070| ServiceQuotaExceededException | グループの最大個数を超過しました |
 |-41000| UnauthorizedAppKey | 承認されていないアプリケーションキー |
 |-50000| InternalServerError | サーバーエラー |
 
@@ -44,6 +48,7 @@
 | ライブラリ     | 用途                          |
 | ---------------- | ------------------------------- |
 | ZeroMQ           | サーバーのIPC                      |
+| Netty            | サーバー・クライアント通信            |
 | Protocol Buffers | サーバー-クライアントメッセージのシリアライズ  |
 
 <a id="tnk-t4"></a>
@@ -52,6 +57,7 @@
 | Error | Error Code | Description |
 | --- | --- | --- |
 | NOT\_INITIALIZED | 1 | Gamebaseが初期化されていません。 |
+| NOT\_LOGGED_IN | 2 | ログインが必要です。（Standalone のみ） |
 | UI\_TERMS\_UNREGISTERED\_SEQ | 6923 | 登録されていない約款Seq値を設定しました。 |
 | UI\_TERMS\_ALREADY\_IN\_PROGRESS\_ERROR | 6924 | 以前に呼び出されたTerms APIがまだ完了していません。<br/>しばらくしてから再度試行してください。 |
 
@@ -62,6 +68,7 @@
 | --- | --- |
 | 通知設定 | 通知を受け取るチャンネルを選択します。 |
 | 受信対象 | 通知を受け取るメンバーを指定します。 |
+| 発送時間 | 通知を送信する時間帯を設定します。 |
 | 保管期間 | 送信履歴を保管する期間です。 |
 
 <a id="tnk-c2"></a>
@@ -71,4 +78,5 @@
 | --- | --- | --- |
 | header.isSuccessful | Boolean | 成否 |
 | header.resultCode | Integer | 結果コード |
+| body.data.templateId | String | テンプレート ID |
 | body.data.templateName | String | テンプレート名 |
