@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=e2e0f1e1d01 -->
+<!-- pre-align:aligned sig=b55afddf5970 -->
 
 <a id="tnk"></a>
 # 표 첫 열 키 e2e 픽스처
@@ -8,7 +8,7 @@
 <a id="tnk-overview"></a>
 ## 개요 { #tnk-overview }
 
-메시지 조회 API의 응답 필드와 오류 코드를 설명합니다.
+메시지 조회 API가 돌려주는 응답 필드와, 요청이 실패했을 때의 오류 코드를 설명합니다.
 
 <a id="tnk-t1"></a>
 ## 중첩 필드 { #tnk-t1 }
