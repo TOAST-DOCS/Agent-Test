@@ -290,7 +290,12 @@
 #                 행만 고치는가. [A] reconcile 경로를 모델 없이, [B] 기존 행 바이트
 #                 보존을 본다. 기대: exit 0 / TABLE_FIELD_ROWS: OK
 #                 (cloud-translate `fix/table-identifier-keys`, 9월 번역 재생 T07).
-#                 **두 plan 모두 all 에서 제외** — 검증 대상 수정이 머지되기 전에는
+#   table-name-keys — 첫 열이 이름인 표 reconcile (e2e-table-name-keys.sh).
+#                 중첩 필드 `- senderKey` · 음수 코드 `-40070` · 공백 든 이름 ·
+#                 이스케이프 네 모양의 실제 행 + 대조군 둘(한글 첫 열 → 여전히 표 전체
+#                 재번역, 필드 경로 → 행 단위). 기대: exit 0 / TABLE_NAME_KEYS: OK
+#                 (cloud-translate `fix/table-reconcile-first-col-key`, 번역 시뮬 F10).
+#                 **세 plan 모두 all 에서 제외** — 검증 대상 수정이 머지되기 전에는
 #                 main 에 대해 항상 REPRO 다 (table-malformed 와 같은 이유). 머지되면
 #                 all 에 넣는다.
 #   term-pin            — 미등록 용어 고정 A/B (e2e-term-pin.sh). 같은 픽스처를
@@ -462,7 +467,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
+    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-name-keys|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -675,12 +680,13 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^UNIT_PRESERVE: (OK|REPRO|FAIL)' "$log" | tail -n1 || true)"
     pairs="$(grep -oE '위반: .*' "$log" | tail -n1 || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${pairs:-<no-pairs>}")
-  elif [[ "$plan" == "unit-pairing" || "$plan" == "table-field-rows" ]]; then
+  elif [[ "$plan" == "unit-pairing" || "$plan" == "table-field-rows" || "$plan" == "table-name-keys" ]]; then
     # 자체 스크립트 — 번역은 로컬 translate_pr.py 로만 돈다 (검증 대상이 체크아웃의
     # 코드라서). 엔진은 스크립트가 CLI 로 고정하고 옵션은 권장 preset 에서 받는다.
     case "$plan" in
       unit-pairing)     _sc=e2e-unit-pairing.sh;     _tag=UNIT_PAIRING ;;
       table-field-rows) _sc=e2e-table-field-rows.sh; _tag=TABLE_FIELD_ROWS ;;
+      table-name-keys)  _sc=e2e-table-name-keys.sh;  _tag=TABLE_NAME_KEYS ;;
     esac
     bash "$REPO_ROOT/scripts/$_sc" > "$log" 2>&1
     ec=$?
