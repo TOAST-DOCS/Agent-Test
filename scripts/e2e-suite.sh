@@ -65,6 +65,14 @@
 #                 링크 · base 에 심어 둔 기존 결함이 전부 침묵하는지. 결정적 판정이라
 #                 기대값이 정확히 8건이고 어느 파일 어느 줄인지까지 박혀 있다.
 #                 e2e-korean-review-links.sh 를 실행. 기대: exit 0. ~3분.
+#   korean-review-line-anchors — 한글 검수 인라인 코멘트가 **올바른 줄**에 달리는지.
+#                 픽스처 한 문서에 patch 줄번호를 밀던 네 모양(U+2028 · 삭제된 `--data`
+#                 · 추가된 `++` · 개행 없는 마지막 줄 교체)을 담고, 각 모양 뒤의 `예)`
+#                 줄 4곳에 규칙 레이어의 확정 suggestion 이 **그 줄 자체의 교정본으로**
+#                 달리는지 본다 (한 줄 아래 앵커 = Apply 가 다른 줄을 덮어쓴다). 결정적.
+#                 e2e-korean-review-line-anchors.sh 를 실행. 기대: exit 0. ~2분.
+#                 **all 에는 아직 없다** — cloud-translate#1049 가 머지되기 전 main 은
+#                 이 plan 에서 늘 실패한다(0/4 게시, 422). 머지·배포 후 all 에 넣는다.
 #   korean-review — dashboard /api/ko-review 잡의 산출물(요약 리뷰 본문 규격,
 #                 인라인 코멘트, ```suggestion``` 블록) 을 검증. e2e-align-and-
 #                 translate.sh 가 아니라 e2e-korean-review.sh 를 실행.
@@ -462,7 +470,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
+    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -765,6 +773,13 @@ for plan in "${PLANS[@]}"; do
     ec=$?
     verdict="$(grep -oE '^KO_REVIEW_LINKS: (OK|FAIL)' "$log" | tail -n1 || true)"
     ko_pr="$(grep -oE '  ko PR        : https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${ko_pr:-<no-pr>}")
+  elif [[ "$plan" == "korean-review-line-anchors" ]]; then
+    # 인라인 코멘트 줄 위치 — 규칙 레이어 확정 4건만 본다(LLM 지적은 무시). 결정적.
+    bash "$REPO_ROOT/scripts/e2e-korean-review-line-anchors.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^RESULT: [A-Z]+' "$log" | tail -n1 || true)"
+    ko_pr="$(grep -oE '  PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${ko_pr:-<no-pr>}")
   elif [[ "$plan" == "korean-review-no-targets" ]]; then
     # 삭제만 있는 PR = 검수 대상 0건. korean-review plan 과 기대값이 정반대다
