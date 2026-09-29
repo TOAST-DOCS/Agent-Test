@@ -1,11 +1,11 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=2e3418e57ac3 -->
+<!-- pre-align:aligned sig=4fa926b08c28 -->
 
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
 
-This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`). (Translation queue test: This sentence is for QUEUE-S1-B-TOKEN verification.) (Translation queue test: This sentence is for QUEUE-S2-B-TOKEN verification.)
+This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`). (Translation queue test: This sentence is for QUEUE-S1-B-TOKEN verification.) (Translation queue test: This sentence is for QUEUE-S2-B-TOKEN verification.) (Translation queue test: This sentence is for QUEUE-S3-B-TOKEN verification.)
 Each section below targets one deterministic rule with a **deliberately malformed link**, and
 `scripts/e2e-fix-links.sh` judges the repair rule by rule.
 
@@ -158,3 +158,8 @@ This section was added by the translation queue e2e (queue-a1). It must appear e
 ## Translation queue test section queue-a2 { #queue-a2 }
 
 This section was added by the translation queue e2e (queue-a2). It must appear exactly once in the translation.
+
+<a id="queue-a3"></a>
+## Translation queue test section queue-a3 { #queue-a3 }
+
+This section was added by the translation queue e2e (queue-a3). This section must appear exactly once in the translation.
