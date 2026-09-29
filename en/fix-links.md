@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=2e3418e57ac3 -->
+<!-- pre-align:aligned sig=4fa926b08c28 -->
 
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
@@ -158,3 +158,8 @@ This section was added by the translation queue e2e (queue-a1). It should appear
 ## Translation queue test section queue-a2 { #queue-a2 }
 
 This section was added by the translation queue e2e (queue-a2). It must appear exactly once in the translation.
+
+<a id="queue-a3"></a>
+## Translation queue test section queue-a3 { #queue-a3 }
+
+This section was added by the translation queue e2e (queue-a3). It must appear exactly once in the translation.
