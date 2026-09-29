@@ -200,12 +200,12 @@
 #                 '다시 넣지 않는지'. nhn-cloud-foundry#37→#38 재현 (Dooray
 #                 cloud-user-guide-agent/359). concurrent 와 같이 항상 로컬
 #                 translate_pr.py 로 번역한다.
-#   translate-queue — repo × base 직렬 번역 큐 (e2e-translate-queue.sh). 한 세션
-#                 위에서 네 장면: S1 대기→해제 (#89→#90 모양, [BEFORE]/[AFTER]) ·
-#                 S2 탈출 (TA 닫힘) · S3 TA 없이 뒤처짐 → 따라잡기 ([BEFORE]/[AFTER]) ·
-#                 S4 대조군 (평범한 PR 은 그대로). 판정 전부 결정적. 로컬
-#                 translate_pr.py 전용이고 CLOUD_TRANSLATE_DIR 에 번역 큐 코드
-#                 (shared/translate_queue.py) 가 있어야 한다 — 없으면 exit 2.
+#   translate-queue — repo × base 순차 번역 큐 (e2e-translate-queue.sh). 한 세션
+#                 위에서 네 장면: S1 대기→차례 (#89→#90 모양, [BEFORE]/[AFTER]) ·
+#                 S2 번역 PR 닫힘은 완료가 아님 · S3 앞 번역 실패→재번역 ([BEFORE]/
+#                 [AFTER]) · S4 대조군. 차례의 번역은 자기 변경만 담는다. 판정 전부
+#                 결정적. 로컬 translate_pr.py 전용이고 CLOUD_TRANSLATE_DIR 에 번역 큐
+#                 코드 (shared/translate_queue.py) 가 있어야 한다 — 없으면 exit 2.
 #                 all 에서는 제외 (cloud-translate 의 큐 PR 이 머지되기 전까지).
 #   table-suite — 표 변형 종합 + stale 결함 재현 (stale-ify 커밋 포함).
 #                 기대: 번역 로직에 table-row reconcile(PR #290)이 있으면 exit 0,
@@ -1013,7 +1013,7 @@ echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
 echo "  (lag-order: exit 0 = A 번역이 B 섹션을 넣지 않고 최종 1회. exit 1 = 중복(버그 재현), 2 = 하네스 오류)"
-echo "  (translate-queue: exit 0 = 대기·해제·탈출·따라잡기 모두 en/ja anchor == ko, 대조군 그대로. 1 = 판정 실패, 2 = 하네스 오류)"
+echo "  (translate-queue: exit 0 = 머지 순서대로 하나씩 · 앞 번역 전엔 대기 · 차례의 번역은 자기 변경만 · en/ja anchor == ko. 1 = 판정 실패, 2 = 하네스 오류)"
 echo "  (fill-stubs: exit 0 = OK. stub 섹션만 채우고 그 밖은 바이트 보존 · id 없는 stub 은 건너뜀)"
 echo "  (fill-stubs: exit 4 = HELD — 도구가 보고한 보류만 남음. ⚠️ 로 집계하고 suite 는 실패시키지 않는다)"
 echo "  (fix-tables: exit 0 = FIX_TABLES: OK. 표가 어긋난 section 만 ko 로 다시 만들고 대조군은 바이트 보존)"

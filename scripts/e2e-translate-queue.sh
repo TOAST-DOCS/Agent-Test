@@ -1,38 +1,42 @@
 #!/usr/bin/env bash
 #
-# e2e-translate-queue.sh — repo × base 직렬 번역 큐 검증 (cloud-translate
-# shared/translate_queue.py · translate/app/queue_lag.py · webhook/queue_wake.py).
+# e2e-translate-queue.sh — repo × base 순차 번역 큐 검증 (cloud-translate
+# shared/translate_queue.py · translate/translate_pr.py · webhook/queue_wake.py).
 #
 # 사건 원형: TOAST-DOCS/RDS-FOR-POSTGRESQL #89 → #90. #89(A)는 anchor id 101개의
 # 이름을 바꾸고 섹션을 더했는데 그 번역(TA)이 실패했고, 그 사이 #90(B, 표 셀 2개)이
 # 머지됐다. B 의 번역(#91)은 B 의 머지 커밋에 고정된 en — A 가 빠진 번역 — 을 기준으로
 # 돌아 옛 id 섹션을 지우고(-101 removed) 새 섹션은 건너뛰었다(left 136) — en -704줄.
 #
-# 이 스크립트는 한 세션 브랜치 위에서 네 장면을 차례로 만든다. 각 장면의 판정은
-# 전부 결정적이다 (anchor id 순서 대조 · ASCII 토큰 · 로그 마커 · 라벨).
+# 큐가 켜진 리포는 머지된 ko PR 을 **머지 순서대로 하나씩** 번역한다. 먼저 머지된
+# PR 의 번역이 머지되기 전에는 (실패·리뷰 중·닫힘 모두) 뒤 PR 은 기다리고, 차례가
+# 되면 base 끝의 en/ja 위에 **자기 변경만** 번역한다 (여러 PR 을 한 번역에 접지
+# 않는다). 한 세션 브랜치 위에서 네 장면을 만든다. 판정은 전부 결정적이다 (anchor id
+# 순서 대조 · ASCII 토큰 · 로그 마커 · 라벨 · 번역 diff 줄 수).
 #
-#   S1 대기 → 해제 (#89 → #90 모양)
+#   S1 대기 → 차례 (#89 → #90 모양)
 #      A1 = anchor 이름 변경 + 섹션 추가 → 머지 → TA1 (열어 둠)
 #      B1 = 다른 섹션 본문 수정 → 머지
 #      [BEFORE] 큐 끔으로 B1 번역 → 옛 id 섹션 삭제 재현 (기대: 결함) → 닫음
-#      [AFTER]  큐 켬으로 B1 번역 → DEFERRED + `번역 대기` 라벨, 번역 PR 없음
-#      TA1 머지 → 대기 해제(webhook 과 같은 queue_wake.search_deferred) 가 B1 을 찾음
-#      → B1 재번역 = 따라잡기 → TB1 : en/ja anchor 순서 == ko, B1 토큰 있음, 라벨 떨어짐
-#   S2 탈출 (TA 가 머지되지 않고 닫힘)
-#      A2 = 섹션 추가 → 머지 → TA2 (열어 둠) · B2 = 본문 수정 → 머지 → DEFERRED
-#      TA2 닫음 → 해제가 B2 를 찾음 → 따라잡기 TB2 = A2 섹션 + B2 편집을 함께 담는다
-#   S3 기다릴 것은 없는데 뒤처짐 (TA 가 아예 없음 — #913 처럼 실패)
-#      A3 = 섹션 추가 → 머지 (번역하지 않음) · B3 = 본문 수정 → 머지
+#      [AFTER]  큐 켬으로 B1 번역 → DEFERRED, 번역 PR 없음
+#      TA1 머지 → webhook 처리(A1 라벨 삭제 + 다음 차례 = B1) → B1 번역 → TB1 :
+#      en/ja anchor 순서 == ko, A1 의 id 보존, B1 토큰, diff 는 B1 문장만 (좁다)
+#   S2 번역 PR 닫힘은 완료가 아니다
+#      A2 = 섹션 추가 → 머지 → TA2 · B2 = 본문 수정 → 머지 → DEFERRED
+#      TA2 닫음 → A2 는 줄에 남고 B2 는 여전히 DEFERRED
+#      A2 재번역 → TA2' 머지 → 다음 차례 = B2 → TB2 는 B2 문장만, A2 섹션 보존
+#   S3 앞 번역 실패 (#913 모양) — TRANSLATE_FAULT_INJECT_PATHS 로 A3 번역을 실패시킨다
+#      A3 = 섹션 추가 → 머지 → 번역 실패 (라벨 남음) · B3 = 본문 수정 → 머지 → DEFERRED
 #      [BEFORE] 큐 끔 → A3 섹션이 stale skip 으로 빠진다 (기대: 결함) → 닫음
-#      [AFTER]  큐 켬 → lag 감지 → 따라잡기 → A3 + B3
-#   S4 대조군 — 뒤처지지 않은 평범한 PR 은 지금과 같은 경로
-#      C = 본문 수정 → 머지 → 번역 로그 "no pending translation, en/ja up to date",
-#      "Catch-up" 없음, en/ja 는 C 토큰만 추가
+#      A3 재번역(성공) → TA3 머지 → 다음 차례 = B3 → TB3 는 B3 문장만, A3 섹션 보존
+#   S4 대조군 — 앞선 PR 이 없는 평범한 PR
+#      C = 본문 수정 → 머지 → 차례 즉시, 번역 diff 좁음, TC 머지 → 줄이 빈다
 #
-# 대기 해제는 webhook pod 대신 같은 함수를 로컬에서 부른다 — webhook 은 번역 PR
-# closed delivery 를 받아 `queue_wake.search_deferred` 결과마다 Jenkins 번역 잡을
-# 건다. 여기서는 그 결과를 로컬 translate_pr.py 로 돌린다. dispatch 배선은
-# cloud-translate 의 webhook/tests/test_queue_wake.py 가 본다.
+# webhook 의 처리는 webhook pod 대신 같은 함수를 로컬에서 부른다 — 번역 PR 이
+# 머지되면 `queue_wake.complete_source` 가 소스 PR 의 라벨을 떼고
+# `queue_wake.next_to_run` 이 다음 차례를 고른다. webhook 은 그 PR 로 Jenkins 번역
+# 잡을 건다. 여기서는 로컬 translate_pr.py 로 돌린다. dispatch 배선은 cloud-translate 의
+# webhook/tests/test_queue_wake.py 가 본다.
 #
 # 번역은 로컬 translate_pr.py (프로덕션과 같은 Claude Code CLI 엔진, 옵션은 권장
 # preset). 큐는 TRANSLATE_TRANSLATE_QUEUE_REPOS 로 이 레포만 켠다 — 배포본과 무관.
@@ -74,7 +78,7 @@ CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/
 
 TS="$(date -u +%Y%m%d-%H%M%S)"
 SESSION="e2e/translate-queue-${TS}"
-DEFER_LABEL="번역 대기"
+QUEUE_LABEL="번역 대기열"
 
 WORK="$(mktemp -d /tmp/e2e-translate-queue-XXXXXX)"
 source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
@@ -171,27 +175,47 @@ preset_eval="$(python3 "$(dirname "$0")/preset_options.py" \
 eval "$preset_eval"
 echo "translate argv: ${PRESET_ARGS[*]}  (preset 출처: $PRESET_CATALOG_DIR · 코드: $CLOUD_TRANSLATE_DIR)"
 
-translate() {  # $1 PR URL · $2 log name · $3 queue(on|off) → log path (번역 PR URL 은 pr_of)
-  local log="$LOGDIR/$2.log" q=""
+translate() {  # $1 PR URL · $2 log name · $3 queue(on|off) · [$4 fault paths] → log path
+  local log="$LOGDIR/$2.log" q="" rc=0
   [[ "$3" == "on" ]] && q="$REPO"
   (cd "$CLOUD_TRANSLATE_DIR" && TRANSLATE_TRANSLATE_QUEUE_REPOS="$q" \
-    "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$1" "${PRESET_ARGS[@]}") >"$log" 2>&1 \
-    || { echo "error: translate_pr.py 실패 — $log" >&2; tail -30 "$log" >&2; exit 2; }
+    TRANSLATE_FAULT_INJECT_PATHS="${4:-}" \
+    "$CLOUD_TRANSLATE_PY" translate/translate_pr.py "$1" "${PRESET_ARGS[@]}") >"$log" 2>&1 || rc=$?
+  if (( rc != 0 )) && [[ -z "${4:-}" ]]; then
+    echo "error: translate_pr.py 실패 — $log" >&2; tail -30 "$log" >&2; exit 2
+  fi
   echo "$log"
 }
 pr_of() { grep -oE 'Translation PR: https://[^ ]+' "$1" | tail -1 | sed 's/Translation PR: //'; }
 
-# webhook 의 대기 해제와 같은 조회 — 결과 PR 번호들 (공백 구분)
-wake_list() {
-  (cd "$CLOUD_TRANSLATE_DIR" && GITHUB_TOKEN="$(gh auth token)" "$CLOUD_TRANSLATE_PY" - "$REPO" "$SESSION" <<'PY'
-import sys
+# webhook 이 번역 PR 머지 delivery 에 하는 일 — 소스 PR 을 줄에서 빼고 다음 차례를
+# 고른다. 출력: 다음 차례 PR 번호 (없으면 빈 줄) · 판정 이유는 stderr.
+webhook_merged() {  # $1 번역 PR URL
+  (cd "$CLOUD_TRANSLATE_DIR" && GITHUB_TOKEN="$(gh auth token)" "$CLOUD_TRANSLATE_PY" - "$REPO" "${1##*/}" <<'PY'
+import json, subprocess, sys
 sys.path.insert(0, ".")
-from webhook.queue_wake import search_deferred
-print(" ".join(str(it["number"]) for it in search_deferred(sys.argv[1], sys.argv[2])))
+from webhook import queue_wake
+repo, n = sys.argv[1], sys.argv[2]
+pr = json.loads(subprocess.run(["gh", "api", f"repos/{repo}/pulls/{n}"],
+                               capture_output=True, text=True, check=True).stdout)
+assert pr.get("merged"), f"#{n} is not merged"
+done = queue_wake.complete_source(repo, pr)
+head, why = queue_wake.next_to_run(repo, pr["base"]["ref"])
+print(f"complete={done} next: {why}", file=sys.stderr)
+print(head["number"] if head else "")
 PY
   )
 }
-has_label() { gh pr view "$1" --repo "$REPO" --json labels -q '.labels[].name' | grep -qx "$DEFER_LABEL"; }
+has_label() { gh pr view "$1" --repo "$REPO" --json labels -q '.labels[].name' | grep -qx "$QUEUE_LABEL"; }
+# 번역 PR 의 en/ja 변경 줄 수 (차례가 된 잡은 자기 변경만 번역해야 한다)
+tx_lines() { gh pr view "$1" --repo "$REPO" --json files -q '[.files[] | select(.path|test("^(en|ja)/")) | .additions + .deletions] | add'; }
+narrow() {  # $1 번역 PR URL · $2 label
+  local n; n="$(tx_lines "$1")"
+  [[ "${n:-0}" -le 12 ]] && ok "[$2] 번역 diff ${n}줄 — 이 PR 의 변경만" || bad "[$2] 번역 diff ${n}줄 — 이 PR 이 안 바꾼 것까지 번역했다"
+}
+next_is() {  # $1 기대 PR URL · $2 webhook_merged 출력
+  [[ "$2" == "${1##*/}" ]] && ok "다음 차례 = #${1##*/}" || bad "다음 차례가 #${1##*/} 가 아니다 (${2:-없음})"
+}
 
 # ref 의 ko/en/ja 에서 <a id> 순서를 비교한다. 추가 인자: 있어야 할 id · ASCII 토큰
 check_ref() {  # $1 ref · $2 label · "$@" id:<x> | tok:<x> | noid:<x>
@@ -242,15 +266,16 @@ head_ref() { gh api "repos/${REPO}/pulls/${1##*/}" -q .head.ref; }
 
 e2e_ensure_label "$REPO"
 
-# ═══ S1 대기 → 해제 ═════════════════════════════════════════════════════
-echo; echo "═══ S1 대기 → 해제 (#89 → #90 모양)"
+# ═══ S1 대기 → 차례 ═════════════════════════════════════════════════════
+echo; echo "═══ S1 대기 → 차례 (#89 → #90 모양)"
 A1="$(make_pr "translate-test/${TS}-q-a1" rename:fix-links-self:fix-links-self-renamed add:queue-a1 \
       "[e2e] queue S1 A — rename anchor + add section (${TS})")"; echo "  A1: $A1"
 merge_pr "$A1"
 L="$(translate "$A1" s1-ta on)"; TA1="$(pr_of "$L")"
 [[ -n "$TA1" ]] || { echo "error: TA1 없음 — $L" >&2; exit 2; }
 e2e_label_pr "$REPO" "$TA1"; echo "  TA1: $TA1 (열어 둠)"
-grep -q "no pending translation, en/ja up to date" "$L" && ok "TA1 은 평범한 경로 (대기·따라잡기 없음)" || bad "TA1 로그에 큐 판정 없음 — $L"
+grep -q "is next on" "$L" && ok "A1 은 곧바로 차례 (앞선 PR 없음)" || bad "A1 로그에 큐 판정 없음 — $L"
+has_label "$A1" && ok "A1 이 줄에 섰다 ('$QUEUE_LABEL')" || bad "A1 에 라벨 없음"
 
 B1="$(make_pr "translate-test/${TS}-q-b1" body:QUEUE-S1-B-TOKEN "[e2e] queue S1 B — body edit (${TS})")"; echo "  B1: $B1"
 merge_pr "$B1"
@@ -265,27 +290,28 @@ else
   bad "[s1] BEFORE 번역 PR 이 없다 — $L"
 fi
 
-echo "  [AFTER] 큐 켬 — TA1 이 열려 있으므로 대기"
+echo "  [AFTER] 큐 켬 — A1 의 번역이 아직 머지되지 않았으므로 대기"
 L="$(translate "$B1" s1-defer on)"
 grep -q "DEFERRED:" "$L" && ok "DEFERRED 출력" || bad "DEFERRED 없음 — $L"
+grep -q "translation PR #${TA1##*/} open" "$L" && ok "대기 사유: TA1 리뷰 중" || bad "대기 사유에 TA1 없음 — $L"
 [[ -z "$(pr_of "$L")" ]] && ok "번역 PR 을 만들지 않음" || bad "대기인데 번역 PR 이 생김"
-has_label "$B1" && ok "B1 에 '$DEFER_LABEL' 라벨" || bad "B1 에 라벨 없음"
 
-echo "  TA1 머지 → 대기 해제"
+echo "  TA1 머지 → webhook 처리"
 merge_pr "$TA1"
-W="$(wake_list)"; echo "  해제 대상: ${W:-(없음)}"
-[[ " $W " == *" ${B1##*/} "* ]] && ok "해제가 B1 을 찾음" || bad "해제가 B1 을 못 찾음"
-L="$(translate "$B1" s1-wake on)"; TB1="$(pr_of "$L")"
-grep -q "Catch-up mode (lag:" "$L" && ok "깨어난 잡은 따라잡기 (lag 감지)" || bad "따라잡기 아님 — $L"
+N="$(webhook_merged "$TA1")"; next_is "$B1" "$N"
+has_label "$A1" && bad "A1 라벨이 남아 있음" || ok "A1 완료 (라벨 떨어짐)"
+L="$(translate "$B1" s1-next on)"; TB1="$(pr_of "$L")"
+grep -q "is next on" "$L" && ok "B1 차례 — base 끝의 en/ja 위에 번역" || bad "B1 이 차례가 아님 — $L"
 [[ -n "$TB1" ]] || { echo "error: TB1 없음 — $L" >&2; exit 2; }
 e2e_label_pr "$REPO" "$TB1"; retitle "$TB1" "[AFTER]"; echo "  TB1: $TB1"
-has_label "$B1" && bad "B1 라벨이 남아 있음" || ok "B1 라벨 떨어짐"
 check_ref "$(head_ref "$TB1")" s1-after id:fix-links-self-renamed id:queue-a1 noid:fix-links-self tok:QUEUE-S1-B-TOKEN || FAIL=1
+narrow "$TB1" s1-after
 merge_pr "$TB1"
-check_ref "$SESSION" s1-final id:fix-links-self-renamed id:queue-a1 || FAIL=1
+N="$(webhook_merged "$TB1")"; [[ -z "$N" ]] && ok "줄이 비었다" || bad "줄에 #$N 가 남음"
+check_ref "$SESSION" s1-final id:fix-links-self-renamed id:queue-a1 tok:QUEUE-S1-B-TOKEN || FAIL=1
 
-# ═══ S2 탈출 — TA 가 머지되지 않고 닫힘 ═══════════════════════════════════
-echo; echo "═══ S2 탈출 (TA 닫힘)"
+# ═══ S2 번역 PR 닫힘은 완료가 아니다 ═════════════════════════════════════
+echo; echo "═══ S2 번역 PR 닫힘 ≠ 완료"
 A2="$(make_pr "translate-test/${TS}-q-a2" add:queue-a2 "[e2e] queue S2 A — add section (${TS})")"; echo "  A2: $A2"
 merge_pr "$A2"
 L="$(translate "$A2" s2-ta on)"; TA2="$(pr_of "$L")"
@@ -295,22 +321,36 @@ B2="$(make_pr "translate-test/${TS}-q-b2" body:QUEUE-S2-B-TOKEN "[e2e] queue S2 
 merge_pr "$B2"
 L="$(translate "$B2" s2-defer on)"
 grep -q "DEFERRED:" "$L" && ok "B2 DEFERRED" || bad "B2 가 대기하지 않음 — $L"
-close_pr "$TA2"; echo "  TA2 닫음 (미머지)"
-W="$(wake_list)"; echo "  해제 대상: ${W:-(없음)}"
-[[ " $W " == *" ${B2##*/} "* ]] && ok "해제가 B2 를 찾음" || bad "해제가 B2 를 못 찾음"
-L="$(translate "$B2" s2-wake on)"; TB2="$(pr_of "$L")"
-grep -q "Catch-up mode (lag:" "$L" && ok "따라잡기" || bad "따라잡기 아님 — $L"
+close_pr "$TA2"; echo "  TA2 닫음 (미머지) — webhook 은 아무것도 하지 않는다"
+has_label "$A2" && ok "A2 는 줄에 남음" || bad "A2 라벨이 떨어짐"
+L="$(translate "$B2" s2-still on)"
+grep -q "DEFERRED:" "$L" && grep -q "failed or closed" "$L" \
+  && ok "B2 는 여전히 대기 (사유: A2 번역 없음)" || bad "TA2 닫힘 뒤 B2 가 대기하지 않음 — $L"
+echo "  A2 재번역"
+L="$(translate "$A2" s2-ta2 on)"; TA2B="$(pr_of "$L")"
+[[ -n "$TA2B" ]] || { echo "error: TA2' 없음 — $L" >&2; exit 2; }
+e2e_label_pr "$REPO" "$TA2B"; echo "  TA2': $TA2B"
+merge_pr "$TA2B"
+N="$(webhook_merged "$TA2B")"; next_is "$B2" "$N"
+L="$(translate "$B2" s2-next on)"; TB2="$(pr_of "$L")"
 [[ -n "$TB2" ]] || { echo "error: TB2 없음 — $L" >&2; exit 2; }
 e2e_label_pr "$REPO" "$TB2"; echo "  TB2: $TB2"
 check_ref "$(head_ref "$TB2")" s2-after id:queue-a2 tok:QUEUE-S2-B-TOKEN || FAIL=1
-merge_pr "$TB2"
+narrow "$TB2" s2-after
+merge_pr "$TB2"; webhook_merged "$TB2" >/dev/null
 
-# ═══ S3 기다릴 것은 없는데 뒤처짐 ════════════════════════════════════════
-echo; echo "═══ S3 TA 없음 (실패) — lag 감지 → 따라잡기"
-A3="$(make_pr "translate-test/${TS}-q-a3" add:queue-a3 "[e2e] queue S3 A — add section, never translated (${TS})")"; echo "  A3: $A3 (번역하지 않음)"
+# ═══ S3 앞 번역 실패 ═════════════════════════════════════════════════════
+echo; echo "═══ S3 앞 번역 실패 (#913 모양)"
+A3="$(make_pr "translate-test/${TS}-q-a3" add:queue-a3 "[e2e] queue S3 A — add section, translation fails (${TS})")"; echo "  A3: $A3"
 merge_pr "$A3"
+L="$(translate "$A3" s3-ta-fail on "ko/$DOC")"
+grep -q "FAILED" "$L" && [[ -z "$(pr_of "$L")" ]] && ok "A3 번역 실패 (주입), 번역 PR 없음" || bad "A3 번역이 실패하지 않음 — $L"
+has_label "$A3" && ok "실패한 A3 는 줄에 남음" || bad "실패한 A3 의 라벨이 떨어짐"
 B3="$(make_pr "translate-test/${TS}-q-b3" body:QUEUE-S3-B-TOKEN "[e2e] queue S3 B — body edit (${TS})")"; echo "  B3: $B3"
 merge_pr "$B3"
+L="$(translate "$B3" s3-defer on)"
+grep -q "DEFERRED:" "$L" && grep -q "failed or closed" "$L" \
+  && ok "B3 DEFERRED (사유: A3 번역 없음)" || bad "B3 가 대기하지 않음 — $L"
 echo "  [BEFORE] 큐 끔"
 L="$(translate "$B3" s3-before off)"; TB3_BEFORE="$(pr_of "$L")"
 if [[ -n "$TB3_BEFORE" ]]; then
@@ -320,35 +360,41 @@ if [[ -n "$TB3_BEFORE" ]]; then
 else
   bad "[s3] BEFORE 번역 PR 이 없다 — $L"
 fi
-echo "  [AFTER] 큐 켬"
-L="$(translate "$B3" s3-after on)"; TB3="$(pr_of "$L")"
-grep -q "Catch-up mode (lag:" "$L" && ok "lag 감지 → 따라잡기" || bad "따라잡기 아님 — $L"
+echo "  A3 재번역 (고친 뒤)"
+L="$(translate "$A3" s3-ta on)"; TA3="$(pr_of "$L")"
+[[ -n "$TA3" ]] || { echo "error: TA3 없음 — $L" >&2; exit 2; }
+e2e_label_pr "$REPO" "$TA3"; echo "  TA3: $TA3"
+merge_pr "$TA3"
+N="$(webhook_merged "$TA3")"; next_is "$B3" "$N"
+L="$(translate "$B3" s3-next on)"; TB3="$(pr_of "$L")"
 [[ -n "$TB3" ]] || { echo "error: TB3 없음 — $L" >&2; exit 2; }
 e2e_label_pr "$REPO" "$TB3"; retitle "$TB3" "[AFTER]"; echo "  TB3: $TB3"
 check_ref "$(head_ref "$TB3")" s3-after id:queue-a3 tok:QUEUE-S3-B-TOKEN || FAIL=1
-merge_pr "$TB3"
+narrow "$TB3" s3-after
+merge_pr "$TB3"; webhook_merged "$TB3" >/dev/null
 
 # ═══ S4 대조군 ═══════════════════════════════════════════════════════════
-echo; echo "═══ S4 대조군 — 뒤처지지 않은 평범한 PR"
+echo; echo "═══ S4 대조군 — 앞선 PR 이 없는 평범한 PR"
 C="$(make_pr "translate-test/${TS}-q-c" body:QUEUE-S4-C-TOKEN "[e2e] queue S4 control — body edit (${TS})")"; echo "  C: $C"
 merge_pr "$C"
 L="$(translate "$C" s4 on)"; TC="$(pr_of "$L")"
-grep -q "no pending translation, en/ja up to date" "$L" && ok "큐 판정: 대기·뒤처짐 없음" || bad "대조군이 평범한 경로가 아님 — $L"
-grep -q "Catch-up mode" "$L" && bad "대조군이 따라잡기로 감" || ok "따라잡기 아님 (머지 커밋 고정 경로 그대로)"
+grep -q "is next on" "$L" && ok "큐 판정: 곧바로 차례" || bad "대조군이 차례가 아님 — $L"
+grep -q "DEFERRED:" "$L" && bad "대조군이 대기함" || ok "대기 없음"
 [[ -n "$TC" ]] || { echo "error: TC 없음 — $L" >&2; exit 2; }
 e2e_label_pr "$REPO" "$TC"; echo "  TC: $TC"
 check_ref "$(head_ref "$TC")" s4 tok:QUEUE-S4-C-TOKEN || FAIL=1
-# 대조군 diff 는 C 가 건드린 문단 근처만이어야 한다
-changed="$(gh pr view "$TC" --repo "$REPO" --json files -q '[.files[] | select(.path|test("^(en|ja)/")) | .additions + .deletions] | add')"
-[[ "${changed:-0}" -le 12 ]] && ok "대조군 번역 diff ${changed}줄 (좁다)" || bad "대조군 번역 diff ${changed}줄 — 넓다"
+narrow "$TC" s4
+merge_pr "$TC"
+N="$(webhook_merged "$TC")"; [[ -z "$N" ]] && ok "TC 머지 → 줄이 빈다" || bad "줄에 #$N 가 남음"
+has_label "$C" && bad "C 라벨이 남아 있음" || ok "C 완료"
 
 echo
 echo "결과"
 echo "  session: $SESSION"
 echo "  S1: A1 $A1 · TA1 $TA1 · B1 $B1 · [BEFORE] ${TB1_BEFORE:-–} · [AFTER] ${TB1:-–}"
-echo "  S2: A2 $A2 · TA2 $TA2 (닫음) · B2 $B2 · TB2 ${TB2:-–}"
-echo "  S3: A3 $A3 · B3 $B3 · [BEFORE] ${TB3_BEFORE:-–} · [AFTER] ${TB3:-–}"
+echo "  S2: A2 $A2 · TA2 $TA2 (닫음) · TA2' ${TA2B:-–} · B2 $B2 · TB2 ${TB2:-–}"
+echo "  S3: A3 $A3 (실패) · TA3 ${TA3:-–} · B3 $B3 · [BEFORE] ${TB3_BEFORE:-–} · [AFTER] ${TB3:-–}"
 echo "  S4: C $C · TC ${TC:-–}"
 echo "  logs: $LOGDIR"
 if (( FAIL )); then echo "RESULT: FAIL"; exit 1; fi
-echo "RESULT: PASS — 대기·해제·탈출·따라잡기 모두 en/ja anchor 순서 == ko, 대조군은 그대로"
+echo "RESULT: PASS — 머지 순서대로 하나씩, 앞 번역이 끝나기 전엔 대기, 차례의 번역은 자기 변경만 · en/ja anchor 순서 == ko"
