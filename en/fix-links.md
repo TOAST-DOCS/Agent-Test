@@ -5,18 +5,11 @@
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
 
-This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`).
+This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`). (Translation queue test: This sentence is for QUEUE-S1-B-TOKEN confirmation.)
 Each section below targets one deterministic rule with a **deliberately malformed link**, and
 `scripts/e2e-fix-links.sh` judges the repair rule by rule.
 
 This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide.
-
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
-
-A link to this very file written as a deployed-URL-shaped path. Only the in-file `#slug` should survive.
-
-* [Valid links](./fix-links/#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
