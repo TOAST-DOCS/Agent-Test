@@ -5,18 +5,11 @@
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
 
-この文書は**リンク訂正**(`dashboard/links/fix.py`、Jenkins `fix-links`)の e2e フィクスチャです。
+この文書は**リンク訂正**(`dashboard/links/fix.py`、Jenkins `fix-links`) e2e フィクスチャです。(翻訳キューテスト: この文は QUEUE-S1-B-TOKEN 確認用です。)
 以下の各セクションは決定的ルールを 1 つずつ狙って**わざと壊したリンク**を持ち、
 `scripts/e2e-fix-links.sh` が訂正結果をルールごとに判定します。
 
 この文書はユーザーガイドメニュー(`ko/nav.yml`)には登録しません。配布される文書ではなくパイプラインのフィクスチャです。
-
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
-
-同じファイルをデプロイ URL 形式のパスで指すリンクです。純粋な in-file `#slug` だけが残るべきです。
-
-* [正常なリンク集](./fix-links/#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
