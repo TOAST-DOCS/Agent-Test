@@ -200,7 +200,10 @@ pr = json.loads(subprocess.run(["gh", "api", f"repos/{repo}/pulls/{n}"],
                                capture_output=True, text=True, check=True).stdout)
 assert pr.get("merged"), f"#{n} is not merged"
 done = queue_wake.complete_source(repo, pr)
-head, why = queue_wake.next_to_run(repo, pr["base"]["ref"])
+# webhook/handler.py 와 같이 방금 뗀 소스 PR 은 후보에서 뺀다 (목록이 라벨 제거를
+# 늦게 반영한다)
+head, why = queue_wake.next_to_run(repo, pr["base"]["ref"],
+                                   exclude=(done.get("source_pr"),))
 print(f"complete={done} next: {why}", file=sys.stderr)
 print(head["number"] if head else "")
 PY
