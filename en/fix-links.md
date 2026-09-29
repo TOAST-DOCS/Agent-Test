@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=5e542d265d9e -->
+<!-- pre-align:aligned sig=842d30272567 -->
 
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
@@ -11,12 +11,12 @@ Each section below targets one deterministic rule with a **deliberately malforme
 
 This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide.
 
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
+<a id="fix-links-self-renamed"></a>
+## Self-link { #fix-links-self-renamed }
 
-A link to this very file written as a deployed-URL-shaped path. Only the in-file `#slug` should survive.
+A link that refers to the same file using a deployment URL-like path. Only pure in-file `#slug` should remain.
 
-* [Valid links](./fix-links/#fix-links-controls)
+* [Valid link examples](./fix-links/#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
@@ -148,3 +148,8 @@ Links inside a code fence are not links, so they must survive untouched as well.
 [broken link inside a fence](./no-such-doc-e2e.md#nowhere)
 [self-path inside a fence](./fix-links/#fix-links-controls)
 ```
+
+<a id="queue-a1"></a>
+## Translation queue test section queue-a1 { #queue-a1 }
+
+This section was added by the translation queue e2e (queue-a1). It must appear exactly once in the translation.
