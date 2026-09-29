@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=2e3418e57ac3 -->
+<!-- pre-align:aligned sig=4fa926b08c28 -->
 
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
@@ -153,3 +153,8 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 ## 翻訳キューテストセクション queue-a2 { #queue-a2 }
 
 このセクションは翻訳キュー e2e により追加されました (queue-a2)。翻訳版に正確に1回含まれる必要があります。
+
+<a id="queue-a3"></a>
+## 翻訳キューテストセクション queue-a3 { #queue-a3 }
+
+このセクションは翻訳キュー e2e が追加しました (queue-a3)。翻訳版に正確に1回存在する必要があります。
