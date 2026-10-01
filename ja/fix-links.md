@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=5e542d265d9e -->
+<!-- pre-align:aligned sig=b325d7b222f6 -->
 
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
@@ -26,12 +26,12 @@
 * [料金 (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ja/overview.md#pricing)
 * [料金 (repo-rooted パス)](/ja/overview.md#pricing)
 
-<a id="fix-links-langdir"></a>
-## lang-dir { #fix-links-langdir }
+<a id="fix-links-langdir-renamed"></a>
+## lang-dir { #fix-links-langdir-renamed }
 
-別の言語フォルダーを指す in-repo リンクです。同じ言語の対応ファイルが実在するので入れ替わるべきです。
+別の言語フォルダを指すリポジトリ内リンクです。この文書の対応文書が存在するため、同じ言語に変更する必要があります。
 
-* [料金 (別の言語フォルダー)](../ko/overview.md#pricing)
+* [料金 (別の言語フォルダ)](../en/overview.md#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
