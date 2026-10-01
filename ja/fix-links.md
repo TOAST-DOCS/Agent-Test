@@ -143,3 +143,8 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 [フェンス内の壊れたリンク](./no-such-doc-e2e.md#nowhere)
 [フェンス内の self-path](./fix-links/#fix-links-controls)
 ```
+
+<a id="queue-ord-r2"></a>
+## 翻訳キューテストセクション queue-ord-r2 { #queue-ord-r2 }
+
+このセクションは翻訳キュー e2e によって追加されました (queue-ord-r2)。翻訳本に正確に 1 回ある必要があります。
