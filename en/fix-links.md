@@ -11,12 +11,12 @@ Each section below targets one deterministic rule with a **deliberately malforme
 
 This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide.
 
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
+<a id="fix-links-self-ord"></a>
+## self-link { #fix-links-self-ord }
 
-A link to this very file written as a deployed-URL-shaped path. Only the in-file `#slug` should survive.
+A link pointing to the same file in deployment URL format. Only pure in-file `#slug` should remain.
 
-* [Valid links](./fix-links/#fix-links-controls)
+* [Collection of valid links](./fix-links/#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
