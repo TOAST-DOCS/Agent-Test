@@ -139,3 +139,8 @@ PR 본문의 "사람이 직접 확인해야 하는 부분" 표에 사유와 함�
 [펜스 안의 깨진 링크](./no-such-doc-e2e.md#nowhere)
 [펜스 안의 self-path](./fix-links/#fix-links-controls)
 ```
+
+<a id="queue-ord-r2"></a>
+## 번역 큐 테스트 섹션 queue-ord-r2 { #queue-ord-r2 }
+
+이 섹션은 번역 큐 e2e 가 추가했습니다 (queue-ord-r2). 번역본에 정확히 한 번 있어야 합니다.
