@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=5e542d265d9e -->
+<!-- pre-align:aligned sig=ea04e42de7d3 -->
 
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
@@ -148,3 +148,8 @@ Links inside a code fence are not links, so they must survive untouched as well.
 [broken link inside a fence](./no-such-doc-e2e.md#nowhere)
 [self-path inside a fence](./fix-links/#fix-links-controls)
 ```
+
+<a id="queue-ord-r2"></a>
+## Translation queue test section queue-ord-r2 { #queue-ord-r2 }
+
+This section was added by the translation queue e2e (queue-ord-r2). It must exist exactly once in the translation.
