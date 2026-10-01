@@ -206,6 +206,10 @@
 #                 [AFTER]) · S4 대조군. 차례의 번역은 자기 변경만 담는다. 판정 전부
 #                 결정적. 로컬 translate_pr.py 전용이고 CLOUD_TRANSLATE_DIR 에 번역 큐
 #                 코드 (shared/translate_queue.py) 가 있어야 한다 — 없으면 exit 2.
+#   translate-queue-ordinary — 큐를 켜도 일반 흐름 (ko → 번역 머지 → ko …) 이
+#                 큐 끔과 바이트 동일한지 (e2e-translate-queue-ordinary.sh). 라운드 4개를
+#                 큐 켬(카세트 기록)·큐 끔(재생)으로 두 번 번역해 모델 입력·트리·기점·
+#                 Files changed·PR 본문을 비교한다.
 #                 all 에서는 제외 (cloud-translate 의 큐 PR 이 머지되기 전까지).
 #   table-suite — 표 변형 종합 + stale 결함 재현 (stale-ify 커밋 포함).
 #                 기대: 번역 로직에 table-row reconcile(PR #290)이 있으면 exit 0,
@@ -469,7 +473,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|translate-queue)
+    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|translate-queue|translate-queue-ordinary)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -600,6 +604,13 @@ for plan in "${PLANS[@]}"; do
     ec=$?
     verdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE '^  A 번역 PR:\s+https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "translate-queue-ordinary" ]]; then
+    # 번역 큐를 켜도 일반 흐름(ko → 번역 머지 → ko …)은 큐 끔과 바이트 동일한가.
+    bash "$REPO_ROOT/scripts/e2e-translate-queue-ordinary.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$log" | tail -n1 || true)"
+    trans_pr="$(grep -oE 'ON https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
   elif [[ "$plan" == "translate-queue" ]]; then
     # 번역 큐 — lag-order 처럼 로컬 translate_pr.py 전용.
@@ -924,6 +935,7 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" == "concurrent" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "lag-order" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "translate-queue" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "translate-queue-ordinary" && $ec -ne 0 ]]; then overall=1; fi
   # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
   # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
   # fill-stubs: exit 4 = HELD — 채우기는 동작했고 남은 실패가 전부 도구가
@@ -950,7 +962,7 @@ for plan in "${PLANS[@]}"; do
         && "$plan" != "korean-review-links" \
         && "$plan" != "anchor-audit" \
         && "$plan" != "concurrent" && "$plan" != "lag-order" && "$plan" != "fill-stubs" \
-        && "$plan" != "translate-queue" \
+        && "$plan" != "translate-queue" && "$plan" != "translate-queue-ordinary" \
         && "$plan" != "fix-tables" \
         && "$plan" != "preserve" \
         && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
