@@ -20,6 +20,28 @@
 #   5) B 번역 PR 머지 → A 번역 PR 머지 (#36 → #38 순서)
 #   6) 검증 2: 세션 브랜치 en/ja 에 B 섹션 anchor · heading 이 **정확히 1번**
 #
+# --case 로 B 의 변경 모양을 고른다. section-add 만 지금 배포본에서 통과하는
+# 대조군이고, 나머지 셋은 순차 큐가 꺼져 있으면 **실패하는 것이 기대값**이다 —
+# lag 창이 실제로 결함을 내는 모양들이다 (2026-09-28 시뮬레이션 · RDS-FOR-
+# POSTGRESQL #90→#91). 큐(#1048)가 켜지면 셋 다 통과해야 한다.
+#
+#   section-add    B 가 문서 끝에 신규 섹션 추가. A 는 stale skip(#898) 으로 B
+#                  섹션을 건너뛴다 → PASS (기본값)
+#   anchor-rename  B 가 기존 섹션(#fix-links-langdir)의 anchor id 를 바꾼다. A 의
+#                  ko 에는 옛 id 가 없으므로 en/ja 의 옛 id 섹션을 지우고, 새 id
+#                  섹션은 자기 변경이 아니라 건너뛴다 → A 번역 PR 이 B 의 섹션을
+#                  건드리고 두 번역 PR 이 충돌하거나 섹션이 사라진다 (기대 FAIL)
+#   section-move   B 가 기존 섹션(#fix-links-nested)을 문서 끝으로 옮긴다. A 가
+#                  en/ja 를 ko 순서로 맞추며 같은 섹션을 옮겨 두 번역 PR 이 같은
+#                  자리를 건드린다 (기대 FAIL)
+#   b-closed       B 의 번역 PR 이 머지되지 않고 닫힌다 (번역 실패·운영자 닫음과
+#                  같은 상태). A 는 B 섹션을 건너뛰므로 B 섹션은 en/ja 에 **영영
+#                  번역되지 않는다** (기대 FAIL — 검증 2 의 anchor 순서 불일치)
+#
+# 판정은 세 케이스 공통이다: 검증 1 = A 번역 PR 의 diff 가 B 가 건드린 anchor 를
+# 담은 줄을 추가·삭제하지 않는가, 검증 2 = 최종 en/ja 의 `<a id>` 순서가 ko 와
+# 같은가 (추가·이름 변경·이동·유실을 한 질문으로 덮는다).
+#
 # 순차 번역 큐 (#1048, TRANSLATE_TRANSLATE_QUEUE_REPOS) 가 이 리포에 켜져 있으면
 # 3) 의 A 잡은 번역하지 않고 A 에 `번역 대기열` 라벨을 남긴다 — 그때는 B 번역 PR
 # 을 먼저 머지하고(webhook 이 A 를 깨운다) A 번역 PR 을 기다린다. 어느 모드로
@@ -36,6 +58,7 @@
 # Usage:
 #   source ./load_env.sh
 #   bash scripts/e2e-webhook-lag-order.sh
+#   bash scripts/e2e-webhook-lag-order.sh --case anchor-rename   # 기대 exit 1 (큐 꺼짐)
 #   bash scripts/e2e-webhook-lag-order.sh --doc fix-links.md --build-timeout 1800 --keep
 #
 # 의존성: git, gh(로그인), curl, python3, DASHBOARD_* (load_env.sh)
@@ -53,6 +76,7 @@ BUILD_TIMEOUT=1800
 KEEP=0
 DOC="${DOC:-fix-links.md}"
 QUEUE_LABEL="번역 대기열"
+CASE="section-add"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -60,10 +84,21 @@ while [[ $# -gt 0 ]]; do
     --build-timeout) BUILD_TIMEOUT="$2"; shift 2 ;;
     --doc)           DOC="$2"; shift 2 ;;
     --keep)          KEEP=1; shift ;;
-    -h|--help)       sed -n '2,46p' "$0"; exit 0 ;;
+    --case)          CASE="$2"; shift 2 ;;
+    -h|--help)       sed -n '2,70p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
   esac
 done
+
+# B 가 건드리는 anchor — 검증 1 은 A 번역 PR diff 에서 이 id 를 담은 줄을 찾는다.
+RENAME_FROM="fix-links-langdir"; RENAME_TO="fix-links-langdir-renamed"
+MOVE_ID="fix-links-nested"
+case "$CASE" in
+  section-add|b-closed) TOUCH=("lag-order-b-added") ;;
+  anchor-rename)        TOUCH=("$RENAME_FROM" "$RENAME_TO") ;;
+  section-move)         TOUCH=("$MOVE_ID") ;;
+  *) echo "unknown --case: $CASE (section-add|anchor-rename|section-move|b-closed)" >&2; exit 2 ;;
+esac
 
 if [[ -z "$DASHBOARD_BASE_URL" || -z "$DASHBOARD_API_TOKEN" ]]; then
   echo "error: DASHBOARD_BASE_URL / DASHBOARD_API_TOKEN 이 필요합니다. load_env.sh 를 source 하세요." >&2
@@ -77,7 +112,7 @@ source "$SCRIPTS/e2e-webhook-toggle.sh"   # set_webhook_repo_enabled
 source "$SCRIPTS/e2e-webhook-filter.sh"   # extend_filters_for_branch, restore_filters
 
 TS="$(date -u +%Y%m%d-%H%M%S)"
-SESSION="e2e-webhook-lag/${TS}"
+SESSION="e2e-webhook-lag/${TS}-${CASE}"
 BR_A="translate-test-webhook-lag/${TS}-a"
 BR_B="translate-test-webhook-lag/${TS}-b"
 TOKEN_B_ANCHOR="lag-order-b-added"
@@ -101,7 +136,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "==================================================================="
-echo "  webhook lag-order e2e — Agent-Test (doc=$DOC)"
+echo "  webhook lag-order e2e — Agent-Test (doc=$DOC, case=$CASE)"
 echo "  session base : $SESSION$( ((KEEP)) || echo ' (종료 시 삭제)' )"
 echo "  PR B / A     : $BR_B / $BR_A"
 echo "==================================================================="
@@ -127,6 +162,19 @@ if ! git diff --quiet; then
   git add ko en ja
   git commit --quiet -m "e2e(webhook-lag-order): restore snapshot + normalize headings + machine_translated header"
 fi
+# 검증 2 는 "최종 en/ja 의 anchor 순서 == ko" 를 묻는다 — 시작점에서 이미 다르면
+# 그 판정이 B·A 와 무관하게 실패하므로 여기서 하네스 전제로 확인한다.
+anchor_seq() { grep -oE '<a id="[^"]+"' | sed -E 's/<a id="([^"]+)"/\1/'; }
+for lang in en ja; do
+  if [[ "$(anchor_seq < "ko/$DOC")" != "$(anchor_seq < "$lang/$DOC")" ]]; then
+    echo "error: 시작점에서 ko/$lang $DOC 의 anchor 순서가 다름 (하네스 전제 실패)" >&2; exit 2
+  fi
+done
+for id in "${TOUCH[@]}"; do
+  [[ "$CASE" == anchor-rename && "$id" == "$RENAME_TO" ]] && continue
+  [[ "$CASE" == section-add || "$CASE" == b-closed ]] && continue
+  grep -q "<a id=\"$id\">" "ko/$DOC" || { echo "error: ko/$DOC 에 #$id 가 없음" >&2; exit 2; }
+done
 git push --quiet origin "$SESSION"
 SESSION_PUSHED=1
 extend_filters_for_branch "$SESSION"
@@ -148,6 +196,21 @@ if which == "a":
     assert hit is not None, "no prose paragraph found"
     lines[hit] = lines[hit] + " (순서 테스트 A: 이 문장은 ${TOKEN_A_EDIT} 검증용입니다.)"
     text = "\n".join(lines)
+elif which == "b" and "${CASE}" == "anchor-rename":
+    old, new = "${RENAME_FROM}", "${RENAME_TO}"
+    assert f'<a id="{old}"></a>' in text and f"{{ #{old} }}" in text
+    text = text.replace(f'<a id="{old}"></a>', f'<a id="{new}"></a>')
+    text = text.replace(f"{{ #{old} }}", f"{{ #{new} }}")
+elif which == "b" and "${CASE}" == "section-move":
+    # 섹션 = 그 <a id> 줄부터 다음 <a id> 줄 직전까지. 문서 끝으로 옮긴다.
+    lines = text.rstrip("\n").split("\n")
+    start = lines.index('<a id="${MOVE_ID}"></a>')
+    end = next(i for i in range(start + 1, len(lines)) if lines[i].startswith("<a id="))
+    block = lines[start:end]
+    while block and not block[-1].strip():
+        block.pop()
+    rest = lines[:start] + lines[end:]
+    text = "\n".join(rest) + "\n\n" + "\n".join(block) + "\n"
 elif which == "b":
     if not text.endswith("\n"):
         text += "\n"
@@ -197,9 +260,10 @@ summary() {
   echo "  merged B → translate           : $R_TRANS_B  ${TRANS_B_URL}"
   echo "  merged A → translate           : $R_TRANS_A  ${TRANS_A_URL}"
   echo "  queue                          : $QUEUE_MODE"
-  echo "  검증1 A 번역에 B 섹션 없음     : $R_V1"
+  echo "  case                           : $CASE"
+  echo "  검증1 A 번역이 B 변경 안 건드림: $R_V1"
   echo "  번역 PR 머지 (B → A)           : $R_MERGE"
-  echo "  검증2 최종 B 섹션 정확히 1번   : $R_V2"
+  echo "  검증2 최종 en/ja anchor == ko  : $R_V2"
   echo "==================================================================="
 }
 
@@ -244,8 +308,8 @@ has_label() {  # $1=PR URL $2=label → 0/1
 
 # ── 1) open B, A ─────────────────────────────────────────────────────
 echo
-echo "[1/8] PR B (신규 섹션) · PR A (다른 섹션 본문 수정) 연달아 open"
-PR_B_URL="$(make_pr "$BR_B" b "[e2e] webhook lag-order PR B — new section (${TS})")"
+echo "[1/8] PR B ($CASE) · PR A (다른 섹션 본문 수정) 연달아 open"
+PR_B_URL="$(make_pr "$BR_B" b "[e2e] webhook lag-order PR B — ${CASE} (${TS})")"
 echo "  B: $PR_B_URL"
 PR_A_URL="$(make_pr "$BR_A" a "[e2e] webhook lag-order PR A — body edit (${TS})")"
 echo "  A: $PR_A_URL"
@@ -270,21 +334,37 @@ echo "  B 번역 PR: $TRANS_B_URL (미머지)"
 e2e_label_pr "$REPO" "$TRANS_B_URL"
 TRANS_B_REF="$(gh api "repos/${REPO}/pulls/${TRANS_B_URL##*/}" -q .head.ref)"
 git fetch --quiet origin "$TRANS_B_REF"
+# FETCH_HEAD 는 다음 fetch 가 덮어쓴다 — 바로 SHA 로 고정한다 (아래에서 세션을
+# fetch 한 뒤에도 FETCH_HEAD 를 B 번역으로 읽어 전제를 거짓 실패시킨 적이 있다).
+TRANS_B_SHA="$(git rev-parse FETCH_HEAD)"
+# 하네스 전제: B 번역 PR 이 en/ja 를 B 의 ko 와 같은 anchor 순서로 만들었는가 —
+# 아니면 이후의 실패는 A 가 아니라 B 번역 자체의 결함이다.
+git fetch --quiet origin "$SESSION"
+ko_b_seq="$(git show "origin/${SESSION}:ko/$DOC" | anchor_seq)"
 for lang in en ja; do
-  if ! git show "FETCH_HEAD:${lang}/$DOC" | grep -q "$TOKEN_B_ANCHOR"; then
-    echo "error: B 번역 PR 의 ${lang} 에 B 섹션이 없음 (하네스 전제 실패)" >&2; summary; exit 2
+  if [[ "$(git show "${TRANS_B_SHA}:${lang}/$DOC" | anchor_seq)" != "$ko_b_seq" ]]; then
+    echo "error: B 번역 PR 의 ${lang} anchor 순서가 B 의 ko 와 다름 (하네스 전제 실패)" >&2
+    diff <(echo "$ko_b_seq") <(git show "${TRANS_B_SHA}:${lang}/$DOC" | anchor_seq) | sed 's/^/    /' >&2 || true
+    summary; exit 2
   fi
 done
+echo "  B 번역 PR en/ja anchor 순서 == B 의 ko ✓"
+if [[ "$CASE" == b-closed ]]; then
+  echo "  [b-closed] B 번역 PR 을 머지하지 않고 닫는다 (번역 실패·운영자 닫음과 같은 상태)"
+  gh pr close "$TRANS_B_URL" --repo "$REPO" >/dev/null
+  TRANS_B_URL="$TRANS_B_URL (닫음)"
+fi
 
 # ── 3) A 머지 → A 번역 ────────────────────────────────────────────────
 echo
 echo "[4/8] A 머지 (ko 에 B 섹션 · en/ja 에는 아직 없음) → webhook → A translate"
 gh pr merge "$PR_A_URL" --repo "$REPO" --merge >/dev/null
 git fetch --quiet origin "$SESSION"
-git show "origin/${SESSION}:ko/$DOC" | grep -q "$TOKEN_B_ANCHOR" \
-  || { echo "error: A 머지 후 ko 에 B 섹션이 없음" >&2; summary; exit 2; }
-if git show "origin/${SESSION}:en/$DOC" | grep -q "$TOKEN_B_ANCHOR"; then
-  echo "error: en 에 B 섹션이 이미 있음 — 창(window) 재현 실패" >&2; summary; exit 2
+if [[ "$(git show "origin/${SESSION}:ko/$DOC" | anchor_seq)" != "$ko_b_seq" ]]; then
+  echo "error: A 머지 후 ko anchor 순서가 B 의 것과 다름 — git 머지가 예상과 다름" >&2; summary; exit 2
+fi
+if [[ "$(git show "origin/${SESSION}:en/$DOC" | anchor_seq)" == "$ko_b_seq" ]]; then
+  echo "error: en 이 이미 B 의 모양 — 창(window) 재현 실패" >&2; summary; exit 2
 fi
 R_TRANS_A="$(await_job "$PR_A_URL" closed translate)" || true
 echo "  A translate: $R_TRANS_A"
@@ -294,6 +374,15 @@ TRANS_A_URL="$(find_translation_pr "$BR_A" 60)"
 B_MERGED_EARLY=0
 if [[ -z "$TRANS_A_URL" ]] && has_label "$PR_A_URL" "$QUEUE_LABEL"; then
   # 큐 모드 — A 는 B 번역 PR 머지를 기다린다. 머지하면 webhook 이 A 를 깨운다.
+  if [[ "$CASE" == b-closed ]]; then
+    # 닫힌 번역 PR 은 완료가 아니다 — A 는 B 가 재번역·머지될 때까지 기다리는 게
+    # 정답이고, 그 대기 자체가 이 케이스의 기대 동작이다.
+    QUEUE_MODE="on (B 번역 닫힘 → A 대기 유지)"
+    R_V1="PASS (A 대기)"; R_MERGE="-"; R_V2="PASS (A 가 번역하지 않고 대기 — 닫힘은 완료가 아님)"
+    summary
+    echo "RESULT: PASS — 큐가 닫힌 번역 PR 을 완료로 치지 않고 A 를 대기시켰다"
+    exit 0
+  fi
   QUEUE_MODE="on (A 가 '$QUEUE_LABEL' 로 대기 → B 번역 머지 후 차례)"
   echo "  A 에 '$QUEUE_LABEL' — 큐 모드. B 번역 PR 을 먼저 머지해 A 를 깨운다"
   gh pr merge "$TRANS_B_URL" --repo "$REPO" --merge >/dev/null
@@ -306,7 +395,7 @@ e2e_label_pr "$REPO" "$TRANS_A_URL"
 
 # ── 4) 검증 1 ────────────────────────────────────────────────────────
 echo
-echo "[5/8] 검증 1: A 번역 PR 의 en/ja 는 B 섹션을 넣지 않았는가"
+echo "[5/8] 검증 1: A 번역 PR 의 diff 가 B 가 건드린 anchor (${TOUCH[*]}) 를 추가·삭제하지 않는가"
 TRANS_A_REF="$(gh api "repos/${REPO}/pulls/${TRANS_A_URL##*/}" -q .head.ref)"
 git fetch --quiet origin "$TRANS_A_REF"
 TRANS_A_SHA="$(git rev-parse FETCH_HEAD)"
@@ -314,15 +403,18 @@ fail=0; v1_fail=0
 for lang in en ja; do
   # 큐 모드에서는 A 가 B 번역이 머지된 en 위에서 돌므로 B 섹션이 있는 게 정상이다
   # — 그때는 '새로 넣었는가' 를 A 번역 PR 의 diff(추가 줄)로 본다.
-  added="$(gh api "repos/${REPO}/pulls/${TRANS_A_URL##*/}/files" --paginate \
-             --jq ".[] | select(.filename == \"${lang}/$DOC\") | .patch" 2>/dev/null \
-           | grep -E '^\+' | grep -c "$TOKEN_B_ANCHOR" || true)"
-  if (( added > 0 )); then
-    echo "  [$lang] B 섹션: A 번역 PR 이 추가 ✗  ← A 의 잡이 자기 diff 밖의 섹션을 번역해 넣었다"
-    v1_fail=1
-  else
-    echo "  [$lang] B 섹션: A 번역 PR 이 추가하지 않음 ✓"
-  fi
+  patch="$(gh api "repos/${REPO}/pulls/${TRANS_A_URL##*/}/files" --paginate \
+             --jq ".[] | select(.filename == \"${lang}/$DOC\") | .patch" 2>/dev/null || true)"
+  for id in "${TOUCH[@]}"; do
+    added="$(grep -E '^\+' <<<"$patch" | grep -cF "$id" || true)"
+    removed="$(grep -E '^-' <<<"$patch" | grep -cF "$id" || true)"
+    if (( added + removed > 0 )); then
+      echo "  [$lang] #$id: A 번역 PR 이 +${added} −${removed} 줄 ✗  ← A 의 잡이 B 의 변경을 건드렸다"
+      v1_fail=1
+    else
+      echo "  [$lang] #$id: A 번역 PR 이 건드리지 않음 ✓"
+    fi
+  done
   if git show "${TRANS_A_SHA}:${lang}/$DOC" 2>/dev/null | grep -qi "$TOKEN_A_EDIT"; then
     echo "  [$lang] A 편집 토큰: PRESENT ✓"
   else
@@ -334,13 +426,16 @@ if (( v1_fail )); then R_V1="FAIL"; fail=1; else R_V1="PASS"; fi
 # ── 5) 번역 PR 머지 B → A ────────────────────────────────────────────
 echo
 echo "[6/8] B 번역 PR 머지 → A 번역 PR 머지 (#36 → #38 순서)"
-if (( ! B_MERGED_EARLY )); then
+if [[ "$CASE" == b-closed ]]; then
+  echo "  [b-closed] B 번역 PR 은 닫혀 있다 — A 번역 PR 만 머지"
+elif (( ! B_MERGED_EARLY )); then
   gh pr merge "$TRANS_B_URL" --repo "$REPO" --merge >/dev/null
 fi
 if gh pr merge "$TRANS_A_URL" --repo "$REPO" --merge >/dev/null 2>&1; then
   R_MERGE="PASS"
 else
   R_MERGE="FAIL (A 번역 PR 머지 충돌)"
+  echo "RESULT: FAIL ($CASE) — A 번역 PR 이 B 번역 PR 과 충돌 (결함 재현)"
   echo "  A 번역 PR 머지 실패 — 충돌 위치:" >&2
   git fetch --quiet origin "$SESSION"
   tree="$(git merge-tree --write-tree "origin/$SESSION" "$TRANS_A_SHA" 2>/dev/null | head -1 || true)"
@@ -353,16 +448,17 @@ git fetch --quiet origin "$SESSION"
 
 # ── 6) 검증 2 ────────────────────────────────────────────────────────
 echo
-echo "[7/8] 검증 2: 세션 브랜치 en/ja 에 B 섹션 anchor 가 정확히 1번인가"
+echo "[7/8] 검증 2: 세션 브랜치 en/ja 의 <a id> 순서가 ko 와 같은가"
 v2_fail=0
-for lang in ko en ja; do
-  n="$(git show "origin/${SESSION}:${lang}/$DOC" | grep -c "<a id=\"${TOKEN_B_ANCHOR}\"></a>" || true)"
-  h="$(git show "origin/${SESSION}:${lang}/$DOC" | grep -c "{ #${TOKEN_B_ANCHOR} }" || true)"
-  if [[ "$n" == "1" && "$h" == "1" ]]; then
-    echo "  [$lang] anchor ×$n · heading ×$h ✓"
+ko_final="$(git show "origin/${SESSION}:ko/$DOC" | anchor_seq)"
+for lang in en ja; do
+  got="$(git show "origin/${SESSION}:${lang}/$DOC" | anchor_seq)"
+  if [[ "$got" == "$ko_final" ]]; then
+    echo "  [$lang] anchor $(wc -l <<<"$got")개 순서 == ko ✓"
   else
-    echo "  [$lang] anchor ×$n · heading ×$h ✗  ← 사본 중복 (또는 유실)"
-    [[ "$lang" == "ko" ]] || v2_fail=1
+    echo "  [$lang] anchor 순서 ≠ ko ✗  (< ko · > $lang)"
+    diff <(echo "$ko_final") <(echo "$got") | grep -E '^[<>]' | sed 's/^/      /' || true
+    v2_fail=1
   fi
 done
 if (( v2_fail )); then R_V2="FAIL"; fail=1; else R_V2="PASS"; fi
@@ -371,9 +467,9 @@ echo
 echo "[8/8] 결과"
 summary
 if (( fail )); then
-  echo "RESULT: FAIL — A 의 번역이 B 섹션을 넣었거나 최종 사본이 1개가 아님 (결함 재현)"
+  echo "RESULT: FAIL ($CASE) — A 번역이 B 의 변경을 건드렸거나 최종 en/ja 가 ko 와 어긋남 (결함 재현)"
   exit 1
 fi
-echo "RESULT: PASS — 번역 잡이 자기 PR 의 diff 안에서만 움직였고 최종 사본 1개"
+echo "RESULT: PASS ($CASE) — 번역 잡이 자기 PR 의 diff 안에서만 움직였고 최종 en/ja 가 ko 와 같다"
 [[ "$R_REVIEW_A" == PASS && "$R_REVIEW_B" == PASS ]] || exit 3
 exit 0
