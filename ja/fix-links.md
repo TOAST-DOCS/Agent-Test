@@ -26,12 +26,12 @@
 * [料金 (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ja/overview.md#pricing)
 * [料金 (repo-rooted パス)](/ja/overview.md#pricing)
 
-<a id="fix-links-langdir"></a>
-## lang-dir { #fix-links-langdir }
+<a id="fix-links-langdir-renamed"></a>
+## lang-dir { #fix-links-langdir-renamed }
 
-別の言語フォルダーを指す in-repo リンクです。同じ言語の対応ファイルが実在するので入れ替わるべきです。
+他の言語フォルダーを指す in-repo リンクです。このドキュメントの言語ペアが存在するため、同じ言語に変更する必要があります。
 
-* [料金 (別の言語フォルダー)](../ko/overview.md#pricing)
+* [料金 (他の言語フォルダー)](../ja/overview.md#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
