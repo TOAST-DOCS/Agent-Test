@@ -5,7 +5,7 @@
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
 
-This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`).
+This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`). (Order test A: This sentence is for lag-order-a-edit verification.)
 Each section below targets one deterministic rule with a **deliberately malformed link**, and
 `scripts/e2e-fix-links.sh` judges the repair rule by rule.
 
@@ -32,13 +32,6 @@ Links to a file in this repo written as an absolute URL / repo-rooted path. Both
 An in-repo link pointing at another language folder. The same-language twin exists, so it should be swapped.
 
 * [Pricing (other language folder)](../ko/overview.md#pricing)
-
-<a id="fix-links-nested"></a>
-## nested-frag { #fix-links-nested }
-
-A link whose fragment swallowed a deployed-URL fragment, leaving `#a/#b`. Only the part after the last `/#` should survive.
-
-* [Pricing (nested fragment)](./overview.md#overview/#pricing)
 
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
@@ -148,3 +141,10 @@ Links inside a code fence are not links, so they must survive untouched as well.
 [broken link inside a fence](./no-such-doc-e2e.md#nowhere)
 [self-path inside a fence](./fix-links/#fix-links-controls)
 ```
+
+<a id="fix-links-nested"></a>
+## nested-frag { #fix-links-nested }
+
+The deployment URL fragment is pulled into the fragment, resulting in an overlapping link with `#a/#b`. Only the part after the last `/#` should remain.
+
+* [Pricing (overlapping fragment)](./overview.md#overview/#pricing)
