@@ -33,13 +33,6 @@ An in-repo link pointing at another language folder. The same-language twin exis
 
 * [Pricing (other language folder)](../ko/overview.md#pricing)
 
-<a id="fix-links-nested"></a>
-## nested-frag { #fix-links-nested }
-
-A link whose fragment swallowed a deployed-URL fragment, leaving `#a/#b`. Only the part after the last `/#` should survive.
-
-* [Pricing (nested fragment)](./overview.md#overview/#pricing)
-
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
 
@@ -148,3 +141,10 @@ Links inside a code fence are not links, so they must survive untouched as well.
 [broken link inside a fence](./no-such-doc-e2e.md#nowhere)
 [self-path inside a fence](./fix-links/#fix-links-controls)
 ```
+
+<a id="fix-links-nested"></a>
+## nested-frag { #fix-links-nested }
+
+The deployed URL fragment is pulled into the fragment, creating an overlapping link like `#a/#b`. Only the part after the last `/#` should remain.
+
+* [Pricing (overlapping fragment)](./overview.md#overview/#pricing)
