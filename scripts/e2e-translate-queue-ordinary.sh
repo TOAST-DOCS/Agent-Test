@@ -257,6 +257,8 @@ print(t)'
 }
 files_sig() { gh pr view "$1" --repo "$REPO" --json files -q '[.files[] | "\(.path) +\(.additions) -\(.deletions)"] | sort | join(",")'; }
 
+head_ref() { gh api "repos/${REPO}/pulls/${1##*/}" -q .head.ref; }
+
 e2e_ensure_label "$REPO"
 
 round() {  # $1 이름 · $2.. mutate ops (마지막 = 제목)
