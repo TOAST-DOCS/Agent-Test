@@ -26,7 +26,7 @@
 [baseos]
 name=Rocky Linux $releasever - BaseOS
 mirrorlist=https://mirrors.rockylinux.org/mirrorlist?arch=$basearch&repo=BaseOS-$releasever
-#baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
+# baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
 gpgcheck=1
 enabled=1
 countme=1
@@ -253,7 +253,7 @@ The default is /boot/loader/entries/ea5b6e1e7bc09da25505ebb3a26a8bf4-4.18.0-553.
 現在Rocky 8.10公式イメージでgrubbyコマンドでカーネルを変更できない問題があるので、下記のシェルスクリプトを使います。
 
 ```bash
-#!/bin/bash
+# !/bin/bash
 
 result=1
 kernel_list=(` rpm -qa | grep ^kernel-[0-9] | sort `)
@@ -326,7 +326,7 @@ done
 [baseos]
 name=Rocky Linux $releasever - BaseOS
 mirrorlist=https://mirrors.rockylinux.org/mirrorlist?arch=$basearch&repo=BaseOS-$releasever$rltype
-#baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
+# baseurl=http://dl.rockylinux.org/$contentdir/$releasever/BaseOS/$basearch/os/
 gpgcheck=1
 enabled=1
 countme=1
