@@ -5,7 +5,7 @@
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
 
-この文書は**リンク訂正**(`dashboard/links/fix.py`、Jenkins `fix-links`)の e2e フィクスチャです。 (翻訳キューテスト: この文は QUEUE-S1-B-TOKEN 確認用です。) (翻訳キューテスト: この文は QUEUE-S2-B-TOKEN 確認用です。) (翻訳キューテスト: この文は QUEUE-S3-B-TOKEN 確認用です。)
+この文書は**リンク訂正**(`dashboard/links/fix.py`、Jenkins `fix-links`)の e2e フィクスチャです。 (翻訳キューテスト: この文は QUEUE-S1-B-TOKEN 確認用です。) (翻訳キューテスト: この文は QUEUE-S2-B-TOKEN 確認用です。) (翻訳キューテスト: この文は QUEUE-S3-B-TOKEN 確認用です。) (翻訳キューテスト: この文は QUEUE-S4-C-TOKEN 確認用です。)
 以下の各セクションは決定的ルールを 1 つずつ狙って**わざと壊したリンク**を持ち、
 `scripts/e2e-fix-links.sh` が訂正結果をルールごとに判定します。
 
