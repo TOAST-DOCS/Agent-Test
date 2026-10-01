@@ -5,7 +5,7 @@
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
 
-この文書は**リンク訂正**(`dashboard/links/fix.py`、Jenkins `fix-links`)の e2e フィクスチャです。
+この文書は**リンク訂正**(`dashboard/links/fix.py`、Jenkins `fix-links`) の e2e フィクスチャです。(順序テスト A: この文章は lag-order-a-edit 検証用です。)
 以下の各セクションは決定的ルールを 1 つずつ狙って**わざと壊したリンク**を持ち、
 `scripts/e2e-fix-links.sh` が訂正結果をルールごとに判定します。
 
@@ -25,13 +25,6 @@
 
 * [料金 (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ja/overview.md#pricing)
 * [料金 (repo-rooted パス)](/ja/overview.md#pricing)
-
-<a id="fix-links-langdir"></a>
-## lang-dir { #fix-links-langdir }
-
-別の言語フォルダーを指す in-repo リンクです。同じ言語の対応ファイルが実在するので入れ替わるべきです。
-
-* [料金 (別の言語フォルダー)](../ko/overview.md#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
