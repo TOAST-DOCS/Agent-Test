@@ -55,12 +55,18 @@ BASE_SOURCE="alpha"
 POLL_TIMEOUT=600      # 초. 딜리버리 → task 등장까지.
 POLL_INTERVAL=5
 BUILD_TIMEOUT=1800    # 초. 각 Jenkins 빌드 완료 대기 상한.
+# 초. Jenkins executor 를 기다리는 시간 (task 가 queued 인 동안). 빌드 실행 시간
+# (--build-timeout) 과 따로 센다 — 운영 번역 잡이 executor 를 잡고 있으면 e2e 빌드는
+# 시작도 못 한 채 기다린다 (2026-10-01 실측: CDN#102 · Service-Gateway#87 두 운영
+# 빌드 뒤에서 30분 대기 → 빌드 시간 제한에 걸려 거짓 실패).
+EXECUTOR_TIMEOUT=3600
 KEEP=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --timeout)       POLL_TIMEOUT="$2"; shift 2 ;;
     --build-timeout) BUILD_TIMEOUT="$2"; shift 2 ;;
+    --executor-timeout) EXECUTOR_TIMEOUT="$2"; shift 2 ;;
     --keep)          KEEP=1; shift ;;
     -h|--help)       sed -n '2,45p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 2 ;;
@@ -246,6 +252,13 @@ await_job() {  # $1=pr_url $2=action $3=kind
   fi
   jid="$(task_field "$tj" job_id)"; tid="$(task_field "$tj" task_id)"
   echo "  #$num $action → $kind task 감지 (jobs/$jid task=$tid)" >&2
+  # executor 대기는 빌드 시간 제한에 넣지 않는다 (위 EXECUTOR_TIMEOUT 주석).
+  local qdeadline=$(( $(date +%s) + EXECUTOR_TIMEOUT ))
+  while [[ "$(task_status "$jid" "$tid")" == queued ]] && (( $(date +%s) < qdeadline )); do sleep 10; done
+  if [[ "$(task_status "$jid" "$tid")" == queued ]]; then
+    echo "  FAIL: ${EXECUTOR_TIMEOUT}s 동안 Jenkins executor 를 못 받음 (task 가 queued)" >&2
+    echo "FAIL (executor timeout)"; return 1
+  fi
   wait_for_build_finish "$jid" "$tid" "$BUILD_TIMEOUT" >&2 || { echo "FAIL (build timeout)"; return 1; }
   st="$(task_status "$jid" "$tid")"
   if [[ "$st" == "success" ]]; then echo "PASS"; else echo "FAIL (build $st)"; return 1; fi

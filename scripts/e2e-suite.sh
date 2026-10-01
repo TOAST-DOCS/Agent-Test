@@ -45,11 +45,13 @@
 #                 머지하고, A 번역 PR 이 B 섹션을 넣지 않는지 · 두 번역 PR 머지
 #                 뒤 en/ja 에 B 섹션이 정확히 1번인지 본다. 순차 큐가 켜져 있으면
 #                 A 대기 → B 번역 머지 → A 차례로 돌고 요약에 queue=on 이 남는다.
-#                 e2e-webhook-lag-order.sh 를 실행 (--case section-add). 기대: exit 0.
-#                 실패를 재현하는 케이스 셋(anchor-rename · section-move ·
-#                 b-closed)은 큐가 꺼진 지금 **exit 1 이 기대값**이라 suite 에
-#                 넣지 않는다 — `bash scripts/e2e-webhook-lag-order.sh --case <c>`
-#                 로 직접 돌린다. 큐를 켠 뒤에는 셋 다 exit 0 이어야 한다.
+#                 e2e-webhook-lag-order.sh 를 --case 네 개로 차례로 실행한다
+#                 (section-add · anchor-rename · section-move · b-closed, 케이스마다
+#                 결과 한 줄 · 로그 `webhook-lag-order-<case>.log`). 기대: 넷 다
+#                 exit 0. 뒤 셋은 순차 큐(#1048)가 꺼져 있으면 실패하는 모양이라
+#                 (2026-10-01 큐 이전 실측: rename·move 충돌, b-closed 영구 미번역)
+#                 큐가 이 리포에서 꺼지면 이 plan 이 빨개진다 — 그게 신호다.
+#                 ~1시간 (케이스당 ko-review 2 + translate 2 빌드).
 #   korean-review-no-targets — 삭제만 있는 ko PR (검수 대상 0건). 리뷰가 게시되지
 #                 않는 것이 정상이고, 그래도 '검수 대상 없음' 코멘트와
 #                 `한글 검수`·`content-agent` 라벨이 남는지 검증(라벨이 없으면
@@ -603,11 +605,22 @@ for plan in "${PLANS[@]}"; do
     trans_pr="$(grep -oE 'merged A → translate\s+:\s+PASS\s+https://[^ ]+' "$log" | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
   elif [[ "$plan" == "webhook-lag-order" ]]; then
-    bash "$REPO_ROOT/scripts/e2e-webhook-lag-order.sh" > "$log" 2>&1
-    ec=$?
-    verdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$log" | tail -n1 || true)"
-    trans_pr="$(grep -oE 'merged A → translate\s+:\s+PASS\s+https://[^ ]+' "$log" | awk '{print $NF}' || true)"
-    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+    # 케이스 넷을 순서대로 — 같은 webhook 토글·필터를 쓰므로 병렬로 돌리면 안 된다.
+    # plan 의 ec 는 처음 실패한 케이스의 exit (전부 통과면 0).
+    ec=0
+    for lag_case in section-add anchor-rename section-move b-closed; do
+      clog="$outdir/$plan-$lag_case.log"
+      echo "    --case $lag_case → $clog"
+      bash "$REPO_ROOT/scripts/e2e-webhook-lag-order.sh" --case "$lag_case" > "$clog" 2>&1
+      cec=$?
+      (( ec == 0 && cec != 0 )) && ec=$cec
+      cverdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$clog" | tail -n1 || true)"
+      cqueue="$(grep -oE '^\s+queue\s+: .*' "$clog" | sed -E 's/^\s+queue\s+: //' | tail -n1 || true)"
+      ctrans="$(grep -oE 'merged A → translate\s+:\s+PASS\s+https://[^ ]+' "$clog" | awk '{print $NF}' || true)"
+      RESULTS+=("$plan:$lag_case|exit=$cec|${cverdict:-<no-verdict>} [queue ${cqueue:-?}]|${ctrans:-<no-pr>}")
+    done
+    cat "$outdir/$plan"-*.log > "$log" 2>/dev/null || true
+    verdict="cases: section-add anchor-rename section-move b-closed (exit=$ec)"
   elif [[ "$plan" == "workflow-ignore" ]]; then
     # `.docs-workflow` ignore × webhook 경로. webhook plan 과 같은 이유로
     # PASS_ARGS (translate/engine/model 계열) 를 전달하지 않는다 — 엔진은
