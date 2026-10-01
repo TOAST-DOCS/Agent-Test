@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=ea04e42de7d3 -->
+<!-- pre-align:aligned sig=a48b011e88e4 -->
 
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
@@ -11,12 +11,12 @@ Each section below targets one deterministic rule with a **deliberately malforme
 
 This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide.
 
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
+<a id="fix-links-self-ord"></a>
+## Self-link { #fix-links-self-ord }
 
-A link to this very file written as a deployed-URL-shaped path. Only the in-file `#slug` should survive.
+Links that point to the same file using deployment URL-style paths. Only pure in-file `#slug` should remain.
 
-* [Valid links](./fix-links/#fix-links-controls)
+* [Valid link examples](./fix-links/#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }

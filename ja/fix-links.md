@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=ea04e42de7d3 -->
+<!-- pre-align:aligned sig=a48b011e88e4 -->
 
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
@@ -11,10 +11,10 @@
 
 この文書はユーザーガイドメニュー(`ko/nav.yml`)には登録しません。配布される文書ではなくパイプラインのフィクスチャです。
 
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
+<a id="fix-links-self-ord"></a>
+## self-link { #fix-links-self-ord }
 
-同じファイルをデプロイ URL 形式のパスで指すリンクです。純粋な in-file `#slug` だけが残るべきです。
+同じファイルをデプロイされた URL 形式のパスで指すリンクです。純粋な in-file `#slug` だけが残る必要があります。
 
 * [正常なリンク集](./fix-links/#fix-links-controls)
 
