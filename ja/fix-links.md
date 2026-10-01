@@ -5,7 +5,7 @@
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
 
-この文書は**リンク訂正**(`dashboard/links/fix.py`、Jenkins `fix-links`)の e2e フィクスチャです。
+この文書は**リンク訂正**(`dashboard/links/fix.py`、Jenkins `fix-links`) の e2e フィクスチャです。(順序テスト A: この文章は lag-order-a-edit の検証用です。)
 以下の各セクションは決定的ルールを 1 つずつ狙って**わざと壊したリンク**を持ち、
 `scripts/e2e-fix-links.sh` が訂正結果をルールごとに判定します。
 
@@ -32,13 +32,6 @@
 別の言語フォルダーを指す in-repo リンクです。同じ言語の対応ファイルが実在するので入れ替わるべきです。
 
 * [料金 (別の言語フォルダー)](../ko/overview.md#pricing)
-
-<a id="fix-links-nested"></a>
-## nested-frag { #fix-links-nested }
-
-デプロイ URL の断片が fragment に入り込み `#a/#b` と重なったリンクです。最後の `/#` 以降だけが残るべきです。
-
-* [料金 (重なった fragment)](./overview.md#overview/#pricing)
 
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
@@ -143,3 +136,10 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 [フェンス内の壊れたリンク](./no-such-doc-e2e.md#nowhere)
 [フェンス内の self-path](./fix-links/#fix-links-controls)
 ```
+
+<a id="fix-links-nested"></a>
+## nested-frag { #fix-links-nested }
+
+デプロイ URL のフラグメントが fragment の中に引き込まれ、`#a/#b` と重複したリンクです。最後の `/#` 以降のみ残る必要があります。
+
+* [料金 (重複した fragment)](./overview.md#overview/#pricing)
