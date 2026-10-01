@@ -9,8 +9,8 @@
 
 이 문서는 사용자 가이드 메뉴(`ko/nav.yml`) 에 등록하지 않습니다. 배포되는 문서가 아니라 파이프라인 픽스처입니다.
 
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
+<a id="fix-links-self-ord"></a>
+## self-link { #fix-links-self-ord }
 
 같은 파일을 배포 URL 모양의 경로로 가리키는 링크입니다. 순수 in-file `#slug` 만 남아야 합니다.
 
