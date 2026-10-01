@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=5e542d265d9e -->
+<!-- pre-align:aligned sig=842d30272567 -->
 
 <a id="fix-links-overview"></a>
 ## リンク訂正テスト { #fix-links-overview }
@@ -11,10 +11,10 @@
 
 この文書はユーザーガイドメニュー(`ko/nav.yml`)には登録しません。配布される文書ではなくパイプラインのフィクスチャです。
 
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
+<a id="fix-links-self-renamed"></a>
+## self-link { #fix-links-self-renamed }
 
-同じファイルをデプロイ URL 形式のパスで指すリンクです。純粋な in-file `#slug` だけが残るべきです。
+同じファイルを配置URLの形式のパスで指すリンクです。純粋な in-file `#slug` のみが残るべきです。
 
 * [正常なリンク集](./fix-links/#fix-links-controls)
 
@@ -143,3 +143,8 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 [フェンス内の壊れたリンク](./no-such-doc-e2e.md#nowhere)
 [フェンス内の self-path](./fix-links/#fix-links-controls)
 ```
+
+<a id="queue-a1"></a>
+## 翻訳キューテストセクション queue-a1 { #queue-a1 }
+
+このセクションは翻訳キュー e2e が追加しました (queue-a1)。翻訳本に正確に 1 回存在する必要があります。
