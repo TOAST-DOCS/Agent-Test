@@ -26,12 +26,12 @@ Links to a file in this repo written as an absolute URL / repo-rooted path. Both
 * [Pricing (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/en/overview.md#pricing)
 * [Pricing (repo-rooted path)](/en/overview.md#pricing)
 
-<a id="fix-links-langdir"></a>
-## lang-dir { #fix-links-langdir }
+<a id="fix-links-langdir-renamed"></a>
+## lang-dir { #fix-links-langdir-renamed }
 
-An in-repo link pointing at another language folder. The same-language twin exists, so it should be swapped.
+These are in-repo links that point to other language folders. Since this document's language counterpart exists, they must be changed to the same language.
 
-* [Pricing (other language folder)](../ko/overview.md#pricing)
+* [Pricing (other language folder)](../en/overview.md#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
