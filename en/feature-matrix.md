@@ -1,10 +1,12 @@
+<!-- pre-align:aligned sig=af6d5efd1d39 -->
+
 <a id="compute-instance-feature-matrix"></a>
-## Compute > Instance > Feature Matrix
+## Compute > Instance > Feature Matrix { #compute-instance-feature-matrix }
 
 This document summarizes the features provided by the Instance service by region and pricing plan. It includes tables, lists, code blocks, and nested headings for translation pipeline testing.
 
 <a id="feature-overview"></a>
-## Feature Overview
+## Feature Overview { #feature-overview }
 
 The main features of Instance are as follows.
 
@@ -14,7 +16,7 @@ The main features of Instance are as follows.
 - **Monitoring**: Check CPU, memory, and disk usage on the dashboard.
 
 <a id="feature-by-region"></a>
-## Feature Availability by Region
+## Feature Availability by Region { #feature-by-region }
 
 Available features vary by region. See the table below.
 
@@ -26,7 +28,7 @@ Available features vary by region. See the table below.
 | INST-MON | Instance Monitoring | Available | Available | Available |
 
 <a id="feature-by-plan"></a>
-### Limits by Pricing Plan
+### Limits by Pricing Plan { #feature-by-plan }
 
 The number of instances you can create differs by pricing plan.
 
@@ -37,12 +39,12 @@ The number of instances you can create differs by pricing plan.
 | Enterprise | Unlimited | Unlimited |
 
 <a id="feature-api"></a>
-## Checking Features via API
+## Checking Features via API { #feature-api }
 
 Feature availability can also be queried via the API.
 
 <a id="feature-api-request"></a>
-### Query Request
+### Query Request { #feature-api-request }
 
 Call the API with a feature code as shown below.
 
@@ -61,6 +63,6 @@ The main fields of the response body are as follows.
 - `regions`: list of available regions
 
 <a id="feature-notes"></a>
-## Notes
+## Notes { #feature-notes }
 
 Feature availability is subject to change with prior notice. Check the console announcements for the latest information.
