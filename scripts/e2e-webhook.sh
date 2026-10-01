@@ -124,69 +124,9 @@ OPENED_RESULT="-"
 MERGED_RESULT="-"
 PRESET_RESULT="-"
 
-# ── filter 확장/원복 helper ───────────────────────────────────────
-# webhook 필터의 base_branches 는 dashboard 관리자가 job(translate/ko-review) 별
-# 로 설정 (기본 alpha,beta). 세션 브랜치를 base 로 쓰려면 두 job 각각의
-# base_branches 에 세션 브랜치 이름을 append 하고, 스크립트 종료 시 append 만
-# 걷어내 원본으로 돌린다 (다른 세팅은 그대로).
-declare -A ORIG_BASE_BRANCHES=()
-FILTER_EXTENDED=0
-
-_get_filters() {
-  curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-    "$DASHBOARD_BASE_URL/api/webhooks/repos"
-}
-
-_set_filter() {
-  # $1=job(translate|ko-review) $2=base_branches
-  # 다른 필드는 현재값 그대로 유지 (POST 는 전체 dict 를 요구)
-  local job="$1" base_branches="$2"
-  python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$job" "$base_branches" <<'PY'
-import json, sys, urllib.request
-base_url, token, job, base_branches = sys.argv[1:5]
-req = urllib.request.Request(
-    f"{base_url}/api/webhooks/repos",
-    headers={"Authorization": f"Bearer {token}"},
-)
-with urllib.request.urlopen(req, timeout=15) as resp:
-    data = json.load(resp)
-cur = ((data.get("filters") or {}).get(job) or {})
-payload = {
-    "job": job,
-    "actions": cur.get("actions") or "",
-    "base_branches": base_branches,
-    "author_skip": cur.get("author_skip") or "",
-    "label_require": cur.get("label_require") or "",
-    "label_skip": cur.get("label_skip") or "",
-    "preset": cur.get("preset") or "",
-}
-body = json.dumps(payload).encode("utf-8")
-put = urllib.request.Request(
-    f"{base_url}/api/webhooks/filters",
-    data=body, method="POST",
-    headers={
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    },
-)
-with urllib.request.urlopen(put, timeout=15) as r2:
-    result = json.load(r2)
-print(json.dumps(result))
-PY
-}
-
-restore_filters() {
-  # trap 에서 호출. 이미 원복돼 있으면 no-op.
-  (( FILTER_EXTENDED )) || return 0
-  for job in translate ko-review; do
-    if [[ -n "${ORIG_BASE_BRANCHES[$job]:-}" ]]; then
-      echo "  [cleanup] restoring filter[$job].base_branches = '${ORIG_BASE_BRANCHES[$job]}'"
-      _set_filter "$job" "${ORIG_BASE_BRANCHES[$job]}" >/dev/null || \
-        echo "  [cleanup] WARN: 필터 원복 실패 ($job) — dashboard 어드민에서 수동 확인 필요" >&2
-    fi
-  done
-  FILTER_EXTENDED=0
-}
+# ── filter 확장/원복 helper (공용) ─────────────────────────────────
+# `extend_filters_for_branch` / `restore_filters`.
+source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-filter.sh"
 
 cleanup_session_branch() {
   local br="$1"
@@ -230,25 +170,7 @@ if (( USE_SESSION_BRANCH )); then
   git push -u origin "$BASE_BRANCH"
 
   # 필터의 base_branches 를 세션 브랜치 포함으로 임시 확장.
-  echo "  [filter] appending '$BASE_BRANCH' to filter.base_branches (translate + ko-review)"
-  _filters_json="$(_get_filters)"
-  for job in translate ko-review; do
-    cur="$(printf '%s' "$_filters_json" | python3 -c "
-import json, sys
-d = json.load(sys.stdin)
-f = (d.get('filters') or {}).get('$job') or {}
-print(f.get('base_branches') or '')
-")"
-    ORIG_BASE_BRANCHES[$job]="$cur"
-    if [[ ",$cur," == *",$BASE_BRANCH,"* ]]; then
-      new="$cur"
-    else
-      new="${cur:+$cur,}$BASE_BRANCH"
-    fi
-    echo "    $job: '$cur' → '$new'"
-    _set_filter "$job" "$new" >/dev/null
-  done
-  FILTER_EXTENDED=1
+  extend_filters_for_branch "$BASE_BRANCH"
 fi
 
 # 이제 head 브랜치 생성 (base 로부터 갈라짐).

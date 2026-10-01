@@ -33,6 +33,13 @@
 #                 ~1분. base=alpha 를 직접 쓰므로 매 실행마다 alpha 에 마커
 #                 커밋 1개가 추가되지만 restore-alpha-origin 이 다음 e2e 에서
 #                 정리한다.
+#   webhook-concurrent — concurrent 시나리오(같은 ko 파일을 만지는 PR 두 개)를
+#                 **webhook 경로로**. 두 PR 을 연달아 열어 ko-review 두 잡을
+#                 확인하고, B 머지 → webhook translate → B 번역 PR 머지 → A
+#                 머지 → webhook translate 뒤 A 번역 PR 의 en/ja 가 B 콘텐츠를
+#                 보존하는지 본다. 로컬 코드가 아니라 배포본(webhook pod +
+#                 Jenkins translate 잡)을 검증한다. e2e-webhook-concurrent.sh 를
+#                 실행. 기대: exit 0.
 #   korean-review-no-targets — 삭제만 있는 ko PR (검수 대상 0건). 리뷰가 게시되지
 #                 않는 것이 정상이고, 그래도 '검수 대상 없음' 코멘트와
 #                 `한글 검수`·`content-agent` 라벨이 남는지 검증(라벨이 없으면
@@ -378,7 +385,7 @@
 #   ko-review          → korean-review/review_pr.py
 #   translate          → translate/translate_pr.py
 #   translate/file     → translate/translate_file.py (retranslate plan)
-# **webhook plan 만 예외** — GitHub webhook → 배포된 webhook pod → Jenkins 라는
+# **webhook · webhook-concurrent plan 만 예외** — GitHub webhook → 배포된 webhook pod → Jenkins 라는
 # 배포 경로 자체가 검증 대상이라 로컬 대응물이 없다. concurrent plan 은 원래부터
 # 항상 로컬 translate_pr.py 다.
 # 그리고 local 모드도 dashboard 를 **한 곳** 쓴다 — 각 plan 0단계의 webhook 킬
@@ -462,7 +469,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
+    webhook|webhook-concurrent|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -480,7 +487,7 @@ while [[ $# -gt 0 ]]; do
       # anchor-audit 도 같은 이유로 제외 (2026-09-21) — `anchor_audit.py` 가
       # 미머지 브랜치(#750)에만 있다. 이쪽은 검수 LLM 3패스를 태운 뒤 마커
       # 코멘트가 없어 규칙 (1) 에서 멈춘다. #750 이 머지되면 되돌린다.
-      PLANS+=(webhook workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links round1 table-suite row-drop-repro
+      PLANS+=(webhook webhook-concurrent workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
               split-docs fix-links fix-tables jinja-mask
               notation list-items); shift ;;
@@ -576,6 +583,14 @@ for plan in "${PLANS[@]}"; do
     ec=$?
     verdict="$(grep -oE '(opened → ko-review triggered.*|merged → translate triggered.*)$' "$log" | tr '\n' ';' | sed 's/;$//' || true)"
     trans_pr="$(grep -oE '^\s*PR\s+:\s+https://[^ ]+' "$log" | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "webhook-concurrent" ]]; then
+    # webhook plan 과 같은 이유로 PASS_ARGS 를 전달하지 않는다 — 엔진·옵션은
+    # webhook 이 보내는 recommended preset 이 정한다.
+    bash "$REPO_ROOT/scripts/e2e-webhook-concurrent.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE 'A 번역이 B 콘텐츠 보존\s+:.*$' "$log" | tail -n1 || true)"
+    trans_pr="$(grep -oE 'merged A → translate\s+:\s+PASS\s+https://[^ ]+' "$log" | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
   elif [[ "$plan" == "workflow-ignore" ]]; then
     # `.docs-workflow` ignore × webhook 경로. webhook plan 과 같은 이유로
@@ -897,6 +912,7 @@ for plan in "${PLANS[@]}"; do
   # webhook / korean-review / round1 은 전부 통과(exit 0)가 기대값 — 실패면 suite 실패
   # table-suite 는 번역 로직에 따라 기대값이 다르므로 exit 3 도 정상 허용
   if [[ "$plan" == "webhook" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "webhook-concurrent" && $ec -ne 0 ]]; then overall=1; fi
   # workflow-ignore: 판정이 전부 결정적이다 (제외 문서를 읽었는가 / 안 읽었는가)
   # — 모델 편차가 끼어들 여지가 없으므로 exit 3 같은 여지도 없다.
   if [[ "$plan" == "workflow-ignore" && $ec -ne 0 ]]; then overall=1; fi
@@ -928,6 +944,7 @@ for plan in "${PLANS[@]}"; do
   # preserve 도 기대값이 하나다 — 반영됐거나 안 됐거나이고, exit 3 여지가 없다.
   if [[ "$plan" == "preserve" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
+        && "$plan" != "webhook-concurrent" \
         && "$plan" != "workflow-ignore" \
         && "$plan" != "korean-review-no-targets" \
         && "$plan" != "korean-review-mkdocs" \
