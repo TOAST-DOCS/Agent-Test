@@ -3,7 +3,7 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Concurrent PR test A: This sentence is for concurrent-a-edit validation.)
 
 <a id="components"></a>
 ## Components
@@ -201,21 +201,21 @@ Your key pair's private key that you input in **Confirm Password** is not sent t
 
 Click **Connect** next to **Confirm Password** to receive the rdp file configured for remote desktop access and run it to access your Windows server. Use `Administrator` for your Windows server ID, and use the password that you checked from the NHN Cloud console.
 
-### How to Access Instances via Serial Console
+### How to Access the Serial Console
 
-When you cannot use an SSH client — for example, due to a boot failure or a network configuration issue — you can connect to the serial console to access an instance.
+In situations where you cannot use an SSH client, such as a boot failure or network configuration issues, you can connect to the serial console to access an instance.
 
 The serial console feature has the following restrictions:
 
-* Only one serial console connection is allowed per instance. Multiple connection attempts may not connect successfully.
-* Serial console access is not guaranteed for instances created with user-uploaded images or private images.
-* Serial console connections are available for up to 10 minutes.
+* Only one serial console connection is allowed per instance, and multiple connection attempts may result in a failed connection.
+* Serial console access is not guaranteed for instances created with personally uploaded Images or private Images.
+* A serial console connection can remain active for up to 10 minutes.
 * Windows instances do not support the serial console feature.
-* Instances created before the January 27, 2026 release require **Stop Instance** followed by **Start Instance**. The **Reboot Instance** feature does not apply.
+* For instances created before the January 27, 2026 release, **Stop Instance** followed by **Start Instance** is required. **Reboot Instance** does not apply.
 
 > [Caution]
-> If you change the boot method while accessing an instance via the serial console, the instance may fail to boot, and you are responsible for the consequences.
-> In normal circumstances, we recommend that you use an SSH client to access the instance.
+> Accessing an instance through the serial console and changing the boot method may result in a boot failure, and you are responsible for the consequences.
+> In general, we recommend that you use an SSH client to connect.
 
 #### Change GRUB bootloader settings
 
