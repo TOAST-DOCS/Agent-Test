@@ -163,7 +163,7 @@ You can specify a script to be executed after instance creation. The user script
 #### Linux
 The first line of a user script must begin with `#!`.
 ```
-#!/bin/bash
+# !/bin/bash
 ...
 ```
 
@@ -181,7 +181,7 @@ rem cmd
 
 * PowerShell Script
 ```
-#ps1_sysnative
+# ps1_sysnative
 ...
 ```
 
