@@ -11,10 +11,10 @@
 
 この文書はユーザーガイドメニュー(`ko/nav.yml`)には登録しません。配布される文書ではなくパイプラインのフィクスチャです。
 
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
+<a id="fix-links-self-ord"></a>
+## self-link { #fix-links-self-ord }
 
-同じファイルをデプロイ URL 形式のパスで指すリンクです。純粋な in-file `#slug` だけが残るべきです。
+同じファイルをデプロイURL形式のパスで指すリンクです。純粋な in-file `#slug` だけが残る必要があります。
 
 * [正常なリンク集](./fix-links/#fix-links-controls)
 
