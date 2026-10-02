@@ -57,3 +57,28 @@ parent. The marker and the indentation are owned by ko.
 
 The e2e changes only the **last item** of the "Pinned sibling bullets" list. Whether that single
 item's change drags the whole list into the model is all this fixture asks.
+
+<a id="nested-admonition"></a>
+## Admonition inside a list
+
+The `!!! danger` box below sits under a nested bullet with a 12-space indent, and its body is indented 16 spaces. The e2e edits only two sibling bullets of the same list (**Other SANs** and **Extended key usage OIDs**) and leaves the box alone. The indentation of the box lines is owned by ko.
+
+1. On the Create Certificate Template page, enter the following information.
+
+    - SAN option
+        - **Allow IP SANs**: allow IP addresses to be included in the SAN.
+        - **Other SANs**: enter other types of SANs (e.g. 1.2.3.4;UTF8:test@example.com)
+
+    - Common applied settings
+        - Key parameters
+            - **Key algorithm**: Choose among RSA, EC, and ED25519
+            - **Key bit**: algorithmic key bit selection
+            - **Signature bit**: Select the number of bits in the hash algorithm to use for signing the certificate
+
+            !!! danger "Caution"
+                Signature bits can only be set when using the RSA algorithm. Otherwise, it is ignored by the algorithm.
+
+        - Extended key usage
+            - **Extended key usage OIDs**: you can manually enter an OID for additional extended key purposes (e.g. 1.3.6.1.5.5.7.3.1, 1.3.6.1.5.5.7.3.2)
+
+2. Click **Add** to add a certificate template.

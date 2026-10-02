@@ -43,6 +43,22 @@
 #   (5) 목록이 끊기지 않았다 — 6줄이 빈 줄 없이 연속 (_append_list_unit)
 #   (6) 고정 목록 블록 안에서 바뀐 줄은 편집한 불릿 하나뿐 (블록 밖 변경은 WARN)
 #   (7) **대조군(LIST_ITEMS off)보다 고정 불릿 보존이 많거나 같다**  ← 플래그 기여
+#   (8) **목록 안 admonition 의 들여쓰기가 ko 와 같다** — en/ja 의 `!!!` 줄 선행
+#       공백 수 == ko 의 그것, 그 본문 첫 줄은 admonition + 4칸. 대조군 arm 도
+#       같은 규칙으로 잰다 (대조군 위반은 FAIL 로 센다 — 플래그와 무관한 결함이다)
+#
+# ── (8) 이 재현하는 사고 ─────────────────────────────────────────────────
+# TOAST-DOCS/PrivateCA ko PR #80 → 번역 PR #82 (2026-10-01 머지, LIST_ITEMS=true ·
+# DIFF_GRANULARITY=block · TABLE_ROWS=true · recommended). `ko/console-guide.md` 의
+# 중첩 목록 `- 키 파라미터`(8칸) 아래 `!!! danger "주의"` 가 12칸, 본문이 16칸으로
+# 놓여 있었다. ko 는 같은 목록 영역의 **형제 불릿**(SAN 옵션의 `기타 SANs`, 확장 키
+# 용도의 `OIDs`)만 고쳤는데 번역 요약의 재번역 유닛에 `!!! danger "주의"` 가 들어
+# 있었고, en/ja 둘 다 그 줄이 `!!! danger "Caution"` / `"注意"` **0칸**으로 나왔다
+# (본문은 16칸 그대로). 상자가 목록 밖으로 빠지고 본문은 코드 블록으로 렌더된다.
+# 픽스처 `#nested-admonition` 절이 그 모양을 그대로 옮긴 것이고 (12칸 상자 · 16칸
+# 본문 · 같은 목록의 형제 불릿 둘), [2/8] 이 #80 과 같은 두 불릿을 함께 고친다.
+# (1)~(7) 은 `!!!` 줄을 한 번도 보지 않았다 — 고정 블록 밖 변경은 (6) 의 WARN 으로만
+# 나오고, 기존 e2e 의 admonition 은 전부 0칸(`^!!! tip`)이라 이 모양이 없었다.
 #
 # ── 왜 대조군이 필요한가 ──────────────────────────────────────────────────
 # (2)(3) 만으로는 "바이트 동일" 이 플래그 덕인지 그날 모델이 우연히 같은 표현을
@@ -172,6 +188,20 @@ PINNED_JA=(
 TARGET_EN="* [Release Notes](./release-notes/)"
 TARGET_JA="* [リリースノート](./release-notes/)"
 
+# (8) 목록 안 admonition — `#nested-admonition` 절. ko 는 상자를 안 건드리고 같은
+# 목록의 형제 불릿 둘만 고친다 (TOAST-DOCS/PrivateCA#80 의 두 줄과 같은 변경).
+ADM_KO='            !!! danger "주의"'
+ADM_EN='            !!! danger "Caution"'
+ADM_JA='            !!! danger "注意"'
+NEST_FROM=(
+  '        - **기타 SANs**: 기타 형식의 SAN을 입력합니다.(예: 1.2.3.4;UTF8:test@example.com)'
+  '            - **확장 키 용도 OIDs**: 추가 확장 키 용도 OID를 직접 입력할 수 있습니다.(예: 1.3.6.1.5.5.7.3.1, 1.3.6.1.5.5.7.3.2)'
+)
+NEST_TO=(
+  '        - **기타 SANs**: 기타 형식의 SAN을 입력합니다(예: 1.2.3.4;UTF8String:test@example.com). TYPE은 UTF8String, IA5String, PrintableString, BMPString, UniversalString 중 하나를 입력합니다.'
+  '            - **확장 키 용도 OIDs**: 추가 확장 키 용도 OID를 직접 입력할 수 있습니다(예: 1.3.6.1.5.5.7.3.1, 1.3.6.1.5.5.7.3.2).'
+)
+
 echo "=== 목록 항목 splice — 파이프라인 e2e ==="
 echo "  mode    : --translate $TRANSLATE_MODE (대조군 $( ((CONTROL)) && echo 포함 || echo 제외 ))"
 echo "  잡 브랜치: ${PIPELINE_BRANCH:-<dashboard 기본 = main>}"
@@ -192,22 +222,29 @@ done
 grep -qxF -- "$EDIT_FROM" "ko/$DOC" || { echo "error: ko 변경 대상 불릿을 찾지 못함: $EDIT_FROM" >&2; exit 1; }
 for l in "${PINNED_EN[@]}" "$TARGET_EN"; do grep -qxF -- "$l" "en/$DOC" || { echo "error: en 고정 줄 없음: $l" >&2; exit 1; }; done
 for l in "${PINNED_JA[@]}" "$TARGET_JA"; do grep -qxF -- "$l" "ja/$DOC" || { echo "error: ja 고정 줄 없음: $l" >&2; exit 1; }; done
+# (8) 의 전제 — 12칸 상자가 세 언어에 정확히 한 번씩, ko 형제 불릿 둘도 그대로
+[[ "$(grep -cxF -- "$ADM_KO" "ko/$DOC")" == 1 ]] || { echo "error: ko 12칸 admonition 없음: $ADM_KO" >&2; exit 1; }
+[[ "$(grep -cxF -- "$ADM_EN" "en/$DOC")" == 1 ]] || { echo "error: en 12칸 admonition 없음: $ADM_EN" >&2; exit 1; }
+[[ "$(grep -cxF -- "$ADM_JA" "ja/$DOC")" == 1 ]] || { echo "error: ja 12칸 admonition 없음: $ADM_JA" >&2; exit 1; }
+for l in "${NEST_FROM[@]}"; do grep -qxF -- "$l" "ko/$DOC" || { echo "error: ko 형제 불릿 없음: $l" >&2; exit 1; }; done
 git push -q origin "$SESSION_BRANCH"
-echo "  픽스처 3벌 · 고정 줄 en 6 / ja 6 확인"
+echo "  픽스처 3벌 · 고정 줄 en 6 / ja 6 · 목록 안 admonition(12칸) 세 언어 확인"
 
-echo "[2/8] ko 변경 — 마지막 불릿 하나"
+echo "[2/8] ko 변경 — 고정 목록의 마지막 불릿 + 목록 안 admonition 의 형제 불릿 둘"
 git checkout -q -B "$HEAD_BRANCH" "$SESSION_BRANCH"
-python3 - "ko/$DOC" "$EDIT_FROM" "$EDIT_TO" <<'PY'
+python3 - "ko/$DOC" "$EDIT_FROM" "$EDIT_TO" "${NEST_FROM[0]}" "${NEST_TO[0]}" "${NEST_FROM[1]}" "${NEST_TO[1]}" <<'PY'
 import io, sys
-path, old, new = sys.argv[1:4]
+path, pairs = sys.argv[1], sys.argv[2:]
 raw = io.open(path, encoding="utf-8", newline="").read()
-assert raw.count(old) == 1, f"변경 대상이 정확히 1회여야 함: {raw.count(old)}"
-io.open(path, "w", encoding="utf-8", newline="").write(raw.replace(old, new))
+for old, new in zip(pairs[0::2], pairs[1::2]):
+    assert raw.count(old) == 1, f"변경 대상이 정확히 1회여야 함: {raw.count(old)} — {old}"
+    raw = raw.replace(old, new)
+io.open(path, "w", encoding="utf-8", newline="").write(raw)
 PY
 git add -- "ko/$DOC"
 committed="$(git diff --cached --name-only)"
 [[ "$committed" == "ko/$DOC" ]] || { echo "error: 예상 외 파일 스테이지됨: $committed" >&2; exit 1; }
-git commit -q -m "e2e(list-items): 고정 목록의 마지막 불릿 하나만 변경 ($TS)"
+git commit -q -m "e2e(list-items): 고정 목록의 마지막 불릿 + 목록 안 admonition 의 형제 불릿 둘 변경 ($TS)"
 git push -q origin "$HEAD_BRANCH"
 e2e_ensure_label "$REPO"
 ko_pr_url="$(gh pr create --repo "$REPO" --base "$SESSION_BRANCH" --head "$HEAD_BRANCH" \
@@ -474,6 +511,71 @@ KEEPPY
 else
   warn "(7) 대조군 없음 — 건너뜀 (--no-control 또는 대조군 PR 미감지)"
 fi
+
+# ── (8) 목록 안 admonition 들여쓰기 — TOAST-DOCS/PrivateCA#82 (2026-10-01) ──
+# ko(head) 의 `!!!` 줄과 en/ja 의 `!!!` 줄을 **등장 순서로** 짝지어 선행 공백 수를
+# 비교하고, 각 상자의 첫 본문 줄(빈 줄 다음 첫 비지 않은 줄)이 상자 + 4칸인지 본다.
+# 둘 중 하나라도 어긋나면 상자가 목록에서 빠지거나 본문이 코드 블록이 된다 —
+# 렌더러 없이도 이 두 수만으로 판정이 끝난다. 형제 불릿 편집(`UTF8String`)이 그
+# 언어에 반영되지 않았다면 그 절이 재번역되지 않은 것이라 PASS 가 공허하므로 WARN.
+echo
+echo "[7b/8] 목록 안 admonition 들여쓰기 (8)"
+adm_check() {   # $1=arm 태그  $2=번역 트리 루트
+  python3 - "$1" "$2" "$HEAD_BRANCH" "$DOC" <<'ADMPY'
+import io, os, re, subprocess, sys
+tag, root, ko_ref, doc = sys.argv[1:5]
+ADM = re.compile(r"^( *)!!! ")
+
+
+def adms(lines):
+    out = []
+    for i, l in enumerate(lines):
+        m = ADM.match(l)
+        if not m:
+            continue
+        body = None
+        for nxt in lines[i + 1:]:
+            if nxt.strip():
+                body = len(nxt) - len(nxt.lstrip(" "))
+                break
+        out.append((len(m.group(1)), body, l.strip()))
+    return out
+
+
+ko = subprocess.run(["git", "show", f"{ko_ref}:ko/{doc}"],
+                    capture_output=True, text=True, check=True).stdout.split("\n")
+ko_adm = adms(ko)
+for lang in ("en", "ja"):
+    try:
+        lines = io.open(os.path.join(root, lang, doc), encoding="utf-8",
+                        newline="").read().split("\n")
+    except OSError:
+        print(f"  FAIL  (8) [{tag}] {lang}/{doc} 를 읽지 못함"); print("__FAIL__"); continue
+    got = adms(lines)
+    bad = []
+    if len(got) != len(ko_adm):
+        bad.append(f"admonition 개수 {len(got)} != ko {len(ko_adm)}")
+    for (k_ind, _, k_line), (g_ind, g_body, g_line) in zip(ko_adm, got):
+        if g_ind != k_ind:
+            bad.append(f"`{g_line}` 선행 공백 {g_ind} != ko {k_ind} (`{k_line}`)")
+        if g_body != g_ind + 4:
+            bad.append(f"`{g_line}` 본문 들여쓰기 {g_body} != 상자 {g_ind}+4")
+    if bad:
+        print(f"  FAIL  (8) [{tag}] {lang} 목록 안 admonition 들여쓰기가 ko 와 다르다: {bad}")
+        print("__FAIL__")
+    else:
+        print(f"  PASS  (8) [{tag}] {lang} admonition {len(got)}개 — 선행 공백 == ko · 본문 == +4 "
+              f"({', '.join(str(g[0]) for g in got)}칸)")
+    if not any("UTF8String" in l for l in lines):
+        print(f"  WARN  (8) [{tag}] {lang} 형제 불릿 편집(UTF8String)이 반영되지 않았다 — "
+              f"#nested-admonition 절이 재번역되지 않았으면 이 PASS 는 공허하다")
+ADMPY
+}
+for arm in "on:$tx_wt" ${ctl_wt:+"ctl:$ctl_wt"}; do
+  aout="$(adm_check "${arm%%:*}" "${arm#*:}")"
+  printf '%s\n' "$aout" | grep -v '^__FAIL__$'
+  fails=$(( fails + $(printf '%s\n' "$aout" | grep -c '^__FAIL__$' || true) ))
+done
 
 # (선택) Jenkins 콘솔의 splice 로그 — 증거 보강용, 판정에는 안 쓴다
 if [[ -n "${JENKINS_USER:-}" && -n "${JENKINS_TOKEN:-}" ]]; then
