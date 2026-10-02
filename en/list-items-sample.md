@@ -1,5 +1,3 @@
-<!-- machine_translated: true -->
-
 # List-item splice fixture — untouched sibling bullets
 
 A Markdown list has no blank line between its items, so it is captured as a **single block**.
@@ -30,7 +28,7 @@ Exposed, they change; not exposed, they stay byte-identical — that is the judg
 * [Settings by Feature](./feature-settings/)
     * [DEX Encryption Target Specification](./dex-encryption/)
 * [Service API](./service-api/)
-* [Release Notes](./release-notes/)
+* [Release notes and change history](./release-notes/)
 
 Both pinned renderings come from drift that was actually observed.
 
@@ -67,7 +65,7 @@ The `!!! danger` box below sits under a nested bullet with a 12-space indent, an
 
     - SAN option
         - **Allow IP SANs**: allow IP addresses to be included in the SAN.
-        - **Other SANs**: enter other types of SANs (e.g. 1.2.3.4;UTF8:test@example.com)
+        - **Other SANs**: Enter SANs in other formats (for example, 1.2.3.4;UTF8String:test@example.com). For TYPE, enter one of UTF8String, IA5String, PrintableString, BMPString, or UniversalString.
 
     - Common applied settings
         - Key parameters
@@ -79,7 +77,7 @@ The `!!! danger` box below sits under a nested bullet with a 12-space indent, an
                 Signature bits can only be set when using the RSA algorithm. Otherwise, it is ignored by the algorithm.
 
         - Extended key usage
-            - **Extended key usage OIDs**: you can manually enter an OID for additional extended key purposes (e.g. 1.3.6.1.5.5.7.3.1, 1.3.6.1.5.5.7.3.2)
+            - **Extended Key Purpose OIDs**: You can manually enter OIDs for additional extended key purposes (e.g., 1.3.6.1.5.5.7.3.1, 1.3.6.1.5.5.7.3.2).
 
 2. Click **Add** to add a certificate template.
 
@@ -95,7 +93,7 @@ The e2e edits only **one sentence in the body** of the box below. The box is re-
         - **Validity period**: Enter the validity period of the certificate.
 
         !!! tip "Note"
-            The common name cannot be changed after issuance.
+            After a certificate is issued, the common name cannot be changed.
 
     - SAN information
         - **Subject alternative name**: Enter an additional identifying name in domain format.
