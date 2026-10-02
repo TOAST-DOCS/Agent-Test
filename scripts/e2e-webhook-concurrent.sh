@@ -103,6 +103,17 @@ cleanup() {
   restore_filters
   set_webhook_repo_enabled false
   if (( SESSION_PUSHED && ! KEEP )); then
+    # 이 세션 base 로 열린 PR 의 head 를 모두 지운다 — 머지·닫기에서 이미 지운 것은
+    # 404 로 조용히 넘어가고, 여기서 잡히는 것은 머지되지 않은 채 남은 PR(열어 둔
+    # 번역 PR · 충돌로 머지 못 한 번역 PR · 중간에 끊긴 실행)의 head 다. base 가
+    # 지워지면 PR 은 자동으로 닫히지만 head 브랜치는 남아 쌓인다 (2026-10-01 에
+    # 26개를 손으로 정리했다). base 가 이 세션인 PR 만 보므로 남의 브랜치는 안 건드린다.
+    local ref
+    for ref in $(gh pr list --repo "$REPO" --base "$SESSION" --state all --limit 100 \
+                   --json headRefName --jq '.[].headRefName' 2>/dev/null); do
+      gh api -X DELETE "repos/$REPO/git/refs/heads/$ref" >/dev/null 2>&1 \
+        && echo "  [cleanup] deleted head $ref"
+    done
     echo "  [cleanup] deleting session branch origin/$SESSION (남아있는 PR 은 자동 close)"
     git -C "$WORK/repo" push --quiet origin ":$SESSION" 2>/dev/null || \
       echo "  [cleanup] WARN: 세션 브랜치 삭제 실패" >&2
@@ -265,6 +276,26 @@ await_job() {  # $1=pr_url $2=action $3=kind
 }
 
 # 번역 잡이 연 번역 PR — head 가 `translate/<source head>-…`, base 는 세션 브랜치.
+# 머지 + head 삭제. 번역 PR 의 head 는 여기서 지워지고 그대로 없어진다. ko PR 의
+# head 는 **곧 되살아난다** — 머지 webhook 이 띄운 translate 잡이 지워진 소스
+# 브랜치를 head sha 로 복원하기 때문이다 (translate_pr.py 의 branch_exists →
+# create_branch, Alimtalk#270: "head 브랜치 자동 삭제" 리포 대응. 2026-10-02 실측
+# PR 타임라인: head_ref_deleted → 30초 뒤 head_ref_restored by anytime-modify[bot]).
+# 그래서 ko head 를 실제로 없애는 것은 모든 번역이 끝난 뒤 도는 cleanup 의 sweep 이고,
+# 여기서 지우는 것은 운영의 그 복원 경로를 e2e 가 함께 태우게 하는 효과가 있다.
+merge_pr() {  # $1=PR URL → 머지 실패면 1
+  local head
+  head="$(gh pr view "$1" --repo "$REPO" --json headRefName --jq .headRefName 2>/dev/null || true)"
+  gh pr merge "$1" --repo "$REPO" --merge >/dev/null 2>&1 || return 1
+  [[ -n "$head" ]] && gh api -X DELETE "repos/$REPO/git/refs/heads/$head" >/dev/null 2>&1 || true
+}
+close_pr() {  # $1=PR URL — 머지하지 않고 닫고 head 삭제
+  local head
+  head="$(gh pr view "$1" --repo "$REPO" --json headRefName --jq .headRefName 2>/dev/null || true)"
+  gh pr close "$1" --repo "$REPO" >/dev/null
+  [[ -n "$head" ]] && gh api -X DELETE "repos/$REPO/git/refs/heads/$head" >/dev/null 2>&1 || true
+}
+
 find_translation_pr() {  # $1=source head branch → URL (없으면 빈 문자열)
   local deadline=$(( $(date +%s) + 120 )) u=""
   while (( $(date +%s) < deadline )); do
@@ -297,7 +328,7 @@ echo "  ko-review A: $R_REVIEW_A · B: $R_REVIEW_B"
 # ── 2) B 머지 → B 번역 → B 번역 PR 머지 ──────────────────────────────
 echo
 echo "[3/7] B 머지 → webhook → B translate"
-gh pr merge "$PR_B_URL" --repo "$REPO" --merge >/dev/null
+merge_pr "$PR_B_URL"
 R_TRANS_B="$(await_job "$PR_B_URL" closed translate)" || true
 echo "  B translate: $R_TRANS_B"
 [[ "$R_TRANS_B" == PASS ]] || { summary; exit 3; }
@@ -308,7 +339,7 @@ e2e_label_pr "$REPO" "$TRANS_B_URL"
 
 echo
 echo "[4/7] B 번역 PR 머지"
-gh pr merge "$TRANS_B_URL" --repo "$REPO" --merge >/dev/null
+merge_pr "$TRANS_B_URL"
 # sanity: 세션 브랜치 en/ja 양쪽에 B 콘텐츠가 실제로 들어갔는지 — 빠진 언어는 A
 # 가 지운 게 아니라 B 번역이 스킵된 것이므로 하네스 전제 실패(exit 2)로 가른다.
 git fetch --quiet origin "$SESSION"
@@ -325,7 +356,7 @@ echo "  세션 en/ja 에 B 콘텐츠 반영 확인"
 # ── 3) A 머지 → A 번역 ────────────────────────────────────────────────
 echo
 echo "[5/7] A 머지 → webhook → A translate"
-gh pr merge "$PR_A_URL" --repo "$REPO" --merge >/dev/null
+merge_pr "$PR_A_URL"
 git fetch --quiet origin "$SESSION"
 if ! git show "origin/${SESSION}:${KO_FILE}" | grep -q "$TOKEN_B_ANCHOR"; then
   echo "error: A 머지 후 ko 에서 B 섹션이 사라짐 — git 머지 자체가 예상과 다름" >&2

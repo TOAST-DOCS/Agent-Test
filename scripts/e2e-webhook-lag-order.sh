@@ -132,6 +132,17 @@ cleanup() {
   restore_filters
   set_webhook_repo_enabled false
   if (( SESSION_PUSHED && ! KEEP )); then
+    # 이 세션 base 로 열린 PR 의 head 를 모두 지운다 — 머지·닫기에서 이미 지운 것은
+    # 404 로 조용히 넘어가고, 여기서 잡히는 것은 머지되지 않은 채 남은 PR(열어 둔
+    # 번역 PR · 충돌로 머지 못 한 번역 PR · 중간에 끊긴 실행)의 head 다. base 가
+    # 지워지면 PR 은 자동으로 닫히지만 head 브랜치는 남아 쌓인다 (2026-10-01 에
+    # 26개를 손으로 정리했다). base 가 이 세션인 PR 만 보므로 남의 브랜치는 안 건드린다.
+    local ref
+    for ref in $(gh pr list --repo "$REPO" --base "$SESSION" --state all --limit 100 \
+                   --json headRefName --jq '.[].headRefName' 2>/dev/null); do
+      gh api -X DELETE "repos/$REPO/git/refs/heads/$ref" >/dev/null 2>&1 \
+        && echo "  [cleanup] deleted head $ref"
+    done
     echo "  [cleanup] deleting session branch origin/$SESSION (남아있는 PR 은 자동 close)"
     git -C "$WORK/repo" push --quiet origin ":$SESSION" 2>/dev/null || \
       echo "  [cleanup] WARN: 세션 브랜치 삭제 실패" >&2
@@ -303,6 +314,26 @@ await_job() {  # $1=pr_url $2=action $3=kind → stdout PASS / FAIL (...)
   if [[ "$st" == "success" ]]; then echo "PASS"; else echo "FAIL (build $st)"; return 1; fi
 }
 
+# 머지 + head 삭제. 번역 PR 의 head 는 여기서 지워지고 그대로 없어진다. ko PR 의
+# head 는 **곧 되살아난다** — 머지 webhook 이 띄운 translate 잡이 지워진 소스
+# 브랜치를 head sha 로 복원하기 때문이다 (translate_pr.py 의 branch_exists →
+# create_branch, Alimtalk#270: "head 브랜치 자동 삭제" 리포 대응. 2026-10-02 실측
+# PR 타임라인: head_ref_deleted → 30초 뒤 head_ref_restored by anytime-modify[bot]).
+# 그래서 ko head 를 실제로 없애는 것은 모든 번역이 끝난 뒤 도는 cleanup 의 sweep 이고,
+# 여기서 지우는 것은 운영의 그 복원 경로를 e2e 가 함께 태우게 하는 효과가 있다.
+merge_pr() {  # $1=PR URL → 머지 실패면 1
+  local head
+  head="$(gh pr view "$1" --repo "$REPO" --json headRefName --jq .headRefName 2>/dev/null || true)"
+  gh pr merge "$1" --repo "$REPO" --merge >/dev/null 2>&1 || return 1
+  [[ -n "$head" ]] && gh api -X DELETE "repos/$REPO/git/refs/heads/$head" >/dev/null 2>&1 || true
+}
+close_pr() {  # $1=PR URL — 머지하지 않고 닫고 head 삭제
+  local head
+  head="$(gh pr view "$1" --repo "$REPO" --json headRefName --jq .headRefName 2>/dev/null || true)"
+  gh pr close "$1" --repo "$REPO" >/dev/null
+  [[ -n "$head" ]] && gh api -X DELETE "repos/$REPO/git/refs/heads/$head" >/dev/null 2>&1 || true
+}
+
 find_translation_pr() {  # $1=source head branch [$2=timeout s] → URL
   local deadline=$(( $(date +%s) + ${2:-120} )) u=""
   while (( $(date +%s) < deadline )); do
@@ -337,7 +368,7 @@ echo "  ko-review B: $R_REVIEW_B · A: $R_REVIEW_A"
 # ── 2) B 머지 → B 번역 PR (열어 둔다) ─────────────────────────────────
 echo
 echo "[3/8] B 머지 → webhook → B translate (번역 PR 은 열어 둠)"
-gh pr merge "$PR_B_URL" --repo "$REPO" --merge >/dev/null
+merge_pr "$PR_B_URL"
 R_TRANS_B="$(await_job "$PR_B_URL" closed translate)" || true
 echo "  B translate: $R_TRANS_B"
 [[ "$R_TRANS_B" == PASS ]] || { summary; exit 3; }
@@ -364,14 +395,14 @@ done
 echo "  B 번역 PR en/ja anchor 순서 == B 의 ko ✓"
 if [[ "$CASE" == b-closed ]]; then
   echo "  [b-closed] B 번역 PR 을 머지하지 않고 닫는다 (번역 실패·운영자 닫음과 같은 상태)"
-  gh pr close "$TRANS_B_URL" --repo "$REPO" >/dev/null
+  close_pr "$TRANS_B_URL"
   TRANS_B_URL="$TRANS_B_URL (닫음)"
 fi
 
 # ── 3) A 머지 → A 번역 ────────────────────────────────────────────────
 echo
 echo "[4/8] A 머지 (ko 에 B 섹션 · en/ja 에는 아직 없음) → webhook → A translate"
-gh pr merge "$PR_A_URL" --repo "$REPO" --merge >/dev/null
+merge_pr "$PR_A_URL"
 git fetch --quiet origin "$SESSION"
 if [[ "$(git show "origin/${SESSION}:ko/$DOC" | anchor_seq)" != "$ko_b_seq" ]]; then
   echo "error: A 머지 후 ko anchor 순서가 B 의 것과 다름 — git 머지가 예상과 다름" >&2; summary; exit 2
@@ -398,7 +429,7 @@ if [[ -z "$TRANS_A_URL" ]] && has_label "$PR_A_URL" "$QUEUE_LABEL"; then
   fi
   QUEUE_MODE="on (A 가 '$QUEUE_LABEL' 로 대기 → B 번역 머지 후 차례)"
   echo "  A 에 '$QUEUE_LABEL' — 큐 모드. B 번역 PR 을 먼저 머지해 A 를 깨운다"
-  gh pr merge "$TRANS_B_URL" --repo "$REPO" --merge >/dev/null
+  merge_pr "$TRANS_B_URL"
   B_MERGED_EARLY=1
   TRANS_A_URL="$(find_translation_pr "$BR_A" "$BUILD_TIMEOUT")"
 fi
@@ -443,9 +474,9 @@ echo "[6/8] B 번역 PR 머지 → A 번역 PR 머지 (#36 → #38 순서)"
 if [[ "$CASE" == b-closed ]]; then
   echo "  [b-closed] B 번역 PR 은 닫혀 있다 — A 번역 PR 만 머지"
 elif (( ! B_MERGED_EARLY )); then
-  gh pr merge "$TRANS_B_URL" --repo "$REPO" --merge >/dev/null
+  merge_pr "$TRANS_B_URL"
 fi
-if gh pr merge "$TRANS_A_URL" --repo "$REPO" --merge >/dev/null 2>&1; then
+if merge_pr "$TRANS_A_URL"; then
   R_MERGE="PASS"
 else
   R_MERGE="FAIL (A 번역 PR 머지 충돌)"
