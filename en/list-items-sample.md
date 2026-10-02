@@ -82,3 +82,22 @@ The `!!! danger` box below sits under a nested bullet with a 12-space indent, an
             - **Extended key usage OIDs**: you can manually enter an OID for additional extended key purposes (e.g. 1.3.6.1.5.5.7.3.1, 1.3.6.1.5.5.7.3.2)
 
 2. Click **Add** to add a certificate template.
+
+<a id="nested-admonition-body"></a>
+## Editing the body of an admonition inside a list
+
+The e2e edits only **one sentence in the body** of the box below. The box is re-translated, but the indentation of the box line (8 spaces) and of its body (12 spaces) must match ko.
+
+1. On the Create Certificate page, enter the following information.
+
+    - Certificate information
+        - **Common name**: Enter the common name (CN) of the certificate.
+        - **Validity period**: Enter the validity period of the certificate.
+
+        !!! tip "Note"
+            The common name cannot be changed after issuance.
+
+    - SAN information
+        - **Subject alternative name**: Enter an additional identifying name in domain format.
+
+2. Click **OK** to create the certificate.

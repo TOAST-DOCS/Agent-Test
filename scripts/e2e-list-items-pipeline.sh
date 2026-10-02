@@ -45,7 +45,10 @@
 #   (7) **대조군(LIST_ITEMS off)보다 고정 불릿 보존이 많거나 같다**  ← 플래그 기여
 #   (8) **목록 안 admonition 의 들여쓰기가 ko 와 같다** — en/ja 의 `!!!` 줄 선행
 #       공백 수 == ko 의 그것, 그 본문 첫 줄은 admonition + 4칸. 대조군 arm 도
-#       같은 규칙으로 잰다 (대조군 위반은 FAIL 로 센다 — 플래그와 무관한 결함이다)
+#       같은 규칙으로 잰다 (대조군 위반은 FAIL 로 센다 — 플래그와 무관한 결함이다).
+#       상자 둘이 결함 둘을 하나씩 맡는다 (아래 "(8) 이 재현하는 사고"):
+#         `#nested-admonition`      — ko 는 상자를 안 건드리고 형제 불릿만 고친다 (A)
+#         `#nested-admonition-body` — ko 가 상자 **본문**만 고친다 (B 단독)
 #
 # ── (8) 이 재현하는 사고 ─────────────────────────────────────────────────
 # TOAST-DOCS/PrivateCA ko PR #80 → 번역 PR #82 (2026-10-01 머지, LIST_ITEMS=true ·
@@ -59,6 +62,16 @@
 # 본문 · 같은 목록의 형제 불릿 둘), [2/8] 이 #80 과 같은 두 불릿을 함께 고친다.
 # (1)~(7) 은 `!!!` 줄을 한 번도 보지 않았다 — 고정 블록 밖 변경은 (6) 의 WARN 으로만
 # 나오고, 기존 e2e 의 admonition 은 전부 0칸(`^!!! tip`)이라 이 모양이 없었다.
+#
+# 원인은 둘이 겹친 것이었다 (cloud-translate, Dooray cloud-user-guide-agent/473):
+#   (A) 단위 분할기가 admonition 의 끝을 "4칸 이상인가" 로 봐서, 12칸 상자 뒤의 8칸
+#       형제 불릿까지 상자 안으로 삼켰다 → 형제 불릿 편집이 상자를 다시 보냈다.
+#   (B) 모든 엔진이 응답을 `.strip()` 해 단위 **첫 줄**의 선행 공백이 사라지고, 목록
+#       항목이 아닌 단위에는 ko 들여쓰기를 되돌리는 단계가 없었다 → 모델이 12칸을
+#       그대로 돌려줘도 0칸.
+# (B) 는 (A) 없이도 터진다 — ko 가 중첩 상자의 본문을 고치는 평범한 PR 이면 된다.
+# 그래서 `#nested-admonition-body` 절(8칸 상자 · 12칸 본문)의 본문 한 문장을 함께
+# 고친다. 이 상자는 수정 후에도 **다시 번역되는 것이 정상**이고, 들여쓰기만 본다.
 #
 # ── 왜 대조군이 필요한가 ──────────────────────────────────────────────────
 # (2)(3) 만으로는 "바이트 동일" 이 플래그 덕인지 그날 모델이 우연히 같은 표현을
@@ -201,6 +214,15 @@ NEST_TO=(
   '        - **기타 SANs**: 기타 형식의 SAN을 입력합니다(예: 1.2.3.4;UTF8String:test@example.com). TYPE은 UTF8String, IA5String, PrintableString, BMPString, UniversalString 중 하나를 입력합니다.'
   '            - **확장 키 용도 OIDs**: 추가 확장 키 용도 OID를 직접 입력할 수 있습니다(예: 1.3.6.1.5.5.7.3.1, 1.3.6.1.5.5.7.3.2).'
 )
+# (8)-B 목록 안 상자의 **본문** — `#nested-admonition-body` 절. ko 가 상자 본문 한
+# 문장만 고친다. 상자 줄 8칸 · 본문 12칸.
+ADM_BODY_KO='        !!! tip "알아두기"'
+ADM_BODY_EN='        !!! tip "Note"'
+ADM_BODY_JA='        !!! tip "ポイント"'
+BODY_FROM='            일반 이름은 발급 후 변경할 수 없습니다.'
+BODY_TO='            일반 이름은 인증서를 발급한 뒤에는 변경할 수 없습니다.'
+BODY_EN_OLD='            The common name cannot be changed after issuance.'
+BODY_JA_OLD='            一般名は発行後に変更できません。'
 
 echo "=== 목록 항목 splice — 파이프라인 e2e ==="
 echo "  mode    : --translate $TRANSLATE_MODE (대조군 $( ((CONTROL)) && echo 포함 || echo 제외 ))"
@@ -227,12 +249,19 @@ for l in "${PINNED_JA[@]}" "$TARGET_JA"; do grep -qxF -- "$l" "ja/$DOC" || { ech
 [[ "$(grep -cxF -- "$ADM_EN" "en/$DOC")" == 1 ]] || { echo "error: en 12칸 admonition 없음: $ADM_EN" >&2; exit 1; }
 [[ "$(grep -cxF -- "$ADM_JA" "ja/$DOC")" == 1 ]] || { echo "error: ja 12칸 admonition 없음: $ADM_JA" >&2; exit 1; }
 for l in "${NEST_FROM[@]}"; do grep -qxF -- "$l" "ko/$DOC" || { echo "error: ko 형제 불릿 없음: $l" >&2; exit 1; }; done
+# (8)-B 의 전제 — 8칸 상자가 세 언어에 한 번씩, ko 본문 문장과 en/ja 본문 번역 그대로
+[[ "$(grep -cxF -- "$ADM_BODY_KO" "ko/$DOC")" == 1 ]] || { echo "error: ko 8칸 admonition 없음: $ADM_BODY_KO" >&2; exit 1; }
+[[ "$(grep -cxF -- "$ADM_BODY_EN" "en/$DOC")" == 1 ]] || { echo "error: en 8칸 admonition 없음: $ADM_BODY_EN" >&2; exit 1; }
+[[ "$(grep -cxF -- "$ADM_BODY_JA" "ja/$DOC")" == 1 ]] || { echo "error: ja 8칸 admonition 없음: $ADM_BODY_JA" >&2; exit 1; }
+grep -qxF -- "$BODY_FROM" "ko/$DOC" || { echo "error: ko 상자 본문 없음: $BODY_FROM" >&2; exit 1; }
+grep -qxF -- "$BODY_EN_OLD" "en/$DOC" || { echo "error: en 상자 본문 없음: $BODY_EN_OLD" >&2; exit 1; }
+grep -qxF -- "$BODY_JA_OLD" "ja/$DOC" || { echo "error: ja 상자 본문 없음: $BODY_JA_OLD" >&2; exit 1; }
 git push -q origin "$SESSION_BRANCH"
-echo "  픽스처 3벌 · 고정 줄 en 6 / ja 6 · 목록 안 admonition(12칸) 세 언어 확인"
+echo "  픽스처 3벌 · 고정 줄 en 6 / ja 6 · 목록 안 admonition(12칸 · 8칸) 세 언어 확인"
 
-echo "[2/8] ko 변경 — 고정 목록의 마지막 불릿 + 목록 안 admonition 의 형제 불릿 둘"
+echo "[2/8] ko 변경 — 고정 목록의 마지막 불릿 + 목록 안 admonition 의 형제 불릿 둘 + 목록 안 admonition 본문 한 문장"
 git checkout -q -B "$HEAD_BRANCH" "$SESSION_BRANCH"
-python3 - "ko/$DOC" "$EDIT_FROM" "$EDIT_TO" "${NEST_FROM[0]}" "${NEST_TO[0]}" "${NEST_FROM[1]}" "${NEST_TO[1]}" <<'PY'
+python3 - "ko/$DOC" "$EDIT_FROM" "$EDIT_TO" "${NEST_FROM[0]}" "${NEST_TO[0]}" "${NEST_FROM[1]}" "${NEST_TO[1]}" "$BODY_FROM" "$BODY_TO" <<'PY'
 import io, sys
 path, pairs = sys.argv[1], sys.argv[2:]
 raw = io.open(path, encoding="utf-8", newline="").read()
@@ -244,7 +273,7 @@ PY
 git add -- "ko/$DOC"
 committed="$(git diff --cached --name-only)"
 [[ "$committed" == "ko/$DOC" ]] || { echo "error: 예상 외 파일 스테이지됨: $committed" >&2; exit 1; }
-git commit -q -m "e2e(list-items): 고정 목록의 마지막 불릿 + 목록 안 admonition 의 형제 불릿 둘 변경 ($TS)"
+git commit -q -m "e2e(list-items): 고정 목록의 마지막 불릿 + 목록 안 admonition 의 형제 불릿 둘 · 본문 한 문장 변경 ($TS)"
 git push -q origin "$HEAD_BRANCH"
 e2e_ensure_label "$REPO"
 ko_pr_url="$(gh pr create --repo "$REPO" --base "$SESSION_BRANCH" --head "$HEAD_BRANCH" \
@@ -521,9 +550,10 @@ fi
 echo
 echo "[7b/8] 목록 안 admonition 들여쓰기 (8)"
 adm_check() {   # $1=arm 태그  $2=번역 트리 루트
-  python3 - "$1" "$2" "$HEAD_BRANCH" "$DOC" <<'ADMPY'
+  python3 - "$1" "$2" "$HEAD_BRANCH" "$DOC" "$BODY_EN_OLD" "$BODY_JA_OLD" <<'ADMPY'
 import io, os, re, subprocess, sys
-tag, root, ko_ref, doc = sys.argv[1:5]
+tag, root, ko_ref, doc, body_en_old, body_ja_old = sys.argv[1:7]
+body_old = {"en": body_en_old, "ja": body_ja_old}
 ADM = re.compile(r"^( *)!!! ")
 
 
@@ -569,6 +599,9 @@ for lang in ("en", "ja"):
     if not any("UTF8String" in l for l in lines):
         print(f"  WARN  (8) [{tag}] {lang} 형제 불릿 편집(UTF8String)이 반영되지 않았다 — "
               f"#nested-admonition 절이 재번역되지 않았으면 이 PASS 는 공허하다")
+    if body_old[lang] in lines:
+        print(f"  WARN  (8) [{tag}] {lang} 상자 본문이 옛 번역 그대로다 — "
+              f"#nested-admonition-body 상자가 재번역되지 않았으면 (B) 판정은 공허하다")
 ADMPY
 }
 for arm in "on:$tx_wt" ${ctl_wt:+"ctl:$ctl_wt"}; do
