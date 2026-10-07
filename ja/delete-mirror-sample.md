@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=866682166a59 -->
+<!-- pre-align:aligned sig=18e686d70cbe -->
 
 <a id="delete-mirror-overview"></a>
 ## 削除ミラーテスト { #delete-mirror-overview }
@@ -16,10 +16,6 @@ koが変更していない兄弟の箇条書きがen/jaで変わった場合は�
 ##### VPN Gateway
 * VPNが接続されたVPCにTransit Hubを接続すると、Transit Hubで接続された他のプロジェクトのVPCでもオンプレミスネットワークとのVPN通信をサポートします。(接続された帯域でVPN Connectionの追加作成が必要)
 
-##### DNS Plus
-* GSLBヘルスチェックにユーザー定義ヘッダーを追加できるように改善されました。
-* プール単位のトラフィック重み設定機能が追加されました。
-
 ##### Service Gateway
 * Service Gateway作成時にユーザーがNAT IPを固定して作成できるように改善されました。
 
@@ -32,9 +28,6 @@ koが変更していない兄弟の箇条書きがen/jaで変わった場合は�
 
 <a id="delete-mirror-2024-05-28-feature-updates"></a>
 #### 機能改善
-
-##### DNS Plus
-* ドメインサービス使用時にレコードセット一括登録機能が追加されました。
 
 ##### Load Balancer
 * ロードバランサー作成時に基本情報でIPアクセス制御設定を一緒に行えるように改善されました。
