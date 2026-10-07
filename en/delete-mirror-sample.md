@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=866682166a59 -->
+<!-- pre-align:aligned sig=18e686d70cbe -->
 
 <a id="delete-mirror-overview"></a>
 ## Delete Mirror Test { #delete-mirror-overview }
@@ -16,10 +16,6 @@ If sibling bullets that ko did not touch change in en/ja, it is a defect.
 ##### VPN Gateway
 * When you connect a Transit Hub to a VPC with a VPN connection, VPN communication with on-premises networks is also supported from VPCs of other projects connected via the Transit Hub. (An additional VPN Connection must be created for the connected bandwidth.)
 
-##### DNS Plus
-* Improved so that custom headers can be added to GSLB health checks.
-* Added the traffic weight setting feature per pool.
-
 ##### Service Gateway
 * Improved so that you can create a Service Gateway with a fixed NAT IP.
 
@@ -32,9 +28,6 @@ If sibling bullets that ko did not touch change in en/ja, it is a defect.
 
 <a id="delete-mirror-2024-05-28-feature-updates"></a>
 #### Feature Updates
-
-##### DNS Plus
-* Added the bulk record set registration feature when using the domain service.
 
 ##### Load Balancer
 * Improved so that IP access control can be configured together in the basic information when creating a load balancer.
