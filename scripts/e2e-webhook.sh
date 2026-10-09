@@ -70,8 +70,9 @@ if [[ "$_origin" =~ ^(https?://|git@)([^/:]+)[/:]([^/]+)/([^/]+)$ ]]; then
   REPO="${BASH_REMATCH[3]}/${BASH_REMATCH[4]}"
   [[ "$REPO_HOST" != "github.com" ]] && REPO="$REPO_HOST/$REPO"
 else
-  REPO_HOST="github.com"
-  REPO="TOAST-DOCS/Agent-Test"
+  # 기본값으로 떨어지지 않는다 — 엉뚱한 리포에 PR 을 열고 webhook 을 켜게 된다.
+  echo "error: origin URL 에서 리포를 알 수 없습니다: '${_origin}'" >&2
+  exit 1
 fi
 # e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
 source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
