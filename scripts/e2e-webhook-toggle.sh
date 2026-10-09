@@ -52,7 +52,15 @@ req = urllib.request.Request(f"{base_url}/api/webhooks/repos", headers=hdr)
 with urllib.request.urlopen(req, timeout=15) as r:
     data = json.load(r)
 rows = data.get("repos") or []
-row = next((x for x in rows if (x.get("repo") or "").lower() == repo.lower()), None)
+# 행의 repo 는 cloud-translate#1243(518) 부터 `host/owner/name` (소문자) 이다.
+# 스크립트의 REPO 는 `owner/name` 이든 `host/owner/name` 이든 받는다 — owner/name
+# 은 그 꼬리로 맞춘다 (owner 가 GitHub 마다 달라 꼬리만으로도 한 사본이다).
+# 정확 비교만 하던 시절엔 행을 못 찾아 종료 시 "미등록 — 비활성화 불필요" 로
+# webhook 을 켠 채 끝났다.
+def _same(row_repo, want):
+    r, w = (row_repo or "").lower(), want.lower()
+    return r == w or r.endswith("/" + w)
+row = next((x for x in rows if _same(x.get("repo"), repo)), None)
 if row is None and enabled != "true":
     print(f"  webhook repo 미등록 — 비활성화 불필요: {repo}")
     raise SystemExit(0)

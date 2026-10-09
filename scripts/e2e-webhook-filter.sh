@@ -103,3 +103,89 @@ restore_filters() {
   done
   FILTER_EXTENDED=0
 }
+
+# ── 리포별 override (webhook_repo_filter_override) ───────────────────
+# 전역 필터만 넓혀서는 부족한 리포가 있다 — 리포 override 는 dim 별로 전역을
+# **덮어쓴다** (webhook/store.merge_job_filter). 실측 (2026-10-09,
+# cloud-docs/Internal-Agent-Test): override `base_branches=alpha` 가 세션 브랜치를
+# 막고, override 에 author_skip 이 없어 전역 skip 목록(e2e PR 작성자 포함)을
+# 물려받았다. Agent-Test 는 override 가 `base_branches=""`(전부 허용) ·
+# `author_skip=anytime-modify` 라 우연히 통과하던 것이다.
+#
+# 그래서 세션 동안만 그 리포의 override 를 고친다: base_branches override 가
+# 세션 브랜치를 막으면 덧붙이고, 실효 author_skip 에 e2e 작성자가 있으면 그
+# 작성자만 뺀다. 원래 없던 dim 은 null 로 되돌린다(= 전역 상속).
+declare -A ORIG_REPO_OVERRIDE=()   # "<job>|<dim>" → JSON 값 (null = override 없음)
+REPO_OVERRIDE_EXTENDED=0
+
+_set_repo_override() {
+  # $1=job $2=overrides JSON
+  python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$REPO" "$1" "$2" <<'PY'
+import json, sys, urllib.request
+base_url, token, repo, job, ov = sys.argv[1:6]
+body = json.dumps({"repo": repo, "job": job, "overrides": json.loads(ov)}).encode()
+req = urllib.request.Request(f"{base_url}/api/webhooks/repos/override", data=body,
+    method="POST", headers={"Authorization": f"Bearer {token}",
+                            "Content-Type": "application/json"})
+with urllib.request.urlopen(req, timeout=15) as r:
+    json.load(r)
+PY
+}
+
+extend_repo_override_for_session() {
+  # $1=session base branch  $2=e2e PR author login
+  local br="$1" author="$2" plan job
+  plan="$(python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$REPO" "$br" "$author" <<'PY'
+import json, sys, urllib.request
+base_url, token, repo, br, author = sys.argv[1:6]
+req = urllib.request.Request(f"{base_url}/api/webhooks/repos",
+                             headers={"Authorization": f"Bearer {token}"})
+with urllib.request.urlopen(req, timeout=15) as r:
+    d = json.load(r)
+want = repo.lower()
+key = next((k for k in (d.get("repo_overrides") or {})
+            if k == want or k.endswith("/" + want)), None)
+ovs = (d.get("repo_overrides") or {}).get(key) or {}
+out = {}
+for job in ("translate", "ko-review"):
+    ov = ovs.get(job) or {}
+    glob = (d.get("filters") or {}).get(job) or {}
+    new, orig = {}, {}
+    bb = ov.get("base_branches")
+    if bb:                      # override 가 있고 비어 있지 않음 → 세션 브랜치가 막힌다
+        items = [x.strip() for x in bb.split(",") if x.strip()]
+        if br not in items:
+            orig["base_branches"] = bb
+            new["base_branches"] = ",".join(items + [br])
+    eff = ov["author_skip"] if "author_skip" in ov else (glob.get("author_skip") or "")
+    skip = [x.strip() for x in eff.split(",") if x.strip()]
+    if author and author.lower() in [x.lower() for x in skip]:
+        orig["author_skip"] = ov["author_skip"] if "author_skip" in ov else None
+        new["author_skip"] = ",".join(x for x in skip if x.lower() != author.lower())
+    out[job] = {"new": new, "orig": orig}
+print(json.dumps(out))
+PY
+)" || { echo "  [override] WARN: 리포 override 를 읽지 못했습니다 — 그대로 진행" >&2; return 0; }
+  for job in translate ko-review; do
+    local new orig
+    new="$(printf '%s' "$plan" | python3 -c "import json,sys;print(json.dumps(json.load(sys.stdin)['$job']['new']))")"
+    orig="$(printf '%s' "$plan" | python3 -c "import json,sys;print(json.dumps(json.load(sys.stdin)['$job']['orig']))")"
+    [[ "$new" == "{}" ]] && continue
+    echo "  [override] $REPO $job: $new (원래: $orig)"
+    ORIG_REPO_OVERRIDE[$job]="$orig"
+    _set_repo_override "$job" "$new"
+    REPO_OVERRIDE_EXTENDED=1
+  done
+}
+
+restore_repo_override() {
+  (( REPO_OVERRIDE_EXTENDED )) || return 0
+  local job
+  for job in translate ko-review; do
+    [[ -n "${ORIG_REPO_OVERRIDE[$job]+set}" ]] || continue
+    echo "  [cleanup] restoring override[$REPO][$job] = ${ORIG_REPO_OVERRIDE[$job]}"
+    _set_repo_override "$job" "${ORIG_REPO_OVERRIDE[$job]}" || \
+      echo "  [cleanup] WARN: override 원복 실패 ($job) — 어드민 ▸ Webhook 설정에서 확인" >&2
+  done
+  REPO_OVERRIDE_EXTENDED=0
+}

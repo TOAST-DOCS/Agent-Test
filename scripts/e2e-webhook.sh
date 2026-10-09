@@ -57,11 +57,24 @@ set -u
 DASHBOARD_BASE_URL="${DASHBOARD_BASE_URL:-}"
 DASHBOARD_API_TOKEN="${DASHBOARD_API_TOKEN:-}"
 
-REPO="TOAST-DOCS/Agent-Test"
+# 대상 리포는 이 체크아웃의 origin 이다 — 같은 스크립트를 github.com 의
+# TOAST-DOCS/Agent-Test 와 사내 GHE 사본 cloud-docs/Internal-Agent-Test 에서
+# 그대로 돌린다 (cloud-user-guide-agent/518). github.com 이면 예전처럼
+# `owner/name`, 그 밖의 호스트면 `host/owner/name` — gh 는 `--repo HOST/OWNER/REPO`
+# 를 받고, 대시보드는 어느 표기든 그 사본으로 푼다.
+_origin="$(git -C "$(dirname "$0")/.." remote get-url origin 2>/dev/null || true)"
+_origin="${_origin%.git}"
+if [[ "$_origin" =~ ^(https?://|git@)([^/:]+)[/:]([^/]+)/([^/]+)$ ]]; then
+  REPO_HOST="${BASH_REMATCH[2]}"
+  REPO_HOST="${REPO_HOST##*@}"
+  REPO="${BASH_REMATCH[3]}/${BASH_REMATCH[4]}"
+  [[ "$REPO_HOST" != "github.com" ]] && REPO="$REPO_HOST/$REPO"
+else
+  REPO_HOST="github.com"
+  REPO="TOAST-DOCS/Agent-Test"
+fi
 # e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
 source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
-
-REPO_LOWER="toast-docs/agent-test"
 BASE_BRANCH=""       # 미지정 → 세션 브랜치 e2e-webhook/<ts> 자동 생성. --base 로 override.
 BASE_SOURCE="alpha"  # 세션 브랜치를 갈라낼 원본
 POLL_TIMEOUT=600     # 초. opened → ko-review task 등장까지 / merged → translate task 등장까지 각각.
@@ -145,10 +158,10 @@ else
 fi
 
 # 스크립트 종료 시 필터 원복 + (세션 모드면) 브랜치 삭제. cleanup 은 idempotent.
-trap 'ec=$?; restore_filters; set_webhook_repo_enabled false; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
+trap 'ec=$?; restore_filters; restore_repo_override; set_webhook_repo_enabled false; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
 
 echo "==================================================================="
-echo "  webhook e2e — Agent-Test"
+echo "  webhook e2e — $REPO"
 echo "  head branch : $HEAD_BRANCH"
 echo "  base branch : $BASE_BRANCH$( ((USE_SESSION_BRANCH)) && echo ' (세션, 종료 시 삭제)' )"
 echo "  timeout(s)  : $POLL_TIMEOUT"
@@ -172,6 +185,9 @@ if (( USE_SESSION_BRANCH )); then
   # 필터의 base_branches 를 세션 브랜치 포함으로 임시 확장.
   extend_filters_for_branch "$BASE_BRANCH"
 fi
+# 리포 override 가 세션 브랜치나 e2e 작성자를 막으면 세션 동안만 푼다 (종료 시 원복).
+E2E_AUTHOR="$(GH_HOST="$REPO_HOST" gh api user --jq .login 2>/dev/null || true)"
+extend_repo_override_for_session "$BASE_BRANCH" "$E2E_AUTHOR"
 
 # 이제 head 브랜치 생성 (base 로부터 갈라짐).
 git fetch origin "$BASE_BRANCH"
