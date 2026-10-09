@@ -189,6 +189,8 @@ print(t.get('status', '') or '-', t.get('build_url', '') or '-')
     case "$status" in
       success|failure|cancelled|aborted|partial)
         echo "  build finished: status=$status  build_url=$build_url"
+        # 호출부가 빌드 결과까지 판정할 수 있게 남긴다 (반환값은 "끝났나" 만 말한다).
+        LAST_BUILD_STATUS="$status"; LAST_BUILD_URL="$build_url"
         return 0
         ;;
     esac

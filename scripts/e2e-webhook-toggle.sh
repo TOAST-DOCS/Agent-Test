@@ -79,3 +79,22 @@ with urllib.request.urlopen(post, timeout=15) as r2:
 print(f"  webhook repo {repo}: translate/ko-review enabled={enabled}")
 PYEOF
 }
+
+# 실행 전 상태 — "on" (translate·ko-review 둘 다 켜짐) / "off" (그 밖, 미등록 포함).
+# 종료 시 무조건 끄면 운영에서 켜 둔 리포(사내 GHE 사본 Internal-Agent-Test 는
+# 평소에도 켜 둔다)의 webhook 을 e2e 가 꺼 버린다 (실측 2026-10-09). 호출부는
+# 이 값을 기억했다가 "on" 이면 켠 채로 둔다.
+webhook_repo_state() {
+  python3 - "${DASHBOARD_BASE_URL:-}" "${DASHBOARD_API_TOKEN:-}" "${REPO:-}" <<'PYEOF' 2>/dev/null || echo off
+import json, sys, urllib.request
+base_url, token, repo = sys.argv[1:4]
+req = urllib.request.Request(f"{base_url}/api/webhooks/repos",
+                             headers={"Authorization": f"Bearer {token}"})
+with urllib.request.urlopen(req, timeout=15) as r:
+    rows = json.load(r).get("repos") or []
+w = repo.lower()
+row = next((x for x in rows if (x.get("repo") or "").lower() == w or
+            (x.get("repo") or "").lower().endswith("/" + w)), None)
+print("on" if row and row.get("translate_enabled") and row.get("ko_review_enabled") else "off")
+PYEOF
+}

@@ -137,6 +137,18 @@ source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-toggle.sh"
 OPENED_RESULT="-"
 MERGED_RESULT="-"
 PRESET_RESULT="-"
+# 트리거만 보고 PASS 를 주면 빌드가 실패해도 초록이다 (실측 2026-10-09:
+# Internal-Agent-Test#4 의 translate #1191 이 GHE App 권한 403 으로 실패했는데
+# 세 줄 다 PASS). 빌드를 기다린 경우 그 결과도 판정한다 (--no-wait-build 면 skipped).
+KO_BUILD_RESULT="skipped"
+TR_BUILD_RESULT="skipped"
+_build_verdict() {   # $1 = wait_for_build_finish 의 반환값
+  if [[ "$1" != 0 ]]; then echo "FAIL (timeout)"; return; fi
+  case "${LAST_BUILD_STATUS:-}" in
+    success) echo "PASS" ;;
+    *)       echo "FAIL (${LAST_BUILD_STATUS:-?} ${LAST_BUILD_URL:-})" ;;
+  esac
+}
 
 # ── filter 확장/원복 helper (공용) ─────────────────────────────────
 # `extend_filters_for_branch` / `restore_filters`.
@@ -159,7 +171,8 @@ else
 fi
 
 # 스크립트 종료 시 필터 원복 + (세션 모드면) 브랜치 삭제. cleanup 은 idempotent.
-trap 'ec=$?; restore_filters; restore_repo_override; set_webhook_repo_enabled false; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
+WEBHOOK_PRIOR="$(webhook_repo_state)"
+trap 'ec=$?; restore_filters; restore_repo_override; if [[ "$WEBHOOK_PRIOR" == on ]]; then echo "  webhook repo $REPO: 실행 전에 켜져 있어 그대로 둡니다"; else set_webhook_repo_enabled false; fi; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
 
 echo "==================================================================="
 echo "  webhook e2e — $REPO"
@@ -260,7 +273,9 @@ else
     ko_review_job_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("job_id",""))')"
     ko_review_task_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("id",""))')"
     if [[ -n "$ko_review_job_id" && -n "$ko_review_task_id" ]]; then
-      wait_for_build_finish "$ko_review_job_id" "$ko_review_task_id" || true
+      LAST_BUILD_STATUS=""; rc=0
+      wait_for_build_finish "$ko_review_job_id" "$ko_review_task_id" || rc=$?
+      KO_BUILD_RESULT="$(_build_verdict "$rc")"
     fi
   fi
 fi
@@ -417,7 +432,9 @@ else
       translate_job_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("job_id",""))')"
       translate_task_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("id",""))')"
       if [[ -n "$translate_job_id" && -n "$translate_task_id" ]]; then
-        wait_for_build_finish "$translate_job_id" "$translate_task_id" || true
+        LAST_BUILD_STATUS=""; rc=0
+        wait_for_build_finish "$translate_job_id" "$translate_task_id" || rc=$?
+        TR_BUILD_RESULT="$(_build_verdict "$rc")"
       fi
     fi
   fi
@@ -431,9 +448,12 @@ echo "  PR                              : $pr_url"
 echo "  opened → ko-review triggered    : $OPENED_RESULT"
 echo "  merged → translate triggered    : $MERGED_RESULT"
 echo "  translate params ↔ preset       : $PRESET_RESULT"
+echo "  ko-review build                 : $KO_BUILD_RESULT"
+echo "  translate build                 : $TR_BUILD_RESULT"
 echo "==================================================================="
 
 if [[ "$OPENED_RESULT" != "PASS" ]]; then exit 2; fi
 if [[ "$DO_MERGE" == "1" && "$MERGED_RESULT" != "PASS" ]]; then exit 3; fi
 if [[ "$PRESET_RESULT" == FAIL* ]]; then exit 4; fi
+if [[ "$KO_BUILD_RESULT" == FAIL* || "$TR_BUILD_RESULT" == FAIL* ]]; then exit 5; fi
 exit 0
