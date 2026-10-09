@@ -62,18 +62,7 @@ DASHBOARD_API_TOKEN="${DASHBOARD_API_TOKEN:-}"
 # 그대로 돌린다 (cloud-user-guide-agent/518). github.com 이면 예전처럼
 # `owner/name`, 그 밖의 호스트면 `host/owner/name` — gh 는 `--repo HOST/OWNER/REPO`
 # 를 받고, 대시보드는 어느 표기든 그 사본으로 푼다.
-_origin="$(git -C "$(dirname "$0")/.." remote get-url origin 2>/dev/null || true)"
-_origin="${_origin%.git}"
-if [[ "$_origin" =~ ^(https?://|git@)([^/:]+)[/:]([^/]+)/([^/]+)$ ]]; then
-  REPO_HOST="${BASH_REMATCH[2]}"
-  REPO_HOST="${REPO_HOST##*@}"
-  REPO="${BASH_REMATCH[3]}/${BASH_REMATCH[4]}"
-  [[ "$REPO_HOST" != "github.com" ]] && REPO="$REPO_HOST/$REPO"
-else
-  # 기본값으로 떨어지지 않는다 — 엉뚱한 리포에 PR 을 열고 webhook 을 켜게 된다.
-  echo "error: origin URL 에서 리포를 알 수 없습니다: '${_origin}'" >&2
-  exit 1
-fi
+source "$(cd "$(dirname "$0")" && pwd)/e2e-repo.sh"
 # e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
 source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
 BASE_BRANCH=""       # 미지정 → 세션 브랜치 e2e-webhook/<ts> 자동 생성. --base 로 override.

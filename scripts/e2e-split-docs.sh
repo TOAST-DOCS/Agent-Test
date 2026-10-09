@@ -73,7 +73,8 @@
 set -eo pipefail
 set -u
 
-REPO="TOAST-DOCS/Agent-Test"
+# 대상 리포는 이 체크아웃의 origin (github.com · 사내 GHE 공용, 518).
+source "$(cd "$(dirname "$0")" && pwd)/e2e-repo.sh"
 BASE_SOURCE="alpha"
 TS="$(date -u +%Y%m%d-%H%M%S)"
 SESSION_BRANCH="e2e-splitdocs/$TS"
@@ -220,7 +221,7 @@ else
   resp="$(curl -sS -X POST \
     -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
     -H "Content-Type: application/json" \
-    -d "{\"target\": \"https://github.com/$REPO\", \"base_ref\": \"$SESSION_BRANCH\",
+    -d "{\"target\": \"$REPO_WEB\", \"base_ref\": \"$SESSION_BRANCH\",
          \"doc\": \"$DOC\", \"langs\": \"$LANGS\", \"dry_run\": false}" \
     "$DASHBOARD_BASE_URL/api/split-docs")"
   echo "$resp" | python3 -m json.tool | sed 's/^/  /'
