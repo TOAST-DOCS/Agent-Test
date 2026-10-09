@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
@@ -238,3 +240,10 @@ Apply the changed setting. The command to apply GRUB settings may vary depending
 ```
 $ sudo update-grub
 ```
+
+<a id="webhook-e2e-20261009-125057"></a>
+## webhook e2e marker (20261009-125057) { #webhook-e2e-20261009-125057 }
+
+This section is a temporary marker inserted by scripts/e2e-webhook.sh.
+It validates whether the webhook routes this PR to the ko-review / translate job,
+after which the marker is cleaned up by the scheduled restore-alpha-origin process.
