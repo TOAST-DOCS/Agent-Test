@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=77a16f7da63f -->
+<!-- pre-align:aligned sig=00d5570bd1c0 -->
 
 <a id="compute-image-api-v2-guide"></a>
 ## Compute > Image > API v2ガイド { #compute-image-api-v2-guide }
