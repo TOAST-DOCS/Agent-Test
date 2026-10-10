@@ -143,3 +143,8 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 [フェンス内の壊れたリンク](./no-such-doc-e2e.md#nowhere)
 [フェンス内の self-path](./fix-links/#fix-links-controls)
 ```
+
+<a id="lag-order-b-added"></a>
+## 翻訳遅延順序テストセクション { #lag-order-b-added }
+
+このセクションはPR Bが追加しました。PR Aの翻訳ジョブはこのセクションに触れてはならず、Bの翻訳PRがマージされるとen/jaに一度だけ存在する必要があります。
