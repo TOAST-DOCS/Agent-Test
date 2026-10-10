@@ -3,7 +3,7 @@
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview
 
-An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud.
+An instance is a virtual server composed of virtual CPUs, memory, and root block storage. You can install your services and applications on this server and use it in combination with the various services provided by NHN Cloud. (Concurrent PR test A: This sentence is for concurrent-a-edit validation.)
 
 <a id="components"></a>
 ## Components
@@ -203,19 +203,19 @@ Click **Connect** next to **Confirm Password** to receive the rdp file configure
 
 ### How to Access the Serial Console
 
-You can connect to the serial console to access an instance in situations where an SSH client cannot be used, such as boot failure or network configuration issues.
+You can connect to the serial console to access an instance in situations where an SSH client is unavailable, such as a boot failure or network configuration issue.
 
 The serial console feature has the following restrictions:
 
-* Only one serial console connection is allowed per instance, and multiple connection attempts may not connect successfully.
-* Serial console access is not guaranteed for instances created with user-uploaded images or private images.
+* Only one serial console connection is allowed per instance, and multiple simultaneous connection attempts may not connect properly.
+* Serial console access is not guaranteed for instances created with images uploaded by individuals or with private images.
 * A serial console connection can remain active for up to 10 minutes.
 * Windows instances do not support the serial console feature.
-* Instances created before the January 27, 2026 release require **Stop Instance** followed by **Start Instance**. The **Reboot Instance** feature does not apply.
+* For instances created before the January 27, 2026 deployment, you must **Stop Instance** and then **Start Instance**. The **Reboot Instance** feature does not apply.
 
 > [Caution]
-> Changing the boot method by accessing an instance through the serial console may cause boot failure, and the user is responsible for the consequences.
-> In general situations, we recommend that you use an SSH client to connect.
+> Changing the boot method by accessing an instance through the serial console may cause the instance to fail to boot, and you are responsible for the consequences.
+> In normal circumstances, we recommend that you use an SSH client to connect.
 
 #### Change GRUB Bootloader Settings
 
