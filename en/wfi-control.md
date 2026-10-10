@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=9b1876e3ba07 -->
+
 ## Overview
 
 This document is a `.docs-workflow` ignore gate e2e fixture (20261010-042750).
