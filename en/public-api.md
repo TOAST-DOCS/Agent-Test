@@ -11,7 +11,8 @@ The Instance API uses the `compute` type endpoint. Refer to the `serviceCatalog`
 
 | Type | Region | Endpoint |
 |---|---|---|
-| compute | Korea (Pangyo) region<br>Korea (Pyeongchon) region<br>Korea (Gwangju) region<br>Japan region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com |
+| compute | Korea (Pangyo) region<br>Korea (Pyeongchon) region<br>Korea (Gwangju) region<br>Japan region | https://kr1-api-instance-infrastructure.nhncloudservice.com<br>https://kr2-api-instance-infrastructure.nhncloudservice.com<br>https://kr3-api-instance-infrastructure.nhncloudservice.com<br>https://jp1-api-instance-infrastructure.nhncloudservice.com (row modification test) |
+| TEST-ROW | (new row test) | (new row test) |
 
 API responses may include fields that are not specified in this guide. These fields are used for internal NHN Cloud purposes and may be changed without prior notice, so they should not be used.
 
@@ -541,3 +542,29 @@ This API does not require a request body.
 </details>
 
 ---
+
+<a id="test-added-endpoint"></a>
+### New test endpoint { #test-added-endpoint }
+
+```
+POST /v2/{tenantId}/test-added-endpoint
+X-Auth-Token: {tokenId}
+```
+
+<a id="test-added-request"></a>
+#### Request { #test-added-request }
+
+| Name | Type | Format | Required | Description |
+|---|---|---|---|---|
+| tenantId | URL | String | O | Tenant ID |
+| tokenId | Header | String | O | Token ID |
+| name | Body | String | O | endpoint name |
+
+<a id="test-added-response"></a>
+#### Response { #test-added-response }
+
+| Name | Type | Format | Description |
+|---|---|---|---|
+| endpoint | Body | Object | Generated endpoint object |
+| endpoint.id | Body | String | Endpoint ID |
+| endpoint.name | Body | String | Endpoint name |
