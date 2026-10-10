@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=77a16f7da63f -->
 
 <a id="compute-image-api-v2-guide"></a>
@@ -41,7 +43,12 @@ X-Auth-Token: {tokenId}
 | size_max | Query | Integer | - | 照会するイメージの最大サイズ(Byte)                                                                                                                                           |
 | sort_key | Query | String | - | イメージリストをソートする時に使用するプロパティ<br>イメージのすべてのプロパティを指定可能。基本値は`created_at`                                                                                               |
 | sort_dir | Query | Enum | - | イメージリストのソート方向<br>`asc` (昇順)、`desc` (降順)のうち、1つの値のみ選択可能。基本値は降順                                                                                                   |
+{% if "public" in build_flags %}
 | member_status | Query | Enum | - | 共有されたイメージの場合、メンバーステータスに応じたイメージリストを照会<br>`accepted`, `pending`, `rejected`, `all`のいずれか1つの値のみ選択可能<br>デフォルト値は`accepted` |
+| os_type | Query | String | - | 照会するイメージのOS種類<br>`linux`、`windows` のいずれか |
+| os_distro | Query | String | - | 照会するイメージのOSディストリビューション |
+
+{% endif %}
 
 <a id="list-images-response"></a>
 #### レスポンス
@@ -135,6 +142,10 @@ X-Auth-Token: {tokenId}
 |---|---|---|---|---|
 | imageId | URL | UUID | O | 照会するイメージID |
 | tokenId | Header | String | O | トークンID|
+| include_properties | Query | Boolean | - | イメージプロパティを含めるかどうか |
+{% if "gov" in build_flags %}
+| gov_zone | Query | String | - | 公共リージョンエリア |
+{% endif %}
 
 <a id="get-image-response"></a>
 #### レスポンス
