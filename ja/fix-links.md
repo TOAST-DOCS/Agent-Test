@@ -33,13 +33,6 @@
 
 * [料金 (別の言語フォルダー)](../ko/overview.md#pricing)
 
-<a id="fix-links-nested"></a>
-## nested-frag { #fix-links-nested }
-
-デプロイ URL の断片が fragment に入り込み `#a/#b` と重なったリンクです。最後の `/#` 以降だけが残るべきです。
-
-* [料金 (重なった fragment)](./overview.md#overview/#pricing)
-
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
 
@@ -143,3 +136,10 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 [フェンス内の壊れたリンク](./no-such-doc-e2e.md#nowhere)
 [フェンス内の self-path](./fix-links/#fix-links-controls)
 ```
+
+<a id="fix-links-nested"></a>
+## nested-frag { #fix-links-nested }
+
+デプロイ URLのフラグメントがfragmentの中に引き込まれ、`#a/#b`のように重複したリンクになっています。最後の`/#`以降のみが残る必要があります。
+
+* [料金 (重複したfragment)](./overview.md#overview/#pricing)
