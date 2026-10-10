@@ -184,13 +184,13 @@ When the service start mode for **SQL SERVER (MSSSQLSERVER) and SQL Server Agent
 ### Starting/Stopping MySQL
 
 ```
-#Start mysql Service
+# Start mysql Service
 shell> service mysqld start
 
-#Stop mysql Service
+# Stop mysql Service
 shell> service mysqld stop
 
-#Restart mysql Service
+# Restart mysql Service
 shell> service mysqld restart
 ```
 
@@ -235,7 +235,7 @@ port = Port name to use
 
 shell> service mysqld restart
 
-#Connect with the changed port number
+# Connect with the changed port number
 
 shell> mysql -uroot -P[changed port number]
 ```
@@ -277,7 +277,7 @@ Directory and file description of MySQL are as below:
 ### How to start/stop PostgreSQL
 
 ```
-##Ubuntu
+## Ubuntu
 # Start postgresql service 
 shell> sudo systemctl start postgresql
 # Stop postgresql service
@@ -292,7 +292,7 @@ shell> sudo systemctl restart postgresql
 For initial connection, connect to MySQL with default user name.
 <br>
 ```
-#Switch account to postgres and log in
+# Switch account to postgres and log in
 shell> sudo su - postgres
 shell> psql
 ```
@@ -307,18 +307,18 @@ The image port provided is 5432, the default PostgreSQL port. Port change is rec
 ```
 shell> vi postgresql.conf
 
-#Specify the port to be used in the postgresql.conf file.
+# Specify the port to be used in the postgresql.conf file.
 
 port =name of the port to use
 
-#Save vi editor
+# Save vi editor
 
-#Restart postgresql service
+# Restart postgresql service
 
-##Ubuntu
+## Ubuntu
 shell> sudo systemctl restart postgresql
 
-#Log in with the changed port as shown below
+# Log in with the changed port as shown below
 
 shell> psql -p[changed port number]
 ```
@@ -330,22 +330,22 @@ The default timezone recorded in the server log is set to UTC. It is recommended
 ```
 shell> vi postgresql.conf
 
-#Specify the timezone to be used in the postgresql.conf file.
+# Specify the timezone to be used in the postgresql.conf file.
 
 log_timezone = timezone to use
 
-#Save vi editor
+# Save vi editor
 
-#Restart postgresql service
+# Restart postgresql service
 
-##Ubuntu
+## Ubuntu
 shell> sudo systemctl restart postgresql
 
-#Log in to postgresql
+# Log in to postgresql
 
 shell> psql
 
-#Check the changed settings
+# Check the changed settings
 
 postgres=# SHOW log_timezone;
 ```
@@ -355,11 +355,11 @@ postgres=# SHOW log_timezone;
 Since all users are provided with CREATE and USAGE permissions for public schema by default, users who can log in to the DB can create objects in public schema. It is recommended to cancel the permissions so that no users can create objects in public schema.
 <br>
 ```
-#Log in to postgresql
+# Log in to postgresql
 
 shell> psql
 
-#Run permission cancellation command
+# Run permission cancellation command
 
 postgres=# REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 ```
@@ -371,19 +371,19 @@ To allow logins other than local host, you need to change the listen_addresses v
 ```
 shell> vi postgresql.conf
 
-#Specify the address to be used in the postgresql.conf file.
-#To allow all IPv4 addresses, 0.0.0.0
-#To allow all IPv6 addresses, ::
-#To allow all addresses, *
+# Specify the address to be used in the postgresql.conf file.
+# To allow all IPv4 addresses, 0.0.0.0
+# To allow all IPv6 addresses, ::
+# To allow all addresses, *
 
 listen_addresses = address to allow
 
-#Save vi editor
+# Save vi editor
 
 shell> vi pg_hba.conf
 
-#Client authentication control per IP address format
-#Since old client library is not supported by scram-sha-256, it needs to be changed to md5
+# Client authentication control per IP address format
+# Since old client library is not supported by scram-sha-256, it needs to be changed to md5
 
 # TYPE  DATABASE        USER            ADDRESS                 METHOD
 # IPv4 local connections:
@@ -393,9 +393,9 @@ host    allowed DB           allowed user          allowed address              
 host    all             all             ::1/128                 scram-sha-256
 host    allowed DB           allowed user          allowed address                   scram-sha-256
 
-#Restart postgresql service
+# Restart postgresql service
 
-##Ubuntu
+## Ubuntu
 shell> pg_ctl reload -D /var/lib/postgresql/${version}/main
 ```
 
