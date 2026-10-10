@@ -41,7 +41,11 @@ X-Auth-Token: {tokenId}
 | size_max | Query | Integer | - | 조회할 이미지의 최대 크기(바이트)                                                                                                                                      |
 | sort_key | Query | String | - | 이미지 목록을 정렬할 때 사용할 속성<br>이미지의 모든 속성을 지정 가능, 기본값은 `created_at`                                                                                             |
 | sort_dir | Query | Enum | - | 이미지 목록 정렬 방향<br>`asc`(오름차순), `desc`(내림차순) 중 하나의 값만 선택 가능, 기본값은 내림차순                                                                                      |
+{% if "public" in build_flags %}
 | member_status | Query | Enum | - | 공유 받은 이미지의 경우 멤버 상태에 따른 이미지 목록을 조회<br>`accepted`, `pending`, `rejected`, `all` 중 하나의 값만 선택 가능<br>기본값은 `accepted` |
+| os_type | Query | String | - | 조회할 이미지의 운영체제 종류<br>`linux`, `windows` 중 하나 |
+| os_distro | Query | String | - | 조회할 이미지의 운영체제 배포판 |
+{% endif %}
 
 <a id="list-images-response"></a>
 #### 응답
@@ -135,6 +139,10 @@ X-Auth-Token: {tokenId}
 |---|---|---|---|---|
 | imageId | URL | UUID | O | 조회할 이미지 ID |
 | tokenId | Header | String | O | 토큰 ID|
+| include_properties | Query | Boolean | - | 이미지 속성 포함 여부 |
+{% if "gov" in build_flags %}
+| gov_zone | Query | String | - | 공공 리전 영역 |
+{% endif %}
 
 <a id="get-image-response"></a>
 #### 응답
