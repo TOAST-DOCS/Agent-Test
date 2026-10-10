@@ -1,7 +1,16 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=2c62441c8680 -->
 
 <a id="compute-instance-installation-component-guide"></a>
 ## Compute > Instance > Installation Component Guide { #compute-instance-installation-component-guide }
+
+This is a test paragraph added to the existing section. Existing headings must be kept as is.
+
+<a id="test-added-subsection"></a>
+### Test subsection { #test-added-subsection }
+
+This subsection was added for translation pipeline testing. It confirms that the new h3 is translated and the same anchor id is assigned across three languages.
 
 <a id="nat-instance"></a>
 ## NAT Instance { #nat-instance }
