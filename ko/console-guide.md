@@ -1,10 +1,8 @@
 <a id="compute-instance-console-guide"></a>
-## Compute > Instance > 콘솔 사용 가이드
+## Compute > Instance > 콘솔 사용 가이드 상세 안내
 
 <a id="create-instances"></a>
 ## 인스턴스 생성
-
-아래 설정들을 통하여 인스턴스를 생성하거나 인스턴스 템플릿(Instance Template)을 통해 인스턴스를 생성할 수 있습니다. 인스턴스 템플릿을 통해 인스턴스를 생성하려면 인스턴스 생성 화면에서 **인스턴스 템플릿 사용**을 선택합니다. 인스턴스 템플릿 생성 방법은 [인스턴스 템플릿 콘솔 가이드](/Compute/Instance%20Template/ko/console-guide/)를 참고합니다.
 
 ![인스턴스 생성 가이드 표지](../static/images/image-1704.jpg)
 
