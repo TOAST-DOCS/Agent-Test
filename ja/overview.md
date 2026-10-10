@@ -1,7 +1,11 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 概要 { #compute-instance-overview }
+
+このパラグラフは既存のセクションに追加されたテストパラグラフです。既存の見出しはそのまま保持される必要があります。
 
 インスタンスは仮想のCPU、メモリ、ルートブロックストレージで構成された仮想サーバーです。このサーバーに顧客のサービスやアプリケーションをインストールしてNHN Cloudが提供する様々なサービスを組み合わせて使用します。
 
