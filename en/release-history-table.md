@@ -11,7 +11,6 @@ This document lists the changes in each release of the instance service in rever
 | Release | Release date | Changes |
 |---|---|---|
 | 2.5.0 | 2026-05-12 | Snapshot scheduling added. You can configure the schedule interval in the console. |
-| 2.4.1 | 2026-04-02 | Reduced creation time through improved node image caching. Fixed internal errors. |
 | 2.4.0 | 2026-03-18 | GPU node pool support. Scheduler priority policy revamped. |
 | 2.3.2 | 2026-02-05 | Security vulnerability patch. Console access logging strengthened. |
 | 2.3.1 | 2026-01-08 | First public release notes. Basic feature guide. |
