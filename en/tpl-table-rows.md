@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=77a16f7da63f -->
 
 <a id="compute-image-api-v2-guide"></a>
@@ -41,7 +43,12 @@ This API does not require a request body.
 | size_max | Query | Integer | - | Maximum size of image to query (bytes)                                                                                                                                                                                |
 | sort_key | Query | String | - | Attribute to use when sorting the image list<br>All attributes of image can be specified, default is `created_at`                                                                                                     |
 | sort_dir | Query | Enum | - | Sorting direction of the image list<br>Select only one of `asc` (ascending order) or `desc` (descending order)                                                                                                        |
+{% if "public" in build_flags %}
 | member_status | Query | Enum | - | For shared images, a list of images are retrieved according to their member status<br>Only one of the following values can be selected: `accepted`, `pending`, `rejected`, or `all`.<br>default is `accepted` |
+| os_type | Query | String | - | OS type of the image to retrieve<br>One of `linux`, `windows` |
+| os_distro | Query | String | - | Operating system distribution of the image to retrieve |
+
+{% endif %}
 
 <a id="list-images-response"></a>
 #### Response
@@ -135,6 +142,10 @@ This API does not require a request body.
 |---|---|---|---|---|
 | imageId | URL | UUID | O | Image ID to query |
 | tokenId | Header | String | O | Token ID|
+| include_properties | Query | Boolean | - | Whether to include image properties |
+{% if "gov" in build_flags %}
+| gov_zone | Query | String | - | Public region zone |
+{% endif %}
 
 <a id="get-image-response"></a>
 #### Response
