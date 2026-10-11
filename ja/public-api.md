@@ -1,9 +1,11 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=8e6d00d3460b -->
 
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
-インスタンスは、API 呼び出し時の認証/認可に IaaS トークンを使用します。IaaS トークンは、NHN Cloud の OpenStack ベースのインフラストラクチャサービス (IaaS) で使用される認証トークンです。IaaS トークンの発行および使用の詳細については、「[IaaS トークン](/nhncloud/ja/public-api/iaas-token)」を参照してください。
+インスタンスは、API 呼び出し時の認証/認可に IaaS トークンを使用します。IaaS トークンは、NHN Cloud の OpenStack ベースのインフラストラクチャサービス (IaaS) で使用される認証トークンです。IaaS トークンの発行および使用の詳細については、「[IaaS トークン](/nhncloud/ja/public-api/iaas-token)」を参照してください。詳細については、以下の表を参照してください。
 
 インスタンス API は `compute` タイプのエンドポイントを使用します。正確なエンドポイントについては、トークン発行応答の `serviceCatalog` を参照してください。
 
@@ -31,10 +33,10 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナント ID |
-| tokenId | Header | String | O | トークン ID |
-| minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズより大きいブロックストレージサイズを持つタイプのみを返します |
-| minRam | Query | Integer | - | 最小 RAM サイズ(MB)<br>指定したサイズより大きい RAM サイズを持つタイプのみを返します |
+| tenantId | URL | String | Y | テナント ID |
+| tokenId | Header | String | Y | 認証トークンID |
+| minDisk | Query | Integer | N | 最小ブロックストレージサイズ(GB)<br>指定したサイズより大きいブロックストレージサイズを持つタイプのみを返します |
+| minRam | Query | Integer | N | 最小 RAM サイズ(MB)<br>指定したサイズより大きい RAM サイズを持つタイプのみを返します |
 
 <a id="response"></a>
 #### レスポンス
@@ -105,10 +107,10 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナント ID |
-| tokenId | Header | String | O | トークン ID |
-| minDisk | Query | Integer | - | 最小ブロックストレージサイズ(GB)<br>指定したサイズより大きいブロックストレージサイズを持つタイプのみを返します |
-| minRam | Query | Integer | - | 最小 RAM サイズ(MB)<br>指定したサイズより大きい RAM サイズを持つタイプのみを返します |
+| tenantId | URL | String | Y | テナント ID |
+| tokenId | Header | String | Y | 認証トークンID |
+| minDisk | Query | Integer | N | 最小ブロックストレージサイズ(GB)<br>指定したサイズより大きいブロックストレージサイズを持つタイプのみを返します |
+| minRam | Query | Integer | N | 最小 RAM サイズ(MB)<br>指定したサイズより大きい RAM サイズを持つタイプのみを返します |
 
 <a id="list-flavors-with-details-response"></a>
 #### レスポンス
@@ -211,8 +213,8 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナント ID |
-| tokenId | Header | String | O | トークン ID |
+| tenantId | URL | String | Y | テナント ID |
+| tokenId | Header | String | Y | トークン ID |
 
 <a id="list-availability-zones-response"></a>
 #### レスポンス
@@ -266,8 +268,8 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | Y | テナントID |
+| tokenId | Header | String | Y | トークンID |
 
 <a id="list-key-pairs-response"></a>
 #### レスポンス
@@ -315,9 +317,9 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| keypairName | URL | String | O | キーペア名 |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | Y | テナントID |
+| keypairName | URL | String | Y | キーペア名 |
+| tokenId | Header | String | Y | トークンID |
 
 <a id="show-key-pair-response"></a>
 #### レスポンス
@@ -372,11 +374,11 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| tokenId | Header | String | O | トークンID |
-| keypair | Body | Object | O | キーペアオブジェクト |
-| keypair.name | Body | String | O | 作成または登録するキーペア名 |
-| keypair.public_key | Body | String | - | 登録する公開キー。このフィールドが省略されている場合は、新しいキーペアを生成します。 |
+| tenantId | URL | String | Y | テナントID |
+| tokenId | Header | String | Y | トークンID |
+| keypair | Body | Object | Y | キーペアオブジェクト |
+| keypair.name | Body | String | Y | 作成または登録するキーペア名 |
+| keypair.public_key | Body | String | N | 登録する公開キー。このフィールドが省略されている場合は、新しいキーペアを生成します。 |
 
 <details><summary>例</summary>
 <p>
@@ -437,9 +439,9 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナントID |
-| keypairName | URL | String | O | キーペア名 |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | Y | テナントID |
+| keypairName | URL | String | Y | キーペア名 |
+| tokenId | Header | String | Y | トークンID |
 
 <a id="delete-key-pair-response"></a>
 #### レスポンス
@@ -490,16 +492,16 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナント ID |
-| tokenId | Header | String | O | トークン ID |
-| reservation_id | Query | String | - | インスタンス作成予約 ID。<br>予約 ID を指定すると、同時に作成されたインスタンス一覧のみが返されます。 |
-| changes-since | Query | Datetime | - | 指定された時刻以降に変更されたインスタンス一覧を返します。`YYYY-MM-DDThh:mm:ss` の形式です。 |
-| image | Query | UUID | - | イメージ ID<br>指定されたイメージを使用したインスタンス一覧を返します。 |
-| flavor | Query | UUID | - | インスタンスタイプ ID<br>指定されたタイプを使用したインスタンス一覧を返します。 |
-| name | Query | String | - | インスタンス名<br>指定された名前を持つインスタンス一覧を返します。正規表現で照会できます。 |
-| status | Query | Enum | - | インスタンスの状態<br>指定された状態を持つインスタンス一覧を返します。 |
-| limit | Query | Integer | - | インスタンス一覧の個数<br>指定された個数のインスタンス一覧を返します。 |
-| marker | Query | UUID | - | 一覧の最初のインスタンス UUID<br>ソート基準に従って、`marker` で指定されたインスタンスから `limit` 個数のインスタンス一覧を返します。 |
+| tenantId | URL | String | Y | テナント ID |
+| tokenId | Header | String | Y | トークン ID |
+| reservation_id | Query | String | N | インスタンス作成予約 ID。<br>予約 ID を指定すると、同時に作成されたインスタンス一覧のみが返されます。 |
+| changes-since | Query | Datetime | N | 指定された時刻以降に変更されたインスタンス一覧を返します。`YYYY-MM-DDThh:mm:ss` の形式です。 |
+| image | Query | UUID | N | イメージ ID<br>指定されたイメージを使用したインスタンス一覧を返します。 |
+| flavor | Query | UUID | N | インスタンスタイプ ID<br>指定されたタイプを使用したインスタンス一覧を返します。 |
+| name | Query | String | N | インスタンス名<br>指定された名前を持つインスタンス一覧を返します。正規表現で照会できます。 |
+| status | Query | Enum | N | インスタンスの状態<br>指定された状態を持つインスタンス一覧を返します。 |
+| limit | Query | Integer | N | インスタンス一覧の個数<br>指定された個数のインスタンス一覧を返します。 |
+| marker | Query | UUID | N | 一覧の最初のインスタンス UUID<br>ソート基準に従って、`marker` で指定されたインスタンスから `limit` 個数のインスタンス一覧を返します。 |
 
 <a id="list-instances-response"></a>
 #### レスポンス
@@ -711,9 +713,9 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナント ID |
-| serverId | URL | UUID | O | インスタンス ID |
-| tokenId | Header | String | O | トークン ID |
+| tenantId | URL | String | Y | テナント ID |
+| serverId | URL | UUID | Y | インスタンス ID |
+| tokenId | Header | String | Y | トークン ID |
 
 <a id="get-instance-response"></a>
 #### レスポンス
@@ -886,39 +888,39 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナント ID |
-| tokenId | Header | String | O | トークン ID |
-| server | body | Object | O | サーバーオブジェクト |
-| server.security_groups | body | Object | - | セキュリティグループリストオブジェクト<br>省略した場合、`default` グループが追加されます |
-| server.security_groups.name | body | String | - | **(条件付き必須)** インスタンスに追加するセキュリティグループ名 |
-| server.user_data | body | String | - | インスタンス起動後に実行するスクリプトおよび設定<br>Base64 エンコードされた文字列で 65535 バイトまで許可 |
-| server.availability_zone | body | String | - | インスタンスを作成する可用性ゾーン<br>指定しない場合は任意に選択されます<br>ルートブロックストレージのソースタイプが `volume`、`snapshot` の場合、元のブロックストレージの可用性ゾーンと同じに設定する必要があります |
-| server.imageRef | Body | String | - | インスタンスを作成するときに使用するイメージ ID<br>ルートブロックストレージのソースタイプが `volume`、`snapshot` の場合、設定は不要です |
-| server.flavorRef | Body | String | O | インスタンスを作成するときに使用するインスタンスタイプ ID |
-| server.networks | Body | Object | O | インスタンスを作成するときに使用するネットワーク情報オブジェクト<br>指定した数だけ NIC が追加され、ネットワーク ID、サブネット ID、ポート ID、固定 IP のいずれかで指定 |
-| server.networks.uuid | Body | UUID | - | **(条件付き必須)** インスタンスを作成するときに使用するネットワーク ID |
-| server.networks.subnet | Body | UUID | - | **(条件付き必須)** インスタンスを作成するときに使用するネットワークのサブネット ID |
-| server.networks.port | Body | UUID | - | **(条件付き必須)** インスタンスを作成するときに使用するポート ID<br>ポート ID を指定する場合、要求したセキュリティグループは指定した既存ポートに適用されません |
-| server.networks.fixed_ip | Body | String | - | **(条件付き必須)** インスタンスを作成するときに使用する固定 IP |
-| server.name | Body | String | O | インスタンスの名前<br>英文字ベースで 255 文字まで許可されていますが、Windows イメージの場合は 15 文字以下である必要があります |
-| server.metadata | Body | Object | - | インスタンスに追加するメタデータオブジェクト<br>最大長 255 文字以下のキー値ペア |
-| server.block_device_mapping_v2 | Body | Object | O | インスタンスのブロックストレージ情報オブジェクト |
-| server.block_device_mapping_v2.source_type | Body | Enum | O | 作成するブロックストレージのソースタイプ<br>- `image`: イメージを使用してブロックストレージを作成<br>- `blank`: 空のブロックストレージを作成（ルートブロックストレージとして使用できません）<br>- `volume`: 既に作成されたブロックストレージを使用<br>- `snapshot`: スナップショットを使用してブロックストレージを作成 |
-| server.block_device_mapping_v2.uuid | Body | String | - | **(条件付き必須)** ブロックストレージのソースタイプに応じて異なるように設定が必要<br>- ソースタイプが `image` の場合、イメージ ID を設定<br>- ソースタイプが `volume` の場合、既に作成されたブロックストレージ ID を設定<br>- ソースタイプが `snapshot` の場合、スナップショット ID を設定<br>- ソースタイプが `blank` の場合、設定は不要<br>ルートブロックストレージの場合、ブート可能なソースである必要があります |
-| server.block_device_mapping_v2.boot_index | Body | Integer | O | 指定したブロックストレージの起動順序<br>-`0` の場合、ルートブロックストレージ<br>- その他は追加ブロックストレージ<br>サイズが大きいほど起動順序は低くなります |
-| server.block_device_mapping_v2.destination_type | Body | Enum | O | インスタンスブロックストレージの場所。インスタンスタイプに応じて異なるように設定が必要です。<br>- `local`: GPU インスタンス、U2 インスタンスタイプを使用する場合<br>- `volume`: その他のインスタンスタイプを使用する場合 |
-| server.block_device_mapping_v2.volume_type | Body | Enum    | - | **(条件付き必須)** 作成するブロックストレージのタイプ<br>ブロックストレージのソースタイプが `volume`、`snapshot` の場合、設定は不要です<br>`ユーザーガイド > Storage > Block Storage > API v2 ガイド` で **ブロックストレージタイプリスト表示** レスポンスの `name` を参照 |
-| server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | インスタンス削除時のブロックストレージの処理の有無。デフォルト値は `false`。<br>`true` の場合、削除; `false` の場合、保持 |
-| server.block_device_mapping_v2.volume_size | Body | Integer | - | **(条件付き必須)** 作成するブロックストレージのサイズ<br>ブロックストレージのソースタイプに応じて異なるように設定が必要<br>- ソースタイプが `volume` の場合、設定は不要です<br>- ソースタイプが `snapshot` の場合、元のブロックストレージサイズ以上に設定<br>`GB` 単位<br>U2 インスタンスタイプを使用し、ルートブロックストレージを作成する場合、U2 インスタンスタイプに明示されたサイズで作成され、この値は無視されます<br>インスタンスタイプに応じて作成可能なルートブロックストレージのサイズが異なるため、詳細については `ユーザーガイド > Compute > Instance > コンソール使用ガイド > インスタンス作成 > ブロックストレージサイズ` を参照 |
-| server.block_device_mapping_v2.nhn_encryption                   | Body | Object | - | **(条件付き必須)** ブロックストレージの暗号化情報                                                                                                                                                                                        |
-| server.block_device_mapping_v2.nhn_encryption.skm_appkey        | Body | String | - | **(条件付き必須)** Secure Key Manager サービスのアプリキー                                                                                                                                                              |
-| server.block_device_mapping_v2.nhn_encryption.skm_key_id        | Body | String | - | **(条件付き必須)** 暗号化ブロックストレージ作成に使用する Secure Key Manager の対称鍵 ID                                                                                                                                  |
-| server.key_name | Body | String | O | インスタンスアクセスに使用するキーペア |
-| server.min_count | Body | Integer | - | 現在のリクエストで作成するインスタンス個数の最小値。<br>デフォルト値は 1。<br>ブロックストレージのソースタイプが `volume` の場合、`1` でのみ設定可能 |
-| server.max_count | Body | Integer | - | 現在のリクエストで作成するインスタンス個数の最大値。<br>デフォルト値は min_count、最大値は 10。<br>ブロックストレージのソースタイプが `volume` の場合、`1` でのみ設定可能 |
-| server.return_reservation_id | Body | Boolean | - | インスタンス作成要求予約 ID。<br>True に指定する場合、インスタンス作成情報の代わりに予約 ID を返します。<br>デフォルト値は False |
-| os:scheduler_hints | Body | Object | - | スケジューラーヒントオブジェクト |
-| os:scheduler_hints.group | Body | String | - | 配置ポリシー ID |
+| tenantId | URL | String | Y | テナント ID |
+| tokenId | Header | String | Y | トークン ID |
+| server | body | Object | Y | サーバーオブジェクト |
+| server.security_groups | body | Object | N | セキュリティグループリストオブジェクト<br>省略した場合、`default` グループが追加されます |
+| server.security_groups.name | body | String | N | **(条件付き必須)** インスタンスに追加するセキュリティグループ名 |
+| server.user_data | body | String | N | インスタンス起動後に実行するスクリプトおよび設定<br>Base64 エンコードされた文字列で 65535 バイトまで許可 |
+| server.availability_zone | body | String | N | インスタンスを作成する可用性ゾーン<br>指定しない場合は任意に選択されます<br>ルートブロックストレージのソースタイプが `volume`、`snapshot` の場合、元のブロックストレージの可用性ゾーンと同じに設定する必要があります |
+| server.imageRef | Body | String | N | インスタンスを作成するときに使用するイメージ ID<br>ルートブロックストレージのソースタイプが `volume`、`snapshot` の場合、設定は不要です |
+| server.flavorRef | Body | String | Y | インスタンスを作成するときに使用するインスタンスタイプ ID |
+| server.networks | Body | Object | Y | インスタンスを作成するときに使用するネットワーク情報オブジェクト<br>指定した数だけ NIC が追加され、ネットワーク ID、サブネット ID、ポート ID、固定 IP のいずれかで指定 |
+| server.networks.uuid | Body | UUID | N | **(条件付き必須)** インスタンスを作成するときに使用するネットワーク ID |
+| server.networks.subnet | Body | UUID | N | **(条件付き必須)** インスタンスを作成するときに使用するネットワークのサブネット ID |
+| server.networks.port | Body | UUID | N | **(条件付き必須)** インスタンスを作成するときに使用するポート ID<br>ポート ID を指定する場合、要求したセキュリティグループは指定した既存ポートに適用されません |
+| server.networks.fixed_ip | Body | String | N | **(条件付き必須)** インスタンスを作成するときに使用する固定 IP |
+| server.name | Body | String | Y | インスタンスの名前<br>英文字ベースで 255 文字まで許可されていますが、Windows イメージの場合は 15 文字以下である必要があります |
+| server.metadata | Body | Object | N | インスタンスに追加するメタデータオブジェクト<br>最大長 255 文字以下のキー値ペア |
+| server.block_device_mapping_v2 | Body | Object | Y | インスタンスのブロックストレージ情報オブジェクト |
+| server.block_device_mapping_v2.source_type | Body | Enum | Y | 作成するブロックストレージのソースタイプ<br>- `image`: イメージを使用してブロックストレージを作成<br>- `blank`: 空のブロックストレージを作成（ルートブロックストレージとして使用できません）<br>- `volume`: 既に作成されたブロックストレージを使用<br>- `snapshot`: スナップショットを使用してブロックストレージを作成 |
+| server.block_device_mapping_v2.uuid | Body | String | N | **(条件付き必須)** ブロックストレージのソースタイプに応じて異なるように設定が必要<br>- ソースタイプが `image` の場合、イメージ ID を設定<br>- ソースタイプが `volume` の場合、既に作成されたブロックストレージ ID を設定<br>- ソースタイプが `snapshot` の場合、スナップショット ID を設定<br>- ソースタイプが `blank` の場合、設定は不要<br>ルートブロックストレージの場合、ブート可能なソースである必要があります |
+| server.block_device_mapping_v2.boot_index | Body | Integer | Y | 指定したブロックストレージの起動順序<br>-`0` の場合、ルートブロックストレージ<br>- その他は追加ブロックストレージ<br>サイズが大きいほど起動順序は低くなります |
+| server.block_device_mapping_v2.destination_type | Body | Enum | Y | インスタンスブロックストレージの場所。インスタンスタイプに応じて異なるように設定が必要です。<br>- `local`: GPU インスタンス、U2 インスタンスタイプを使用する場合<br>- `volume`: その他のインスタンスタイプを使用する場合 |
+| server.block_device_mapping_v2.volume_type | Body | Enum    | N | **(条件付き必須)** 作成するブロックストレージのタイプ<br>ブロックストレージのソースタイプが `volume`、`snapshot` の場合、設定は不要です<br>`ユーザーガイド > Storage > Block Storage > API v2 ガイド` で **ブロックストレージタイプリスト表示** レスポンスの `name` を参照 |
+| server.block_device_mapping_v2.delete_on_termination | Body | Boolean | N | インスタンス削除時のブロックストレージの処理の有無。デフォルト値は `false`。<br>`true` の場合、削除; `false` の場合、保持 |
+| server.block_device_mapping_v2.volume_size | Body | Integer | N | **(条件付き必須)** 作成するブロックストレージのサイズ<br>ブロックストレージのソースタイプに応じて異なるように設定が必要<br>- ソースタイプが `volume` の場合、設定は不要です<br>- ソースタイプが `snapshot` の場合、元のブロックストレージサイズ以上に設定<br>`GB` 単位<br>U2 インスタンスタイプを使用し、ルートブロックストレージを作成する場合、U2 インスタンスタイプに明示されたサイズで作成され、この値は無視されます<br>インスタンスタイプに応じて作成可能なルートブロックストレージのサイズが異なるため、詳細については `ユーザーガイド > Compute > Instance > コンソール使用ガイド > インスタンス作成 > ブロックストレージサイズ` を参照 |
+| server.block_device_mapping_v2.nhn_encryption                   | Body | Object | N | **(条件付き必須)** ブロックストレージの暗号化情報                                                                                                                                                                                        |
+| server.block_device_mapping_v2.nhn_encryption.skm_appkey        | Body | String | N | **(条件付き必須)** Secure Key Manager サービスのアプリキー                                                                                                                                                              |
+| server.block_device_mapping_v2.nhn_encryption.skm_key_id        | Body | String | N | **(条件付き必須)** 暗号化ブロックストレージ作成に使用する Secure Key Manager の対称鍵 ID                                                                                                                                  |
+| server.key_name | Body | String | Y | インスタンスアクセスに使用するキーペア |
+| server.min_count | Body | Integer | N | 現在のリクエストで作成するインスタンス個数の最小値。<br>デフォルト値は 1。<br>ブロックストレージのソースタイプが `volume` の場合、`1` でのみ設定可能 |
+| server.max_count | Body | Integer | N | 現在のリクエストで作成するインスタンス個数の最大値。<br>デフォルト値は min_count、最大値は 10。<br>ブロックストレージのソースタイプが `volume` の場合、`1` でのみ設定可能 |
+| server.return_reservation_id | Body | Boolean | N | インスタンス作成要求予約 ID。<br>True に指定する場合、インスタンス作成情報の代わりに予約 ID を返します。<br>デフォルト値は False |
+| os:scheduler_hints | Body | Object | N | スケジューラーヒントオブジェクト |
+| os:scheduler_hints.group | Body | String | N | 配置ポリシー ID |
 
 <details><summary>例</summary>
 <p>
@@ -1010,11 +1012,11 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | テナント ID |
-| serverId | URL | UUID | O | 変更するインスタンス ID |
-| tokenId | Header | String | O | トークン ID |
-| server | Body | Object | O | インスタンス変更要求オブジェクト |
-| server.name | Body | String | - | インスタンスの新しい名前 |
+| tenantId | URL | String | Y | テナント ID |
+| serverId | URL | UUID | Y | 変更するインスタンス ID |
+| tokenId | Header | String | Y | トークン ID |
+| server | Body | Object | Y | インスタンス変更要求オブジェクト |
+| server.name | Body | String | N | インスタンスの新しい名前 |
 
 <details><summary>例</summary>
 <p>
@@ -1051,9 +1053,9 @@ X-Auth-Token: {tokenId}
 
 | 名前 | 種類 | 形式 | 必須 | 説明 |
 |---|---|---|---|--|
-| tenantId | URL | String | O | テナントID |
-| serverId | URL | UUID | O | 削除するインスタンスID |
-| tokenId | Header | String | O | トークンID |
+| tenantId | URL | String | Y | テナントID |
+| serverId | URL | UUID | Y | 削除するインスタンスID |
+| tokenId | Header | String | Y | トークンID |
 
 <a id="delete-instance-response"></a>
 #### レスポンス
