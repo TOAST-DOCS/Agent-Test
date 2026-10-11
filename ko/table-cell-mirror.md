@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=e2e0c3117a1 -->
+<!-- pre-align:aligned sig=b2ee712956dd -->
 
 <a id="tcm"></a>
 # table-cell-mirror e2e 픽스처
@@ -12,12 +12,12 @@ API 응답 본문의 필드입니다.
 
 | 이름 | 타입 | 필수 | 설명 |
 | --- | --- | --- | --- |
-| header.isSuccessful | Boolean | Yes | 성공 여부 |
-| header.resultCode | Integer | Yes | 결과 코드 |
-| header.resultMessage | String | Yes | 결과 메시지 |
-| body.id | String | No | 리소스 ID |
-| body.name | String | No | 리소스 이름 |
-| body.createdAt | DateTime | No | 생성 일시 |
+| header.isSuccessful | Boolean | Y | 성공 여부 |
+| header.resultCode | Integer | Y | 결과 코드 |
+| header.resultMessage | String | Y | 결과 메시지 |
+| body.id | String | N | 리소스 ID |
+| body.name | String | N | 리소스 이름 |
+| body.createdAt | DateTime | N | 생성 일시 |
 
 <a id="tcm-request"></a>
 ## 요청 { #tcm-request }
@@ -26,10 +26,10 @@ API 응답 본문의 필드입니다.
 
 | 구분 | 이름 | 타입 | 필수 | 설명 |
 | --- | --- | --- | --- | --- |
-| Header | X-Auth-Token | String | Yes | 발급받은 토큰 |
-| Path | appKey | String | Yes | 앱키 |
-| Query | pageNum | Integer | No | 페이지 번호 |
-| Query | pageSize | Integer | No | 페이지 크기 |
+| Header | X-Auth-Token | String | Y | 발급받은 토큰 |
+| Path | appKey | String | Y | 앱키 |
+| Query | pageNum | Integer | N | 페이지 번호 |
+| Query | pageSize | Integer | N | 페이지 크기 |
 
 <a id="tcm-partial"></a>
 ## 부분 수정 { #tcm-partial }
@@ -38,8 +38,8 @@ API 응답 본문의 필드입니다.
 
 | 이름 | 타입 | 필수 | 설명 |
 | --- | --- | --- | --- |
-| labelKey | String | Yes | 라벨 키 |
-| labelValue | String | No | 라벨 값 |
+| labelKey | String | Y | 라벨 키(최대 64자, 영문·숫자만 허용) |
+| labelValue | String | N | 라벨 값 |
 
 <a id="tcm-control"></a>
 ## 대조군 { #tcm-control }
@@ -49,4 +49,4 @@ API 응답 본문의 필드입니다.
 | 이름 | 필수 여부 | 설명 |
 | --- | --- | --- |
 | region | 필수 | 리전 코드 |
-| zone | 선택 | 가용성 영역 |
+| zone | 필수 | 가용성 영역 |
