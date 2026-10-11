@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e0c3117a1 -->
 
 <a id="tcm"></a>
@@ -12,12 +14,12 @@ APIレスポンス本文のフィールドです。
 
 | 名前 | タイプ | 必須 | 説明 |
 | --- | --- | --- | --- |
-| header.isSuccessful | Boolean | Yes | 成功したかどうか |
-| header.resultCode | Integer | Yes | 結果コード |
-| header.resultMessage | String | Yes | 結果メッセージ |
-| body.id | String | No | リソースID |
-| body.name | String | No | リソース名 |
-| body.createdAt | DateTime | No | 作成日時 |
+| header.isSuccessful | Boolean | Y | 成功したかどうか |
+| header.resultCode | Integer | Y | 結果コード |
+| header.resultMessage | String | Y | 結果メッセージ |
+| body.id | String | N | リソースID |
+| body.name | String | N | リソース名 |
+| body.createdAt | DateTime | N | 作成日時 |
 
 <a id="tcm-request"></a>
 ## リクエスト { #tcm-request }
@@ -26,10 +28,10 @@ APIレスポンス本文のフィールドです。
 
 | 区分 | 名前 | タイプ | 必須 | 説明 |
 | --- | --- | --- | --- | --- |
-| Header | X-Auth-Token | String | Yes | 発行されたトークン |
-| Path | appKey | String | Yes | アプリケーションキー |
-| Query | pageNum | Integer | No | ページ番号 |
-| Query | pageSize | Integer | No | ページサイズ |
+| Header | X-Auth-Token | String | Y | 発行されたトークン |
+| Path | appKey | String | Y | アプリケーションキー |
+| Query | pageNum | Integer | N | ページ番号 |
+| Query | pageSize | Integer | N | ページサイズ |
 
 <a id="tcm-partial"></a>
 ## 部分修正 { #tcm-partial }
@@ -38,8 +40,8 @@ APIレスポンス本文のフィールドです。
 
 | 名前 | タイプ | 必須 | 説明 |
 | --- | --- | --- | --- |
-| labelKey | String | Yes | ラベルキー |
-| labelValue | String | No | ラベル値 |
+| labelKey | String | Y | ラベルキー(最大64文字、英数字のみ) |
+| labelValue | String | N | ラベル値 |
 
 <a id="tcm-control"></a>
 ## 対照群 { #tcm-control }
@@ -49,4 +51,4 @@ APIレスポンス本文のフィールドです。
 | 名前 | 必須かどうか | 説明 |
 | --- | --- | --- |
 | region | 必須 | リージョンコード |
-| zone | 任意 | アベイラビリティゾーン |
+| zone | 必須 | アベイラビリティゾーン |
