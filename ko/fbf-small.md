@@ -8,7 +8,7 @@
 
 | 이름 | 타입 | 필수 | 설명 |
 | --- | --- | --- | --- |
-| appKey | String | Yes | 앱키 |
-| serviceId | String | Yes | 서비스 ID |
-| pageNum | Integer | No | 페이지 번호 |
-| pageSize | Integer | No | 페이지 크기 |
+| appKey | String | Y | 앱키 |
+| serviceId | String | Y | 서비스 ID |
+| pageNum | Integer | N | 페이지 번호 |
+| pageSize | Integer | N | 페이지 크기 |
