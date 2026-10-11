@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2ef1b5a11 -->
 
 <a id="fbf-small"></a>
@@ -8,7 +10,7 @@
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| appKey | String | Yes | Appkey |
-| serviceId | String | Yes | Service ID |
-| pageNum | Integer | No | Page number |
-| pageSize | Integer | No | Page size |
+| appKey | String | Y | Appkey |
+| serviceId | String | Y | Service ID |
+| pageNum | Integer | N | Page number |
+| pageSize | Integer | N | Page size |
