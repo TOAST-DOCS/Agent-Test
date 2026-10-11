@@ -3,7 +3,7 @@
 <a id="compute-instance-api-v2-guide"></a>
 ## Compute > Instance > API v2 가이드 { #compute-instance-api-v2-guide }
 
-Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용에 대한 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token) 을 참고하세요.
+Instance는 API 호출 시 인증/인가를 위해 IaaS 토큰을 사용합니다. IaaS 토큰은 NHN Cloud의 OpenStack 기반 인프라 서비스(IaaS)에서 사용하는 인증 토큰입니다. IaaS 토큰 발급 및 사용에 대한 자세한 내용은 [IaaS 토큰](/nhncloud/ko/public-api/iaas-token) 을 참고하세요. 자세한 내용은 아래 표를 참고하세요.
 
 인스턴스 API는 `compute` 타입 엔드포인트를 이용합니다. 정확한 엔드포인트는 토큰 발급 응답의 `serviceCatalog`를 참조합니다.
 
@@ -31,10 +31,10 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| tokenId | Header | String | O | 토큰 ID |
-| minDisk | Query | Integer | - | 최소 블록 스토리지 크기(GB)<br>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
-| minRam | Query | Integer | - | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
+| tenantId | URL | String | Y | 테넌트 ID |
+| tokenId | Header | String | Y | 인증 토큰 ID |
+| minDisk | Query | Integer | N | 최소 블록 스토리지 크기(GB)<br>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
+| minRam | Query | Integer | N | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
 
 <a id="response"></a>
 #### 응답
@@ -105,10 +105,10 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| tokenId | Header | String | O | 토큰 ID |
-| minDisk | Query | Integer | - | 최소 블록 스토리지 크기(GB)<br>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
-| minRam | Query | Integer | - | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
+| tenantId | URL | String | Y | 테넌트 ID |
+| tokenId | Header | String | Y | 인증 토큰 ID |
+| minDisk | Query | Integer | N | 최소 블록 스토리지 크기(GB)<br>지정한 크기보다 블록 스토리지 크기가 큰 타입만 반환 |
+| minRam | Query | Integer | N | 최소 RAM 크기(MB)<br>지정한 크기보다 RAM 크기가 큰 타입만 반환 |
 
 <a id="list-flavors-with-details-response"></a>
 #### 응답
@@ -211,8 +211,8 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| tokenId | Header | String | O | 토큰 ID |
+| tenantId | URL | String | Y | 테넌트 ID |
+| tokenId | Header | String | Y | 토큰 ID |
 
 <a id="list-availability-zones-response"></a>
 #### 응답
@@ -266,8 +266,8 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| tokenId | Header | String | O | 토큰 ID |
+| tenantId | URL | String | Y | 테넌트 ID |
+| tokenId | Header | String | Y | 토큰 ID |
 
 <a id="list-key-pairs-response"></a>
 #### 응답
@@ -315,9 +315,9 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| keypairName | URL | String | O | 키페어 이름 |
-| tokenId | Header | String | O | 토큰 ID |
+| tenantId | URL | String | Y | 테넌트 ID |
+| keypairName | URL | String | Y | 키페어 이름 |
+| tokenId | Header | String | Y | 토큰 ID |
 
 <a id="show-key-pair-response"></a>
 #### 응답
@@ -372,11 +372,11 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| tokenId | Header | String | O | 토큰 ID |
-| keypair | Body | Object | O | 키페어 객체 |
-| keypair.name | Body | String | O | 생성 또는 등록할 키페어 이름 |
-| keypair.public_key | Body | String | - | 등록할 공개키. 이 필드가 생략되면 새로운 키페어를 생성합니다. |
+| tenantId | URL | String | Y | 테넌트 ID |
+| tokenId | Header | String | Y | 토큰 ID |
+| keypair | Body | Object | Y | 키페어 객체 |
+| keypair.name | Body | String | Y | 생성 또는 등록할 키페어 이름 |
+| keypair.public_key | Body | String | N | 등록할 공개키. 이 필드가 생략되면 새로운 키페어를 생성합니다. |
 
 <details><summary>예시</summary>
 <p>
@@ -437,9 +437,9 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| keypairName | URL | String | O | 키페어 이름 |
-| tokenId | Header | String | O | 토큰 ID |
+| tenantId | URL | String | Y | 테넌트 ID |
+| keypairName | URL | String | Y | 키페어 이름 |
+| tokenId | Header | String | Y | 토큰 ID |
 
 <a id="delete-key-pair-response"></a>
 #### 응답
@@ -490,16 +490,16 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| tokenId | Header | String | O | 토큰 ID |
-| reservation_id | Query | String | - | 인스턴스 생성 예약 ID. <br>예약 ID를 지정하면 동시에 생성된 인스턴스 목록만 반환함 |
-| changes-since | Query | Datetime | - | 지정된 시각 이후로 변경된 인스턴스 목록을 반환. `YYYY-MM-DDThh:mm:ss`의 형태. |
-| image | Query | UUID | - | 이미지 ID<br>지정된 이미지를 사용한 인스턴스 목록을 반환 |
-| flavor | Query | UUID | - | 인스턴스 타입 ID<br>지정된 타입을 사용한 인스턴스 목록을 반환 |
-| name | Query | String | - | 인스턴스 이름<br>지정된 이름을 가진 인스턴스 목록을 반환, 정규 표현식으로 질의 가능 |
-| status | Query | Enum | - | 인스턴스 상태<br>지정된 상태를 가진 인스턴스 목록을 반환 |
-| limit | Query | Integer | - | 인스턴스 목록 개수<br>지정된 개수 만큼의 인스턴스 목록을 반환 |
-| marker | Query | UUID | - | 목록의 첫번째 인스턴스 UUID<br>정렬 기준에 따라 `marker`로 지정된 인스턴스부터 `limit` 개수 만큼의 인스턴스 목록을 반환 |
+| tenantId | URL | String | Y | 테넌트 ID |
+| tokenId | Header | String | Y | 토큰 ID |
+| reservation_id | Query | String | N | 인스턴스 생성 예약 ID. <br>예약 ID를 지정하면 동시에 생성된 인스턴스 목록만 반환함 |
+| changes-since | Query | Datetime | N | 지정된 시각 이후로 변경된 인스턴스 목록을 반환. `YYYY-MM-DDThh:mm:ss`의 형태. |
+| image | Query | UUID | N | 이미지 ID<br>지정된 이미지를 사용한 인스턴스 목록을 반환 |
+| flavor | Query | UUID | N | 인스턴스 타입 ID<br>지정된 타입을 사용한 인스턴스 목록을 반환 |
+| name | Query | String | N | 인스턴스 이름<br>지정된 이름을 가진 인스턴스 목록을 반환, 정규 표현식으로 질의 가능 |
+| status | Query | Enum | N | 인스턴스 상태<br>지정된 상태를 가진 인스턴스 목록을 반환 |
+| limit | Query | Integer | N | 인스턴스 목록 개수<br>지정된 개수 만큼의 인스턴스 목록을 반환 |
+| marker | Query | UUID | N | 목록의 첫번째 인스턴스 UUID<br>정렬 기준에 따라 `marker`로 지정된 인스턴스부터 `limit` 개수 만큼의 인스턴스 목록을 반환 |
 
 <a id="list-instances-response"></a>
 #### 응답
@@ -711,9 +711,9 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| serverId | URL | UUID | O | 인스턴스 ID |
-| tokenId | Header | String | O | 토큰 ID |
+| tenantId | URL | String | Y | 테넌트 ID |
+| serverId | URL | UUID | Y | 인스턴스 ID |
+| tokenId | Header | String | Y | 토큰 ID |
 
 <a id="get-instance-response"></a>
 #### 응답
@@ -886,39 +886,39 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| tokenId | Header | String | O | 토큰 ID |
-| server | body | Object | O | 서버 객체 |
-| server.security_groups | body | Object | - | 보안 그룹 목록 객체<br>생략할 경우 `default` 그룹이 추가됨 |
-| server.security_groups.name | body | String | - | **(조건부 필수)** 인스턴스에 추가할 보안 그룹 이름 |
-| server.user_data | body | String | - | 인스턴스 부팅 후 실행할 스크립트 및 설정<br>base64 인코딩된 문자열로 65535 바이트까지 허용 |
-| server.availability_zone | body | String | - | 인스턴스를 생성할 가용성 영역<br>지정하지 않을 경우 임의로 선택됨<br>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 원본 블록 스토리지의 가용성 영역과 동일하게 설정 필요 |
-| server.imageRef | Body | String | - | 인스턴스를 생성할 때 사용할 이미지 ID<br>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요 |
-| server.flavorRef | Body | String | O | 인스턴스를 생성할 때 사용할 인스턴스 타입 ID |
-| server.networks | Body | Object | O | 인스턴스를 생성할 때 사용할 네트워크 정보 객체<br>지정한 개수만큼 NIC가 추가되며, 네트워크 ID, 서브넷 ID, 포트 ID, 고정 IP 중 하나로 지정 |
-| server.networks.uuid | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크 ID |
-| server.networks.subnet | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크의 서브넷 ID |
-| server.networks.port | Body | UUID | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 포트 ID<br>포트 ID 지정 시 요청한 보안 그룹은 지정한 기존 포트에 적용되지 않음 |
-| server.networks.fixed_ip | Body | String | - | **(조건부 필수)** 인스턴스를 생성할 때 사용할 고정 IP |
-| server.name | Body | String | O | 인스턴스의 이름<br>영문자 기준 255자까지 허용되지만, Windows 이미지의 경우 15자 이하여야 함 |
-| server.metadata | Body | Object | - | 인스턴스에 추가할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍 |
-| server.block_device_mapping_v2 | Body | Object | O | 인스턴스의 블록 스토리지 정보 객체 |
-| server.block_device_mapping_v2.source_type | Body | Enum | O | 생성할 블록 스토리지 원본의 타입<br>- `image`: 이미지를 이용해 블록 스토리지 생성<br>- `blank`: 빈 블록 스토리지 생성(루트 블록 스토리지로 사용할 수 없음)<br>- `volume`: 기존에 생성된 블록 스토리지를 사용<br>- `snapshot`: 스냅숏을 이용해 블록 스토리지 생성 |
-| server.block_device_mapping_v2.uuid | Body | String | - | **(조건부 필수)** 블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br>- 소스 타입이 `image`인 경우 이미지 ID를 설정<br>- 소스 타입이 `volume`인 경우 기존에 생성된 블록 스토리지 ID를 설정<br>- 소스 타입이 `snapshot`인 경우 스냅숏 ID를 설정<br>- 소스 타입이 `blank`인 경우 설정 불필요<br>루트 블록 스토리지인 경우 반드시 부팅 가능한 원본이어야 함 |
-| server.block_device_mapping_v2.boot_index | Body | Integer | O | 지정한 블록 스토리지의 부팅 순서<br>-`0`이면 루트 블록 스토리지<br>- 그 외는 추가 블록 스토리지<br>크기가 클수록 부팅 순서는 낮아짐 |
-| server.block_device_mapping_v2.destination_type | Body | Enum | O | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br>- `local`: GPU 인스턴스, U2 인스턴스 타입을 이용하는 경우<br>- `volume`: 그 외의 인스턴스 타입을 이용하는 경우 |
-| server.block_device_mapping_v2.volume_type | Body | Enum    | - | **(조건부 필수)** 생성할 블록 스토리지의 타입<br>블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요<br>`사용자 가이드 > Storage > Block Storage > API v2 가이드`에서 **블록 스토리지 타입 목록 보기** 응답의 `name` 참고 |
-| server.block_device_mapping_v2.delete_on_termination | Body | Boolean | - | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br>`true`면 삭제, `false`면 유지 |
-| server.block_device_mapping_v2.volume_size | Body | Integer | - | **(조건부 필수)** 생성할 블록 스토리지 크기<br>블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br>- 소스 타입이 `volume`인 경우 설정 불필요<br>- 소스 타입이 `snapshot`인 경우 원본 블록 스토리지 크기보다 같거나 크게 설정<br>`GB` 단위<br>U2 인스턴스 타입을 사용하고 루트 블록 스토리지를 생성하는 경우에는 U2 인스턴스 타입에 명시된 크기로 생성되며 이 값은 무시됨<br>인스턴스 타입에 따라 생성할 수 있는 루트 블록 스토리지의 크기가 다르므로 자세한 내용은 `사용자 가이드 > Compute > Instance > 콘솔 사용 가이드 > 인스턴스 생성 > 블록 스토리지 크기`를 참고 |
-| server.block_device_mapping_v2.nhn_encryption                   | Body | Object | - | **(조건부 필수)** 블록 스토리지의 암호화 정보                                                                                                                                                                                        |
-| server.block_device_mapping_v2.nhn_encryption.skm_appkey        | Body | String | - | **(조건부 필수)** Secure Key Manager 서비스의 앱키                                                                                                                                                                              |
-| server.block_device_mapping_v2.nhn_encryption.skm_key_id        | Body | String | - | **(조건부 필수)** 암호화 블록 스토리지 생성에 사용할 Secure Key Manager의 대칭 키 ID                                                                                                                                  |
-| server.key_name | Body | String | O | 인스턴스 접속에 사용할 키페어 |
-| server.min_count | Body | Integer | - | 현재 요청으로 생성할 인스턴스 개수의 최솟값.<br>기본값은 1.<br>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
-| server.max_count | Body | Integer | - | 현재 요청으로 생성할 인스턴스 개수의 최댓값.<br>기본값은 min_count, 최댓값은 10.<br>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
-| server.return_reservation_id | Body | Boolean | - | 인스턴스 생성 요청 예약 ID.<br>True로 지정하면 인스턴스 생성 정보 대신 예약 ID를 반환.<br>기본값은 False |
-| os:scheduler_hints | Body | Object | - | 스케줄러 힌트 객체 |
-| os:scheduler_hints.group | Body | String | - | 배치 정책 ID |
+| tenantId | URL | String | Y | 테넌트 ID |
+| tokenId | Header | String | Y | 토큰 ID |
+| server | body | Object | Y | 서버 객체 |
+| server.security_groups | body | Object | N | 보안 그룹 목록 객체<br>생략할 경우 `default` 그룹이 추가됨 |
+| server.security_groups.name | body | String | N | **(조건부 필수)** 인스턴스에 추가할 보안 그룹 이름 |
+| server.user_data | body | String | N | 인스턴스 부팅 후 실행할 스크립트 및 설정<br>base64 인코딩된 문자열로 65535 바이트까지 허용 |
+| server.availability_zone | body | String | N | 인스턴스를 생성할 가용성 영역<br>지정하지 않을 경우 임의로 선택됨<br>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 원본 블록 스토리지의 가용성 영역과 동일하게 설정 필요 |
+| server.imageRef | Body | String | N | 인스턴스를 생성할 때 사용할 이미지 ID<br>루트 블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요 |
+| server.flavorRef | Body | String | Y | 인스턴스를 생성할 때 사용할 인스턴스 타입 ID |
+| server.networks | Body | Object | Y | 인스턴스를 생성할 때 사용할 네트워크 정보 객체<br>지정한 개수만큼 NIC가 추가되며, 네트워크 ID, 서브넷 ID, 포트 ID, 고정 IP 중 하나로 지정 |
+| server.networks.uuid | Body | UUID | N | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크 ID |
+| server.networks.subnet | Body | UUID | N | **(조건부 필수)** 인스턴스를 생성할 때 사용할 네트워크의 서브넷 ID |
+| server.networks.port | Body | UUID | N | **(조건부 필수)** 인스턴스를 생성할 때 사용할 포트 ID<br>포트 ID 지정 시 요청한 보안 그룹은 지정한 기존 포트에 적용되지 않음 |
+| server.networks.fixed_ip | Body | String | N | **(조건부 필수)** 인스턴스를 생성할 때 사용할 고정 IP |
+| server.name | Body | String | Y | 인스턴스의 이름<br>영문자 기준 255자까지 허용되지만, Windows 이미지의 경우 15자 이하여야 함 |
+| server.metadata | Body | Object | N | 인스턴스에 추가할 메타데이터 객체<br>최대 길이 255자 이하의 키-값 쌍 |
+| server.block_device_mapping_v2 | Body | Object | Y | 인스턴스의 블록 스토리지 정보 객체 |
+| server.block_device_mapping_v2.source_type | Body | Enum | Y | 생성할 블록 스토리지 원본의 타입<br>- `image`: 이미지를 이용해 블록 스토리지 생성<br>- `blank`: 빈 블록 스토리지 생성(루트 블록 스토리지로 사용할 수 없음)<br>- `volume`: 기존에 생성된 블록 스토리지를 사용<br>- `snapshot`: 스냅숏을 이용해 블록 스토리지 생성 |
+| server.block_device_mapping_v2.uuid | Body | String | N | **(조건부 필수)** 블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br>- 소스 타입이 `image`인 경우 이미지 ID를 설정<br>- 소스 타입이 `volume`인 경우 기존에 생성된 블록 스토리지 ID를 설정<br>- 소스 타입이 `snapshot`인 경우 스냅숏 ID를 설정<br>- 소스 타입이 `blank`인 경우 설정 불필요<br>루트 블록 스토리지인 경우 반드시 부팅 가능한 원본이어야 함 |
+| server.block_device_mapping_v2.boot_index | Body | Integer | Y | 지정한 블록 스토리지의 부팅 순서<br>-`0`이면 루트 블록 스토리지<br>- 그 외는 추가 블록 스토리지<br>크기가 클수록 부팅 순서는 낮아짐 |
+| server.block_device_mapping_v2.destination_type | Body | Enum | Y | 인스턴스 블록 스토리지의 위치, 인스턴스 타입에 따라 다르게 설정 필요.<br>- `local`: GPU 인스턴스, U2 인스턴스 타입을 이용하는 경우<br>- `volume`: 그 외의 인스턴스 타입을 이용하는 경우 |
+| server.block_device_mapping_v2.volume_type | Body | Enum    | N | **(조건부 필수)** 생성할 블록 스토리지의 타입<br>블록 스토리지의 소스 타입이 `volume`, `snapshot`인 경우 설정 불필요<br>`사용자 가이드 > Storage > Block Storage > API v2 가이드`에서 **블록 스토리지 타입 목록 보기** 응답의 `name` 참고 |
+| server.block_device_mapping_v2.delete_on_termination | Body | Boolean | N | 인스턴스 삭제 시 블록 스토리지 처리 여부, 기본값은 `false`.<br>`true`면 삭제, `false`면 유지 |
+| server.block_device_mapping_v2.volume_size | Body | Integer | N | **(조건부 필수)** 생성할 블록 스토리지 크기<br>블록 스토리지의 소스 타입에 따라 다르게 설정 필요<br>- 소스 타입이 `volume`인 경우 설정 불필요<br>- 소스 타입이 `snapshot`인 경우 원본 블록 스토리지 크기보다 같거나 크게 설정<br>`GB` 단위<br>U2 인스턴스 타입을 사용하고 루트 블록 스토리지를 생성하는 경우에는 U2 인스턴스 타입에 명시된 크기로 생성되며 이 값은 무시됨<br>인스턴스 타입에 따라 생성할 수 있는 루트 블록 스토리지의 크기가 다르므로 자세한 내용은 `사용자 가이드 > Compute > Instance > 콘솔 사용 가이드 > 인스턴스 생성 > 블록 스토리지 크기`를 참고 |
+| server.block_device_mapping_v2.nhn_encryption                   | Body | Object | N | **(조건부 필수)** 블록 스토리지의 암호화 정보                                                                                                                                                                                        |
+| server.block_device_mapping_v2.nhn_encryption.skm_appkey        | Body | String | N | **(조건부 필수)** Secure Key Manager 서비스의 앱키                                                                                                                                                                              |
+| server.block_device_mapping_v2.nhn_encryption.skm_key_id        | Body | String | N | **(조건부 필수)** 암호화 블록 스토리지 생성에 사용할 Secure Key Manager의 대칭 키 ID                                                                                                                                  |
+| server.key_name | Body | String | Y | 인스턴스 접속에 사용할 키페어 |
+| server.min_count | Body | Integer | N | 현재 요청으로 생성할 인스턴스 개수의 최솟값.<br>기본값은 1.<br>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
+| server.max_count | Body | Integer | N | 현재 요청으로 생성할 인스턴스 개수의 최댓값.<br>기본값은 min_count, 최댓값은 10.<br>블록 스토리지의 소스 타입이 `volume`인 경우 `1`로만 설정 가능 |
+| server.return_reservation_id | Body | Boolean | N | 인스턴스 생성 요청 예약 ID.<br>True로 지정하면 인스턴스 생성 정보 대신 예약 ID를 반환.<br>기본값은 False |
+| os:scheduler_hints | Body | Object | N | 스케줄러 힌트 객체 |
+| os:scheduler_hints.group | Body | String | N | 배치 정책 ID |
 
 <details><summary>예시</summary>
 <p>
@@ -1010,11 +1010,11 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|---|
-| tenantId | URL | String | O | 테넌트 ID |
-| serverId | URL | UUID | O | 변경할 인스턴스 ID |
-| tokenId | Header | String | O | 토큰 ID |
-| server | Body | Object | O | 인스턴스 변경 요청 객체 |
-| server.name | Body | String | - | 인스턴스의 새로운 이름 |
+| tenantId | URL | String | Y | 테넌트 ID |
+| serverId | URL | UUID | Y | 변경할 인스턴스 ID |
+| tokenId | Header | String | Y | 토큰 ID |
+| server | Body | Object | Y | 인스턴스 변경 요청 객체 |
+| server.name | Body | String | N | 인스턴스의 새로운 이름 |
 
 <details><summary>예시</summary>
 <p>
@@ -1051,9 +1051,9 @@ X-Auth-Token: {tokenId}
 
 | 이름 | 종류 | 형식 | 필수 | 설명 |
 |---|---|---|---|--|
-| tenantId | URL | String | O | 테넌트 ID |
-| serverId | URL | UUID | O | 삭제할 인스턴스 ID |
-| tokenId | Header | String | O | 토큰 ID |
+| tenantId | URL | String | Y | 테넌트 ID |
+| serverId | URL | UUID | Y | 삭제할 인스턴스 ID |
+| tokenId | Header | String | Y | 토큰 ID |
 
 <a id="delete-instance-response"></a>
 #### 응답
