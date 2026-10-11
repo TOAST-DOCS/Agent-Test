@@ -1,0 +1,52 @@
+<!-- pre-align:aligned sig=e2e0c3117a1 -->
+
+<a id="tcm"></a>
+# table-cell-mirror e2e 픽스처
+
+이 문서는 자동 생성된 e2e 픽스처입니다 (20261011-225551).
+
+<a id="tcm-response"></a>
+## 응답 { #tcm-response }
+
+API 응답 본문의 필드입니다.
+
+| 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| header.isSuccessful | Boolean | Yes | 성공 여부 |
+| header.resultCode | Integer | Yes | 결과 코드 |
+| header.resultMessage | String | Yes | 결과 메시지 |
+| body.id | String | No | 리소스 ID |
+| body.name | String | No | 리소스 이름 |
+| body.createdAt | DateTime | No | 생성 일시 |
+
+<a id="tcm-request"></a>
+## 요청 { #tcm-request }
+
+요청 헤더와 파라미터입니다.
+
+| 구분 | 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- | --- |
+| Header | X-Auth-Token | String | Yes | 발급받은 토큰 |
+| Path | appKey | String | Yes | 앱키 |
+| Query | pageNum | Integer | No | 페이지 번호 |
+| Query | pageSize | Integer | No | 페이지 크기 |
+
+<a id="tcm-partial"></a>
+## 부분 수정 { #tcm-partial }
+
+라벨을 지정하는 필드입니다.
+
+| 이름 | 타입 | 필수 | 설명 |
+| --- | --- | --- | --- |
+| labelKey | String | Yes | 라벨 키 |
+| labelValue | String | No | 라벨 값 |
+
+<a id="tcm-control"></a>
+## 대조군 { #tcm-control }
+
+리소스의 위치를 지정합니다.
+
+| 이름 | 필수 여부 | 설명 |
+| --- | --- | --- |
+| region | 필수 | 리전 코드 |
+| zone | 선택 | 가용성 영역 |
