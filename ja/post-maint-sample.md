@@ -1,10 +1,12 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2epostmaint1 -->
 
 <a id="pm-intro"></a>
 ## 翻訳PR文書整備サンプル { #pm-intro }
 
 この文書は翻訳PR文書整備(`--post-maint`)を検証するためのフィクスチャです。
-ko PRはこの段落の文を1行だけ変更します。
+ko PRはこの段落のこの文を1行だけ修正して翻訳を引き起こします。
 
 <a id="pm-markup"></a>
 ## マークアップの欠陥 { #pm-markup }
