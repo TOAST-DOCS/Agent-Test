@@ -16,7 +16,7 @@ For more information, see the [API guide](https://docs.example.com/api/).
 <a id="pm-stub"></a>
 ## Section With an Empty Body { #pm-stub }
 
-<!-- TODO: translate body -->
+When you create an instance, it may take a few minutes for the status to change to **Running**.
 
 <a id="pm-table"></a>
 ## Table With a Duplicated Header { #pm-table }
