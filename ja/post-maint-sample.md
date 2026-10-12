@@ -11,7 +11,7 @@ ko PRはこの段落のこの1文だけを修正して翻訳を起動させま�
 <a id="pm-markup"></a>
 ## マークアップの欠陥 { #pm-markup }
 
-詳細は[APIガイド\](https://docs.example.com/api/)を参照してください。
+詳細は[APIガイド](https://docs.example.com/api/)を参照してください。
 
 <a id="pm-stub"></a>
 ## 本文が空のセクション { #pm-stub }
