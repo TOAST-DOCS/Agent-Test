@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2epostmaint1 -->
 
 <a id="pm-intro"></a>
@@ -21,7 +23,10 @@ For more information, see the [API guide\](https://docs.example.com/api/).
 
 | Value | Type | Description |
 |---|---|---|
-| Name | Type | Description |
+| appKey | String | App Key |
+| secretKey | String | Secret Key |
+| region | String | Region Code |
+
 |---|---|---|
 | appKey | String | App key |
 | secretKey | String | Secret key |
