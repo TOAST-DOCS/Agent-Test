@@ -1,16 +1,18 @@
+<!-- machine_translated: true -->
+
 # 画像ロケールサンプル
 
-この文書は、全体再翻訳時に翻訳版の画像リンクが維持されるかを確認するe2eフィクスチャです。
+このドキュメントは、全体再翻訳の際に翻訳版の画像リンクが維持されるかどうかを確認するe2eフィクスチャです。
 
 <a id="region"></a>
-## リージョン位置 { #region }
+## リージョンの場所 { #region }
 
-NHN Cloudは複数の地域でリージョンを運営しています。下の地図でリージョン位置を確認できます。
+NHN Cloudは複数の地域でリージョンを運営しています。下の地図でリージョンの場所を確認できます。
 
 ![region](https://static.toastoven.net/toast/region_guide/Docs_NHNCloud_Region-Guide_JP.png)
 
 <a id="analytics"></a>
-## ユーザー流入/流出指標 { #analytics }
+## 流入/流出指標 { #analytics }
 
 日別のユーザー流入と流出の推移を確認できます。
 
@@ -30,9 +32,11 @@ NHN Cloudは複数の地域でリージョンを運営しています。下の�
 
 ターミナルプログラムでインスタンスに接続します。
 
-![terminal](http://static.toastoven.net/prod_instance/putty002-en.png)
+![terminal](http://static.toastoven.net/prod_instance/putty006.png)
 
 <a id="new-image"></a>
 ## 音声認識 { #new-image }
 
 音声ファイルをアップロードすると、認識結果がテキストで出力されます。
+
+![stt](http://static.toastoven.net/prod_speech/stt_console_ko.png)
