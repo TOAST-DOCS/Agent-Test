@@ -1,20 +1,22 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2epostmaint1 -->
 
 <a id="pm-intro"></a>
 ## 翻訳PR文書整備サンプル { #pm-intro }
 
 この文書は翻訳PR文書整備(`--post-maint`)を検証するためのフィクスチャです。
-ko PRはこの段落の文を1行だけ変更します。
+ko PRはこの段落のこの1文だけを修正して翻訳を起動させます。
 
 <a id="pm-markup"></a>
 ## マークアップの欠陥 { #pm-markup }
 
-詳細は[APIガイド\](https://docs.example.com/api/)を参照してください。
+詳細は[APIガイド](https://docs.example.com/api/)を参照してください。
 
 <a id="pm-stub"></a>
 ## 本文が空のセクション { #pm-stub }
 
-<!-- TODO: translate body -->
+インスタンスを作成すると、ステータスが**実行中**に変わるまで数分かかることがあります。
 
 <a id="pm-table"></a>
 ## 行が欠けた表 { #pm-table }

@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2epostmaint1 -->
 
 <a id="pm-intro"></a>
@@ -9,19 +11,22 @@ The ko PR changes only one sentence in this paragraph.
 <a id="pm-markup"></a>
 ## Markup Defect { #pm-markup }
 
-For more information, see the [API guide\](https://docs.example.com/api/).
+For more information, see the [API guide](https://docs.example.com/api/).
 
 <a id="pm-stub"></a>
 ## Section With an Empty Body { #pm-stub }
 
-<!-- TODO: translate body -->
+When you create an instance, it may take a few minutes for the status to change to **Running**.
 
 <a id="pm-table"></a>
 ## Table With a Duplicated Header { #pm-table }
 
 | Value | Type | Description |
 |---|---|---|
-| Name | Type | Description |
+| appKey | String | App Key |
+| secretKey | String | Secret Key |
+| region | String | Region Code |
+
 |---|---|---|
 | appKey | String | App key |
 | secretKey | String | Secret key |

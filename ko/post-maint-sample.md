@@ -4,12 +4,12 @@
 ## 번역 PR 문서 정비 샘플 { #pm-intro }
 
 이 문서는 번역 PR 문서 정비(`--post-maint`)를 검증하는 픽스처입니다.
-ko PR 은 이 문단의 문장 한 줄만 바꿉니다.
+ko PR 은 이 문단의 이 문장 한 줄만 고쳐서 번역을 일으킵니다.
 
 <a id="pm-markup"></a>
 ## 마크업 결함 { #pm-markup }
 
-자세한 내용은 [API 가이드\](https://docs.example.com/api/)를 참고하세요.
+자세한 내용은 [API 가이드](https://docs.example.com/api/)를 참고하세요.
 
 <a id="pm-stub"></a>
 ## 본문이 빈 섹션 { #pm-stub }
