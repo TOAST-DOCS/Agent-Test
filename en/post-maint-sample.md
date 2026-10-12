@@ -11,7 +11,7 @@ The ko PR changes only one sentence in this paragraph.
 <a id="pm-markup"></a>
 ## Markup Defect { #pm-markup }
 
-For more information, see the [API guide\](https://docs.example.com/api/).
+For more information, see the [API guide](https://docs.example.com/api/).
 
 <a id="pm-stub"></a>
 ## Section With an Empty Body { #pm-stub }
