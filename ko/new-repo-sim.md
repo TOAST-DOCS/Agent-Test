@@ -6,7 +6,7 @@ NHN Cloud를 사용하면서 겪을 수 있는 다양한 문제들을 해결하�
 <h3>현재 NHN Cloud에서 기본 제공하는 OS 버전 이외의 버전을 사용하고 싶습니다. 개인 이미지를 업로드해서 사용할 수는 없나요?</h3>
 
 NHN Cloud에서 제공하는 OS 버전만 이용할 수 있습니다. 개인 이미지 업로드는 지원하지 않습니다.
-개인 OS 이미지를 사용하려면 NHN Cloud에서 제공하는 이미지로 인스턴스를 생성한 후, **이미지 생성** 기능을 이용하시기 바랍니다.
+개인 OS 이미지를 사용하려면 NHN Cloud에서 제공하는 이미지로 인스턴스를 생성한 후, **이미지 생성** 기능을 이용하세요.
 <br>
 
 <h3>인스턴스에 접속하면 "Permissions 0644 for '/Users/username/.ssh/your-key.pem' are too open." 메시지가 나타나면서 접속되지 않습니다.</h3>
@@ -47,7 +47,7 @@ CentOS 인스턴스에서 root 권한을 얻으려면 다음과 같이 `sudo` �
 <br>
 
 <a id="proxy-instance-issue">
-<h3>프록시를 사용하는 인스턴스에서의 동작이 이상합니다.</h3>
+<h3>프락시를 사용하는 인스턴스에서의 동작이 이상합니다.</h3>
 </a>
 
 프록시를 사용하는 인스턴스에서 NHN Cloud의 Monitoring 서비스(System Monitoring, Service Monitoring, Cloud Monitoring)가 정상적으로 동작하지 않을 수 있습니다. 또한 Windows 운영체제의 경우 비밀번호 초기화 등의 문제가 발생할 수 있습니다.
