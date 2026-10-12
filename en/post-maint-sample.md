@@ -1,10 +1,12 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2epostmaint1 -->
 
 <a id="pm-intro"></a>
 ## Translation PR Maintenance Sample { #pm-intro }
 
 This document is a fixture for verifying translation PR maintenance (`--post-maint`).
-The ko PR changes only one sentence in this paragraph.
+The ko PR changes only this one sentence in this paragraph, triggering translation.
 
 <a id="pm-markup"></a>
 ## Markup Defect { #pm-markup }
@@ -21,7 +23,10 @@ For more information, see the [API guide\](https://docs.example.com/api/).
 
 | Value | Type | Description |
 |---|---|---|
-| Name | Type | Description |
+| appKey | String | App Key |
+| secretKey | String | Security Key |
+| region | String | Region Code |
+
 |---|---|---|
 | appKey | String | App key |
 | secretKey | String | Secret key |
