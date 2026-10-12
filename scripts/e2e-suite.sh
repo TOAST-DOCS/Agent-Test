@@ -312,6 +312,22 @@
 #                 **두 plan 모두 all 에서 제외** — 검증 대상 수정이 머지되기 전에는
 #                 main 에 대해 항상 REPRO 다 (table-malformed 와 같은 이유). 머지되면
 #                 all 에 넣는다.
+#   table-cell-mirror — 언어 중립 셀 미러 M7 (e2e-table-cell-mirror.sh, cloud-translate
+#                 #1261 · TOAST-Cloud#416 모양). ko 가 필드 표 `필수` 열만 Yes/No → Y/N
+#                 으로 바꾸면 그 행은 모델로 가지 않고 en/ja 의 그 셀만 바뀌는가. [A]
+#                 모델 payload 를 기록해 중립 행 11개가 빠지는지, [B] 로그 수치 = [A] ·
+#                 표 밖 바이트 보존 · 부분 행/한국어 열 대조군은 재번역. 기대: exit 0 /
+#                 TABLE_CELL_MIRROR: OK (`--no-mirror` 로 돌리면 exit 3 이 기대값).
+#   table-tag-trail — 표 마지막 행 바로 아래 템플릿 태그 (e2e-table-tag-trail.sh,
+#                 cloud-translate #1258 · Compute-Image#114). 재사용·재번역·행 덧붙임
+#                 세 경로에서 en/ja 의 태그 줄 앞뒤 빈 줄이 ko 와 같은가 + 대조군 둘
+#                 (ko 가 빈 줄을 둔 태그 · 태그 없는 표). 기대: exit 0 / TABLE_TAG_TRAIL: OK
+#                 (#1258 이전 코드의 [A] 는 6곳 REPRO).
+#   file-by-file — 큰 ko 변경 (e2e-file-by-file.sh, cloud-translate #1261 · #1263 ·
+#                 TOAST-Cloud#416 모양). (a) 파일별 번역: 시간이 넘친 파일만 '번역 실패로
+#                 제외된 파일' 로 빠지고 나머지는 한 PR 에 커밋 (b) 폴링 타임아웃: ko PR 에
+#                 실패 코멘트 + warning 라벨. 시간 초과는 모델 호출 0 인 파일(M7)과 문단
+#                 40개 파일의 비대칭으로 결정적으로 만든다. 기대: exit 0 / FILE_BY_FILE: OK.
 #   term-pin            — 미등록 용어 고정 A/B (e2e-term-pin.sh). 같은 픽스처를
 #                 OFF/ON 두 팔로 N판 돌려 (가) 문서 안 갈림과 (나) 판 사이 흔들림을
 #                 **분포**로 판정한다. 기대: exit 0 / TERM_PIN: OK.
@@ -481,7 +497,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
+    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-cell-mirror|table-tag-trail|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -502,7 +518,7 @@ while [[ $# -gt 0 ]]; do
       PLANS+=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
               split-docs fix-links fix-tables jinja-mask
-              notation list-items); shift ;;
+              notation list-items table-cell-mirror table-tag-trail file-by-file); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -719,17 +735,23 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^UNIT_PRESERVE: (OK|REPRO|FAIL)' "$log" | tail -n1 || true)"
     pairs="$(grep -oE '위반: .*' "$log" | tail -n1 || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${pairs:-<no-pairs>}")
-  elif [[ "$plan" == "unit-pairing" || "$plan" == "table-field-rows" ]]; then
+  elif [[ "$plan" == "unit-pairing" || "$plan" == "table-field-rows" \
+          || "$plan" == "table-cell-mirror" || "$plan" == "table-tag-trail" \
+          || "$plan" == "file-by-file" ]]; then
     # 자체 스크립트 — 번역은 로컬 translate_pr.py 로만 돈다 (검증 대상이 체크아웃의
     # 코드라서). 엔진은 스크립트가 CLI 로 고정하고 옵션은 권장 preset 에서 받는다.
     case "$plan" in
       unit-pairing)     _sc=e2e-unit-pairing.sh;     _tag=UNIT_PAIRING ;;
       table-field-rows) _sc=e2e-table-field-rows.sh; _tag=TABLE_FIELD_ROWS ;;
+      table-cell-mirror) _sc=e2e-table-cell-mirror.sh; _tag=TABLE_CELL_MIRROR ;;
+      table-tag-trail)  _sc=e2e-table-tag-trail.sh;  _tag=TABLE_TAG_TRAIL ;;
+      file-by-file)     _sc=e2e-file-by-file.sh;     _tag=FILE_BY_FILE ;;
     esac
     bash "$REPO_ROOT/scripts/$_sc" > "$log" 2>&1
     ec=$?
     verdict="$(grep -oE "^${_tag}: (OK|REPRO|FAIL)" "$log" | tail -n1 || true)"
     tx_pr="$(grep -oE '번역 PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    [[ -z "$tx_pr" ]] && tx_pr="$(grep -oE '\(a\) ko PR: .*' "$log" | tail -n1 || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${tx_pr:-<no-pr>}")
   elif [[ "$plan" == term-pin* ]]; then
     # 미등록 용어 고정 — 네 스크립트가 같은 모양이다 (OFF/ON 두 팔, 결정적 판정,

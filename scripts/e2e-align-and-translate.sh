@@ -33,8 +33,8 @@
 # Usage:
 #   scripts/e2e-align-and-translate.sh [--engine api|cli] [--model haiku|sonnet|opus]
 #                                      [--tm-top-k N] [--chunk-workers N]
-#                                      [--guidelines-variant-en aws|unified|unified-v2|default]
-#                                      [--guidelines-variant-ja aws|unified|default]
+#                                      [--guidelines-variant-en aws|unified|unified-v2|unified-v3|default]
+#                                      [--guidelines-variant-ja aws|unified|unified-v2|default]
 #                                      [--align-v2|--no-align-v2]
 #                                      [--plan round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn|jinja-mask]
 #                                      [--translate api|local]
@@ -53,10 +53,12 @@
 #   --tm-top-k N          TM few-shot 개수 (기본값 1). "default" 지정 시 필드 미전송 (잡 .env default = 10)
 #   --chunk-workers N     chunk 병렬도 (기본값 2). PR#192/#199 의 chunk 병렬화 exercise.
 #                         "default" 시 잡 .env default (api=4, cli=2).
-#   --guidelines-variant-en <v>  en 가이드라인 크기 (aws|unified|unified-v2|default).
-#                                기본값 default (잡 .env default = unified-v2).
-#   --guidelines-variant-ja <v>  ja 가이드라인 크기 (aws|unified|default).
-#                                기본값 default (잡 .env default = unified).
+#   --guidelines-variant-en <v>  en 가이드라인 (aws|unified|unified-v2|unified-v3|default).
+#                                기본값 default (cloud-translate #1262 이후 기본 = unified-v3).
+#                                옛 지침 대조는 unified-v2.
+#   --guidelines-variant-ja <v>  ja 가이드라인 (aws|unified|unified-v2|default).
+#                                기본값 default (cloud-translate #1262 이후 기본 = unified-v2).
+#                                옛 지침 대조는 unified.
 #   --align-v2 / --no-align-v2   PR#218 ko-source-of-truth 모드로 align 실행 여부.
 #                                기본값 --align-v2 (opinionated defaults: demote-extras +
 #                                translate-headings 자동 활성; ancestor subtree 재번역 포함
@@ -203,8 +205,8 @@ TRANSLATE_ENGINE="claude-code"            # 기본값 cli — api/default 로 ov
 TRANSLATE_MODEL="claude-haiku-4-5"        # 기본값 haiku — sonnet/opus/default 로 override 가능
 TRANSLATE_TM_TOP_K="1"                    # TM few-shot 개수 기본값 1 (잡 .env default 10 → 절감)
 TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199). "default" → 필드 미전송
-TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
-TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
+TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (#1262 이후: unified-v3)
+TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (#1262 이후: unified-v2)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn|jinja-mask
 TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기본) | local = 모든 단계를 로컬 실행
@@ -268,16 +270,16 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --guidelines-variant-en)
       case "${2:-}" in
-        aws|unified|unified-v2) TRANSLATE_GUIDELINES_VARIANT_EN="$2" ;;
+        aws|unified|unified-v2|unified-v3) TRANSLATE_GUIDELINES_VARIANT_EN="$2" ;;
         default) TRANSLATE_GUIDELINES_VARIANT_EN="" ;;
-        *) echo "error: --guidelines-variant-en 은 aws|unified|unified-v2|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+        *) echo "error: --guidelines-variant-en 은 aws|unified|unified-v2|unified-v3|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --guidelines-variant-ja)
       case "${2:-}" in
-        aws|unified) TRANSLATE_GUIDELINES_VARIANT_JA="$2" ;;
+        aws|unified|unified-v2) TRANSLATE_GUIDELINES_VARIANT_JA="$2" ;;
         default) TRANSLATE_GUIDELINES_VARIANT_JA="" ;;
-        *) echo "error: --guidelines-variant-ja 은 aws|unified|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+        *) echo "error: --guidelines-variant-ja 은 aws|unified|unified-v2|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --align-v2)      ALIGN_V2=1; shift ;;
