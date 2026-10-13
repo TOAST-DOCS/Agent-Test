@@ -53,6 +53,7 @@ If even one character changes, the fill touched something outside a stub, which 
 This section comes after the stubs. It must be preserved byte-for-byte once the sections above are filled.
 
 The options are listed below.
+
 | Option | Value |
 | --- | --- |
 | mode | fast |
