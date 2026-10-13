@@ -12,10 +12,14 @@
 # 픽스처: archive/image-locale/ (README 표가 기대값) — 세션 브랜치에만 심는다.
 # 판정:   scripts/check_image_locale.py (모델 없음, 이미지 대상만)
 #
+# 실행 (suite plan `full-retranslate-images`):
+#   scripts/e2e-full-retranslate-images.sh
+#
 # BEFORE/AFTER: 같은 세션 브랜치에 코드만 바꿔 두 번 돌린다.
-#   scripts/e2e-full-retranslate-images.sh --cloud-translate-dir <main 체크아웃> --label BEFORE
-#   scripts/e2e-full-retranslate-images.sh --cloud-translate-dir <수정 브랜치> --label AFTER \
+#   CLOUD_TRANSLATE_DIR=<main 체크아웃> scripts/e2e-full-retranslate-images.sh --label BEFORE
+#   CLOUD_TRANSLATE_DIR=<수정 워크트리> scripts/e2e-full-retranslate-images.sh --label AFTER \
 #       --base-branch <첫 실행이 만든 e2e-fullimg/<ts>>
+#   (--cloud-translate-dir <경로> 도 같은 뜻. 워크트리에는 .env 심볼릭 링크가 필요하다)
 #
 # 엔진은 언제나 claude-code (CLI). 옵션은 대시보드 전체 재번역 기본값과 같다
 # (PRESERVE_EXISTING=false, --source-ref <세션 브랜치>).
@@ -25,8 +29,8 @@ set -euo pipefail
 
 REPO=TOAST-DOCS/Agent-Test
 DOC=image-locale-sample.md
-CT=""; LABEL=""; BASE=""
-PY=${PY:-/home/irteam/works/cloud-translate/.venv/bin/python}
+CT="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"; LABEL=""; BASE=""
+PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --cloud-translate-dir) CT=$2; shift 2;;
@@ -35,7 +39,8 @@ while [ $# -gt 0 ]; do
     *) echo "unknown arg: $1" >&2; exit 1;;
   esac
 done
-[ -n "$CT" ] && [ -f "$CT/translate/translate_file.py" ] || { echo "error: --cloud-translate-dir 필요" >&2; exit 1; }
+[ -f "$CT/translate/translate_file.py" ] || { echo "error: $CT 에 translate/translate_file.py 없음 (CLOUD_TRANSLATE_DIR / --cloud-translate-dir)" >&2; exit 1; }
+[ -x "$PY" ] || { echo "error: python 없음: $PY (CLOUD_TRANSLATE_PY)" >&2; exit 1; }
 [ -e "$CT/.env" ] || { echo "error: $CT/.env 없음 (워크트리면 심볼릭 링크)" >&2; exit 1; }
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 TS=$(date -u +%Y%m%d-%H%M%S)
