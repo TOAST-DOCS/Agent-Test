@@ -25,27 +25,48 @@ If even one character changes, the fill touched something outside a stub, which 
 <a id="fill-stub-table"></a>
 ## Section With a Table { #fill-stub-table }
 
-<!-- TODO: translate body -->
+This is a body stub with a table in the body. After being filled in, the number of columns and rows in the table must match those in the Korean source.
+
+| Item | Description | Default |
+|---|---|---|
+| Instance type | CPU/memory specifications of the instance to create | m2.c1m2 |
+| Block Storage | Size of the root volume (GB) | 20 |
+| Boot script | Script to run on the first boot of the instance | None |
 
 <a id="fill-stub-code"></a>
 ## Section With a Code Block { #fill-stub-code }
 
-<!-- TODO: translate body -->
+Code blocks are not subject to translation. The block below must remain unchanged even after it is filled in.
+
+```bash
+# fill-stub-test: this line must be copied verbatim
+curl -X GET "https://api.example.com/v2.0/servers" \
+  -H "X-Auth-Token: ${TOKEN}"
+```
+
+Only this sentence outside the block is subject to translation, and command and comment lines must not be touched.
 
 <a id="fill-stub-heading"></a>
-## 제목까지 비어 있는 섹션 { #fill-stub-heading }
+## Sections with Empty Headings { #fill-stub-heading }
 
-<!-- TODO: translate -->
+The same section in en/ja has a heading stub where the heading is still in Korean.
+When filling in the section, translate both the heading and the body text, but the heading level and `{ #id }` must follow the ko source as the authoritative reference.
 
 <a id="fill-stub-heading-child"></a>
-### 하위 제목도 비어 있는 경우 { #fill-stub-heading-child }
+### When Child Headings Are Also Empty { #fill-stub-heading-child }
 
-<!-- TODO: translate -->
+This is a case where heading stubs appear consecutively. Each must be filled in independently of the parent section,
+and the `###` level must not be promoted to `##` or demoted.
 
 <a id="section-1"></a>
-## 앵커가 없는 섹션 { #section-1 }
+## Section Without an Anchor { #section-1 }
 
-<!-- TODO: translate -->
+**This is a negative control. Do not attach an `<a id>` anchor or a `{ #id }` attribute to this heading.**
+
+The fill tool locates Korean sections using shared anchors, so stubs without an anchor must not be filled and must be reported as "skipped" in the PR body.
+If a stub is silently filled or silently removed, that is a defect.
+
+If pre-align is run on this document again, an ID will be attached to this heading as well, eliminating the control group — at that point, restore it from the copy in `archive/fill-stub/`.
 
 <a id="fill-stub-tail"></a>
 ## Last Section { #fill-stub-tail }
