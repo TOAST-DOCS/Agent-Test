@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=86fc80138a36 -->
 
 <a id="fix-tables-sample"></a>
@@ -7,7 +9,7 @@ This document is a test fixture for **Fix broken tables** (`translate/translate_
 The en/ja copies deliberately keep three shapes of table divergence from ko, so a fix run can be checked
 for rebuilding exactly those section bodies from ko and preserving every other section byte-for-byte.
 
-This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide.
+This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide. The document fix run e2e added this sentence.
 
 <a id="fix-tables-untouched"></a>
 ## Section With a Healthy Table { #fix-tables-untouched }
