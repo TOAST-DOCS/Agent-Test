@@ -58,7 +58,8 @@ The same section in en/ja lost one identifier row from its table. The remaining 
 | Instance type | CPU/memory spec of the instance to create |
 | Block storage | Size of the root volume |
 
-### Child Section Without an Anchor
+<a id="child-section-without-an-anchor"></a>
+### Child Section Without an Anchor { #child-section-without-an-anchor }
 
 **Second negative control. Do not add an `<a id>` anchor or a `{ #id }` attribute to this heading.**
 
