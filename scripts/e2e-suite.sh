@@ -387,6 +387,15 @@
 #   round2      — 전제 조건(직전 round1 의 ko/번역 PR 이 base 에 머지되어 있음)이
 #                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
 #
+#   full-retranslate-images — 전체 재번역(translate_file.py)의 이미지 링크 유지
+#                 (e2e-full-retranslate-images.sh). 세션 브랜치에 픽스처
+#                 `archive/image-locale/` 를 심고 대시보드 '전체 재번역' 과 같은
+#                 진입점·기본값으로 돌린 뒤, en/ja 의 절별 이미지 대상이 기존
+#                 번역본 그대로인지 판정 (모델 없음, scripts/check_image_locale.py).
+#                 국가 코드 대문자(+끼어든 _KR 줄) · 디렉터리+파일명 로케일 · 목록 안
+#                 이미지 · 번역본 전용 이미지 · 대조군(ko 에만 있는 이미지 → ko 값).
+#                 cloud-translate#1281 이전 코드는 FAIL (8). 기대: exit 0 /
+#                 IMAGE_LOCALE: OK. 로컬 translate_file.py 전용 (~3분).
 # 별칭:
 #   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
 #                 / anchor-audit 를 제외한 plan 전체
@@ -395,6 +404,7 @@
 #                   round1 table-suite row-drop-repro llm-patch
 #                   markup-churn retranslate concurrent lag-order fill-stubs
 #                   split-docs fix-links fix-tables jinja-mask notation
+#                   full-retranslate-images
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #                 preserve 는 전제(CLI 섹션 슬라이스)가 폐기되어 제외 — 위 plan 설명 참고.
@@ -497,7 +507,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-cell-mirror|table-tag-trail|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
+    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-cell-mirror|table-tag-trail|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -518,7 +528,8 @@ while [[ $# -gt 0 ]]; do
       PLANS+=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links round1 table-suite row-drop-repro
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
               split-docs fix-links fix-tables jinja-mask
-              notation list-items table-cell-mirror table-tag-trail file-by-file); shift ;;
+              notation list-items table-cell-mirror table-tag-trail file-by-file
+              full-retranslate-images); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -669,6 +680,14 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^FILL_STUBS: (OK|HELD|FAIL)' "$log" | tail -n1 || true)"
     fill_pr="$(grep -oE 'Fill PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fill_pr:-<no-pr>}")
+  elif [[ "$plan" == "full-retranslate-images" ]]; then
+    # 전체 재번역 이미지 링크 유지 — 자체 스크립트. 픽스처를 세션 브랜치에
+    # 직접 심으므로 align 프롤로그가 필요 없다. 엔진은 스크립트가 CLI 로 고정.
+    bash "$REPO_ROOT/scripts/e2e-full-retranslate-images.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^IMAGE_LOCALE: (OK|FAIL.*)' "$log" | tail -n1 || true)"
+    fri_pr="$(grep -oE '^RESULT .* pr=https://[^ ]+' "$log" | tail -n1 | grep -oE 'pr=https://[^ ]+' | cut -d= -f2 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fri_pr:-<no-pr>}")
   elif [[ "$plan" == "fix-tables" ]]; then
     # 깨진 표 정비 — 자체 스크립트. 픽스처가 alpha 상주라 align 프롤로그가
     # 필요 없다 (fill-stubs 와 같은 모양).
