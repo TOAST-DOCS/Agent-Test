@@ -42,7 +42,8 @@ If even one character changes, the fill touched something outside a stub, which 
 
 <!-- TODO: translate -->
 
-## 앵커가 없는 섹션
+<a id="section-1"></a>
+## 앵커가 없는 섹션 { #section-1 }
 
 <!-- TODO: translate -->
 
