@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=28e448e4e890 -->
 
 <a id="fill-stub-sample"></a>
@@ -7,7 +9,7 @@ This document is a test fixture for **Fill empty translations** (`translate/tran
 The en/ja copies deliberately keep the two kinds of stub that pre-align leaves behind, so a fill run
 can be checked for filling exactly those stubs and preserving every other section byte-for-byte.
 
-This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide.
+This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide. The document maintenance e2e added this sentence.
 
 <a id="fill-stub-untouched"></a>
 ## Already Translated Section { #fill-stub-untouched }
