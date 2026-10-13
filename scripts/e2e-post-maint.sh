@@ -5,6 +5,8 @@
 # 리포 override `post_maint=true` 인 리포의 ko PR 이 머지되면, 번역 잡이 PR 을
 # 열기 전에 **이번 번역이 쓴 파일에만** 마크업 정정 · 빈 번역 채우기 · 깨진 표
 # 정비를 돌려 같은 브랜치에 커밋하고 Jinja 문법 오류를 보고(warning 라벨)하는지.
+# 결과는 번역 PR 의 새 댓글 `## 문서 정비 (번역 PR)` (cloud-translate#1294 부터 —
+# 그 전에는 PR 본문 절이었다): 도구 × 파일 실행 이력 표 + 수정 · 보류 · 오류.
 #
 # ── 픽스처 ────────────────────────────────────────────────────────────────
 # alpha 상주 `{ko,en,ja}/fill-stub-sample.md` (빈 번역 stub) 와
@@ -18,21 +20,28 @@
 # ko PR 은 두 문서의 첫 절 문단에 한 문장씩 더한다 (번역이 그 두 파일을 쓰게).
 #
 # ── 판정 (전부 결정적) ────────────────────────────────────────────────────
-#   [1] 번역 PR 본문에 '문서 정비 (번역 PR)' 절            (= POST_MAINT 가 잡에 닿았다)
+#   [1] 번역 PR 에 '문서 정비 (번역 PR)' 댓글 1개, 본문에는 그 절이 없다
+#       (= POST_MAINT 가 잡에 닿았다) + 실행 이력 표에 PR 파일 6개의 행
 #   [2] 커밋 post-maint(fix-markup|fill-empty|fix-tables) 셋 다
-#   [3] Jinja 보고: 본문 🚫 줄(ja/fix-tables-sample.md) + `warning` 라벨
+#   [3] Jinja 보고: 댓글 🚫 줄(ja/fix-tables-sample.md) + `warning` 라벨
 #   [4] PR 파일 ⊆ 두 픽스처 × ko/en/ja, 대조군 en/fix-links.md 는 base 와 바이트 동일
 #   [5] M9 정정: 세 언어 fill-stub-sample.md 의 표 앞에 빈 줄
-#   [6] 빈 번역: en/ja fill-stub-sample.md 의 id 있는 stub 절 5개에 TODO 없음
+#   [6] 빈 번역: en/ja fill-stub-sample.md 의 id 있는 stub 절 5개가 채워졌거나,
+#       남았으면 댓글 '보류' 에 그 절이 적혀 있다 (채우기 도구의 블록 구조 가드는
+#       모델 결과에 따라 보류한다 — 보류 자체는 정상, 보고 누락이 결함. #1557)
 #   [7] 깨진 표: en/ja fix-tables-sample.md 의 절별 표 수 == ko
 #   [8] 정상 절 보존: en/ja `#fix-tables-untouched` 가 base 와 바이트 동일
 #   [9] Jinja 줄은 고치지 않았다 (ja 에 미닫힘 `{% if` 그대로)
 #
 # Usage:
 #   source ./load_env.sh
-#   bash scripts/e2e-post-maint.sh [--timeout 3600]
+#   bash scripts/e2e-post-maint.sh [--timeout 3600] [--pipeline-branch PR-1294]
 #
-# webhook repo 등록과 override 는 세션 동안만 켜고 trap 에서 원래 값으로 되돌린다. 세션 브랜치·PR 은
+# --pipeline-branch: 번역 잡을 그 Jenkins multibranch 잡으로 돌린다 (미머지 코드 검증).
+#   그 잡이 있고 빌드가 1회 이상이어야 한다 (파라미터 등록).
+#
+# webhook repo 등록(번역만 켜고 한글 검수는 끈다 — 이 e2e 의 판정 밖이다)·pipeline
+# 브랜치·override 는 세션 동안만 바꾸고 trap 에서 원래 값으로 되돌린다. 세션 브랜치·PR 은
 # 검토용으로 남긴다 (정리: README 의 세션 브랜치 정리 절).
 set -eo pipefail
 set -u
@@ -43,12 +52,13 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/e2e-repo.sh"
 source "$SCRIPT_DIR/e2e-label.sh"
-source "$SCRIPT_DIR/e2e-webhook-toggle.sh"
 
 TIMEOUT=3600
+PIPELINE_BRANCH=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --timeout) TIMEOUT="$2"; shift 2 ;;
+    --pipeline-branch) PIPELINE_BRANCH="$2"; shift 2 ;;
     -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
@@ -61,7 +71,7 @@ BASE="e2e-postmaint/$TS"
 HEAD="translate-test-postmaint/$TS"
 WT="$(mktemp -d)"
 ORIG_PM="__unset__"
-WEBHOOK_PRIOR=""
+WEBHOOK_ROW=""   # 실행 전 webhook 대상 repo 행 (JSON) — cleanup 이 그대로 되돌린다
 
 _override() {  # $1 = overrides JSON
   python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$REPO" "$1" <<'PY'
@@ -71,6 +81,29 @@ req = urllib.request.Request(f"{base}/api/webhooks/repos/override",
     data=json.dumps({"repo": repo, "job": "translate", "overrides": json.loads(ov)}).encode(),
     method="POST", headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
 urllib.request.urlopen(req, timeout=15).read()
+PY
+}
+
+_webhook_row() {   # 현재 행 → {translate_enabled, ko_review_enabled, pipeline_branch} JSON
+  curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" "$DASHBOARD_BASE_URL/api/webhooks/repos" \
+  | python3 -c "
+import json,sys
+w=sys.argv[1].lower()
+row=next((x for x in json.load(sys.stdin).get('repos') or []
+          if (x.get('repo') or '').lower()==w or (x.get('repo') or '').lower().endswith('/'+w)), None)
+print(json.dumps({k:(row or {}).get(k) or d for k,d in
+      (('translate_enabled',False),('ko_review_enabled',False),('pipeline_branch',''))}))" "$REPO"
+}
+
+_set_webhook_row() {   # $1 = {translate_enabled, ko_review_enabled, pipeline_branch} JSON
+  python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$REPO" "$1" <<'PY'
+import json, sys, urllib.request
+base, tok, repo, row = sys.argv[1:5]
+req = urllib.request.Request(f"{base}/api/webhooks/repos",
+    data=json.dumps({"repo": repo, **json.loads(row)}).encode(), method="POST",
+    headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"})
+urllib.request.urlopen(req, timeout=15).read()
+print(f"  webhook repo {repo}: {row}")
 PY
 }
 
@@ -89,10 +122,9 @@ else: print('null')" "$REPO"
 cleanup() {
   local rc=$?
   trap - EXIT INT TERM
-  if [[ "$WEBHOOK_PRIOR" == off ]]; then
-    set_webhook_repo_enabled false
-  elif [[ "$WEBHOOK_PRIOR" == on ]]; then
-    echo "  webhook repo $REPO: 실행 전에 켜져 있어 그대로 둡니다"
+  if [[ -n "$WEBHOOK_ROW" ]]; then
+    echo "  [cleanup] webhook repo 원복"
+    _set_webhook_row "$WEBHOOK_ROW" || echo "  [cleanup] WARN: webhook repo 원복 실패 — 수동 확인" >&2
   fi
   if [[ "$ORIG_PM" != "__unset__" ]]; then
     echo "  [cleanup] override post_maint 원복 → $ORIG_PM"
@@ -104,10 +136,13 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "== [0] webhook repo 켜기 + override post_maint 켜기 ($REPO)"
-# webhook e2e 규약 (e2e-webhook-toggle.sh): 실행 중에만 켜고, 원래 꺼져 있었으면 끈다.
-WEBHOOK_PRIOR="$(webhook_repo_state)"
-echo "  webhook repo 원래 상태: $WEBHOOK_PRIOR"
-set_webhook_repo_enabled true
+# webhook e2e 규약 (e2e-webhook-toggle.sh): 실행 중에만 켜고 끝나면 원래 행으로 되돌린다.
+WEBHOOK_ROW="$(_webhook_row)"
+echo "  webhook repo 원래 행: $WEBHOOK_ROW"
+_set_webhook_row "$(python3 -c "
+import json,sys; r=json.loads(sys.argv[1])
+print(json.dumps({'translate_enabled': True, 'ko_review_enabled': False,
+                  'pipeline_branch': sys.argv[2] or r['pipeline_branch']}))" "$WEBHOOK_ROW" "$PIPELINE_BRANCH")"
 ORIG_PM="$(_read_pm)"
 echo "  원래 값: $ORIG_PM"
 _override '{"post_maint": true}'
@@ -174,7 +209,12 @@ while (( $(date +%s) < deadline )); do
   sleep 30
 done
 [[ -n "$TX_PR" ]] || { echo "FAIL: 번역 PR 이 ${TIMEOUT}s 안에 열리지 않았다" >&2; exit 1; }
-sleep 15   # 라벨(flag_problem_pr)은 PR 생성 직후 붙는다
+# 라벨(flag_problem_pr)·정비 댓글은 PR 생성 직후 붙는다 — 정비 댓글이 보일 때까지 (최대 5분)
+for _ in $(seq 1 30); do
+  gh api "repos/$REPO/issues/$TX_PR/comments" --jq '.[].body' 2>/dev/null \
+    | grep -q '^## 문서 정비 (번역 PR)' && break
+  sleep 10
+done
 e2e_label_pr "$REPO" "$TX_PR"
 echo "  번역 PR: #$TX_PR"
 
@@ -193,6 +233,9 @@ body = pr["body"]
 labels = {l["name"] for l in pr["labels"]}
 files = {f["path"] for f in pr["files"]}
 msgs = [c["messageHeadline"] for c in pr["commits"]]
+comments = json.loads(gh("api", f"repos/{repo}/issues/{num}/comments", "--paginate"))
+pm = [c["body"] for c in comments if c["body"].startswith("## 문서 정비 (번역 PR)")]
+note = pm[0] if pm else ""
 
 def raw(path, ref):
     out = subprocess.run(["gh", "api", f"repos/{repo}/contents/{path}?ref={ref}",
@@ -218,12 +261,15 @@ def check(name, ok, detail=""):
     res.append(ok)
     print(f"  [{'PASS' if ok else 'FAIL'}] {name}" + (f" — {detail}" if detail else ""))
 
-check("1 PR 본문 '문서 정비 (번역 PR)' 절", "### 문서 정비 (번역 PR)" in body)
+check("1a '문서 정비 (번역 PR)' 댓글 1개", len(pm) == 1, f"{len(pm)}개")
+check("1b PR 본문에는 그 절이 없다", "문서 정비 (번역 PR)" not in body)
+rows = re.findall(r"^\| `([^`]+)` \|", note, re.M)
+check("1c 실행 이력 표 = PR 파일", set(rows) == files, f"{len(rows)}행")
 for tool in ("fix-markup", "fill-empty", "fix-tables"):
     n = sum(1 for m in msgs if m.startswith(f"post-maint({tool})"))
     check(f"2 커밋 post-maint({tool})", n > 0, f"{n}건")
 check("3a Jinja 🚫 줄 (ja/fix-tables-sample.md)",
-      bool(re.search(r"🚫 Jinja 문법 검사 — `ja/fix-tables-sample\.md`", body)))
+      bool(re.search(r"🚫 Jinja 문법 검사 — `ja/fix-tables-sample\.md`", note)))
 check("3b warning 라벨", "warning" in labels, ",".join(sorted(labels)))
 allowed = {f"{l}/{d}.md" for l in ("ko", "en", "ja") for d in ("fill-stub-sample", "fix-tables-sample")}
 check("4a PR 파일 ⊆ 두 픽스처", files <= allowed, ", ".join(sorted(files - allowed)) or f"{len(files)}개")
@@ -236,7 +282,11 @@ stub_ids = ("fill-stub-body", "fill-stub-table", "fill-stub-code", "fill-stub-he
 for l in ("en", "ja"):
     secs = sections(raw(f"{l}/fill-stub-sample.md", head) or "")
     left = [i for i in stub_ids if "TODO: translate" in secs.get(i, "TODO: translate")]
-    check(f"6 빈 번역 {l}", not left, ",".join(left) or "5/5 채움")
+    held = re.findall(rf"^- ⚠ 빈 번역 채우기 — `{l}/fill-stub-sample\.md`: (.*)$", note, re.M)
+    unreported = [i for i in left if not any(i in h for h in held)]
+    check(f"6 빈 번역 {l}", not unreported,
+          f"미보고 {','.join(unreported)}" if unreported else
+          (f"{5 - len(left)}/5 채움 · 보류 보고 {','.join(left)}" if left else "5/5 채움"))
 ko_secs = sections(raw("ko/fix-tables-sample.md", head) or "")
 for l in ("en", "ja"):
     t = raw(f"{l}/fix-tables-sample.md", head) or ""
