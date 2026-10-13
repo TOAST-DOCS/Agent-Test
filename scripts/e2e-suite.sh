@@ -226,7 +226,12 @@
 #                 가도록 두 가지로 변형한다 (블록 안 본문 수정 / 문단을 새 태그로
 #                 감쌈). markup-churn 은 M4 미러가 churn 을 흡수해 태그 유닛이
 #                 모델에 가지 않으므로 이 경로를 못 본다 (2026-09-07 실측).
-#                 판정: tag-mismatch=0 unprotected-fallback=0.
+#                 판정: scripts/check_jinja_mask.py — (a) tag-mismatch=0
+#                 (b) unprotected-fallback=0 (c) 마스크가 전체 번역(macro-shapes)·
+#                 증분(jinja-guide) 두 경로에서 실제로 걸렸다 (debug 로그, local 은
+#                 TRANSLATE_LOG_LEVEL=debug 로 돌려 필수) (d) 번역 PR 의 en/ja 가
+#                 check_template_tags.py 통과 (태그 순서 · 사이트 Jinja 렌더).
+#                 하나라도 어긋나면 suite 실패 (cloud-translate#1297 이후 기대값).
 #   markup-churn— 코스메틱 마크업 churn(펜스 info string, <br/>, 헤딩 뒤 빈 줄,
 #                 Jinja 태그 whitespace 제어) + 소수 내용 변경. load guard 가
 #                 정상 리뷰 PR 을 runaway 로 오판해 파일을 제외하던 것을 재현
@@ -876,7 +881,14 @@ for plan in "${PLANS[@]}"; do
       plan_arg="row-drop-repro"
       variant_args+=(--no-table-reconcile)
     fi
-    bash "$REPO_ROOT/scripts/e2e-align-and-translate.sh" \
+    # jinja-mask 의 판정 (c) — 마스크가 실제로 걸렸는가 — 는 debug 줄로만
+    # 보인다. local 모드는 번역이 이 프로세스의 자식이라 env 로 넘긴다
+    # (api 모드는 Jenkins 잡의 로그 레벨이라 여기서 바꿀 수 없다 → 미측정).
+    plan_env=()
+    if [[ "$plan" == "jinja-mask" && "$TRANSLATE_MODE" != "api" ]]; then
+      plan_env+=(TRANSLATE_LOG_LEVEL=debug)
+    fi
+    env "${plan_env[@]}" bash "$REPO_ROOT/scripts/e2e-align-and-translate.sh" \
       --plan "$plan_arg" "${PASS_ARGS[@]}" "${reuse_args[@]}" \
       "${variant_args[@]}" > "$log" 2>&1
     ec=$?
@@ -928,16 +940,33 @@ for plan in "${PLANS[@]}"; do
     fi
     if [[ "$plan" == "jinja-mask" ]]; then
       # 이 plan 의 핵심은 "모델이 템플릿 태그를 아예 못 본다" 다. ALIGNMENT 는
-      # heading/anchor/표만 보므로 `{% %}` 유실을 못 잡는다 — markup-churn 의
-      # guard-skips 가 공허하게 통과했던 것과 같은 함정이라 로그에서 직접 센다.
-      # 두 카운터는 WARNING/ERROR 급이라 기본 로그 레벨에서도 잡힌다.
-      jm_mismatch="$(grep -c 'Template-tag mismatch' "$log" 2>/dev/null || true)"
-      jm_fallback="$(grep -c 'falling back to unprotected' "$log" 2>/dev/null || true)"
-      # 기작 자체는 debug 로만 보인다 (TRANSLATE_LOG_LEVEL=debug 로 돌린 경우).
-      jm_masked="$(grep -c 'Masked .* template tag' "$log" 2>/dev/null || true)"
-      verdict="${verdict:-<no-verdict>} tag-mismatch=${jm_mismatch:-0} unprotected-fallback=${jm_fallback:-0} masked=${jm_masked:-0}"
-      if [[ "${jm_mismatch:-0}" != "0" || "${jm_fallback:-0}" != "0" ]]; then
-        verdict="$verdict (FAIL: 태그 시퀀스가 어긋났거나 보호 없이 재번역됐다)"
+      # heading/anchor/표만 보므로 `{% %}` 유실을 못 잡는다 — 판정은
+      # check_jinja_mask.py 가 한다 (로그 카운터 + 마스크 도달 + 번역 PR 산출물).
+      # api 모드는 번역 로그가 Jenkins 쪽에만 있으므로 llm-patch 와 같은 규칙으로
+      # 콘솔을 받아 세고, 받지 못하면 로그 판정을 '?' 로 남긴다 (산출물 판정은
+      # 자격 증명 없이도 된다). 예전에는 문구만 붙고 exit 에 반영되지 않았고,
+      # api 모드 카운터는 늘 0 이었다.
+      jm_src="$log"; jm_args=(--require-debug)
+      if [[ "$TRANSLATE_MODE" == "api" ]]; then
+        jm_args=()
+        if jenkins_console "$log" > "$outdir/$plan.jenkins.log" 2>/dev/null \
+           && [[ -s "$outdir/$plan.jenkins.log" ]]; then
+          jm_src="$outdir/$plan.jenkins.log"
+          echo "    (Jenkins 콘솔 확보: $plan.jenkins.log — api 모드 카운터의 근거)"
+        else
+          jm_src=""; jm_args=(--unmeasured)
+        fi
+      fi
+      if [[ -n "$trans_pr" ]]; then
+        python3 "$REPO_ROOT/scripts/check_jinja_mask.py" ${jm_src:+--log "$jm_src"} \
+          --pr "$trans_pr" "${jm_args[@]}" > "$outdir/$plan.verdict.log" 2>&1
+        jm_ec=$?
+        sed 's/^/    /' "$outdir/$plan.verdict.log"
+        jm_line="$(grep -oE '^JINJA_MASK: .*' "$outdir/$plan.verdict.log" | tail -n1 || true)"
+        verdict="${verdict:-<no-verdict>} ${jm_line:-JINJA_MASK: FAIL (판정 스크립트 오류 exit=$jm_ec)}"
+      else
+        jm_ec=1
+        verdict="${verdict:-<no-verdict>} JINJA_MASK: FAIL (번역 PR 없음)"
       fi
     fi
     if [[ "$plan" == "markup-churn" ]]; then
@@ -1065,6 +1094,12 @@ for plan in "${PLANS[@]}"; do
     echo "    ! LLM-patch fallback 미발동 — 이 변형은 그 경로 검증이 목적이므로 실패로 집계" >&2
     overall=1
   fi
+  # jinja-mask: exit 0/3 은 위 공통 규칙대로지만 그것만으로는 아무것도 재지
+  # 않는다 — check_jinja_mask.py 가 하나라도 FAIL 이면 suite 실패.
+  if [[ "$plan" == "jinja-mask" ]] && (( ${jm_ec:-1} != 0 )); then
+    echo "    ! jinja-mask 판정 FAIL — $outdir/$plan.verdict.log 참고" >&2
+    overall=1
+  fi
   if [[ "$plan" == "markup-churn" ]]; then
     if [[ "$verdict" == *"guard-skips=?"* ]]; then
       # 미측정은 미발동이 아니다 — pr-excl 은 자격 증명 없이도 읽히므로 그것만
@@ -1090,5 +1125,6 @@ echo "  (fill-stubs: exit 4 = HELD — 도구가 보고한 보류만 남음. ⚠
 echo "  (fix-tables: exit 0 = FIX_TABLES: OK. 표가 어긋난 section 만 ko 로 다시 만들고 대조군은 바이트 보존)"
 echo "  (row-drop-repro-noreconcile: exit 0/3 허용, 단 llm-patch=0 이면 실패 — 그 경로를 안 태운 실행)"
 echo "  (llm-patch: exit 0/3 허용, 단 llm-patch=0 이면 실패. ok/declined 로 fallback 판단을 확인)"
+echo "  (jinja-mask: JINJA_MASK: OK 가 PASS — mismatch·fallback 0, 마스크 두 경로 도달(local), 번역 PR 태그 검사 통과. '?' 는 미측정)"
 [[ -n "$ALIGNED_BRANCH" ]] && echo "  (align 스냅샷: $ALIGNED_BRANCH — 재현/디버그용, 정리는 수동)"
 exit $overall
