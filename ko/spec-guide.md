@@ -11,7 +11,7 @@
 | 경로 | 타입 | Not Null | 설명 |
 | --- | --- | --- | --- |
 | resource.id | String | O | 리소스 아이디입니다. |
-| resource.name | String | O | 리소스 이름입니다. 콘솔에서 변경할 수 있습니다. |
+| resource.name | String | O | 리소스 이름입니다. 콘솔에서 변경할 수 있습니다. 이름은 프로젝트 안에서 고유해야 합니다. |
 | resource.status | Enum | O | 리소스 상태입니다.<br>[ACTIVE(사용 중), PAUSED(일시 중지), DELETED(삭제됨)] |
 | resource.quota | Object | X | 리소스 할당량 정보입니다. |
 | resource.quota.limit | Integer | X | 최대 할당량입니다. 기본값은 100입니다. |
