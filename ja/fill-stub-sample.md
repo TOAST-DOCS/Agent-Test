@@ -18,27 +18,47 @@ en/ja のコピーには pre-align が残す 2 種類の stub をわざと残し
 <a id="fill-stub-body"></a>
 ## 本文だけが空のセクション { #fill-stub-body }
 
-<!-- TODO: translate body -->
+en/ja の同じセクションは、見出しは翻訳されていて、本文のみが body stub として空白になっています。
+埋め込み処理では、見出し行をそのまま残して、このパラグラフのみを翻訳して入れる必要があります。
+
+インスタンスを作成すると、コンソールの状態が**実行中**に変わるまで数分かかる場合があります。
+状態がしばらく変わらない場合は、イメージとインスタンスタイプの組み合わせが正しいかどうかを先に確認します。
 
 <a id="fill-stub-table"></a>
 ## 表があるセクション { #fill-stub-table }
 
-<!-- TODO: translate body -->
+本文に表があるbody stubです。埋められた後も、表の列数と行数がkoと同じである必要があります。
+
+| 項目 | 説明 | デフォルト値 |
+|---|---|---|
+| インスタンスタイプ | 作成するインスタンスのCPU/メモリ仕様 | m2.c1m2 |
+| ブロックストレージ | ルートボリュームのサイズ(GB) | 20 |
+| ブートスクリプト | インスタンスの初回ブート時に実行するスクリプト | なし |
 
 <a id="fill-stub-code"></a>
 ## コードブロックがあるセクション { #fill-stub-code }
 
-<!-- TODO: translate body -->
+コードブロックは翻訳の対象ではありません。下記のブロックは埋め込み後も内容がそのまま保持される必要があります。
+
+```bash
+# fill-stub-test: this line must be copied verbatim
+curl -X GET "https://api.example.com/v2.0/servers" \
+  -H "X-Auth-Token: ${TOKEN}"
+```
+
+ブロック外のこの文のみが翻訳の対象であり、コマンドとコメント行は変更しません。
 
 <a id="fill-stub-heading"></a>
-## 제목까지 비어 있는 섹션 { #fill-stub-heading }
+## 見出しまで空になっているセクション { #fill-stub-heading }
 
-<!-- TODO: translate -->
+en/jaの同じセクションは、見出しがまだ韓国語の見出しスタブです。
+埋め込み実行は見出しと本文を一緒に翻訳しますが、見出しのレベルと `{ #id }` は ko を正本として従う必要があります。
 
 <a id="fill-stub-heading-child"></a>
-### 하위 제목도 비어 있는 경우 { #fill-stub-heading-child }
+### 子見出しも空いている場合 { #fill-stub-heading-child }
 
-<!-- TODO: translate -->
+見出しスタブが連続して現れる場合です。親セクションとは独立して、それぞれが入力される必要があり、
+`###`レベルが`##`に昇格または降格されてはいけません。
 
 ## 앵커가 없는 섹션
 
