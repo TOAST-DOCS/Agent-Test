@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=13760e8f5501 -->
+
 # Image Locale Sample
 
 This document is an e2e fixture for verifying that image links in translations are preserved during full retranslation.
