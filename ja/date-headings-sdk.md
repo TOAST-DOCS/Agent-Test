@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=499fcf966eda -->
+<!-- pre-align:aligned sig=a0bb857088ed -->
 
 <a id="nhn-cloud-sdk-user-guide-release-notes-ios"></a>
 ## NHN Cloud > User Guide for SDK > Release Notes > iOS { #nhn-cloud-sdk-user-guide-release-notes-ios }
