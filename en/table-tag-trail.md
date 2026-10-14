@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e7a97a11 -->
 
 <a id="ttt"></a>
@@ -11,7 +13,10 @@ This document is a generated e2e fixture (20261014-120919).
 | Name | Description |
 | --- | --- |
 | sort_dir | Sort direction |
+{%- if "public" in build_flags %}
 | member_status | Member status |
+{% else %}
+{% endif %}
 
 Used to sort the list.
 
@@ -21,17 +26,23 @@ Used to sort the list.
 | Name | Description |
 | --- | --- |
 | limit | Number of items to retrieve at once |
-| offset | Start position of the query |
+| offset | Start position of the query (from 0) |
+{% if "gov" in build_flags %}
+{% endif %}
 
 Used to retrieve the list in pages.
 
 <a id="ttt-append"></a>
 ## Filter Parameters { #ttt-append }
 
+{%- if "public" in build_flags %}
 | Name | Description |
 | --- | --- |
 | name | Name filter |
 | status | Status filter |
+| createdFrom | Created time starts |
+| createdTo | Created time ends |
+{% endif %}
 
 Used to filter the list.
 
@@ -43,6 +54,10 @@ Used to filter the list.
 | keyword | Search keyword |
 | scope | Search scope |
 
+{% if "gov" in build_flags %}
+In Government environments, the search scope is limited.
+{% endif %}
+
 Used to search the list.
 
 <a id="ttt-plain"></a>
@@ -50,7 +65,7 @@ Used to search the list.
 
 | Name | Description |
 | --- | --- |
-| totalCount | Total count |
+| totalCount | Total count matching the conditions |
 | items | List of items |
 
 Fields of the response body.
