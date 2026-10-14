@@ -11,7 +11,10 @@
 | 이름 | 설명 |
 | --- | --- |
 | sort_dir | 정렬 방향 |
+{%- if "public" in build_flags %}
 | member_status | 멤버 상태 |
+{% else %}
+{% endif %}
 
 목록을 정렬할 때 사용합니다.
 
@@ -21,17 +24,23 @@
 | 이름 | 설명 |
 | --- | --- |
 | limit | 한 번에 조회할 개수 |
-| offset | 조회 시작 위치 |
+| offset | 조회를 시작할 위치(0부터) |
+{% if "gov" in build_flags %}
+{% endif %}
 
 목록을 나눠 조회할 때 사용합니다.
 
 <a id="ttt-append"></a>
 ## 필터 파라미터 { #ttt-append }
 
+{%- if "public" in build_flags %}
 | 이름 | 설명 |
 | --- | --- |
 | name | 이름 필터 |
 | status | 상태 필터 |
+| createdFrom | 생성 일시 시작 |
+| createdTo | 생성 일시 끝 |
+{% endif %}
 
 목록을 걸러 낼 때 사용합니다.
 
@@ -41,7 +50,11 @@
 | 이름 | 설명 |
 | --- | --- |
 | keyword | 검색어 |
-| scope | 검색 범위 |
+| scope | 검색할 범위 |
+
+{% if "gov" in build_flags %}
+공공 환경에서는 검색 범위가 제한됩니다.
+{% endif %}
 
 목록을 검색할 때 사용합니다.
 
@@ -50,7 +63,7 @@
 
 | 이름 | 설명 |
 | --- | --- |
-| totalCount | 전체 개수 |
+| totalCount | 조건에 맞는 전체 개수 |
 | items | 항목 목록 |
 
 응답 본문의 필드입니다.
