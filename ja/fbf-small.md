@@ -1,0 +1,14 @@
+<!-- pre-align:aligned sig=e2ef1b5a11 -->
+
+<a id="fbf-small"></a>
+# fbf-small e2e フィクスチャ
+
+<a id="fbf-small-params"></a>
+## リクエストパラメータ { #fbf-small-params }
+
+| 名前 | タイプ | 必須 | 説明 |
+| --- | --- | --- | --- |
+| appKey | String | Yes | アプリケーションキー |
+| serviceId | String | Yes | サービスID |
+| pageNum | Integer | No | ページ番号 |
+| pageSize | Integer | No | ページサイズ |
