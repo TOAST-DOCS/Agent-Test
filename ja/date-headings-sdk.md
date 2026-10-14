@@ -5,6 +5,16 @@
 <a id="nhn-cloud-sdk-user-guide-release-notes-ios"></a>
 ## NHN Cloud > User Guide for SDK > Release Notes > iOS { #nhn-cloud-sdk-user-guide-release-notes-ios }
 
+<a id="110-2026-10-14"></a>
+## 1.11.0(2026. 10. 14.) { #110-2026-10-14 }
+
+<a id="110-2026-10-14-nhn-cloud-push"></a>
+### NHN Cloud Push { #110-2026-10-14-nhn-cloud-push }
+
+<a id="110-2026-10-14-nhn-cloud-push-bugfix"></a>
+#### バグ修正
+* 特定の状況でプッシュトークン登録が失敗する問題を修正
+
 <a id="100-2026-09-15"></a>
 ## 1.10.0(2026. 09. 15.) { #100-2026-09-15 }
 
@@ -61,7 +71,7 @@
 <a id="100-2026-09-15-nhn-cloud-ocr-bugfix"></a>
 #### バグ修正
 
-* Default UI アイコンの比率が歪む問題を修正
+* Default UI アイコンの比率が歪む問題修正
 
 <a id="90-2025-04-29"></a>
 ## 1.9.0(2025. 04. 29.) { #90-2025-04-29 }
