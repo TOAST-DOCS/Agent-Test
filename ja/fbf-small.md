@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2ef1b5a11 -->
 
 <a id="fbf-small"></a>
@@ -8,7 +10,7 @@
 
 | 名前 | タイプ | 必須 | 説明 |
 | --- | --- | --- | --- |
-| appKey | String | Yes | アプリケーションキー |
-| serviceId | String | Yes | サービスID |
-| pageNum | Integer | No | ページ番号 |
-| pageSize | Integer | No | ページサイズ |
+| appKey | String | Y | アプリケーションキー |
+| serviceId | String | Y | サービスID |
+| pageNum | Integer | N | ページ番号 |
+| pageSize | Integer | N | ページサイズ |
