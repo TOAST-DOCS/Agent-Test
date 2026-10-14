@@ -1,7 +1,17 @@
-<!-- pre-align:aligned sig=499fcf966eda -->
+<!-- pre-align:aligned sig=a0bb857088ed -->
 
 <a id="nhn-cloud-sdk-user-guide-release-notes-ios"></a>
 ## NHN Cloud > SDK 사용 가이드 > 릴리스 노트 > iOS { #nhn-cloud-sdk-user-guide-release-notes-ios }
+
+<a id="110-2026-10-14"></a>
+## 1.11.0(2026. 10. 14.) { #110-2026-10-14 }
+
+<a id="110-2026-10-14-nhn-cloud-push"></a>
+### NHN Cloud Push { #110-2026-10-14-nhn-cloud-push }
+
+<a id="110-2026-10-14-nhn-cloud-push-bugfix"></a>
+#### 버그 수정
+* 특정 상황에서 푸시 토큰 등록이 실패하는 문제 수정
 
 <a id="100-2026-09-15"></a>
 ## 1.10.0(2026. 09. 15.) { #100-2026-09-15 }
@@ -53,7 +63,7 @@
 
 <a id="100-2026-09-15-nhn-cloud-ocr-bugfix"></a>
 #### 버그 수정
-* Default UI 아이콘 비율 왜곡 문제 수정
+* Default UI 아이콘 비율이 왜곡되는 문제 수정
 
 <a id="90-2025-04-29"></a>
 ## 1.9.0(2025. 04. 29.) { #90-2025-04-29 }
