@@ -1,7 +1,38 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=602ad029c65d -->
 
 <a id="game-gamebase-release-notes-unity"></a>
 ## Game > Gamebase > リリースノート > Unity { #game-gamebase-release-notes-unity }
+
+<a id="2-83-0-2026-10-13"></a>
+### 2.83.0 (2026. 10. 13.) { #2-83-0-2026-10-13 }
+[SDKダウンロード](https://static.toastoven.net/toastcloud/sdk_download/gamebase/v2.83.0/GamebaseSDK-Unity.zip)
+
+<a id="830-2026-10-13-added-features"></a>
+#### 機能追加
+* (Windows, macOS) WebビューでPredefined Custom Schemeをサポートしています。
+* (Windows, macOS) 点検ポップアップに点検の詳細ページを表示する「詳細を表示」ボタンを追加しました。
+* GamebaseResponse.Purchase.PurchasableReceiptにextrasフィールドを追加しました。
+
+<a id="830-2026-10-13-feature-updates"></a>
+#### 機能改善/変更
+* Unityエディターの高速Play Mode進入(Fast Enter Play Mode)環境をサポートしています。
+* GamebaseResponse.Event.PurchasableReceiptを非推奨化しました。GamebaseResponse.Purchase.PurchasableReceiptを使用してください。
+
+<a id="830-2026-10-13-bug-fixes"></a>
+#### バグ修正
+* (Android, iOS) PURCHASE_UPDATEDイベントのレシート情報の一部が欠落する問題を修正しました。
+* (Windows, macOS, WebGL) 特定の状況でログインを再度試行できない問題を修正しました。
+* (WebGL) ChangeLoginでアカウント切り替え後にアプリを再起動すると、切り替え前のアカウントでログインされる問題を修正しました。
+* (macOS) Apple Silicon環境でWebビューが正常に表示されない問題を修正しました。
+* (Windows, macOS) Webビューを使用した後にアプリを終了するとクラッシュが発生する問題を修正しました。
+* (Windows, macOS) WebビューでGamebase://openbrowser、gamebase://dismissスキームが重複して処理される問題を修正しました。
+
+<a id="830-2026-10-13-platform-specific-changes"></a>
+#### プラットフォーム別の変更事項
+* [Gamebase Android SDK 2.83.0](./release-notes-android/#2-83-0-2026-09-17)
+* [Gamebase iOS SDK 2.82.1](./release-notes-ios/#2-82-1-2026-08-25)
 
 <a id="2-82-0-2026-08-11"></a>
 ### 2.82.0 (2026. 08. 11.) { #2-82-0-2026-08-11 }
@@ -13,7 +44,7 @@
 
 <a id="820-2026-08-11-bug-fixes"></a>
 #### 不具合の修正
-* (Windows、macOS) Webビューでgamebase://openbrowserスキームが処理されない不具合を修正しました。
+* (Windows、macOS) Webビューでgamebase://openbrowserスキームが正常に処理されない問題を修正しました。
 
 <a id="820-2026-08-11-platform-specific-changes"></a>
 #### プラットフォーム別の変更事項
