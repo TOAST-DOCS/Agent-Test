@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=7d092c19ae89 -->
+<!-- pre-align:aligned sig=c0ec0fad460c -->
 
 <a id="cloudtrail-release-notes"></a>
 ## CloudTrail > リリースノート { #cloudtrail-release-notes }
