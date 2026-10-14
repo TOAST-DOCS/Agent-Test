@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=adfb86a099e7 -->
+
 # List-item splice fixture — untouched sibling bullets
 
 A Markdown list has no blank line between its items, so it is captured as a **single block**.
@@ -19,7 +21,7 @@ difference. Delete it and the feature comes back immediately — that is this fi
 arm.
 
 <a id="pinned-siblings"></a>
-## Pinned sibling bullets
+## Pinned sibling bullets { #pinned-siblings }
 
 **Only the last item** in the list below is edited. The rest are left alone, and their en/ja
 translations are **deliberately pinned to wording a fresh translation would plausibly change**.
@@ -45,7 +47,7 @@ arrives at. The new wording is not wrong as language, but it no longer matches t
 points to, so the reader sees one thing under two names.
 
 <a id="indent-donor"></a>
-## Indentation donor
+## Indentation donor { #indent-donor }
 
 The nested bullet in the list above exists for `_reuse_unchanged_list_marker`. Handed an
 indented bullet on its own, the model has no surrounding list to copy the depth from and may
@@ -53,13 +55,13 @@ strip the indentation or change the marker, which silently moves the item under 
 parent. The marker and the indentation are owned by ko.
 
 <a id="edit-target"></a>
-## Edit target
+## Edit target { #edit-target }
 
 The e2e changes only the **last item** of the "Pinned sibling bullets" list. Whether that single
 item's change drags the whole list into the model is all this fixture asks.
 
 <a id="nested-admonition"></a>
-## Admonition inside a list
+## Admonition inside a list { #nested-admonition }
 
 The `!!! danger` box below sits under a nested bullet with a 12-space indent, and its body is indented 16 spaces. The e2e edits only two sibling bullets of the same list (**Other SANs** and **Extended key usage OIDs**) and leaves the box alone. The indentation of the box lines is owned by ko.
 
@@ -84,7 +86,7 @@ The `!!! danger` box below sits under a nested bullet with a 12-space indent, an
 2. Click **Add** to add a certificate template.
 
 <a id="nested-admonition-body"></a>
-## Editing the body of an admonition inside a list
+## Editing the body of an admonition inside a list { #nested-admonition-body }
 
 The e2e edits only **one sentence in the body** of the box below. The box is re-translated, but the indentation of the box line (8 spaces) and of its body (12 spaces) must match ko.
 
