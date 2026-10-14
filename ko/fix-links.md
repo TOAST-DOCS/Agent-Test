@@ -3,7 +3,7 @@
 <a id="fix-links-overview"></a>
 ## 링크 정정 테스트 { #fix-links-overview }
 
-이 문서는 **링크 정정**(`dashboard/links/fix.py`, Jenkins `fix-links`) e2e 픽스처입니다.
+이 문서는 **링크 정정**(`dashboard/links/fix.py`, Jenkins `fix-links`) e2e 픽스처입니다. (순서 테스트 A: 이 문장은 lag-order-a-edit 검증용입니다.)
 아래 섹션들은 결정적 규칙 하나씩을 겨냥해 **일부러 잘못 쓴 링크**를 담고 있고,
 `scripts/e2e-fix-links.sh` 가 정정 결과를 규칙별로 판정합니다.
 
