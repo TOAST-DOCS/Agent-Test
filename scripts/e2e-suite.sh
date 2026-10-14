@@ -401,6 +401,13 @@
 #                 이미지 · 번역본 전용 이미지 · 대조군(ko 에만 있는 이미지 → ko 값).
 #                 cloud-translate#1281 이전 코드는 FAIL (8). 기대: exit 0 /
 #                 IMAGE_LOCALE: OK. 로컬 translate_file.py 전용 (~3분).
+#   date-headings — 릴리스 노트 날짜 헤딩 · `버전 (날짜)` 헤딩 (e2e-date-headings.sh).
+#                 세션 브랜치에 픽스처 `archive/date-headings/` (Gamebase#433 입력 ·
+#                 CloudTrail 날짜만 · NHNCloud-SDK 괄호 붙여 씀) 를 심고 새 릴리스 절을
+#                 번역해 en `Month D, YYYY` (버전은 그대로, 괄호 앞 공백 하나) · ja ko 그대로 ·
+#                 ko 가 안 바꾼 헤딩 바이트 동일을 판정 (모델 없음,
+#                 scripts/check_date_headings.py). cloud-translate#1301 이전 코드는
+#                 REPRO (2). 기대: exit 0 / DATE_HEADINGS: OK. 로컬 translate_pr.py (~10분).
 # 별칭:
 #   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
 #                 / anchor-audit 를 제외한 plan 전체
@@ -409,7 +416,7 @@
 #                   round1 table-suite row-drop-repro llm-patch
 #                   markup-churn retranslate concurrent lag-order fill-stubs
 #                   split-docs fix-links fix-tables jinja-mask notation
-#                   full-retranslate-images
+#                   full-retranslate-images date-headings
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #                 preserve 는 전제(CLI 섹션 슬라이스)가 폐기되어 제외 — 위 plan 설명 참고.
@@ -512,7 +519,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-cell-mirror|table-tag-trail|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images)
+    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-cell-mirror|table-tag-trail|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -534,7 +541,7 @@ while [[ $# -gt 0 ]]; do
               llm-patch markup-churn retranslate concurrent lag-order fill-stubs
               split-docs fix-links fix-tables jinja-mask
               notation list-items table-cell-mirror table-tag-trail file-by-file
-              full-retranslate-images); shift ;;
+              full-retranslate-images date-headings); shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -685,6 +692,14 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^FILL_STUBS: (OK|HELD|FAIL)' "$log" | tail -n1 || true)"
     fill_pr="$(grep -oE 'Fill PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fill_pr:-<no-pr>}")
+  elif [[ "$plan" == "date-headings" ]]; then
+    # 날짜·버전 헤딩 — 자체 스크립트. 픽스처를 세션 브랜치에 직접 심는다.
+    # suite 에서는 번역 PR 을 닫는다 (BEFORE/AFTER 증거가 필요하면 직접 실행).
+    bash "$REPO_ROOT/scripts/e2e-date-headings.sh" --cleanup > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^DATE_HEADINGS: (OK|REPRO.*)' "$log" | tail -n1 || true)"
+    dh_pr="$(grep -oE 'TX_PR=https://[^ ]+' "$log" | tail -n1 | cut -d= -f2 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${dh_pr:-<no-pr>}")
   elif [[ "$plan" == "full-retranslate-images" ]]; then
     # 전체 재번역 이미지 링크 유지 — 자체 스크립트. 픽스처를 세션 브랜치에
     # 직접 심으므로 align 프롤로그가 필요 없다. 엔진은 스크립트가 CLI 로 고정.
