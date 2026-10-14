@@ -753,7 +753,10 @@ for plan in "${PLANS[@]}"; do
     #       프리셋을 서버에서 적용하지 않아 스크립트 본문이 운영 recommended 를 옮긴다.
     # [A] 가 실패하면 [B] 는 돌리지 않는다 — 전송 자체가 틀린 상태에서 산출물을
     # 재면 모델 편차와 구분되지 않는다.
-    bash "$REPO_ROOT/scripts/e2e-list-items.sh" > "$log" 2>&1
+    # 픽스처는 alpha 에서 읽는다 — 공유 체크아웃은 직전 plan 의 세션 브랜치 위라
+    # 픽스처가 그 세션의 것이다 (e2e-list-items.sh 의 --ref 주석 참고).
+    git -C "$REPO_ROOT" fetch -q origin +refs/heads/alpha:refs/remotes/origin/alpha >/dev/null 2>&1 || true
+    bash "$REPO_ROOT/scripts/e2e-list-items.sh" --ref origin/alpha > "$log" 2>&1
     ec=$?
     det="$(grep -oE '^RESULT: (OK|REPRO|BROKEN)' "$log" | tail -n1 || true)"
     if [[ $ec -eq 0 ]]; then
