@@ -13,11 +13,11 @@
 
 <a id="post-maint-links-ios"></a>
 #### iOS { #post-maint-links-ios }
-* [NHN Cloud Log & Crash Search iOSガイド](https://docs.nhncloud.com/ja/nhncloud-sdk/ja/log-collector-ios/)を参照してください。
+* [NHN Cloud Log & Crash Search iOSガイド](/nhncloud-sdk/ja/log-collector-ios/)を参照してください。
 
 <a id="post-maint-links-android"></a>
 #### Android { #post-maint-links-android }
-* [NHN Cloud Log & Crash Search Androidガイド](https://docs.nhncloud.com/ja/nhncloud-sdk/ja/log-collector-android/)を参照してください。
+* [NHN Cloud Log & Crash Search Androidガイド](/nhncloud-sdk/ja/log-collector-android/)を参照してください。
 
 <a id="post-maint-links-control"></a>
 ### その他 { #post-maint-links-control }
