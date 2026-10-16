@@ -180,7 +180,13 @@ git clone --quiet "$REPO_URL" "$WORK/repo"
 cd "$WORK/repo"
 [[ -f "ko/$DOC" ]] || { echo "error: ko/$DOC 없음" >&2; exit 2; }
 git checkout --quiet -b "$SESSION" "origin/${BASE_SOURCE}"
-bash scripts/restore-alpha-origin.sh >/dev/null
+# 복원은 restore-alpha-origin.sh 와 같은 복사지만 그 스크립트를 부르지 않는다 — 그쪽은 안에서
+# 바로 commit·push 하고 push 재시도가 없어, 케이스를 동시에 돌리면 GitHub 의 일시적 거부
+# (`remote rejected … (failed)`) 한 번에 케이스가 끝났다 (2026-10-16 section-move). 여기서는
+# 복사만 하고 아래 커밋 하나에 담아 push_retry 로 민다.
+for lang in ko en ja; do
+  [[ -d "archive/alpha-origin/$lang" ]] && cp -rf "archive/alpha-origin/$lang/." "$lang/"
+done
 sed -i -E 's/^(#{1,6})([^ #])/\1 \2/' ko/*.md en/*.md ja/*.md
 # machine_translated 헤더 선삽입 — 이유는 e2e-translation-lag-order.sh 의 같은 자리.
 for lang in en ja; do
