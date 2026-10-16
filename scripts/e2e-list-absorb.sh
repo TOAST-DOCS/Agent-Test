@@ -14,11 +14,14 @@
 # ── 무엇을 재나 (모델 호출 없음, 전부 결정적) ────────────────────────────
 #   [A] 픽스처 archive/list-absorb/<lang>/ 를 사이트 렌더러로 판정 → C1~C6 결함, K1~K3 정상
 #   [B] cloud-translate 의 마크업 정정(shared/markup_lint.scan_markup)을 픽스처에 돌린 출력을
-#       같은 판정에 넣는다 → 지금은 결함이 그대로다(도구가 이 모양을 모른다)
+#       같은 판정에 넣는다 → M15(#1310) 이후: 확실한 C1·C3·C5·C6 은 고쳐지고, C2·C4 는 소스
+#       그대로 남는다 (M15 이전 코드는 판정 0건 — exit 3)
 #   [C] 검토 중인 수리안 archive/list-absorb/proposed/<lang>/ → 결함 0 · 대조군 바이트 동일 ·
 #       보이는 글자 동일
-# 종료 코드: 0 = [B] 가 결함을 모두 없앰(룰이 들어온 뒤의 기대값) / 3 = [B] 에 결함이 남음(REPRO,
-# 지금의 기대값) / 1 = 픽스처·대조군·수리안 자체가 기대와 다름.
+# 종료 코드: 0 = [B] 가 확실한 절을 모두 고치고 불확실한 절은 건드리지 않음 (M15 이후의 기대값) /
+# 3 = 확실한 절에 결함이 남음 (REPRO — M15 이전 코드) / 1 = 불확실한 절·대조군·글자를 건드렸거나
+# 픽스처·수리안 자체가 기대와 다름.
+# 판정 렌더러는 CLOUD_TRANSLATE_DIR 의 docs viewer(`dashboard/viewer/mkdocs_md.convert`) — 배포와 같다.
 #
 # Usage:
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate scripts/e2e-list-absorb.sh [--label BEFORE|AFTER]
@@ -36,6 +39,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 CHECK="$REPO_ROOT/scripts/check_list_absorb.py"
+# 마크업 정정(M15, cloud-translate#1310)이 **고쳐야 하는** 절 — 결과가 GitHub 미리보기와 같은
+# 모양이 되는 두 편집(1~3칸 → 4칸 · 종류가 바뀌는 자리에 `<!-- -->`)으로 끝나는 모양.
+CERTAIN="c1,c3,c5,c6"
+# **손대지 말아야 하는** 절 — 0칸 코드 블록·이미지를 앞 단계 안으로 들여야 하는 모양은
+# 레이아웃 판단이라 도구의 몫이 아니다 (수리안 proposed/ 에만 있다).
+UNSURE="c2,c4"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 rc=0; tool_rc=0
 echo "[list-absorb] ${LABEL:+label=$LABEL }cloud-translate=$CT @ $(git -C "$CT" rev-parse --short HEAD 2>/dev/null)"
@@ -55,12 +64,12 @@ open(sys.argv[2], "w", encoding="utf-8").write(out)
 rules = sorted({r for f in findings for r in f.rules})
 print(f"findings={len(findings)} rules={rules} changed={out != text}")
 PY
-  "$PY" "$CHECK" --before "$src" "$TMP/$lang.md" | sed 's/^/   /'; b=${PIPESTATUS[0]}
-  case $b in 0) ;; 3) tool_rc=3 ;; *) echo "   ✗ 마크업 정정이 대조군·글자를 바꿨다"; rc=1 ;; esac
+  "$PY" "$CHECK" --before "$src" --expect-fixed "$CERTAIN" --expect-untouched "$UNSURE" "$TMP/$lang.md" | sed 's/^/   /'; b=${PIPESTATUS[0]}
+  case $b in 0) ;; 3) tool_rc=3 ;; *) echo "   ✗ 마크업 정정이 대조군·글자·불확실한 절을 바꿨다"; rc=1 ;; esac
   echo "== [$lang][C] 수리안"
   "$PY" "$CHECK" --before "$src" "$prop" | sed 's/^/   /'; c=${PIPESTATUS[0]}
   [[ $c -eq 0 ]] || { echo "   ✗ 수리안은 OK(0) 여야 한다 (got $c)"; rc=1; }
 done
 if [[ $rc -ne 0 ]]; then echo "LIST_ABSORB_E2E: FAIL"; exit 1; fi
-if [[ $tool_rc -eq 3 ]]; then echo "LIST_ABSORB_E2E: REPRO (마크업 정정이 이 모양을 고치지 않는다)"; exit 3; fi
+if [[ $tool_rc -eq 3 ]]; then echo "LIST_ABSORB_E2E: REPRO (마크업 정정이 확실한 모양을 고치지 않는다)"; exit 3; fi
 echo "LIST_ABSORB_E2E: OK"; exit 0

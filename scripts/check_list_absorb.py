@@ -46,7 +46,31 @@ FENCE = re.compile(r"^\s*(```|~~~)")
 SEC = re.compile(r"^## .*\{ #(?P<id>[^ }]+) \}\s*$")
 
 
+def _viewer_convert():
+    """docs viewer 의 배포 렌더러(`dashboard/viewer/mkdocs_md.convert`)를 쓴다 — mkdocs 빌트인
+    (toc·tables·fenced_code) + 사이트 확장 + 빌드 훅(fence_table_gap · dedup_anchor) 까지 배포와 같다.
+    CLOUD_TRANSLATE_DIR 이 없으면 아래 근사(빌트인·훅 없음)로 떨어진다."""
+    import os
+    ct = os.environ.get("CLOUD_TRANSLATE_DIR")
+    if not ct:
+        return None
+    sys.path.insert(0, os.path.join(ct, "dashboard"))
+    try:
+        from viewer.mkdocs_md import convert
+        return convert
+    except Exception:
+        return None
+    finally:
+        sys.path.pop(0)
+
+
+_CONVERT = _viewer_convert()
+RENDERER = "viewer.mkdocs_md" if _CONVERT else "approx (no tables/hooks)"
+
+
 def render(text: str) -> str:
+    if _CONVERT:
+        return _CONVERT(text)
     return markdown.Markdown(extensions=EXT, extension_configs=CFG).convert(text)
 
 
@@ -128,6 +152,10 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("path")
     ap.add_argument("--before")
+    ap.add_argument("--expect-fixed", default="",
+                    help="쉼표로 구분한 절 id 접두(c1,c3…) — 이 절들만 결함 0 이어야 한다")
+    ap.add_argument("--expect-untouched", default="",
+                    help="쉼표로 구분한 절 id 접두 — --before 와 소스가 바이트 같아야 한다 (도구가 손대지 않을 모양)")
     a = ap.parse_args()
     lines = open(a.path, encoding="utf-8").read().split("\n")
     sec = section_of(lines)
@@ -160,6 +188,24 @@ def main() -> int:
             if bv.get(s) != nv.get(s):
                 print(f"[TEXT-CHANGED] #{s}: 보이는 글자가 바뀌었다")
                 rc = 1
+    if a.expect_fixed or a.expect_untouched:
+        # 도구 출력 판정 — '확실한 것만 고친다' 의 두 면. 고쳐야 할 절이 남으면 REPRO(3),
+        # 손대지 말아야 할 절을 건드렸으면 FAIL(1).
+        want_fixed = [x for x in a.expect_fixed.split(",") if x]
+        want_same = [x for x in a.expect_untouched.split(",") if x]
+        rc2 = 0 if rc != 1 else 1
+        for s_ in ids:
+            if any(s_.startswith(p) for p in want_fixed) and bad.get(s_):
+                print(f"[NOT-FIXED] #{s_}"); rc2 = max(rc2, 3) if rc2 != 1 else 1
+        if want_same:
+            if not a.before:
+                print("--expect-untouched 는 --before 가 필요하다"); return 1
+            bs, ns = sections(open(a.before, encoding="utf-8").read().split("\n")), sections(lines)
+            for s_ in ids:
+                if any(s_.startswith(p) for p in want_same) and bs.get(s_) != ns.get(s_):
+                    print(f"[TOUCHED] #{s_}: 확실하지 않은 모양을 고쳤다"); rc2 = 1
+        print("LIST_ABSORB_TOOL:", {0: "OK", 3: "REPRO", 1: "FAIL"}[rc2])
+        return rc2
     print("LIST_ABSORB:", {0: "OK", 3: "REPRO", 1: "FAIL"}[rc])
     return rc
 
