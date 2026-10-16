@@ -57,10 +57,10 @@ Set information for external log storage.
 
 3. **Verify ertificateRequest**
 
-```bash
-kubectl get certificaterequest -n default
-kubectl describe certificaterequest <request-name> -n default
-```
+    ```bash
+    kubectl get certificaterequest -n default
+    kubectl describe certificaterequest <request-name> -n default
+    ```
 
 4. **Check Challenge**
 

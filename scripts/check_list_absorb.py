@@ -13,7 +13,9 @@ pymdownx.superfences + mermaid · pymdownx.tabbed alternate_style), pymdown-exte
 판정(절 = `## … { #id }` 단위):
   * 글머리로 쓴 항목이 <ol> 안에 있다 → 결함 (번호로 보임)
   * 번호로 쓴 항목이 <ul> 안에 있다   → 결함 (글머리로 보임)
-  번호가 몇으로 보이는지는 세지 않는다 — `1.` 만 반복해 쓰는 관행이 있어 이 축의 판정이 아니다.
+  * 2 이상으로 쓴 번호가 다른 번호로 보인다 → 결함 (번호 다름). 목록이 중간에 끊겨
+    `4.` 가 새 목록의 `1.` 이 되는 모양이다. `1.` 로 쓴 항목은 보지 않는다 — `1.` 만 반복해
+    쓰는 관행(lazy numbering)이 있어 저자가 쓴 번호가 곧 의도가 아니다.
 
 종료 코드: 0 = C 절 결함 0 · K(대조군) 절 결함 0 / 3 = C 절에 결함이 남음(REPRO) / 1 = 대조군이 깨짐.
 --before PATH 를 주면 K 절의 소스가 PATH 와 바이트 같은지, 모든 절의 보이는 글자가 같은지도 본다
@@ -79,6 +81,21 @@ def shown(lines):
     return res
 
 
+def defect(line, v):
+    """저자가 쓴 표지·번호(``line``)와 보이는 것(``v``)이 다르면 그 종류, 같으면 None."""
+    if v is None:
+        return None
+    mk = LI.match(line).group("mk")
+    if not mk[0].isdigit():
+        return "번호로 보임" if v != "ul" else None
+    if v == "ul":
+        return "글머리로 보임"
+    n = int(mk[:-1])
+    if n > 1 and v != f"ol#{n}":
+        return "번호 다름"
+    return None
+
+
 def section_of(lines):
     cur, out = "_", []
     for ln in lines:
@@ -116,11 +133,8 @@ def main() -> int:
     sec = section_of(lines)
     bad: dict[str, list[str]] = {}
     for i, v in shown(lines).items():
-        k = "ol" if LI.match(lines[i]).group("mk")[0].isdigit() else "ul"
-        if v is None:
-            continue
-        if (k == "ul" and v != "ul") or (k == "ol" and v == "ul"):
-            what = "번호로 보임" if k == "ul" else "글머리로 보임"
+        what = defect(lines[i], v)
+        if what:
             bad.setdefault(sec[i], []).append(f"L{i + 1} {lines[i].strip()[:50]!r} → {v} ({what})")
     ids = [s for s in dict.fromkeys(sec) if s != "_"]
     rc = 0
