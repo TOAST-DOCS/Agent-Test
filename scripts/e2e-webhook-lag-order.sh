@@ -119,12 +119,26 @@ source "$SCRIPTS/e2e-webhook-filter.sh"   # extend_filters_for_branch, restore_f
 
 TS="$(date -u +%Y%m%d-%H%M%S)"
 SESSION="e2e-webhook-lag/${TS}-${CASE}"
-BR_A="translate-test-webhook-lag/${TS}-a"
-BR_B="translate-test-webhook-lag/${TS}-b"
+BR_A="translate-test-webhook-lag/${TS}-${CASE}-a"
+BR_B="translate-test-webhook-lag/${TS}-${CASE}-b"
 TOKEN_B_ANCHOR="lag-order-b-added"
 TOKEN_A_EDIT="lag-order-a-edit"
 
 WORK="$(mktemp -d /tmp/e2e-webhook-lag-XXXXXX)"
+
+# push 재시도 — suite 가 케이스 넷을 동시에 돌리면 몇 초 사이에 여러 clone 이 같은
+# 리포로 push 해, GitHub 가 ref 갱신 일부를 `! [remote rejected] … (failed)` 로
+# 거부한다 (2026-10-16 실측: 첫 동시 실행에서 넷 중 셋이 push 단계에서 멈췄다).
+# 일시적인 거부라 간격을 두고 다시 민다.
+push_retry() {  # git push 인자 그대로
+  local i
+  for i in 1 2 3 4 5; do
+    git push --quiet "$@" && return 0
+    echo "  (push 거부 — ${i}/5, $((i * 4))초 뒤 재시도)" >&2
+    sleep $((i * 4))
+  done
+  return 1
+}
 SESSION_PUSHED=0
 
 cleanup() {
@@ -192,7 +206,7 @@ for id in "${TOUCH[@]}"; do
   [[ "$CASE" == section-add || "$CASE" == b-closed ]] && continue
   grep -q "<a id=\"$id\">" "ko/$DOC" || { echo "error: ko/$DOC 에 #$id 가 없음" >&2; exit 2; }
 done
-git push --quiet origin "$SESSION"
+push_retry origin "$SESSION"
 SESSION_PUSHED=1
 extend_filters_for_branch "$SESSION"
 
@@ -255,7 +269,7 @@ make_pr() {  # $1: branch  $2: a|b  $3: title  → PR URL
   mutate "$2"
   git add "ko/$DOC"
   git commit --quiet -m "$3"
-  git push --quiet origin "$1"
+  push_retry origin "$1"
   gh pr create --repo "$REPO" --base "$SESSION" --head "$1" \
     --label "content-agent" --label "한글 검수" --label "$E2E_LABEL" \
     --title "$3" --body "webhook lag-order e2e ($2) — scripts/e2e-webhook-lag-order.sh" 2>/dev/null | tail -1
