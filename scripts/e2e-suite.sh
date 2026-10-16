@@ -3,7 +3,7 @@
 # e2e 전체 suite 러너 — 여러 plan 을 순차 실행하고 결과를 요약한다.
 #
 #   scripts/e2e-suite.sh [--translate api|local] [--engine api|cli] [--model haiku|sonnet|opus] \
-#                        [--verify py|fable] [--no-reuse-align] \
+#                        [--verify py|fable] [--no-reuse-align] [--all-haiku] \
 #                        [--translate-pipeline-branch <jenkins-child>] \
 #                        [--sleep-between <sec>] [plan ...]
 #
@@ -11,6 +11,18 @@
 #       에서 돌려 plan 로그에 translator 줄이 없다. 이 토큰이 있으면 러너가 번역
 #       PR 본문의 build 콘솔을 받아 llm-patch·markup-churn 카운터를 실측하고,
 #       없으면 '?' 로 남기고 suite 를 실패시키지 않는다. 획득 방법은 CLAUDE.md.
+#
+#   --all-haiku — 번역뿐 아니라 **모든 모델 호출**을 haiku 로 (scripts/all-haiku.env.sh 를
+#       source). 한글 검수·깨진 표 정비·전체 재번역·align heading 번역(기본 .env 의 sonnet),
+#       align-v2 outline 분류(opus), 하네스 판정(fable)이 대상이다 — 2026-10-14 실측으로
+#       그 넷이 비용의 62% 였다. 운영과 다른 조건이므로 요약 첫 줄에 남긴다. webhook 계열
+#       plan 과 --translate api 의 Jenkins 잡은 배포 파이프라인이라 닿지 않는다.
+#       --model 은 haiku 만 같이 줄 수 있다.
+#
+#   --lag-order-serial — webhook-lag-order 의 케이스 넷을 예전처럼 차례로 (기본은 동시).
+#
+#   --no-align-cache — align 프롤로그 스냅샷을 **실행 사이에** 재사용하지 않는다 (아래
+#       "실행 시간" 참고). 한 실행 안의 재사용은 --no-reuse-align 이 끈다.
 #
 #   --sleep-between <sec> — plan 과 plan 사이 대기 (기본 0). Jenkins agent 의
 #       claude CLI (OAuth) 가 연속 실행으로 usage limit 에 걸려 align/ko-review
@@ -33,6 +45,30 @@
 #                 ~1분. base=alpha 를 직접 쓰므로 매 실행마다 alpha 에 마커
 #                 커밋 1개가 추가되지만 restore-alpha-origin 이 다음 e2e 에서
 #                 정리한다.
+#   webhook-concurrent — concurrent 시나리오(같은 ko 파일을 만지는 PR 두 개)를
+#                 **webhook 경로로**. 두 PR 을 연달아 열어 ko-review 두 잡을
+#                 확인하고, B 머지 → webhook translate → B 번역 PR 머지 → A
+#                 머지 → webhook translate 뒤 A 번역 PR 의 en/ja 가 B 콘텐츠를
+#                 보존하는지 본다. 로컬 코드가 아니라 배포본(webhook pod +
+#                 Jenkins translate 잡)을 검증한다. e2e-webhook-concurrent.sh 를
+#                 실행. 기대: exit 0.
+#   webhook-lag-order — lag-order 시나리오(앞선 번역 PR 이 미머지인 창에서 다른
+#                 ko PR 머지)를 **webhook 경로로**. B 번역 PR 을 열어 둔 채 A 를
+#                 머지하고, A 번역 PR 이 B 섹션을 넣지 않는지 · 두 번역 PR 머지
+#                 뒤 en/ja 에 B 섹션이 정확히 1번인지 본다. 순차 큐가 켜져 있으면
+#                 A 대기 → B 번역 머지 → A 차례로 돌고 요약에 queue=on 이 남는다.
+#                 e2e-webhook-lag-order.sh 를 --case 네 개로 **동시에** 실행한다
+#                 (section-add · anchor-rename · section-move · b-closed, 케이스마다
+#                 결과 한 줄 · 로그 `webhook-lag-order-<case>.log`). 기대: 넷 다
+#                 exit 0. 뒤 셋은 순차 큐(#1048)가 꺼져 있으면 실패하는 모양이라
+#                 (2026-10-01 큐 이전 실측: rename·move 충돌, b-closed 영구 미번역)
+#                 큐가 이 리포에서 꺼지면 이 plan 이 빨개진다 — 그게 신호다.
+#                 차례로 돌리면 ~30분(케이스당 ko-review 2 + translate 2 빌드, 7~8분)이고,
+#                 동시에 돌리면 Jenkins translate 잡(동시 빌드 1)에 번역 빌드 8개가 줄을
+#                 서는 만큼만 걸린다. 케이스마다 세션 base·clone·PR 브랜치가 따로라 서로
+#                 겹치는 것은 두 공유 자원뿐이다: webhook 필터(헬퍼가 잠금 안에서 자기
+#                 브랜치만 더하고 뺀다)와 webhook 활성 토글(suite 가 앞뒤로 한 번만 —
+#                 E2E_WEBHOOK_SUITE_MANAGED). --lag-order-serial 로 예전 방식.
 #   korean-review-no-targets — 삭제만 있는 ko PR (검수 대상 0건). 리뷰가 게시되지
 #                 않는 것이 정상이고, 그래도 '검수 대상 없음' 코멘트와
 #                 `한글 검수`·`content-agent` 라벨이 남는지 검증(라벨이 없으면
@@ -70,9 +106,9 @@
 #                 · 추가된 `++` · 개행 없는 마지막 줄 교체)을 담고, 각 모양 뒤의 `예)`
 #                 줄 4곳에 규칙 레이어의 확정 suggestion 이 **그 줄 자체의 교정본으로**
 #                 달리는지 본다 (한 줄 아래 앵커 = Apply 가 다른 줄을 덮어쓴다). 결정적.
-#                 e2e-korean-review-line-anchors.sh 를 실행. 기대: exit 0. ~2분.
-#                 **all 에는 아직 없다** — cloud-translate#1049 가 머지되기 전 main 은
-#                 이 plan 에서 늘 실패한다(0/4 게시, 422). 머지·배포 후 all 에 넣는다.
+#                 e2e-korean-review-line-anchors.sh 를 실행 — 언제나 대시보드
+#                 /api/ko-review(배포된 Jenkins ko-review 잡)라 --translate 를 받지 않는다.
+#                 기대: exit 0 (cloud-translate#1049 이전 코드는 0/4 게시, 422). ~2분.
 #   korean-review — dashboard /api/ko-review 잡의 산출물(요약 리뷰 본문 규격,
 #                 인라인 코멘트, ```suggestion``` 블록) 을 검증. e2e-align-and-
 #                 translate.sh 가 아니라 e2e-korean-review.sh 를 실행.
@@ -215,7 +251,12 @@
 #                 가도록 두 가지로 변형한다 (블록 안 본문 수정 / 문단을 새 태그로
 #                 감쌈). markup-churn 은 M4 미러가 churn 을 흡수해 태그 유닛이
 #                 모델에 가지 않으므로 이 경로를 못 본다 (2026-09-07 실측).
-#                 판정: tag-mismatch=0 unprotected-fallback=0.
+#                 판정: scripts/check_jinja_mask.py — (a) tag-mismatch=0
+#                 (b) unprotected-fallback=0 (c) 마스크가 전체 번역(macro-shapes)·
+#                 증분(jinja-guide) 두 경로에서 실제로 걸렸다 (debug 로그, local 은
+#                 TRANSLATE_LOG_LEVEL=debug 로 돌려 필수) (d) 번역 PR 의 en/ja 가
+#                 check_template_tags.py 통과 (태그 순서 · 사이트 Jinja 렌더).
+#                 하나라도 어긋나면 suite 실패 (cloud-translate#1297 이후 기대값).
 #   markup-churn— 코스메틱 마크업 churn(펜스 info string, <br/>, 헤딩 뒤 빈 줄,
 #                 Jinja 태그 whitespace 제어) + 소수 내용 변경. load guard 가
 #                 정상 리뷰 PR 을 runaway 로 오판해 파일을 제외하던 것을 재현
@@ -301,6 +342,28 @@
 #                 **두 plan 모두 all 에서 제외** — 검증 대상 수정이 머지되기 전에는
 #                 main 에 대해 항상 REPRO 다 (table-malformed 와 같은 이유). 머지되면
 #                 all 에 넣는다.
+#   table-cell-mirror — 언어 중립 셀 미러 M7 (e2e-table-cell-mirror.sh, cloud-translate
+#                 #1261 · TOAST-Cloud#416 모양). ko 가 필드 표 `필수` 열만 Yes/No → Y/N
+#                 으로 바꾸면 그 행은 모델로 가지 않고 en/ja 의 그 셀만 바뀌는가. [A]
+#                 모델 payload 를 기록해 중립 행 11개가 빠지는지, [B] 로그 수치 = [A] ·
+#                 표 밖 바이트 보존 · 부분 행/한국어 열 대조군은 재번역. 기대: exit 0 /
+#                 TABLE_CELL_MIRROR: OK (`--no-mirror` 로 돌리면 exit 3 이 기대값).
+#   table-tag-gaps — 표 **행 사이** 템플릿 태그만 `{%` → `{%-` 로 고친 ko 에 en/ja 가 따라오는가
+#                 (e2e-table-tag-gaps.sh, cloud-translate#1264 · Compute-Instance#338 재현).
+#                 en/ja 의 태그 옆 빈 줄이 걷혀 표가 되살아나는지, 순번 짝짓기 todo 백스톱이
+#                 ko 가 안 건드린 응답 표를 지우지 않는지. [A] 이상적 모델 + [B] 로컬
+#                 translate_pr.py, 판정 전부 결정적. 기대: exit 0 / TABLE_TAG_GAPS: OK
+#                 (#1264 이전 코드는 REPRO). ~1~2분.
+#   table-tag-trail — 표 마지막 행 바로 아래 템플릿 태그 (e2e-table-tag-trail.sh,
+#                 cloud-translate #1258 · Compute-Image#114). 재사용·재번역·행 덧붙임
+#                 세 경로에서 en/ja 의 태그 줄 앞뒤 빈 줄이 ko 와 같은가 + 대조군 둘
+#                 (ko 가 빈 줄을 둔 태그 · 태그 없는 표). 기대: exit 0 / TABLE_TAG_TRAIL: OK
+#                 (#1258 이전 코드의 [A] 는 6곳 REPRO).
+#   file-by-file — 큰 ko 변경 (e2e-file-by-file.sh, cloud-translate #1261 · #1263 ·
+#                 TOAST-Cloud#416 모양). (a) 파일별 번역: 시간이 넘친 파일만 '번역 실패로
+#                 제외된 파일' 로 빠지고 나머지는 한 PR 에 커밋 (b) 폴링 타임아웃: ko PR 에
+#                 실패 코멘트 + warning 라벨. 시간 초과는 모델 호출 0 인 파일(M7)과 문단
+#                 40개 파일의 비대칭으로 결정적으로 만든다. 기대: exit 0 / FILE_BY_FILE: OK.
 #   term-pin            — 미등록 용어 고정 A/B (e2e-term-pin.sh). 같은 픽스처를
 #                 OFF/ON 두 팔로 N판 돌려 (가) 문서 안 갈림과 (나) 판 사이 흔들림을
 #                 **분포**로 판정한다. 기대: exit 0 / TERM_PIN: OK.
@@ -360,7 +423,35 @@
 #   round2      — 전제 조건(직전 round1 의 ko/번역 PR 이 base 에 머지되어 있음)이
 #                 필요해 suite 기본/all 에서 제외. 명시 지정 시에만 실행.
 #
+#   full-retranslate-images — 전체 재번역(translate_file.py)의 이미지 링크 유지
+#                 (e2e-full-retranslate-images.sh). 세션 브랜치에 픽스처
+#                 `archive/image-locale/` 를 심고 대시보드 '전체 재번역' 과 같은
+#                 진입점·기본값으로 돌린 뒤, en/ja 의 절별 이미지 대상이 기존
+#                 번역본 그대로인지 판정 (모델 없음, scripts/check_image_locale.py).
+#                 국가 코드 대문자(+끼어든 _KR 줄) · 디렉터리+파일명 로케일 · 목록 안
+#                 이미지 · 번역본 전용 이미지 · 대조군(ko 에만 있는 이미지 → ko 값).
+#                 cloud-translate#1281 이전 코드는 FAIL (8). 기대: exit 0 /
+#                 IMAGE_LOCALE: OK. 로컬 translate_file.py 전용 (~3분).
+#   date-headings — 릴리스 노트 날짜 헤딩 · `버전 (날짜)` 헤딩 (e2e-date-headings.sh).
+#                 세션 브랜치에 픽스처 `archive/date-headings/` (Gamebase#433 입력 ·
+#                 CloudTrail 날짜만 · NHNCloud-SDK 괄호 붙여 씀) 를 심고 새 릴리스 절을
+#                 번역해 en `Month D, YYYY` (버전은 그대로, 괄호 앞 공백 하나) · ja ko 그대로 ·
+#                 ko 가 안 바꾼 헤딩 바이트 동일을 판정 (모델 없음,
+#                 scripts/check_date_headings.py). cloud-translate#1301 이전 코드는
+#                 REPRO (2). 기대: exit 0 / DATE_HEADINGS: OK. 로컬 translate_pr.py (~10분).
 # 별칭:
+#   high · medium · low — 중요도 묶음. 시간이 없을 때는 `high` 만 돌린다 (정의와 기준은
+#                 스크립트 본문 TIER_* 옆 주석). `high medium` 처럼 이어 붙일 수 있고,
+#                 셋을 합치면 all 과 같다. 돌기 전에 목록만 보려면 `--list`.
+#                 high   = webhook korean-review korean-review-no-targets round1
+#                          table-suite concurrent jinja-mask
+#                 medium = webhook-concurrent webhook-lag-order workflow-ignore
+#                          korean-review-mkdocs korean-review-markup korean-review-links
+#                          korean-review-line-anchors
+#                          row-drop-repro markup-churn retranslate lag-order notation
+#                          list-items table-tag-trail table-tag-gaps date-headings
+#                 low    = llm-patch fill-stubs split-docs fix-links fix-tables
+#                          table-cell-mirror file-by-file full-retranslate-images
 #   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
 #                 / anchor-audit 를 제외한 plan 전체
 #                 = webhook workflow-ignore korean-review korean-review-no-targets
@@ -368,6 +459,7 @@
 #                   round1 table-suite row-drop-repro llm-patch
 #                   markup-churn retranslate concurrent lag-order fill-stubs
 #                   split-docs fix-links fix-tables jinja-mask notation
+#                   full-retranslate-images date-headings
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #                 preserve 는 전제(CLI 섹션 슬라이스)가 폐기되어 제외 — 위 plan 설명 참고.
@@ -386,7 +478,7 @@
 #   ko-review          → korean-review/review_pr.py
 #   translate          → translate/translate_pr.py
 #   translate/file     → translate/translate_file.py (retranslate plan)
-# **webhook plan 만 예외** — GitHub webhook → 배포된 webhook pod → Jenkins 라는
+# **webhook · webhook-concurrent · webhook-lag-order plan 만 예외** — GitHub webhook → 배포된 webhook pod → Jenkins 라는
 # 배포 경로 자체가 검증 대상이라 로컬 대응물이 없다. concurrent plan 은 원래부터
 # 항상 로컬 translate_pr.py 다.
 # 그리고 local 모드도 dashboard 를 **한 곳** 쓴다 — 각 plan 0단계의 webhook 킬
@@ -410,6 +502,16 @@
 # 넘겨 6~8분/plan 을 줄인다. plan 별 세션 브랜치는 여전히 따로 생성되므로
 # 서로 간섭하지 않는다. --no-reuse-align 이면 plan 마다 프롤로그를 다시 돈다
 # (align/fix-heading-syntax 잡 자체를 여러 번 태우고 싶을 때).
+#
+# **실행 사이에도** 재사용한다 (local 모드만, --no-align-cache 로 끈다). 프롤로그의
+# 입력은 셋 — alpha 의 픽스처(archive/ · ko/en/ja), 그것을 돌리는 하네스 스크립트,
+# 로컬 cloud-translate 의 pre-align/translate 코드 — 과 모델 설정이다. 그 전부의
+# 해시를 키로 스냅샷 브랜치를 ~/.cache/agent-test-e2e/aligned/<key> 에 적어 두고,
+# 키가 같고 브랜치가 원격에 아직 있으면 첫 plan 부터 --from-aligned 로 시작한다.
+# 하나라도 바뀌면(또는 cloud-translate 의 그 경로에 커밋 안 된 수정이 있으면) 키가
+# 달라져 다시 만든다. api 모드는 프롤로그가 배포된 Jenkins 잡에서 돌아 코드 버전을
+# 알 수 없으므로 대상이 아니다. 2026-10-14 실측으로 프롤로그는 opus 7.3분 · all-haiku
+# 4.5분이고, suite 를 나눠 재실행할 때마다 그만큼 다시 들었다.
 #
 # --translate-pipeline-branch <name> 이면 translate 잡을 cloud-translate 의
 # Jenkins multibranch child <name> (예: PR-532) 에서 돌린다 — 미머지 PR 의 번역
@@ -437,7 +539,44 @@ LI_ARGS=()   # list-items 로 넘길 인자 (--translate/--pipeline-branch; 옵�
 UP_ARGS=()   # unit-preserve 로 넘길 인자 (--translate/--pipeline-branch)
 PLANS=()
 SLEEP_BETWEEN=0
+LIST_ONLY=0       # --list — 돌 plan 목록만 출력하고 끝낸다
+
+# `all` 의 plan 과 그 순서. 순서가 의미를 가진다 — 첫 align 기반 plan(round1)이
+# 만든 스냅샷을 뒤 plan 이 재사용한다.
+ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-review
+           korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links
+           korean-review-line-anchors
+           round1 table-suite row-drop-repro llm-patch markup-churn retranslate concurrent
+           lag-order fill-stubs split-docs fix-links fix-tables jinja-mask notation list-items
+           table-cell-mirror table-tag-trail table-tag-gaps file-by-file full-retranslate-images
+           date-headings)
+# 중요도 묶음 (2026-10-16 확정). 시간이 없을 때는 `high` 만 돌린다 — 10-14·16 실측으로
+# high 약 51분(align 캐시 적중 시 약 44분) · medium 약 70분 · low 약 20분.
+#   high   — 머지된 ko PR 이 운영에서 매번 지나는 경로(webhook → 한글 검수 → 번역), 또는
+#            깨지면 조용히 큰 피해가 나는 것(빌드 실패 · 내용 유실 · 번역이 안 돎).
+#   medium — 운영 경로지만 빈도가 낮거나, 실패가 리뷰 코멘트·PR 에서 드러나는 것.
+#   low    — 사람이 PR 을 검토하는 정비 도구, 운영에서 도달하지 않는 경로(llm-patch:
+#            운영 preset 이 skip-full-table 을 끈다), 단위 테스트가 덮는 좁은 기능.
+# 세 묶음의 합은 ALL_PLANS 와 정확히 같아야 한다 — 시작할 때 검사한다 (새 plan 을 all 에만
+# 넣고 묶음에 빠뜨리면 실패한다).
+TIER_HIGH=(webhook korean-review korean-review-no-targets round1 table-suite concurrent jinja-mask)
+TIER_MEDIUM=(webhook-concurrent webhook-lag-order workflow-ignore korean-review-mkdocs
+             korean-review-markup korean-review-links korean-review-line-anchors row-drop-repro markup-churn retranslate
+             lag-order notation list-items table-tag-trail table-tag-gaps date-headings)
+TIER_LOW=(llm-patch fill-stubs split-docs fix-links fix-tables table-cell-mirror file-by-file
+          full-retranslate-images)
+_tier_check="$(comm -3 <(printf '%s\n' "${ALL_PLANS[@]}" | sort) \
+  <(printf '%s\n' "${TIER_HIGH[@]}" "${TIER_MEDIUM[@]}" "${TIER_LOW[@]}" | sort))"
+if [[ -n "$_tier_check" ]] || (( ${#ALL_PLANS[@]} != ${#TIER_HIGH[@]} + ${#TIER_MEDIUM[@]} + ${#TIER_LOW[@]} )); then
+  echo "error: 중요도 묶음(TIER_*) 의 합이 all 과 다릅니다 — 묶음에 빠졌거나 두 번 든 plan:" >&2
+  echo "$_tier_check" | sed 's/^\s*/  /' >&2
+  exit 1
+fi
+ALL_HAIKU=0       # --all-haiku — 모든 모델 호출을 haiku 로 (scripts/all-haiku.env.sh)
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
+ALIGN_CACHE=1     # 그 스냅샷을 실행 사이에도 재사용 (local 모드만) — --no-align-cache
+ALIGN_CACHE_FILE=""
+LAG_PARALLEL=1    # webhook-lag-order 케이스 넷을 동시에 — --lag-order-serial
 ALIGNED_BRANCH="" # 그 스냅샷 브랜치 (첫 align 기반 plan 의 로그에서 파싱)
 TRANSLATE_MODE=local  # --translate 의 현재값. api 모드에서는 번역 로그가 Jenkins
                       # 쪽에만 있어 로컬 로그를 세는 카운터가 구조적으로 0 이 된다
@@ -455,6 +594,12 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --no-reuse-align)
       REUSE_ALIGN=0; shift ;;
+    --no-align-cache)
+      ALIGN_CACHE=0; shift ;;
+    --lag-order-serial)
+      LAG_PARALLEL=0; shift ;;
+    --all-haiku)
+      ALL_HAIKU=1; shift ;;
     --translate-pipeline-branch)
       # translate 잡만 특정 cloud-translate 브랜치에서 — align/retranslate 양쪽에 전달.
       # list-items·unit-preserve 의 전용 스크립트는 플래그 이름이 `--pipeline-branch`
@@ -470,7 +615,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|term-pin|term-pin-existing|term-pin-splice|term-pin-guards)
+    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-cell-mirror|table-tag-trail|table-tag-gaps|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -488,10 +633,12 @@ while [[ $# -gt 0 ]]; do
       # anchor-audit 도 같은 이유로 제외 (2026-09-21) — `anchor_audit.py` 가
       # 미머지 브랜치(#750)에만 있다. 이쪽은 검수 LLM 3패스를 태운 뒤 마커
       # 코멘트가 없어 규칙 (1) 에서 멈춘다. #750 이 머지되면 되돌린다.
-      PLANS+=(webhook workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links round1 table-suite row-drop-repro
-              llm-patch markup-churn retranslate concurrent lag-order fill-stubs
-              split-docs fix-links fix-tables jinja-mask
-              notation list-items); shift ;;
+      PLANS+=("${ALL_PLANS[@]}"); shift ;;
+    high|medium|low)
+      # 중요도 묶음 — 정의와 기준은 아래 ALL_PLANS 옆 TIER_* 주석. 순서는 all 과 같다.
+      _tier="TIER_${1^^}[@]"; PLANS+=("${!_tier}"); shift ;;
+    --list)
+      LIST_ONLY=1; shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -506,6 +653,19 @@ if (( ${#PLANS[@]} )); then
   PLANS=("${_dedup[@]}")
 fi
 (( ${#PLANS[@]} )) || PLANS=(webhook round1 table-suite markup-churn)
+if (( LIST_ONLY )); then printf '%s\n' "${PLANS[@]}"; exit 0; fi
+
+if (( ALL_HAIKU )); then
+  # --model 이 haiku 가 아니면 두 지정이 서로 어긋난다 — 어느 쪽을 뜻했는지 추측하지 않는다.
+  for ((i=0; i<${#PASS_ARGS[@]}; i++)); do
+    if [[ "${PASS_ARGS[$i]}" == "--model" && "${PASS_ARGS[$((i+1))]:-}" != "haiku" ]]; then
+      echo "error: --all-haiku 와 --model ${PASS_ARGS[$((i+1))]:-} 은 함께 쓸 수 없습니다" >&2; exit 1
+    fi
+  done
+  # shellcheck source=all-haiku.env.sh
+  source "$REPO_ROOT/scripts/all-haiku.env.sh"
+  echo "all-haiku: 모든 모델 호출을 $E2E_HAIKU_MODEL 로 (판정 claude -p 는 --model $E2E_JUDGE_MODEL)"
+fi
 
 ts="$(date +%Y%m%d-%H%M%S)"
 outdir="/tmp/e2e-suite-$ts"
@@ -551,6 +711,41 @@ jenkins_console() {
 declare -a RESULTS=()
 overall=0
 first_plan=1
+# ── align 스냅샷 캐시 (실행 사이 재사용) ────────────────────────────────
+align_cache_key() {
+  local ct="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}" paths=(pre-align shared translate/app translate/prompts translate/translate_pr.py)
+  git -C "$REPO_ROOT" fetch -q origin +refs/heads/alpha:refs/remotes/origin/alpha 2>/dev/null || return 1
+  # 커밋 안 된 수정은 해시에 안 잡히므로 캐시를 쓰지 않는다.
+  [[ -z "$(git -C "$ct" status --porcelain -- "${paths[@]}" 2>/dev/null)" ]] || return 1
+  {
+    echo "v1"
+    git -C "$REPO_ROOT" rev-parse origin/alpha:archive origin/alpha:ko origin/alpha:en origin/alpha:ja \
+      origin/alpha:scripts/e2e-align-and-translate.sh origin/alpha:scripts/restore-alpha-origin.sh \
+      origin/alpha:scripts/restore-aligned-public-api.sh || return 1
+    local p; for p in "${paths[@]}"; do git -C "$ct" rev-parse "HEAD:$p" || return 1; done
+    echo "${TRANSLATE_CLAUDE_CODE_MODEL:-}|${TRANSLATE_ANTHROPIC_MODEL:-}|${TRANSLATE_DEBUG_VERIFY_MODEL:-}"
+    echo "${PASS_ARGS[*]}"
+  } 2>/dev/null | sha256sum | cut -c1-16
+}
+if (( REUSE_ALIGN && ALIGN_CACHE )) && [[ "$TRANSLATE_MODE" == "local" ]]; then
+  if akey="$(align_cache_key)" && [[ -n "$akey" ]]; then
+    ALIGN_CACHE_FILE="$HOME/.cache/agent-test-e2e/aligned/$akey"
+    if [[ -s "$ALIGN_CACHE_FILE" ]]; then
+      cached="$(head -1 "$ALIGN_CACHE_FILE")"
+      if git -C "$REPO_ROOT" ls-remote --exit-code --heads origin "$cached" >/dev/null 2>&1; then
+        ALIGNED_BRANCH="$cached"
+        echo "align 캐시 적중 ($akey): $ALIGNED_BRANCH — 첫 plan 부터 프롤로그를 건너뛴다"
+      else
+        echo "align 캐시 ($akey): $cached 가 원격에 없어 다시 만든다"
+      fi
+    else
+      echo "align 캐시 ($akey): 없음 — 첫 align plan 이 만든 스냅샷을 기록한다"
+    fi
+  else
+    echo "align 캐시: 쓰지 않음 (cloud-translate 에 커밋 안 된 수정이 있거나 키를 계산하지 못함)"
+  fi
+fi
+
 for plan in "${PLANS[@]}"; do
   if (( first_plan )); then
     first_plan=0
@@ -585,6 +780,59 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '(opened → ko-review triggered.*|merged → translate triggered.*)$' "$log" | tr '\n' ';' | sed 's/;$//' || true)"
     trans_pr="$(grep -oE '^\s*PR\s+:\s+https://[^ ]+' "$log" | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "webhook-concurrent" ]]; then
+    # webhook plan 과 같은 이유로 PASS_ARGS 를 전달하지 않는다 — 엔진·옵션은
+    # webhook 이 보내는 recommended preset 이 정한다.
+    bash "$REPO_ROOT/scripts/e2e-webhook-concurrent.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE 'A 번역이 B 콘텐츠 보존\s+:.*$' "$log" | tail -n1 || true)"
+    trans_pr="$(grep -oE 'merged A → translate\s+:\s+PASS\s+https://[^ ]+' "$log" | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "webhook-lag-order" ]]; then
+    # 케이스 넷 — 기본은 동시에 (plan 설명 참고), --lag-order-serial 이면 차례로.
+    # plan 의 ec 는 케이스 순서상 처음 실패한 케이스의 exit (전부 통과면 0).
+    ec=0
+    LAG_CASES=(section-add anchor-rename section-move b-closed)
+    declare -A lag_ec=()
+    if (( LAG_PARALLEL )); then
+      ( REPO="TOAST-DOCS/Agent-Test"; source "$REPO_ROOT/scripts/e2e-webhook-toggle.sh"
+        set_webhook_repo_enabled true )
+      lag_pids=()
+      # 중단되면 자식에게 TERM — 자식 trap 이 필터·브랜치를 정리한다 — 그리고 webhook 을 끈다.
+      trap 'kill -TERM "${lag_pids[@]}" 2>/dev/null; wait; ( REPO="TOAST-DOCS/Agent-Test"; source "$REPO_ROOT/scripts/e2e-webhook-toggle.sh"; set_webhook_repo_enabled false ); exit 130' INT TERM
+      for lag_case in "${LAG_CASES[@]}"; do
+        clog="$outdir/$plan-$lag_case.log"
+        echo "    --case $lag_case → $clog (동시)"
+        E2E_WEBHOOK_SUITE_MANAGED=1 bash "$REPO_ROOT/scripts/e2e-webhook-lag-order.sh" \
+          --case "$lag_case" > "$clog" 2>&1 &
+        lag_pids+=($!)
+        sleep 15  # push 가 몰리지 않게 (GitHub 가 동시 ref 갱신 일부를 거부한다 — 케이스 쪽 push_retry 와 함께)
+      done
+      for i in "${!LAG_CASES[@]}"; do
+        wait "${lag_pids[$i]}"; lag_ec[${LAG_CASES[$i]}]=$?
+      done
+      trap - INT TERM
+      ( REPO="TOAST-DOCS/Agent-Test"; source "$REPO_ROOT/scripts/e2e-webhook-toggle.sh"
+        set_webhook_repo_enabled false )
+    else
+      for lag_case in "${LAG_CASES[@]}"; do
+        clog="$outdir/$plan-$lag_case.log"
+        echo "    --case $lag_case → $clog"
+        bash "$REPO_ROOT/scripts/e2e-webhook-lag-order.sh" --case "$lag_case" > "$clog" 2>&1
+        lag_ec[$lag_case]=$?
+      done
+    fi
+    for lag_case in "${LAG_CASES[@]}"; do
+      clog="$outdir/$plan-$lag_case.log"
+      cec=${lag_ec[$lag_case]}
+      (( ec == 0 && cec != 0 )) && ec=$cec
+      cverdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$clog" | tail -n1 || true)"
+      cqueue="$(grep -oE '^\s+queue\s+: .*' "$clog" | sed -E 's/^\s+queue\s+: //' | tail -n1 || true)"
+      ctrans="$(grep -oE 'merged A → translate\s+:\s+PASS\s+https://[^ ]+' "$clog" | awk '{print $NF}' || true)"
+      RESULTS+=("$plan:$lag_case|exit=$cec|${cverdict:-<no-verdict>} [queue ${cqueue:-?}]|${ctrans:-<no-pr>}")
+    done
+    cat "$outdir/$plan"-*.log > "$log" 2>/dev/null || true
+    verdict="cases: section-add anchor-rename section-move b-closed (exit=$ec)"
   elif [[ "$plan" == "workflow-ignore" ]]; then
     # `.docs-workflow` ignore × webhook 경로. webhook plan 과 같은 이유로
     # PASS_ARGS (translate/engine/model 계열) 를 전달하지 않는다 — 엔진은
@@ -617,6 +865,22 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^FILL_STUBS: (OK|HELD|FAIL)' "$log" | tail -n1 || true)"
     fill_pr="$(grep -oE 'Fill PR 생성 — https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fill_pr:-<no-pr>}")
+  elif [[ "$plan" == "date-headings" ]]; then
+    # 날짜·버전 헤딩 — 자체 스크립트. 픽스처를 세션 브랜치에 직접 심는다.
+    # suite 에서는 번역 PR 을 닫는다 (BEFORE/AFTER 증거가 필요하면 직접 실행).
+    bash "$REPO_ROOT/scripts/e2e-date-headings.sh" --cleanup > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^DATE_HEADINGS: (OK|REPRO.*)' "$log" | tail -n1 || true)"
+    dh_pr="$(grep -oE 'TX_PR=https://[^ ]+' "$log" | tail -n1 | cut -d= -f2 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${dh_pr:-<no-pr>}")
+  elif [[ "$plan" == "full-retranslate-images" ]]; then
+    # 전체 재번역 이미지 링크 유지 — 자체 스크립트. 픽스처를 세션 브랜치에
+    # 직접 심으므로 align 프롤로그가 필요 없다. 엔진은 스크립트가 CLI 로 고정.
+    bash "$REPO_ROOT/scripts/e2e-full-retranslate-images.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^IMAGE_LOCALE: (OK|FAIL.*)' "$log" | tail -n1 || true)"
+    fri_pr="$(grep -oE '^RESULT .* pr=https://[^ ]+' "$log" | tail -n1 | grep -oE 'pr=https://[^ ]+' | cut -d= -f2 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${fri_pr:-<no-pr>}")
   elif [[ "$plan" == "fix-tables" ]]; then
     # 깨진 표 정비 — 자체 스크립트. 픽스처가 alpha 상주라 align 프롤로그가
     # 필요 없다 (fill-stubs 와 같은 모양).
@@ -662,7 +926,10 @@ for plan in "${PLANS[@]}"; do
     #       프리셋을 서버에서 적용하지 않아 스크립트 본문이 운영 recommended 를 옮긴다.
     # [A] 가 실패하면 [B] 는 돌리지 않는다 — 전송 자체가 틀린 상태에서 산출물을
     # 재면 모델 편차와 구분되지 않는다.
-    bash "$REPO_ROOT/scripts/e2e-list-items.sh" > "$log" 2>&1
+    # 픽스처는 alpha 에서 읽는다 — 공유 체크아웃은 직전 plan 의 세션 브랜치 위라
+    # 픽스처가 그 세션의 것이다 (e2e-list-items.sh 의 --ref 주석 참고).
+    git -C "$REPO_ROOT" fetch -q origin +refs/heads/alpha:refs/remotes/origin/alpha >/dev/null 2>&1 || true
+    bash "$REPO_ROOT/scripts/e2e-list-items.sh" --ref origin/alpha > "$log" 2>&1
     ec=$?
     det="$(grep -oE '^RESULT: (OK|REPRO|BROKEN)' "$log" | tail -n1 || true)"
     if [[ $ec -eq 0 ]]; then
@@ -683,17 +950,25 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^UNIT_PRESERVE: (OK|REPRO|FAIL)' "$log" | tail -n1 || true)"
     pairs="$(grep -oE '위반: .*' "$log" | tail -n1 || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${pairs:-<no-pairs>}")
-  elif [[ "$plan" == "unit-pairing" || "$plan" == "table-field-rows" ]]; then
+  elif [[ "$plan" == "unit-pairing" || "$plan" == "table-field-rows" \
+          || "$plan" == "table-cell-mirror" || "$plan" == "table-tag-trail" \
+          || "$plan" == "table-tag-gaps" \
+          || "$plan" == "file-by-file" ]]; then
     # 자체 스크립트 — 번역은 로컬 translate_pr.py 로만 돈다 (검증 대상이 체크아웃의
     # 코드라서). 엔진은 스크립트가 CLI 로 고정하고 옵션은 권장 preset 에서 받는다.
     case "$plan" in
       unit-pairing)     _sc=e2e-unit-pairing.sh;     _tag=UNIT_PAIRING ;;
       table-field-rows) _sc=e2e-table-field-rows.sh; _tag=TABLE_FIELD_ROWS ;;
+      table-cell-mirror) _sc=e2e-table-cell-mirror.sh; _tag=TABLE_CELL_MIRROR ;;
+      table-tag-trail)  _sc=e2e-table-tag-trail.sh;  _tag=TABLE_TAG_TRAIL ;;
+      table-tag-gaps)   _sc=e2e-table-tag-gaps.sh;   _tag=TABLE_TAG_GAPS ;;
+      file-by-file)     _sc=e2e-file-by-file.sh;     _tag=FILE_BY_FILE ;;
     esac
     bash "$REPO_ROOT/scripts/$_sc" > "$log" 2>&1
     ec=$?
     verdict="$(grep -oE "^${_tag}: (OK|REPRO|FAIL)" "$log" | tail -n1 || true)"
     tx_pr="$(grep -oE '번역 PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    [[ -z "$tx_pr" ]] && tx_pr="$(grep -oE '\(a\) ko PR: .*' "$log" | tail -n1 || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${tx_pr:-<no-pr>}")
   elif [[ "$plan" == term-pin* ]]; then
     # 미등록 용어 고정 — 네 스크립트가 같은 모양이다 (OFF/ON 두 팔, 결정적 판정,
@@ -776,6 +1051,7 @@ for plan in "${PLANS[@]}"; do
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${ko_pr:-<no-pr>}")
   elif [[ "$plan" == "korean-review-line-anchors" ]]; then
     # 인라인 코멘트 줄 위치 — 규칙 레이어 확정 4건만 본다(LLM 지적은 무시). 결정적.
+    # 인자를 넘기지 않는다 — 이 스크립트에는 --translate 가 없다(KR_ARGS 를 붙이면 exit 1).
     bash "$REPO_ROOT/scripts/e2e-korean-review-line-anchors.sh" > "$log" 2>&1
     ec=$?
     verdict="$(grep -oE '^RESULT: [A-Z]+' "$log" | tail -n1 || true)"
@@ -806,13 +1082,24 @@ for plan in "${PLANS[@]}"; do
       plan_arg="row-drop-repro"
       variant_args+=(--no-table-reconcile)
     fi
-    bash "$REPO_ROOT/scripts/e2e-align-and-translate.sh" \
+    # jinja-mask 의 판정 (c) — 마스크가 실제로 걸렸는가 — 는 debug 줄로만
+    # 보인다. local 모드는 번역이 이 프로세스의 자식이라 env 로 넘긴다
+    # (api 모드는 Jenkins 잡의 로그 레벨이라 여기서 바꿀 수 없다 → 미측정).
+    plan_env=()
+    if [[ "$plan" == "jinja-mask" && "$TRANSLATE_MODE" != "api" ]]; then
+      plan_env+=(TRANSLATE_LOG_LEVEL=debug)
+    fi
+    env "${plan_env[@]}" bash "$REPO_ROOT/scripts/e2e-align-and-translate.sh" \
       --plan "$plan_arg" "${PASS_ARGS[@]}" "${reuse_args[@]}" \
       "${variant_args[@]}" > "$log" 2>&1
     ec=$?
     if (( REUSE_ALIGN )) && [[ -z "$ALIGNED_BRANCH" ]]; then
       ALIGNED_BRANCH="$(grep -oE 'E2E_ALIGNED_BRANCH=[^ ]+' "$log" | tail -n1 | cut -d= -f2 || true)"
       [[ -n "$ALIGNED_BRANCH" ]] && echo "    (align 스냅샷 확보: $ALIGNED_BRANCH — 이후 plan 이 재사용)"
+      if [[ -n "$ALIGNED_BRANCH" && -n "$ALIGN_CACHE_FILE" && $ec -eq 0 ]]; then
+        mkdir -p "$(dirname "$ALIGN_CACHE_FILE")" && echo "$ALIGNED_BRANCH" > "$ALIGN_CACHE_FILE" \
+          && echo "    (align 캐시 기록: $ALIGN_CACHE_FILE)"
+      fi
     fi
     verdict="$(grep -oE '^ALIGNMENT: (OK|FAIL)' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
@@ -858,16 +1145,33 @@ for plan in "${PLANS[@]}"; do
     fi
     if [[ "$plan" == "jinja-mask" ]]; then
       # 이 plan 의 핵심은 "모델이 템플릿 태그를 아예 못 본다" 다. ALIGNMENT 는
-      # heading/anchor/표만 보므로 `{% %}` 유실을 못 잡는다 — markup-churn 의
-      # guard-skips 가 공허하게 통과했던 것과 같은 함정이라 로그에서 직접 센다.
-      # 두 카운터는 WARNING/ERROR 급이라 기본 로그 레벨에서도 잡힌다.
-      jm_mismatch="$(grep -c 'Template-tag mismatch' "$log" 2>/dev/null || true)"
-      jm_fallback="$(grep -c 'falling back to unprotected' "$log" 2>/dev/null || true)"
-      # 기작 자체는 debug 로만 보인다 (TRANSLATE_LOG_LEVEL=debug 로 돌린 경우).
-      jm_masked="$(grep -c 'Masked .* template tag' "$log" 2>/dev/null || true)"
-      verdict="${verdict:-<no-verdict>} tag-mismatch=${jm_mismatch:-0} unprotected-fallback=${jm_fallback:-0} masked=${jm_masked:-0}"
-      if [[ "${jm_mismatch:-0}" != "0" || "${jm_fallback:-0}" != "0" ]]; then
-        verdict="$verdict (FAIL: 태그 시퀀스가 어긋났거나 보호 없이 재번역됐다)"
+      # heading/anchor/표만 보므로 `{% %}` 유실을 못 잡는다 — 판정은
+      # check_jinja_mask.py 가 한다 (로그 카운터 + 마스크 도달 + 번역 PR 산출물).
+      # api 모드는 번역 로그가 Jenkins 쪽에만 있으므로 llm-patch 와 같은 규칙으로
+      # 콘솔을 받아 세고, 받지 못하면 로그 판정을 '?' 로 남긴다 (산출물 판정은
+      # 자격 증명 없이도 된다). 예전에는 문구만 붙고 exit 에 반영되지 않았고,
+      # api 모드 카운터는 늘 0 이었다.
+      jm_src="$log"; jm_args=(--require-debug)
+      if [[ "$TRANSLATE_MODE" == "api" ]]; then
+        jm_args=()
+        if jenkins_console "$log" > "$outdir/$plan.jenkins.log" 2>/dev/null \
+           && [[ -s "$outdir/$plan.jenkins.log" ]]; then
+          jm_src="$outdir/$plan.jenkins.log"
+          echo "    (Jenkins 콘솔 확보: $plan.jenkins.log — api 모드 카운터의 근거)"
+        else
+          jm_src=""; jm_args=(--unmeasured)
+        fi
+      fi
+      if [[ -n "$trans_pr" ]]; then
+        python3 "$REPO_ROOT/scripts/check_jinja_mask.py" ${jm_src:+--log "$jm_src"} \
+          --pr "$trans_pr" "${jm_args[@]}" > "$outdir/$plan.verdict.log" 2>&1
+        jm_ec=$?
+        sed 's/^/    /' "$outdir/$plan.verdict.log"
+        jm_line="$(grep -oE '^JINJA_MASK: .*' "$outdir/$plan.verdict.log" | tail -n1 || true)"
+        verdict="${verdict:-<no-verdict>} ${jm_line:-JINJA_MASK: FAIL (판정 스크립트 오류 exit=$jm_ec)}"
+      else
+        jm_ec=1
+        verdict="${verdict:-<no-verdict>} JINJA_MASK: FAIL (번역 PR 없음)"
       fi
     fi
     if [[ "$plan" == "markup-churn" ]]; then
@@ -912,6 +1216,8 @@ for plan in "${PLANS[@]}"; do
   # webhook / korean-review / round1 은 전부 통과(exit 0)가 기대값 — 실패면 suite 실패
   # table-suite 는 번역 로직에 따라 기대값이 다르므로 exit 3 도 정상 허용
   if [[ "$plan" == "webhook" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "webhook-concurrent" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "webhook-lag-order" && $ec -ne 0 ]]; then overall=1; fi
   # workflow-ignore: 판정이 전부 결정적이다 (제외 문서를 읽었는가 / 안 읽었는가)
   # — 모델 편차가 끼어들 여지가 없으므로 exit 3 같은 여지도 없다.
   if [[ "$plan" == "workflow-ignore" && $ec -ne 0 ]]; then overall=1; fi
@@ -920,10 +1226,13 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" == "korean-review-mkdocs" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "korean-review-markup" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "korean-review-links" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "korean-review-line-anchors" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "anchor-audit" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "round1" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "concurrent" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "lag-order" && $ec -ne 0 ]]; then overall=1; fi
+  # table-tag-gaps 의 exit 3(REPRO) 은 #1264 머지 뒤라 회귀다 — 허용하지 않는다.
+  if [[ "$plan" == "table-tag-gaps" && $ec -ne 0 ]]; then overall=1; fi
   # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
   # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
   # fill-stubs: exit 4 = HELD — 채우기는 동작했고 남은 실패가 전부 도구가
@@ -943,15 +1252,16 @@ for plan in "${PLANS[@]}"; do
   # preserve 도 기대값이 하나다 — 반영됐거나 안 됐거나이고, exit 3 여지가 없다.
   if [[ "$plan" == "preserve" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" != "round1" && "$plan" != "webhook" && "$plan" != "korean-review" \
+        && "$plan" != "webhook-concurrent" && "$plan" != "webhook-lag-order" \
         && "$plan" != "workflow-ignore" \
         && "$plan" != "korean-review-no-targets" \
         && "$plan" != "korean-review-mkdocs" \
         && "$plan" != "korean-review-markup" \
-        && "$plan" != "korean-review-links" \
+        && "$plan" != "korean-review-links" && "$plan" != "korean-review-line-anchors" \
         && "$plan" != "anchor-audit" \
         && "$plan" != "concurrent" && "$plan" != "lag-order" && "$plan" != "fill-stubs" \
         && "$plan" != "fix-tables" \
-        && "$plan" != "preserve" \
+        && "$plan" != "preserve" && "$plan" != "table-tag-gaps" \
         && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
   # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
   # 마크업 미러링이 동작하지 않은 것이므로 suite 실패로 잡는다.
@@ -992,6 +1302,12 @@ for plan in "${PLANS[@]}"; do
     echo "    ! LLM-patch fallback 미발동 — 이 변형은 그 경로 검증이 목적이므로 실패로 집계" >&2
     overall=1
   fi
+  # jinja-mask: exit 0/3 은 위 공통 규칙대로지만 그것만으로는 아무것도 재지
+  # 않는다 — check_jinja_mask.py 가 하나라도 FAIL 이면 suite 실패.
+  if [[ "$plan" == "jinja-mask" ]] && (( ${jm_ec:-1} != 0 )); then
+    echo "    ! jinja-mask 판정 FAIL — $outdir/$plan.verdict.log 참고" >&2
+    overall=1
+  fi
   if [[ "$plan" == "markup-churn" ]]; then
     if [[ "$verdict" == *"guard-skips=?"* ]]; then
       # 미측정은 미발동이 아니다 — pr-excl 은 자격 증명 없이도 읽히므로 그것만
@@ -1007,6 +1323,7 @@ done
 
 echo
 echo "===== e2e suite 요약 ($outdir) ====="
+(( ALL_HAIKU )) && echo "(all-haiku — 모든 로컬 모델 호출 $E2E_HAIKU_MODEL · 운영과 다른 조건. webhook 계열은 배포 모델)"
 for r in "${RESULTS[@]}"; do echo "  $r"; done
 echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포함이면 exit 3 이 정상)"
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
@@ -1017,5 +1334,6 @@ echo "  (fill-stubs: exit 4 = HELD — 도구가 보고한 보류만 남음. ⚠
 echo "  (fix-tables: exit 0 = FIX_TABLES: OK. 표가 어긋난 section 만 ko 로 다시 만들고 대조군은 바이트 보존)"
 echo "  (row-drop-repro-noreconcile: exit 0/3 허용, 단 llm-patch=0 이면 실패 — 그 경로를 안 태운 실행)"
 echo "  (llm-patch: exit 0/3 허용, 단 llm-patch=0 이면 실패. ok/declined 로 fallback 판단을 확인)"
+echo "  (jinja-mask: JINJA_MASK: OK 가 PASS — mismatch·fallback 0, 마스크 두 경로 도달(local), 번역 PR 태그 검사 통과. '?' 는 미측정)"
 [[ -n "$ALIGNED_BRANCH" ]] && echo "  (align 스냅샷: $ALIGNED_BRANCH — 재현/디버그용, 정리는 수동)"
 exit $overall

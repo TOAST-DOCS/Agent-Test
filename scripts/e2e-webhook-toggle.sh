@@ -29,6 +29,13 @@
 # 호출하는 스크립트가 시작 시 자격 증명 유무를 하드 체크해야 한다.
 set_webhook_repo_enabled() {
   local enabled="$1"   # true|false
+  # suite 가 여러 webhook e2e 를 동시에 돌릴 때(webhook-lag-order 케이스 넷)는
+  # suite 가 앞뒤로 한 번만 켜고 끈다 — 각 케이스가 끝나며 끄면 아직 도는 다른
+  # 케이스의 delivery 가 막힌다. 그동안 자식은 토글을 건드리지 않는다.
+  if [[ -n "${E2E_WEBHOOK_SUITE_MANAGED:-}" ]]; then
+    echo "  (webhook repo 토글 '$enabled' 건너뜀 — suite 가 관리)" >&2
+    return 0
+  fi
   # 자격 증명은 **하드 체크**한다. 두 가지 실패 모드가 모두 나쁘다:
   #   - `set -u` 를 쓰는 스크립트(concurrent/round2)는 미정의 변수 확장에서
   #     `unbound variable` 로 죽는다 (아래 :- 기본값으로 회피).
@@ -52,7 +59,15 @@ req = urllib.request.Request(f"{base_url}/api/webhooks/repos", headers=hdr)
 with urllib.request.urlopen(req, timeout=15) as r:
     data = json.load(r)
 rows = data.get("repos") or []
-row = next((x for x in rows if (x.get("repo") or "").lower() == repo.lower()), None)
+# 행의 repo 는 cloud-translate#1243(518) 부터 `host/owner/name` (소문자) 이다.
+# 스크립트의 REPO 는 `owner/name` 이든 `host/owner/name` 이든 받는다 — owner/name
+# 은 그 꼬리로 맞춘다 (owner 가 GitHub 마다 달라 꼬리만으로도 한 사본이다).
+# 정확 비교만 하던 시절엔 행을 못 찾아 종료 시 "미등록 — 비활성화 불필요" 로
+# webhook 을 켠 채 끝났다.
+def _same(row_repo, want):
+    r, w = (row_repo or "").lower(), want.lower()
+    return r == w or r.endswith("/" + w)
+row = next((x for x in rows if _same(x.get("repo"), repo)), None)
 if row is None and enabled != "true":
     print(f"  webhook repo 미등록 — 비활성화 불필요: {repo}")
     raise SystemExit(0)
@@ -69,5 +84,24 @@ post = urllib.request.Request(
 with urllib.request.urlopen(post, timeout=15) as r2:
     json.load(r2)
 print(f"  webhook repo {repo}: translate/ko-review enabled={enabled}")
+PYEOF
+}
+
+# 실행 전 상태 — "on" (translate·ko-review 둘 다 켜짐) / "off" (그 밖, 미등록 포함).
+# 종료 시 무조건 끄면 운영에서 켜 둔 리포(사내 GHE 사본 Internal-Agent-Test 는
+# 평소에도 켜 둔다)의 webhook 을 e2e 가 꺼 버린다 (실측 2026-10-09). 호출부는
+# 이 값을 기억했다가 "on" 이면 켠 채로 둔다.
+webhook_repo_state() {
+  python3 - "${DASHBOARD_BASE_URL:-}" "${DASHBOARD_API_TOKEN:-}" "${REPO:-}" <<'PYEOF' 2>/dev/null || echo off
+import json, sys, urllib.request
+base_url, token, repo = sys.argv[1:4]
+req = urllib.request.Request(f"{base_url}/api/webhooks/repos",
+                             headers={"Authorization": f"Bearer {token}"})
+with urllib.request.urlopen(req, timeout=15) as r:
+    rows = json.load(r).get("repos") or []
+w = repo.lower()
+row = next((x for x in rows if (x.get("repo") or "").lower() == w or
+            (x.get("repo") or "").lower().endswith("/" + w)), None)
+print("on" if row and row.get("translate_enabled") and row.get("ko_review_enabled") else "off")
 PYEOF
 }

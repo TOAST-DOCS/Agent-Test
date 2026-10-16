@@ -48,10 +48,33 @@
 #   (8) [C] 표 C 의 기존 3행은 바이트 그대로 (keyed backfill 의 계약)
 #   (9) 번역 PR 본문에 표 A 가 "수리하지 않았습니다" 로 공개된다 (#691 공지)
 #
+# ── (D) 대상 쪽 절단 — opt-in (`--case D` / `--with-target-cut`, 기본 꺼짐) ──
+# 재현하는 사고 (2026-10-15): TOAST-DOCS/Log-Crash-Search ko PR #134 → 번역 PR
+#   https://github.com/TOAST-DOCS/Log-Crash-Search/pull/137
+#   ja/console-guide.md 의 이슈 상세 표가 8행 연속 → 빈 줄 1개 → 표의 마지막
+#   2행이 **고아 파이프 줄**로 남아 있었다 (ko 는 10행 연속). 고아 줄은 구분 행이
+#   없어 `_table_region` 이 표로 세지 않으므로 reconcile 은 ko 10 ↔ ja 8 로 읽고,
+#   빠진 2행을 새로 번역해 표에 **덧붙인 뒤 고아 2줄은 그대로 둔다** → 같은 내용이
+#   두 번. (A) 의 거울상(ko 쪽 절단 → 대상 행 삭제)이고, 대상 쪽 절단은 이 케이스
+#   전까지 어떤 e2e 에도 없었다.
+# 픽스처 D: ko 8행 연속(첫 열 한국어 라벨) · en/ja 는 같은 8행을 번역하되 마지막
+#   2행을 빈 줄 하나로 표에서 떼어 둔다. 시드는 A/B/C 와 같이 세션 base 에만.
+# 판정 (결정적, 모델 판단 없음 — en/ja 각각, 범위는 D 절):
+#   (11) 고아 2행의 첫 셀 라벨이 파일 전체에서 **정확히 1번** (중복 없음)
+#   (12) D 표의 데이터 행 수 == ko 의 행 수
+#   (13) D 절의 파이프 데이터 줄 수 == ko 행 수 (표 밖 고아 줄이 남지 않았다 —
+#        모델이 라벨을 고아와 다르게 번역해 (11)이 통과해도 중복을 잡는다)
+#   (14) D 절에 `<todo` 마커 없음
+#   요약으로 `[D] REPRO` (하나라도 실패) / `[D] OK` 를 찍는다.
+# 현재 기대 결과: **[D] REPRO → RESULT: FAIL** (파이프라인 수정 전). 그래서
+#   opt-in 이다 — e2e-suite.sh 의 table-malformed plan 은 인자 없이 이 스크립트를
+#   부르므로 D 를 켜지 않고, A/B/C 판정은 오늘과 같다. 수정이 머지되면 [D] OK 를
+#   확인한 뒤 기본값으로 올릴지 정한다.
+#
 # Usage:
 #   source ./load_env.sh
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
-#     bash scripts/e2e-table-malformed.sh [--keep]
+#     bash scripts/e2e-table-malformed.sh [--keep] [--case D | --with-target-cut]
 #
 # 의존성: git, gh (로그인), python3
 set -eo pipefail
@@ -64,6 +87,7 @@ SESSION_BRANCH="e2e-tablemal/$TS"
 HEAD_BRANCH="translate-test-tablemal/$TS"
 DOC="overview.md"
 KEEP=0
+CASE_D=0   # (D) 대상 쪽 절단 — opt-in, 기본 꺼짐 (헤더 주석 참고)
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
@@ -74,7 +98,11 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --keep) KEEP=1; shift ;;
     --doc)  DOC="$2"; shift 2 ;;
-    -h|--help) sed -n '1,70p' "$0"; exit 0 ;;
+    --with-target-cut) CASE_D=1; shift ;;
+    --case)
+      [[ "${2:-}" == "D" || "${2:-}" == "d" ]] || { echo "unknown --case: ${2:-} (D 만 지원)" >&2; exit 1; }
+      CASE_D=1; shift 2 ;;
+    -h|--help) sed -n '1,95p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -201,9 +229,74 @@ fixture_ja() { cat <<'EOF'
 EOF
 }
 
+# 표 D (opt-in): 대상 쪽 절단 — Log-Crash-Search#137 의 이슈 상세 표 모양.
+#       ko 8행 연속. en/ja 는 마지막 2행(`최초 발생 시각`·`최근 발생 시각`)이
+#       빈 줄 하나 뒤의 고아 파이프 줄. 고아 줄에는 구분 행이 없어 표로 세지 않는다.
+#       고아 라벨은 판정 (11) 이 찾으므로 아래 D_ORPHAN_LABELS 와 같아야 한다.
+fixture_d_ko() { cat <<'EOF'
+
+<a id="e2e-table-target-cut"></a>
+### 대상 쪽 절단 픽스처
+
+이슈 상세 화면의 항목입니다.
+
+| 항목 | 설명 |
+|---|---|
+| 이슈 ID | 이슈를 식별하는 고유 ID입니다. |
+| 로그 레벨 | 이슈가 발생한 로그의 레벨입니다. |
+| 앱 키 | 로그를 전송한 프로젝트의 앱 키입니다. |
+| 호스트 | 로그를 전송한 호스트입니다. |
+| 플랫폼 | 이슈가 발생한 플랫폼입니다. |
+| 발생 횟수 | 조회 기간 동안 이슈가 발생한 횟수입니다. |
+| 최초 발생 시각 | 이슈가 처음 발생한 시각입니다. |
+| 최근 발생 시각 | 이슈가 마지막으로 발생한 시각입니다. |
+EOF
+}
+fixture_d_en() { cat <<'EOF'
+
+<a id="e2e-table-target-cut"></a>
+### Target-side cut fixture
+
+Items on the issue details screen.
+
+| Item | Description |
+|---|---|
+| Issue ID | Unique ID that identifies the issue. |
+| Log Level | Level of the log where the issue occurred. |
+| Appkey | Appkey of the project that sent the log. |
+| Host | Host that sent the log. |
+| Platform | Platform where the issue occurred. |
+| Occurrences | Number of times the issue occurred during the query period. |
+
+| First Occurred | Time when the issue first occurred. |
+| Last Occurred | Time when the issue last occurred. |
+EOF
+}
+fixture_d_ja() { cat <<'EOF'
+
+<a id="e2e-table-target-cut"></a>
+### 対象側切断のフィクスチャ
+
+イシュー詳細画面の項目です。
+
+| 項目 | 説明 |
+|---|---|
+| イシューID | イシューを識別する固有IDです。 |
+| ログレベル | イシューが発生したログのレベルです。 |
+| アプリキー | ログを送信したプロジェクトのアプリキーです。 |
+| ホスト | ログを送信したホストです。 |
+| プラットフォーム | イシューが発生したプラットフォームです。 |
+| 発生回数 | 照会期間中にイシューが発生した回数です。 |
+
+| 最初の発生日時 | イシューが最初に発生した日時です。 |
+| 最近の発生日時 | イシューが最後に発生した日時です。 |
+EOF
+}
+
 echo "repo    : $REPO"
 echo "session : $SESSION_BRANCH"
 echo "doc     : $DOC"
+echo "case D  : $( (( CASE_D )) && echo 'on (대상 쪽 절단 — 현재 REPRO 기대)' || echo off )"
 echo "translate: $CLOUD_TRANSLATE_DIR"
 echo
 
@@ -219,7 +312,8 @@ echo "[2/6] 시드 — ko/en/ja 에 표 A(끊김)·B(이상치 행)·C(진짜 st
 for lang in ko en ja; do
   [[ -f "$lang/$DOC" ]] || { echo "error: $lang/$DOC 없음" >&2; exit 1; }
   "fixture_$lang" >> "$lang/$DOC"
-  echo "  시드: $lang/$DOC"
+  if (( CASE_D )); then "fixture_d_$lang" >> "$lang/$DOC"; fi
+  echo "  시드: $lang/$DOC$( (( CASE_D )) && echo ' (+표 D)' )"
 done
 cp "en/$DOC" "$tmpdir/en.seed"; cp "ja/$DOC" "$tmpdir/ja.seed"
 git add -- "ko/$DOC" "en/$DOC" "ja/$DOC"
@@ -296,9 +390,9 @@ for l in ko en ja; do
 done
 
 set +e
-python3 - "$LOG" "$tmpdir" "$tx_rc" "$tx_pr_url" "$REPO" <<'PY'
+python3 - "$LOG" "$tmpdir" "$tx_rc" "$tx_pr_url" "$REPO" "$CASE_D" <<'PY'
 import re, subprocess, sys
-log_p, tmp, rc, pr_url, repo = sys.argv[1:6]
+log_p, tmp, rc, pr_url, repo, case_d = sys.argv[1:7]
 log = open(log_p, encoding="utf-8", errors="replace").read()
 def rd(lang, side):
     return open(f"{tmp}/{lang}.{side}.md", encoding="utf-8", newline="").read()
@@ -367,6 +461,73 @@ n_bf = len(re.findall(r"backfilled 1 row\(s\) \(SVC-104\)", log))
 rule(9, "대조군 표 C 가 두 언어 모두 backfill (가드가 진짜 수리를 막지 않음)",
      n_bf >= 2, f"{n_bf}회")
 
+# ── [D] 대상 쪽 절단 (opt-in) ─────────────────────────────────────────────
+# 고아 2행의 첫 셀 라벨 — fixture_d_en/ja 의 마지막 두 줄과 같아야 한다.
+D_ORPHAN_LABELS = {
+    "en": ("First Occurred", "Last Occurred"),
+    "ja": ("最初の発生日時", "最近の発生日時"),
+}
+D_ANCHOR = '<a id="e2e-table-target-cut"></a>'
+
+def d_section(text):
+    """D 절 — 앵커부터 다음 heading(앵커 다음의 자기 heading 제외) 또는 EOF 까지."""
+    ls = text.split("\n")
+    try:
+        i = next(k for k, l in enumerate(ls) if l.strip() == D_ANCHOR)
+    except StopIteration:
+        return None
+    j = i + 2
+    while j < len(ls) and not ls[j].startswith("#"):
+        j += 1
+    return ls[i:j]
+
+def is_sep(l):
+    return bool(re.fullmatch(r"\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*", l))
+
+def d_table_rows(sec):
+    """D 표(헤더+구분 행 아래 **연속된** 파이프 줄)의 데이터 행 수."""
+    for k in range(len(sec) - 1):
+        if sec[k].strip().startswith("|") and is_sep(sec[k + 1]):
+            n, e = 0, k + 2
+            while e < len(sec) and sec[e].strip().startswith("|"):
+                n += 1; e += 1
+            return n
+    return None
+
+def d_pipe_data_lines(sec):
+    """D 절의 파이프 줄 중 헤더·구분 행을 뺀 수 — 표 밖 고아 줄까지 센다."""
+    pipes = [l for l in sec if l.strip().startswith("|")]
+    return len([l for l in pipes if not is_sep(l)]) - 1  # -1 = 헤더
+
+d_fail = []
+if case_d == "1":
+    ko_sec = d_section(rd("ko", "head"))
+    ko_n = d_table_rows(ko_sec) if ko_sec else None
+    for lang in ("en", "ja"):
+        cur = rd(lang, "head")
+        sec = d_section(cur)
+        if sec is None or ko_n is None:
+            rule(11, f"[D/{lang}] D 절을 찾았다", False,
+                 f"앵커 없음 (ko={'O' if ko_sec else 'X'}, {lang}={'O' if sec else 'X'})")
+            d_fail.append(lang); continue
+        firsts = [c.split("|")[1].strip() for c in cur.split("\n")
+                  if c.strip().startswith("|") and c.count("|") >= 2]
+        counts = {lab: sum(1 for f in firsts if f == lab) for lab in D_ORPHAN_LABELS[lang]}
+        once = all(v == 1 for v in counts.values())
+        rule(11, f"[D/{lang}] 고아 2행의 첫 셀 라벨이 파일에 정확히 1번", once,
+             ", ".join(f"{k}={v}" for k, v in counts.items()))
+        n_tbl = d_table_rows(sec)
+        rule(12, f"[D/{lang}] D 표 데이터 행 수 == ko", n_tbl == ko_n,
+             f"{lang}={n_tbl} ko={ko_n}")
+        n_pipe = d_pipe_data_lines(sec)
+        rule(13, f"[D/{lang}] D 절 파이프 데이터 줄 수 == ko (표 밖 고아 줄 없음)",
+             n_pipe == ko_n, f"{lang}={n_pipe} ko={ko_n}")
+        has_todo = any("<todo" in l for l in sec)
+        rule(14, f"[D/{lang}] D 절에 <todo 마커 없음", not has_todo,
+             "<todo 있음" if has_todo else "")
+        if not (once and n_tbl == ko_n and n_pipe == ko_n and not has_todo):
+            d_fail.append(lang)
+
 body = subprocess.run(["gh", "pr", "view", pr_url, "--repo", repo, "--json", "body",
                        "--jq", ".body"], capture_output=True, text=True).stdout
 rule(10, "번역 PR 본문에 '수리하지 않았습니다' 공개",
@@ -378,6 +539,10 @@ for n, desc, good, detail in sorted(results):
     ok += good
     print(f"  ({n}) {'PASS' if good else 'FAIL'}  {desc}" + (f"  - {detail}" if detail else ""))
 print()
+if case_d == "1":
+    print(f"[D] REPRO  대상 쪽 절단 — 고아 행 중복/잔존 ({', '.join(d_fail)})" if d_fail
+          else "[D] OK     대상 쪽 절단 — 고아 행이 표로 합쳐지고 중복 없음")
+    print()
 print(f"TABLE-MALFORMED: {ok}/{len(results)} rules passed")
 print("RESULT: OK" if ok == len(results) else "RESULT: FAIL")
 sys.exit(0 if ok == len(results) else 1)

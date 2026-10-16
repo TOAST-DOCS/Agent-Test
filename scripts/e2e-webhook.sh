@@ -57,11 +57,14 @@ set -u
 DASHBOARD_BASE_URL="${DASHBOARD_BASE_URL:-}"
 DASHBOARD_API_TOKEN="${DASHBOARD_API_TOKEN:-}"
 
-REPO="TOAST-DOCS/Agent-Test"
+# 대상 리포는 이 체크아웃의 origin 이다 — 같은 스크립트를 github.com 의
+# TOAST-DOCS/Agent-Test 와 사내 GHE 사본 cloud-docs/Internal-Agent-Test 에서
+# 그대로 돌린다 (cloud-user-guide-agent/518). github.com 이면 예전처럼
+# `owner/name`, 그 밖의 호스트면 `host/owner/name` — gh 는 `--repo HOST/OWNER/REPO`
+# 를 받고, 대시보드는 어느 표기든 그 사본으로 푼다.
+source "$(cd "$(dirname "$0")" && pwd)/e2e-repo.sh"
 # e2e 산출물 PR 에 'e2e' 라벨 (사람이 만든 PR 과 구분)
 source "$(cd "$(dirname "$0")" && pwd)/e2e-label.sh"
-
-REPO_LOWER="toast-docs/agent-test"
 BASE_BRANCH=""       # 미지정 → 세션 브랜치 e2e-webhook/<ts> 자동 생성. --base 로 override.
 BASE_SOURCE="alpha"  # 세션 브랜치를 갈라낼 원본
 POLL_TIMEOUT=600     # 초. opened → ko-review task 등장까지 / merged → translate task 등장까지 각각.
@@ -123,70 +126,22 @@ source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-toggle.sh"
 OPENED_RESULT="-"
 MERGED_RESULT="-"
 PRESET_RESULT="-"
-
-# ── filter 확장/원복 helper ───────────────────────────────────────
-# webhook 필터의 base_branches 는 dashboard 관리자가 job(translate/ko-review) 별
-# 로 설정 (기본 alpha,beta). 세션 브랜치를 base 로 쓰려면 두 job 각각의
-# base_branches 에 세션 브랜치 이름을 append 하고, 스크립트 종료 시 append 만
-# 걷어내 원본으로 돌린다 (다른 세팅은 그대로).
-declare -A ORIG_BASE_BRANCHES=()
-FILTER_EXTENDED=0
-
-_get_filters() {
-  curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-    "$DASHBOARD_BASE_URL/api/webhooks/repos"
+# 트리거만 보고 PASS 를 주면 빌드가 실패해도 초록이다 (실측 2026-10-09:
+# Internal-Agent-Test#4 의 translate #1191 이 GHE App 권한 403 으로 실패했는데
+# 세 줄 다 PASS). 빌드를 기다린 경우 그 결과도 판정한다 (--no-wait-build 면 skipped).
+KO_BUILD_RESULT="skipped"
+TR_BUILD_RESULT="skipped"
+_build_verdict() {   # $1 = wait_for_build_finish 의 반환값
+  if [[ "$1" != 0 ]]; then echo "FAIL (timeout)"; return; fi
+  case "${LAST_BUILD_STATUS:-}" in
+    success) echo "PASS" ;;
+    *)       echo "FAIL (${LAST_BUILD_STATUS:-?} ${LAST_BUILD_URL:-})" ;;
+  esac
 }
 
-_set_filter() {
-  # $1=job(translate|ko-review) $2=base_branches
-  # 다른 필드는 현재값 그대로 유지 (POST 는 전체 dict 를 요구)
-  local job="$1" base_branches="$2"
-  python3 - "$DASHBOARD_BASE_URL" "$DASHBOARD_API_TOKEN" "$job" "$base_branches" <<'PY'
-import json, sys, urllib.request
-base_url, token, job, base_branches = sys.argv[1:5]
-req = urllib.request.Request(
-    f"{base_url}/api/webhooks/repos",
-    headers={"Authorization": f"Bearer {token}"},
-)
-with urllib.request.urlopen(req, timeout=15) as resp:
-    data = json.load(resp)
-cur = ((data.get("filters") or {}).get(job) or {})
-payload = {
-    "job": job,
-    "actions": cur.get("actions") or "",
-    "base_branches": base_branches,
-    "author_skip": cur.get("author_skip") or "",
-    "label_require": cur.get("label_require") or "",
-    "label_skip": cur.get("label_skip") or "",
-    "preset": cur.get("preset") or "",
-}
-body = json.dumps(payload).encode("utf-8")
-put = urllib.request.Request(
-    f"{base_url}/api/webhooks/filters",
-    data=body, method="POST",
-    headers={
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    },
-)
-with urllib.request.urlopen(put, timeout=15) as r2:
-    result = json.load(r2)
-print(json.dumps(result))
-PY
-}
-
-restore_filters() {
-  # trap 에서 호출. 이미 원복돼 있으면 no-op.
-  (( FILTER_EXTENDED )) || return 0
-  for job in translate ko-review; do
-    if [[ -n "${ORIG_BASE_BRANCHES[$job]:-}" ]]; then
-      echo "  [cleanup] restoring filter[$job].base_branches = '${ORIG_BASE_BRANCHES[$job]}'"
-      _set_filter "$job" "${ORIG_BASE_BRANCHES[$job]}" >/dev/null || \
-        echo "  [cleanup] WARN: 필터 원복 실패 ($job) — dashboard 어드민에서 수동 확인 필요" >&2
-    fi
-  done
-  FILTER_EXTENDED=0
-}
+# ── filter 확장/원복 helper (공용) ─────────────────────────────────
+# `extend_filters_for_branch` / `restore_filters`.
+source "$(cd "$(dirname "$0")" && pwd)/e2e-webhook-filter.sh"
 
 cleanup_session_branch() {
   local br="$1"
@@ -194,6 +149,25 @@ cleanup_session_branch() {
   echo "  [cleanup] deleting session branch origin/$br (남아있는 PR 은 자동 close)"
   git push origin ":$br" 2>/dev/null || \
     echo "  [cleanup] WARN: 세션 브랜치 삭제 실패 (이미 없거나 권한 문제)" >&2
+}
+
+# 순차 번역 큐가 이 리포에 켜져 있으면 번역 잡이 ko PR 에 `번역 대기열` 라벨을
+# 단다. 큐에서 빠지는 것은 번역 PR 이 **머지될 때**뿐인데, 이 e2e 는 번역 PR 을
+# 머지하지 않고 세션 브랜치 삭제로 닫으므로 라벨이 그대로 남는다 (실측
+# 2026-10-12 Internal-Agent-Test#10). 세션 base 가 사라져 큐에는 영향이 없지만
+# 남은 라벨은 "아직 대기 중인 PR" 로 읽히므로 정리 단계에서 뗀다.
+# 빌드를 기다린 경우에만 확실하다 — --no-wait-build 면 번역 잡이 cleanup 뒤에
+# 라벨을 달 수 있다.
+QUEUE_LABEL="번역 대기열"
+pr_url=""
+cleanup_queue_label() {
+  [[ -n "$pr_url" ]] || return 0
+  if gh pr view "$pr_url" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null \
+       | grep -Fxq "$QUEUE_LABEL"; then
+    echo "  [cleanup] removing label '$QUEUE_LABEL' from $pr_url"
+    gh pr edit "$pr_url" --repo "$REPO" --remove-label "$QUEUE_LABEL" >/dev/null 2>&1 || \
+      echo "  [cleanup] WARN: '$QUEUE_LABEL' 라벨 제거 실패" >&2
+  fi
 }
 
 # ── 세션 브랜치 결정 (미지정 시 자동 생성) + 필터 확장 ────────────────
@@ -205,10 +179,11 @@ else
 fi
 
 # 스크립트 종료 시 필터 원복 + (세션 모드면) 브랜치 삭제. cleanup 은 idempotent.
-trap 'ec=$?; restore_filters; set_webhook_repo_enabled false; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
+WEBHOOK_PRIOR="$(webhook_repo_state)"
+trap 'ec=$?; cleanup_queue_label; restore_filters; restore_repo_override; if [[ "$WEBHOOK_PRIOR" == on ]]; then echo "  webhook repo $REPO: 실행 전에 켜져 있어 그대로 둡니다"; else set_webhook_repo_enabled false; fi; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
 
 echo "==================================================================="
-echo "  webhook e2e — Agent-Test"
+echo "  webhook e2e — $REPO"
 echo "  head branch : $HEAD_BRANCH"
 echo "  base branch : $BASE_BRANCH$( ((USE_SESSION_BRANCH)) && echo ' (세션, 종료 시 삭제)' )"
 echo "  timeout(s)  : $POLL_TIMEOUT"
@@ -230,26 +205,11 @@ if (( USE_SESSION_BRANCH )); then
   git push -u origin "$BASE_BRANCH"
 
   # 필터의 base_branches 를 세션 브랜치 포함으로 임시 확장.
-  echo "  [filter] appending '$BASE_BRANCH' to filter.base_branches (translate + ko-review)"
-  _filters_json="$(_get_filters)"
-  for job in translate ko-review; do
-    cur="$(printf '%s' "$_filters_json" | python3 -c "
-import json, sys
-d = json.load(sys.stdin)
-f = (d.get('filters') or {}).get('$job') or {}
-print(f.get('base_branches') or '')
-")"
-    ORIG_BASE_BRANCHES[$job]="$cur"
-    if [[ ",$cur," == *",$BASE_BRANCH,"* ]]; then
-      new="$cur"
-    else
-      new="${cur:+$cur,}$BASE_BRANCH"
-    fi
-    echo "    $job: '$cur' → '$new'"
-    _set_filter "$job" "$new" >/dev/null
-  done
-  FILTER_EXTENDED=1
+  extend_filters_for_branch "$BASE_BRANCH"
 fi
+# 리포 override 가 세션 브랜치나 e2e 작성자를 막으면 세션 동안만 푼다 (종료 시 원복).
+E2E_AUTHOR="$(GH_HOST="$REPO_HOST" gh api user --jq .login 2>/dev/null || true)"
+extend_repo_override_for_session "$BASE_BRANCH" "$E2E_AUTHOR"
 
 # 이제 head 브랜치 생성 (base 로부터 갈라짐).
 git fetch origin "$BASE_BRANCH"
@@ -321,7 +281,9 @@ else
     ko_review_job_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("job_id",""))')"
     ko_review_task_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("id",""))')"
     if [[ -n "$ko_review_job_id" && -n "$ko_review_task_id" ]]; then
-      wait_for_build_finish "$ko_review_job_id" "$ko_review_task_id" || true
+      LAST_BUILD_STATUS=""; rc=0
+      wait_for_build_finish "$ko_review_job_id" "$ko_review_task_id" || rc=$?
+      KO_BUILD_RESULT="$(_build_verdict "$rc")"
     fi
   fi
 fi
@@ -478,7 +440,9 @@ else
       translate_job_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("job_id",""))')"
       translate_task_id="$(printf '%s' "$task_json" | python3 -c 'import json,sys; print((json.load(sys.stdin).get("task") or {}).get("id",""))')"
       if [[ -n "$translate_job_id" && -n "$translate_task_id" ]]; then
-        wait_for_build_finish "$translate_job_id" "$translate_task_id" || true
+        LAST_BUILD_STATUS=""; rc=0
+        wait_for_build_finish "$translate_job_id" "$translate_task_id" || rc=$?
+        TR_BUILD_RESULT="$(_build_verdict "$rc")"
       fi
     fi
   fi
@@ -492,9 +456,12 @@ echo "  PR                              : $pr_url"
 echo "  opened → ko-review triggered    : $OPENED_RESULT"
 echo "  merged → translate triggered    : $MERGED_RESULT"
 echo "  translate params ↔ preset       : $PRESET_RESULT"
+echo "  ko-review build                 : $KO_BUILD_RESULT"
+echo "  translate build                 : $TR_BUILD_RESULT"
 echo "==================================================================="
 
 if [[ "$OPENED_RESULT" != "PASS" ]]; then exit 2; fi
 if [[ "$DO_MERGE" == "1" && "$MERGED_RESULT" != "PASS" ]]; then exit 3; fi
 if [[ "$PRESET_RESULT" == FAIL* ]]; then exit 4; fi
+if [[ "$KO_BUILD_RESULT" == FAIL* || "$TR_BUILD_RESULT" == FAIL* ]]; then exit 5; fi
 exit 0

@@ -51,7 +51,7 @@ while [[ $# -gt 0 ]]; do
     --label)           LABEL="$2"; shift 2 ;;
     --expect-fail)     EXPECT_FAIL=1; shift ;;
     --timeout)         JOB_TIMEOUT="$2"; shift 2 ;;
-    -h|--help)         sed -n '3,38p' "$0"; exit 0 ;;
+    -h|--help)         sed -n '3,34p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -188,14 +188,16 @@ echo "  status=$status build=$build_url"
 echo "[4/4] 판정"
 head_sha="$(gh pr view "$pr_url" --json headRefOid --jq .headRefOid)"
 gh api "repos/$REPO/contents/$DOC?ref=$head_sha" --jq .content | base64 -d > "$tmpdir/head.md"
-gh api --paginate "repos/$REPO/pulls/$pr_number/reviews" > "$tmpdir/reviews.json"
-gh api --paginate "repos/$REPO/pulls/$pr_number/comments" > "$tmpdir/comments.json"
+# --slurp: 페이지마다 배열 하나씩 담긴 배열로 받는다. 예전엔 페이지를 `][` → `,` 문자열
+# 치환으로 이어 붙여, 본문에 `][` 가 든 코멘트가 있으면 JSON 이 깨졌다.
+gh api --paginate --slurp "repos/$REPO/pulls/$pr_number/reviews" > "$tmpdir/reviews.json"
+gh api --paginate --slurp "repos/$REPO/pulls/$pr_number/comments" > "$tmpdir/comments.json"
 set +e
 python3 - "$tmpdir" <<'PY'
 import json,sys,re
 d=sys.argv[1]
 L=open(f"{d}/head.md",encoding="utf-8").read().split("\n")
-load=lambda f: json.loads(open(f"{d}/{f}").read().replace("][",","))
+load=lambda f: [x for page in json.load(open(f"{d}/{f}")) for x in page]
 reviews=[r for r in load("reviews.json") if r["user"]["login"].endswith("[bot]") and "한글 검수 결과" in (r["body"] or "")]
 comments=[c for c in load("comments.json") if c["user"]["login"].endswith("[bot]")]
 expected={i+1:l for i,l in enumerate(L) if "예)" in l}

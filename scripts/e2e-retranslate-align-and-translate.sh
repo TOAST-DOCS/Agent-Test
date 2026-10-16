@@ -722,7 +722,7 @@ fi
 
 # ── 8) claude CLI(fable)로 align PR (재번역 포함) heading·anchor-id 정렬 검사 ─
 echo
-echo "[8/14] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url, 재번역 포함)"
+echo "[8/14] claude CLI (${E2E_JUDGE_MODEL:-fable}) heading/anchor-id 정렬 검사 (PR=$align_pr_url, 재번역 포함)"
 
 check_wt="$tmpdir/pr-check"
 git worktree add "$check_wt" "origin/$head_ref" >/dev/null
@@ -739,7 +739,7 @@ if [[ "$VERIFY_MODE" == "py" ]]; then
   set -e
 else
   check_out="$(cd "$check_wt" && claude -p "$check_prompt" \
-    --model fable \
+    --model "${E2E_JUDGE_MODEL:-fable}" \
     --allowedTools "Bash,Read,Grep,Glob")"
 fi
 
@@ -883,7 +883,7 @@ fi
 
 # ── 14) claude CLI(fable)로 번역 PR 검증 → 결과를 PR 댓글로 등록 ───────
 echo
-echo "[14/14] claude CLI (fable model) 번역 PR 검증 (PR=$trans_pr_url)"
+echo "[14/14] claude CLI (${E2E_JUDGE_MODEL:-fable}) 번역 PR 검증 (PR=$trans_pr_url)"
 
 trans_head_ref="$(gh pr view "$trans_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$trans_head_ref"
@@ -915,7 +915,7 @@ if [[ "$VERIFY_MODE" == "py" ]]; then
   set -e
 else
   trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
-    --model fable \
+    --model "${E2E_JUDGE_MODEL:-fable}" \
     --allowedTools "Bash,Read,Grep,Glob")"
 fi
 
