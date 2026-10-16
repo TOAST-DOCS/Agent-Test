@@ -29,6 +29,13 @@
 # 호출하는 스크립트가 시작 시 자격 증명 유무를 하드 체크해야 한다.
 set_webhook_repo_enabled() {
   local enabled="$1"   # true|false
+  # suite 가 여러 webhook e2e 를 동시에 돌릴 때(webhook-lag-order 케이스 넷)는
+  # suite 가 앞뒤로 한 번만 켜고 끈다 — 각 케이스가 끝나며 끄면 아직 도는 다른
+  # 케이스의 delivery 가 막힌다. 그동안 자식은 토글을 건드리지 않는다.
+  if [[ -n "${E2E_WEBHOOK_SUITE_MANAGED:-}" ]]; then
+    echo "  (webhook repo 토글 '$enabled' 건너뜀 — suite 가 관리)" >&2
+    return 0
+  fi
   # 자격 증명은 **하드 체크**한다. 두 가지 실패 모드가 모두 나쁘다:
   #   - `set -u` 를 쓰는 스크립트(concurrent/round2)는 미정의 변수 확장에서
   #     `unbound variable` 로 죽는다 (아래 :- 기본값으로 회피).

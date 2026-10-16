@@ -19,6 +19,11 @@
 #       plan 과 --translate api 의 Jenkins 잡은 배포 파이프라인이라 닿지 않는다.
 #       --model 은 haiku 만 같이 줄 수 있다.
 #
+#   --lag-order-serial — webhook-lag-order 의 케이스 넷을 예전처럼 차례로 (기본은 동시).
+#
+#   --no-align-cache — align 프롤로그 스냅샷을 **실행 사이에** 재사용하지 않는다 (아래
+#       "실행 시간" 참고). 한 실행 안의 재사용은 --no-reuse-align 이 끈다.
+#
 #   --sleep-between <sec> — plan 과 plan 사이 대기 (기본 0). Jenkins agent 의
 #       claude CLI (OAuth) 가 연속 실행으로 usage limit 에 걸려 align/ko-review
 #       가 무더기 is_error 로 무너지는 것(2026-08-13 08:15Z 실측: align build
@@ -52,13 +57,18 @@
 #                 머지하고, A 번역 PR 이 B 섹션을 넣지 않는지 · 두 번역 PR 머지
 #                 뒤 en/ja 에 B 섹션이 정확히 1번인지 본다. 순차 큐가 켜져 있으면
 #                 A 대기 → B 번역 머지 → A 차례로 돌고 요약에 queue=on 이 남는다.
-#                 e2e-webhook-lag-order.sh 를 --case 네 개로 차례로 실행한다
+#                 e2e-webhook-lag-order.sh 를 --case 네 개로 **동시에** 실행한다
 #                 (section-add · anchor-rename · section-move · b-closed, 케이스마다
 #                 결과 한 줄 · 로그 `webhook-lag-order-<case>.log`). 기대: 넷 다
 #                 exit 0. 뒤 셋은 순차 큐(#1048)가 꺼져 있으면 실패하는 모양이라
 #                 (2026-10-01 큐 이전 실측: rename·move 충돌, b-closed 영구 미번역)
 #                 큐가 이 리포에서 꺼지면 이 plan 이 빨개진다 — 그게 신호다.
-#                 ~1시간 (케이스당 ko-review 2 + translate 2 빌드).
+#                 차례로 돌리면 ~30분(케이스당 ko-review 2 + translate 2 빌드, 7~8분)이고,
+#                 동시에 돌리면 Jenkins translate 잡(동시 빌드 1)에 번역 빌드 8개가 줄을
+#                 서는 만큼만 걸린다. 케이스마다 세션 base·clone·PR 브랜치가 따로라 서로
+#                 겹치는 것은 두 공유 자원뿐이다: webhook 필터(헬퍼가 잠금 안에서 자기
+#                 브랜치만 더하고 뺀다)와 webhook 활성 토글(suite 가 앞뒤로 한 번만 —
+#                 E2E_WEBHOOK_SUITE_MANAGED). --lag-order-serial 로 예전 방식.
 #   korean-review-no-targets — 삭제만 있는 ko PR (검수 대상 0건). 리뷰가 게시되지
 #                 않는 것이 정상이고, 그래도 '검수 대상 없음' 코멘트와
 #                 `한글 검수`·`content-agent` 라벨이 남는지 검증(라벨이 없으면
@@ -467,6 +477,16 @@
 # 서로 간섭하지 않는다. --no-reuse-align 이면 plan 마다 프롤로그를 다시 돈다
 # (align/fix-heading-syntax 잡 자체를 여러 번 태우고 싶을 때).
 #
+# **실행 사이에도** 재사용한다 (local 모드만, --no-align-cache 로 끈다). 프롤로그의
+# 입력은 셋 — alpha 의 픽스처(archive/ · ko/en/ja), 그것을 돌리는 하네스 스크립트,
+# 로컬 cloud-translate 의 pre-align/translate 코드 — 과 모델 설정이다. 그 전부의
+# 해시를 키로 스냅샷 브랜치를 ~/.cache/agent-test-e2e/aligned/<key> 에 적어 두고,
+# 키가 같고 브랜치가 원격에 아직 있으면 첫 plan 부터 --from-aligned 로 시작한다.
+# 하나라도 바뀌면(또는 cloud-translate 의 그 경로에 커밋 안 된 수정이 있으면) 키가
+# 달라져 다시 만든다. api 모드는 프롤로그가 배포된 Jenkins 잡에서 돌아 코드 버전을
+# 알 수 없으므로 대상이 아니다. 2026-10-14 실측으로 프롤로그는 opus 7.3분 · all-haiku
+# 4.5분이고, suite 를 나눠 재실행할 때마다 그만큼 다시 들었다.
+#
 # --translate-pipeline-branch <name> 이면 translate 잡을 cloud-translate 의
 # Jenkins multibranch child <name> (예: PR-532) 에서 돌린다 — 미머지 PR 의 번역
 # 로직을 배포 없이 Jenkins 경로로 검증할 때. align/fix-heading-syntax/ko-review
@@ -495,6 +515,9 @@ PLANS=()
 SLEEP_BETWEEN=0
 ALL_HAIKU=0       # --all-haiku — 모든 모델 호출을 haiku 로 (scripts/all-haiku.env.sh)
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
+ALIGN_CACHE=1     # 그 스냅샷을 실행 사이에도 재사용 (local 모드만) — --no-align-cache
+ALIGN_CACHE_FILE=""
+LAG_PARALLEL=1    # webhook-lag-order 케이스 넷을 동시에 — --lag-order-serial
 ALIGNED_BRANCH="" # 그 스냅샷 브랜치 (첫 align 기반 plan 의 로그에서 파싱)
 TRANSLATE_MODE=local  # --translate 의 현재값. api 모드에서는 번역 로그가 Jenkins
                       # 쪽에만 있어 로컬 로그를 세는 카운터가 구조적으로 0 이 된다
@@ -512,6 +535,10 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --no-reuse-align)
       REUSE_ALIGN=0; shift ;;
+    --no-align-cache)
+      ALIGN_CACHE=0; shift ;;
+    --lag-order-serial)
+      LAG_PARALLEL=0; shift ;;
     --all-haiku)
       ALL_HAIKU=1; shift ;;
     --translate-pipeline-branch)
@@ -623,6 +650,41 @@ jenkins_console() {
 declare -a RESULTS=()
 overall=0
 first_plan=1
+# ── align 스냅샷 캐시 (실행 사이 재사용) ────────────────────────────────
+align_cache_key() {
+  local ct="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}" paths=(pre-align shared translate/app translate/prompts translate/translate_pr.py)
+  git -C "$REPO_ROOT" fetch -q origin +refs/heads/alpha:refs/remotes/origin/alpha 2>/dev/null || return 1
+  # 커밋 안 된 수정은 해시에 안 잡히므로 캐시를 쓰지 않는다.
+  [[ -z "$(git -C "$ct" status --porcelain -- "${paths[@]}" 2>/dev/null)" ]] || return 1
+  {
+    echo "v1"
+    git -C "$REPO_ROOT" rev-parse origin/alpha:archive origin/alpha:ko origin/alpha:en origin/alpha:ja \
+      origin/alpha:scripts/e2e-align-and-translate.sh origin/alpha:scripts/restore-alpha-origin.sh \
+      origin/alpha:scripts/restore-aligned-public-api.sh || return 1
+    local p; for p in "${paths[@]}"; do git -C "$ct" rev-parse "HEAD:$p" || return 1; done
+    echo "${TRANSLATE_CLAUDE_CODE_MODEL:-}|${TRANSLATE_ANTHROPIC_MODEL:-}|${TRANSLATE_DEBUG_VERIFY_MODEL:-}"
+    echo "${PASS_ARGS[*]}"
+  } 2>/dev/null | sha256sum | cut -c1-16
+}
+if (( REUSE_ALIGN && ALIGN_CACHE )) && [[ "$TRANSLATE_MODE" == "local" ]]; then
+  if akey="$(align_cache_key)" && [[ -n "$akey" ]]; then
+    ALIGN_CACHE_FILE="$HOME/.cache/agent-test-e2e/aligned/$akey"
+    if [[ -s "$ALIGN_CACHE_FILE" ]]; then
+      cached="$(head -1 "$ALIGN_CACHE_FILE")"
+      if git -C "$REPO_ROOT" ls-remote --exit-code --heads origin "$cached" >/dev/null 2>&1; then
+        ALIGNED_BRANCH="$cached"
+        echo "align 캐시 적중 ($akey): $ALIGNED_BRANCH — 첫 plan 부터 프롤로그를 건너뛴다"
+      else
+        echo "align 캐시 ($akey): $cached 가 원격에 없어 다시 만든다"
+      fi
+    else
+      echo "align 캐시 ($akey): 없음 — 첫 align plan 이 만든 스냅샷을 기록한다"
+    fi
+  else
+    echo "align 캐시: 쓰지 않음 (cloud-translate 에 커밋 안 된 수정이 있거나 키를 계산하지 못함)"
+  fi
+fi
+
 for plan in "${PLANS[@]}"; do
   if (( first_plan )); then
     first_plan=0
@@ -666,14 +728,42 @@ for plan in "${PLANS[@]}"; do
     trans_pr="$(grep -oE 'merged A → translate\s+:\s+PASS\s+https://[^ ]+' "$log" | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
   elif [[ "$plan" == "webhook-lag-order" ]]; then
-    # 케이스 넷을 순서대로 — 같은 webhook 토글·필터를 쓰므로 병렬로 돌리면 안 된다.
-    # plan 의 ec 는 처음 실패한 케이스의 exit (전부 통과면 0).
+    # 케이스 넷 — 기본은 동시에 (plan 설명 참고), --lag-order-serial 이면 차례로.
+    # plan 의 ec 는 케이스 순서상 처음 실패한 케이스의 exit (전부 통과면 0).
     ec=0
-    for lag_case in section-add anchor-rename section-move b-closed; do
+    LAG_CASES=(section-add anchor-rename section-move b-closed)
+    declare -A lag_ec=()
+    if (( LAG_PARALLEL )); then
+      ( REPO="TOAST-DOCS/Agent-Test"; source "$REPO_ROOT/scripts/e2e-webhook-toggle.sh"
+        set_webhook_repo_enabled true )
+      lag_pids=()
+      # 중단되면 자식에게 TERM — 자식 trap 이 필터·브랜치를 정리한다 — 그리고 webhook 을 끈다.
+      trap 'kill -TERM "${lag_pids[@]}" 2>/dev/null; wait; ( REPO="TOAST-DOCS/Agent-Test"; source "$REPO_ROOT/scripts/e2e-webhook-toggle.sh"; set_webhook_repo_enabled false ); exit 130' INT TERM
+      for lag_case in "${LAG_CASES[@]}"; do
+        clog="$outdir/$plan-$lag_case.log"
+        echo "    --case $lag_case → $clog (동시)"
+        E2E_WEBHOOK_SUITE_MANAGED=1 bash "$REPO_ROOT/scripts/e2e-webhook-lag-order.sh" \
+          --case "$lag_case" > "$clog" 2>&1 &
+        lag_pids+=($!)
+        sleep 15  # push 가 몰리지 않게 (GitHub 가 동시 ref 갱신 일부를 거부한다 — 케이스 쪽 push_retry 와 함께)
+      done
+      for i in "${!LAG_CASES[@]}"; do
+        wait "${lag_pids[$i]}"; lag_ec[${LAG_CASES[$i]}]=$?
+      done
+      trap - INT TERM
+      ( REPO="TOAST-DOCS/Agent-Test"; source "$REPO_ROOT/scripts/e2e-webhook-toggle.sh"
+        set_webhook_repo_enabled false )
+    else
+      for lag_case in "${LAG_CASES[@]}"; do
+        clog="$outdir/$plan-$lag_case.log"
+        echo "    --case $lag_case → $clog"
+        bash "$REPO_ROOT/scripts/e2e-webhook-lag-order.sh" --case "$lag_case" > "$clog" 2>&1
+        lag_ec[$lag_case]=$?
+      done
+    fi
+    for lag_case in "${LAG_CASES[@]}"; do
       clog="$outdir/$plan-$lag_case.log"
-      echo "    --case $lag_case → $clog"
-      bash "$REPO_ROOT/scripts/e2e-webhook-lag-order.sh" --case "$lag_case" > "$clog" 2>&1
-      cec=$?
+      cec=${lag_ec[$lag_case]}
       (( ec == 0 && cec != 0 )) && ec=$cec
       cverdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$clog" | tail -n1 || true)"
       cqueue="$(grep -oE '^\s+queue\s+: .*' "$clog" | sed -E 's/^\s+queue\s+: //' | tail -n1 || true)"
@@ -935,6 +1025,10 @@ for plan in "${PLANS[@]}"; do
     if (( REUSE_ALIGN )) && [[ -z "$ALIGNED_BRANCH" ]]; then
       ALIGNED_BRANCH="$(grep -oE 'E2E_ALIGNED_BRANCH=[^ ]+' "$log" | tail -n1 | cut -d= -f2 || true)"
       [[ -n "$ALIGNED_BRANCH" ]] && echo "    (align 스냅샷 확보: $ALIGNED_BRANCH — 이후 plan 이 재사용)"
+      if [[ -n "$ALIGNED_BRANCH" && -n "$ALIGN_CACHE_FILE" && $ec -eq 0 ]]; then
+        mkdir -p "$(dirname "$ALIGN_CACHE_FILE")" && echo "$ALIGNED_BRANCH" > "$ALIGN_CACHE_FILE" \
+          && echo "    (align 캐시 기록: $ALIGN_CACHE_FILE)"
+      fi
     fi
     verdict="$(grep -oE '^ALIGNMENT: (OK|FAIL)' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE 'detected translation PR: https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
