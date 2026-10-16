@@ -56,10 +56,10 @@ python-markdown 은 목록 뒤 빈 줄 너머에 **목록 항목**이 오면 종
 
 3. **CertificateRequest 확인**
 
-```bash
-kubectl get certificaterequest -n default
-kubectl describe certificaterequest <request-name> -n default
-```
+    ```bash
+    kubectl get certificaterequest -n default
+    kubectl describe certificaterequest <request-name> -n default
+    ```
 
 4. **Challenge 확인**
 

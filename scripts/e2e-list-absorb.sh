@@ -5,8 +5,9 @@
 #
 # ── 재현하는 사고 ─────────────────────────────────────────────────────────
 # cloud-translate#1310 검토(2026-10-16) 중 alpha 전수에서 찾았다. 배포 alpha 기준
-# 29 리포 · 97 문서 · 405 항목 (대상 101 리포, ko/en/ja 3,032 문서, zh·variant 제외).
-# 대표: PrivateCA `cert-manager-guide.md` 의 `2. Certificate 상태 확인` 이 글머리,
+# 40 리포 · 152 문서 · 936 항목 (대상 101 리포, ko/en/ja 3,032 문서, zh·variant 제외) —
+# 번호로 보임 328 · 글머리로 보임 77 · 번호 다름 531. 번호 다름은 배포본 표본 35 중 32 일치.
+# 대표: PrivateCA `cert-manager-guide.md` 의 `2. Certificate 상태 확인` 이 글머리, `4.` 가 `1.`,
 # NHNBastion·Network-Load-Balancer 의 하위 글머리가 번호 단계(4.·5.)로 보인다.
 # GitHub 미리보기(CommonMark)는 종류가 바뀌면 새 목록을 시작하므로 소스 리뷰로는 안 보인다.
 #

@@ -56,10 +56,10 @@ python-markdown はリストの後に空行を挟んで**リスト項目**が来
 
 3. **CertificateRequest確認**
 
-```bash
-kubectl get certificaterequest -n default
-kubectl describe certificaterequest <request-name> -n default
-```
+    ```bash
+    kubectl get certificaterequest -n default
+    kubectl describe certificaterequest <request-name> -n default
+    ```
 
 4. **Challenge確認**
 
