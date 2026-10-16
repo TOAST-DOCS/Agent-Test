@@ -19,12 +19,16 @@ Set information for external log storage.
 
 - Logs can be stored at an external OBS. 
 
+<!-- -->
+
 1. Visit [AWS S3 API](/Storage/Object%20Storage/en/s3-api-guide/#s3-api-credential) and register/query credential to import access key and secret key. 
 2. From the **External Log Storage Settings**, click **Storage Settings**.
 3. Enter data, including access key and secret key.
 4. All of the information about external log tampering notifications is required when adding/editing/deleting settings.
 5. After all data entered for OBS, click **Save**.
     - A temporary file is created in the bucket you set up for integration verification. 
+
+<!-- -->
 
 - Logs are saved at OBS as configured. 
 - [Guide for NHN Cloud OBS API](/Storage/Object%20Storage/en/s3-api-guide/)
@@ -36,20 +40,20 @@ Set information for external log storage.
 
 1. **Check Issuer status**
 
-```bash
-kubectl describe issuer my-acme-issuer-example-com -n default
-```
+    ```bash
+    kubectl describe issuer my-acme-issuer-example-com -n default
+    ```
 
-- Verify that the `Ready` status `is True`.
-- Verify that your ACME account registration was successful.
+    - Verify that the `Ready` status `is True`.
+    - Verify that your ACME account registration was successful.
 
 2. **Check Certificate Satus**
 
-```bash
-kubectl describe certificate test-server-cert-example-com -n default
-```
+    ```bash
+    kubectl describe certificate test-server-cert-example-com -n default
+    ```
 
-- In the Events section, check for error messages.
+    - In the Events section, check for error messages.
 
 3. **Verify ertificateRequest**
 
@@ -87,6 +91,8 @@ For general mail delivery, you must enter the receiver directly.
 6. **Enter the title and message content**.
 7. In **Recipient** and **CC**, enter the email address that you want to send to.
 
+<!-- -->
+
 - Up to 10 attachments can be uploaded, and only 30MB or less files can be uploaded.
 - Total size of attachments cannot exceed 30MB.
 - You can attach up to 30MB, but it is recommended to attach it within 10MB because it may be rejected due to `exceeding the limit` or may result in a higher
@@ -99,11 +105,11 @@ For general mail delivery, you must enter the receiver directly.
 
 1. Add Individually 
 
-![deploy_ref_08_202402.png](https://static.toastoven.net/prod_tcdeploy/deploy_ref_08_202402.png)
+    ![deploy_ref_08_202402.png](https://static.toastoven.net/prod_tcdeploy/deploy_ref_08_202402.png)
 
-* Enter host name (required), IP address (required), and OS (optional), and click **Add**. 
-* Find what is added on the server list below. Only the servers left in the list are registered. 
-* Click **Create**: to modify, click **Modify**. 
+    * Enter host name (required), IP address (required), and OS (optional), and click **Add**. 
+    * Find what is added on the server list below. Only the servers left in the list are registered. 
+    * Click **Create**: to modify, click **Modify**. 
 
 2. Add in Mass 
 
@@ -128,7 +134,7 @@ For general mail delivery, you must enter the receiver directly.
 1. Select the Private DNS Zone to modify, then click **Modify Private DNS Zone** .
    
 2. You can add or delete VPCs. You can add a VPC by clicking the **+** button on the right side of the screen, and remove a VPC by clicking the **-** button on the added VPC.
-   - Because a Private DNS Zone must be associated with at least one VPC, the last VPC cannot be deleted.
+    - Because a Private DNS Zone must be associated with at least one VPC, the last VPC cannot be deleted.
 
 3. Modify **Description** and click **Confirm**.
 
@@ -149,6 +155,9 @@ For general mail delivery, you must enter the receiver directly.
         - **{variable+}** includes the child path where the path variable is located to declare a variable. A child resource path cannot be created in the variable containing the child path.
             - e.g./{proxy+} 
                 - **{proxy+}** path variable value of **/members/id1** becomes **members/id1**.
+
+<!-- -->
+
 - **Plugin**: Select this option if you want to add a plugin that is added to the selected path to the created method as well.
 - To create a resource and register a method at the same time, select HTTP method.
 - If you make a request to API Gateway with an unregistered resource path, 404 Not Found response is returned.

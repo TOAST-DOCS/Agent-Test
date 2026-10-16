@@ -18,12 +18,16 @@ python-markdown はリストの後に空行を挟んで**リスト項目**が来
 
 - 外部OBSにログを保管できます。
 
+<!-- -->
+
 1. [AWS S3 API](/Storage/Object%20Storage/ja/s3-api-guide/#s3-api-credential)を利用して認証情報の登録および照会でアクセスキー(accessKey)と秘密鍵(secretKey)を取得します。
 2. **ログ外部保管設定**で**保管設定**をクリックします。
 3. アクセスキーと秘密鍵をはじめとするデータを入力します。
 4. 外部ログ改ざん通知に関する情報は、設定の追加/修正/削除時に全て必要です。
 5. すべてのOBS情報を入力した後、**保存**をクリックします。
     - 連動検証のために設定したバケットに一時ファイルが作成されます。
+
+<!-- -->
 
 - 設定したOBSでログが保存されます。
 - [NHN Cloud OBS API案内ガイド](/Storage/Object%20Storage/ja/s3-api-guide/)
@@ -35,20 +39,20 @@ python-markdown はリストの後に空行を挟んで**リスト項目**が来
 
 1. **Issuer状態確認**
 
-```bash
-kubectl describe issuer my-acme-issuer-example-com -n default
-```
+    ```bash
+    kubectl describe issuer my-acme-issuer-example-com -n default
+    ```
 
-- `Ready`ステータスが`True`か確認します。
-- ACMEアカウント登録が成功したか確認します。
+    - `Ready`ステータスが`True`か確認します。
+    - ACMEアカウント登録が成功したか確認します。
 
 2. **Certificate状態確認**
 
-```bash
-kubectl describe certificate test-server-cert-example-com -n default
-```
+    ```bash
+    kubectl describe certificate test-server-cert-example-com -n default
+    ```
 
-- Eventsセクションでエラーメッセージを確認します。
+    - Eventsセクションでエラーメッセージを確認します。
 
 3. **CertificateRequest確認**
 
@@ -86,6 +90,8 @@ kubectl describe challenge <challenge-name> -n default
 6. **件名とメッセージ内容**を入力します。
 7. **受信者**と**CC**にメールアドレスを入力します。
 
+<!-- -->
+
 - 添付ファイルは最大10個までアップロード可能で、30MB以下のファイルのみ可能です。
 - 添付ファイルの合計は30MBを超えることはできません。
 - 最大30MBまで添付可能ですが、受信するメールシステム（gmail.com、naver.comなど）の添付ファイル制限ポリシーにより「制限超過」で拒否されたり、スパム判定率が高くなる可能性があるため、10MB以内で添付することを推奨します。
@@ -97,11 +103,11 @@ kubectl describe challenge <challenge-name> -n default
 
 1. 個別追加
 
-![deploy_ref_08_ja_20200527.png](https://static.toastoven.net/prod_tcdeploy/ja/deploy_ref_08_ja_20200527.png)
+    ![deploy_ref_08_ja_20200527.png](https://static.toastoven.net/prod_tcdeploy/ja/deploy_ref_08_ja_20200527.png)
 
-* ホスト名(必須)、IPアドレス(必須)、OS(任意)を入力し、**追加**ボタンをクリックします。
-* 下にあるサーバーリストに追加された内容を確認します。左にあるチェックボックスを選択したサーバーのみ登録されます。
-* **作成**ボタンをクリックします。修正する時は**修正**ボタンをクリックします。
+    * ホスト名(必須)、IPアドレス(必須)、OS(任意)を入力し、**追加**ボタンをクリックします。
+    * 下にあるサーバーリストに追加された内容を確認します。左にあるチェックボックスを選択したサーバーのみ登録されます。
+    * **作成**ボタンをクリックします。修正する時は**修正**ボタンをクリックします。
 
 2. 大量追加
 
@@ -126,7 +132,7 @@ kubectl describe challenge <challenge-name> -n default
 1. 修正するPrivate DNS Zoneを選択した後、**Private DNS Zone修正**ボタンをクリックします。
    
 2. VPCを追加または削除できます。画面右側の**+**ボタンをクリックしてVPCを追加することができ、追加したVPCの**-**ボタンをクリックしてVPCを削除できます。
-   - Private DNS ZoneのVPCの最小接続数は1つでなければならないため、最後のVPCは削除できません。
+    - Private DNS ZoneのVPCの最小接続数は1つでなければならないため、最後のVPCは削除できません。
 
 3. **説明**を修正し、**確認**ボタンをクリックします。
 
@@ -147,6 +153,9 @@ kubectl describe challenge <challenge-name> -n default
         - **{variable+}**はパス変数が位置する下位パスを含めて変数で宣言します。下位パスを含む変数には下位リソースパスを作成できません。
             - 例：/{proxy+} 
                 - **/members/id1**リクエストの**{proxy+}**パス変数値は**members/id1**になります。
+
+<!-- -->
+
 - **プラグイン**：選択されたパスに追加されたプラグインを作成されたメソッドにも追加するにはチェックします。
 - リソースを作成する時にメソッドも一緒に登録するにはHTTPメソッドを選択します。
 - 登録していないリソースパスでAPI Gatewayにリクエストすると404 Not Foundレスポンスを返します。

@@ -18,12 +18,16 @@ python-markdown 은 목록 뒤 빈 줄 너머에 **목록 항목**이 오면 종
 
 - 외부 OBS에 로그를 보관할 수 있습니다.
 
+<!-- -->
+
 1. [AWS S3 API](/Storage/Object%20Storage/ko/s3-api-guide/#s3-api-credential)를 이용해 자격 증명 등록 및 조회로 액세스 키(accessKey)와 비밀 키(secretKey)를 가져옵니다.
 2. **로그 외부 보관 설정**에서 **보관 설정**을 클릭합니다.
 3. 액세스 키와 비밀 키를 비롯한 데이터들 입력합니다.
 4. 외부 로그 변조 알림에 대한 정보들은 설정 추가/수정/삭제 시 전부 필요합니다.
 5. 모든 OBS 정보를 입력한 뒤 **저장**을 클릭합니다.
     - 연동 검증을 위해 설정한 버킷에 임시 파일이 생성됩니다.
+
+<!-- -->
 
 - 설정한 OBS로 로그가 저장됩니다.
 - [NHN Cloud OBS API 안내 가이드](/Storage/Object%20Storage/ko/s3-api-guide/)
@@ -35,20 +39,20 @@ python-markdown 은 목록 뒤 빈 줄 너머에 **목록 항목**이 오면 종
 
 1. **Issuer 상태 확인**
 
-```bash
-kubectl describe issuer my-acme-issuer-example-com -n default
-```
+    ```bash
+    kubectl describe issuer my-acme-issuer-example-com -n default
+    ```
 
-- `Ready` 상태가 `True`인지 확인합니다.
-- ACME 계정 등록이 성공했는지 확인합니다.
+    - `Ready` 상태가 `True`인지 확인합니다.
+    - ACME 계정 등록이 성공했는지 확인합니다.
 
 2. **Certificate 상태 확인**
 
-```bash
-kubectl describe certificate test-server-cert-example-com -n default
-```
+    ```bash
+    kubectl describe certificate test-server-cert-example-com -n default
+    ```
 
-- Events 섹션에서 오류 메시지를 확인합니다.
+    - Events 섹션에서 오류 메시지를 확인합니다.
 
 3. **CertificateRequest 확인**
 
@@ -86,6 +90,8 @@ kubectl describe challenge <challenge-name> -n default
 6. **제목 및 메시지 내용**을 입력합니다.
 7. **받는 사람**과 **참조**에 원하는 메일 주소를 입력합니다.
 
+<!-- -->
+
 - 첨부 파일은 최대 10개까지 업로드 가능하며, 30MB 이하의 파일만 가능합니다.
 - 첨부 파일의 총합은 30MB를 넘어갈 수 없습니다.
 - 최대 30MB까지 첨부 가능하지만 수신하는 이메일 시스템(gmail.com, naver.com 등)의 첨부 파일 제한 정책에 따라 `제한 초과`로 거부되거나 스팸 판정률이 높아질 수 있으므로 10MB 이내로 첨부할 것을 권장합니다.
@@ -97,11 +103,11 @@ kubectl describe challenge <challenge-name> -n default
 
 1. 개별 추가
 
-![deploy_ref_08_202402.png](https://static.toastoven.net/prod_tcdeploy/deploy_ref_08_202402.png)
+    ![deploy_ref_08_202402.png](https://static.toastoven.net/prod_tcdeploy/deploy_ref_08_202402.png)
 
-* 호스트 이름(필수), IP 주소(필수), OS(선택) 입력 후 **추가** 버튼을 클릭합니다.
-* 아래 서버 목록에 추가된 내용을 확인합니다. 목록에 남아 있는 서버만 등록됩니다.
-* **생성** 버튼을 클릭합니다. 수정할 때는 **수정** 버튼을 클릭합니다.
+    * 호스트 이름(필수), IP 주소(필수), OS(선택) 입력 후 **추가** 버튼을 클릭합니다.
+    * 아래 서버 목록에 추가된 내용을 확인합니다. 목록에 남아 있는 서버만 등록됩니다.
+    * **생성** 버튼을 클릭합니다. 수정할 때는 **수정** 버튼을 클릭합니다.
 
 2. 대량 추가
 
@@ -126,7 +132,7 @@ kubectl describe challenge <challenge-name> -n default
 1. 수정할 Private DNS Zone을 선택한 후, **Private DNS Zone 수정** 버튼을 클릭합니다.
    
 2. VPC를 추가하거나 삭제할 수 있습니다. 화면 우측 **+** 버튼을 클릭해 VPC를 추가할 수 있으며, 추가된 VPC의 **-** 버튼을 클릭해 VPC를 제거할 수 있습니다.
-   - Private DNS Zone은 최소 1개의 VPC에 연결되어야 하므로, 마지막 VPC는 삭제할 수 없습니다.
+    - Private DNS Zone은 최소 1개의 VPC에 연결되어야 하므로, 마지막 VPC는 삭제할 수 없습니다.
 
 3. **설명**을 수정하고, **확인** 버튼을 클릭합니다.
 
@@ -147,6 +153,9 @@ kubectl describe challenge <challenge-name> -n default
         - **{variable+}** 는 경로 변수가 위치한 하위 경로를 포함하여 변수로 선언합니다. 하위 경로를 포함한 변수에는 하위 리소스 경로를 생성할 수 없습니다.
             - 예: /{proxy+} 
                 - **/members/id1** 요청의 **{proxy+}** 경로 변숫값은 **members/id1**이 됩니다.
+
+<!-- -->
+
 - **플러그인**: 선택된 경로에 추가된 플러그인을 생성된 메서드에도 추가하려면 체크합니다.
 - 리소스를 생성하면서 메서드도 같이 등록하려면 HTTP 메서드를 선택합니다.
 - 등록하지 않은 리소스 경로로 API Gateway에 요청하면 404 Not Found 응답을 반환합니다.
