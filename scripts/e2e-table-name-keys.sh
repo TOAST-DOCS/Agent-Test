@@ -104,8 +104,15 @@ cleanup() {
   for wt in "$tmpdir"/base "$tmpdir"/tx-*; do
     [[ -d "$wt" ]] && git worktree remove --force "$wt" >/dev/null 2>&1 || true
   done
-  if (( KEEP )) || (( DRY )); then
-    (( DRY )) || { echo; echo "--keep: 보존 — $SESSION_BRANCH (ko PR: ${ko_pr_url:-없음}, 번역 PR: ${tx_prs[*]:-없음})"; }
+  # 공유 체크아웃을 세션/head 브랜치에 남기지 않는다 — 153·343행이 `checkout -B` 로 옮긴다.
+  # 형제 스크립트(e2e-table-cell-mirror.sh 등)와 같은 정리다 (Agent-Test#1218 검토).
+  git checkout -q --detach 2>/dev/null || true
+  if (( DRY )); then
+    git branch -D -q "$SESSION_BRANCH" "$HEAD_BRANCH" 2>/dev/null || true
+    return $rc
+  fi
+  if (( KEEP )); then
+    echo; echo "--keep: 보존 — $SESSION_BRANCH (ko PR: ${ko_pr_url:-없음}, 번역 PR: ${tx_prs[*]:-없음})"
     return $rc
   fi
   echo; echo "[cleanup] PR 닫기 · 브랜치 정리"
@@ -117,6 +124,7 @@ cleanup() {
   done < <(git ls-remote --heads origin "refs/heads/translate/${HEAD_BRANCH}*" 2>/dev/null | sed 's|.*refs/heads/||')
   git push origin ":$HEAD_BRANCH"    >/dev/null 2>&1 || true
   git push origin ":$SESSION_BRANCH" >/dev/null 2>&1 || true
+  git branch -D -q "$SESSION_BRANCH" "$HEAD_BRANCH" 2>/dev/null || true
   return $rc
 }
 trap cleanup EXIT
