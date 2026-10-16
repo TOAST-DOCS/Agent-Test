@@ -151,6 +151,25 @@ cleanup_session_branch() {
     echo "  [cleanup] WARN: 세션 브랜치 삭제 실패 (이미 없거나 권한 문제)" >&2
 }
 
+# 순차 번역 큐가 이 리포에 켜져 있으면 번역 잡이 ko PR 에 `번역 대기열` 라벨을
+# 단다. 큐에서 빠지는 것은 번역 PR 이 **머지될 때**뿐인데, 이 e2e 는 번역 PR 을
+# 머지하지 않고 세션 브랜치 삭제로 닫으므로 라벨이 그대로 남는다 (실측
+# 2026-10-12 Internal-Agent-Test#10). 세션 base 가 사라져 큐에는 영향이 없지만
+# 남은 라벨은 "아직 대기 중인 PR" 로 읽히므로 정리 단계에서 뗀다.
+# 빌드를 기다린 경우에만 확실하다 — --no-wait-build 면 번역 잡이 cleanup 뒤에
+# 라벨을 달 수 있다.
+QUEUE_LABEL="번역 대기열"
+pr_url=""
+cleanup_queue_label() {
+  [[ -n "$pr_url" ]] || return 0
+  if gh pr view "$pr_url" --repo "$REPO" --json labels --jq '.labels[].name' 2>/dev/null \
+       | grep -Fxq "$QUEUE_LABEL"; then
+    echo "  [cleanup] removing label '$QUEUE_LABEL' from $pr_url"
+    gh pr edit "$pr_url" --repo "$REPO" --remove-label "$QUEUE_LABEL" >/dev/null 2>&1 || \
+      echo "  [cleanup] WARN: '$QUEUE_LABEL' 라벨 제거 실패" >&2
+  fi
+}
+
 # ── 세션 브랜치 결정 (미지정 시 자동 생성) + 필터 확장 ────────────────
 if [[ -z "$BASE_BRANCH" ]]; then
   BASE_BRANCH="e2e-webhook/${ts}"
@@ -161,7 +180,7 @@ fi
 
 # 스크립트 종료 시 필터 원복 + (세션 모드면) 브랜치 삭제. cleanup 은 idempotent.
 WEBHOOK_PRIOR="$(webhook_repo_state)"
-trap 'ec=$?; restore_filters; restore_repo_override; if [[ "$WEBHOOK_PRIOR" == on ]]; then echo "  webhook repo $REPO: 실행 전에 켜져 있어 그대로 둡니다"; else set_webhook_repo_enabled false; fi; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
+trap 'ec=$?; cleanup_queue_label; restore_filters; restore_repo_override; if [[ "$WEBHOOK_PRIOR" == on ]]; then echo "  webhook repo $REPO: 실행 전에 켜져 있어 그대로 둡니다"; else set_webhook_repo_enabled false; fi; if (( USE_SESSION_BRANCH )); then cleanup_session_branch "$BASE_BRANCH"; fi; exit $ec' EXIT INT TERM
 
 echo "==================================================================="
 echo "  webhook e2e — $REPO"

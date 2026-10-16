@@ -33,8 +33,8 @@
 # Usage:
 #   scripts/e2e-align-and-translate.sh [--engine api|cli] [--model haiku|sonnet|opus]
 #                                      [--tm-top-k N] [--chunk-workers N]
-#                                      [--guidelines-variant-en aws|unified|unified-v2|default]
-#                                      [--guidelines-variant-ja aws|unified|default]
+#                                      [--guidelines-variant-en aws|unified|unified-v2|unified-v3|default]
+#                                      [--guidelines-variant-ja aws|unified|unified-v2|default]
 #                                      [--align-v2|--no-align-v2]
 #                                      [--plan round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn|jinja-mask]
 #                                      [--translate api|local]
@@ -53,10 +53,12 @@
 #   --tm-top-k N          TM few-shot 개수 (기본값 1). "default" 지정 시 필드 미전송 (잡 .env default = 10)
 #   --chunk-workers N     chunk 병렬도 (기본값 2). PR#192/#199 의 chunk 병렬화 exercise.
 #                         "default" 시 잡 .env default (api=4, cli=2).
-#   --guidelines-variant-en <v>  en 가이드라인 크기 (aws|unified|unified-v2|default).
-#                                기본값 default (잡 .env default = unified-v2).
-#   --guidelines-variant-ja <v>  ja 가이드라인 크기 (aws|unified|default).
-#                                기본값 default (잡 .env default = unified).
+#   --guidelines-variant-en <v>  en 가이드라인 (aws|unified|unified-v2|unified-v3|default).
+#                                기본값 default (cloud-translate #1262 이후 기본 = unified-v3).
+#                                옛 지침 대조는 unified-v2.
+#   --guidelines-variant-ja <v>  ja 가이드라인 (aws|unified|unified-v2|default).
+#                                기본값 default (cloud-translate #1262 이후 기본 = unified-v2).
+#                                옛 지침 대조는 unified.
 #   --align-v2 / --no-align-v2   PR#218 ko-source-of-truth 모드로 align 실행 여부.
 #                                기본값 --align-v2 (opinionated defaults: demote-extras +
 #                                translate-headings 자동 활성; ancestor subtree 재번역 포함
@@ -203,8 +205,8 @@ TRANSLATE_ENGINE="claude-code"            # 기본값 cli — api/default 로 ov
 TRANSLATE_MODEL="claude-haiku-4-5"        # 기본값 haiku — sonnet/opus/default 로 override 가능
 TRANSLATE_TM_TOP_K="1"                    # TM few-shot 개수 기본값 1 (잡 .env default 10 → 절감)
 TRANSLATE_CHUNK_WORKERS="2"               # chunk 병렬도 (PR#192/#199). "default" → 필드 미전송
-TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (잡 .env: unified-v2)
-TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (잡 .env: unified)
+TRANSLATE_GUIDELINES_VARIANT_EN=""        # 기본값 default (#1262 이후: unified-v3)
+TRANSLATE_GUIDELINES_VARIANT_JA=""        # 기본값 default (#1262 이후: unified-v2)
 ALIGN_V2=1                                # PR#218 v2 모드 (기본 활성)
 PLAN_NAME="round1"                        # create-translate-test-pr.sh --plan 값. round1|round2|row-drop-repro|llm-patch|table-suite|markup-churn|jinja-mask
 TRANSLATE_VIA="api"                       # api = dashboard /api/translate (기본) | local = 모든 단계를 로컬 실행
@@ -268,16 +270,16 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --guidelines-variant-en)
       case "${2:-}" in
-        aws|unified|unified-v2) TRANSLATE_GUIDELINES_VARIANT_EN="$2" ;;
+        aws|unified|unified-v2|unified-v3) TRANSLATE_GUIDELINES_VARIANT_EN="$2" ;;
         default) TRANSLATE_GUIDELINES_VARIANT_EN="" ;;
-        *) echo "error: --guidelines-variant-en 은 aws|unified|unified-v2|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+        *) echo "error: --guidelines-variant-en 은 aws|unified|unified-v2|unified-v3|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --guidelines-variant-ja)
       case "${2:-}" in
-        aws|unified) TRANSLATE_GUIDELINES_VARIANT_JA="$2" ;;
+        aws|unified|unified-v2) TRANSLATE_GUIDELINES_VARIANT_JA="$2" ;;
         default) TRANSLATE_GUIDELINES_VARIANT_JA="" ;;
-        *) echo "error: --guidelines-variant-ja 은 aws|unified|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
+        *) echo "error: --guidelines-variant-ja 은 aws|unified|unified-v2|default 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
     --align-v2)      ALIGN_V2=1; shift ;;
@@ -315,6 +317,9 @@ while [[ $# -gt 0 ]]; do
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
+# LLM-patch 경로를 검증하는 plan 은 skip-full-table 가드를 켠다 (15단계 주석 참고).
+FORCE_SKIP_FULL_TABLE=0
+if [[ "$PLAN_NAME" == "llm-patch" ]] || (( ! TABLE_RECONCILE )); then FORCE_SKIP_FULL_TABLE=1; fi
 
 # ── ko-review 실행 여부 (plan 기본값) ────────────────────────────────
 if [[ "$KO_REVIEW_MODE" == "auto" ]]; then
@@ -693,7 +698,7 @@ fi
 
 # ── 8) claude CLI(fable)로 align PR heading·anchor-id 정렬 검사 ───────
 echo
-echo "[8/17] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
+echo "[8/17] claude CLI (${E2E_JUDGE_MODEL:-fable}) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
 
 head_ref="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$head_ref"
@@ -713,7 +718,7 @@ if [[ "$VERIFY_MODE" == "py" ]]; then
   set -e
 else
   check_out="$(cd "$check_wt" && claude -p "$check_prompt" \
-    --model fable \
+    --model "${E2E_JUDGE_MODEL:-fable}" \
     --allowedTools "Bash,Read,Grep,Glob")"
 fi
 
@@ -963,6 +968,14 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   # argparse 가 같은 store_true 를 두 번 받아도 결과는 같다.
   unit_preserve_opt=()
   if (( UNIT_PRESERVE )); then unit_preserve_opt=(--unit-preserve); fi
+  # LLM-patch 경로 plan(llm-patch · reconcile-off 변형)은 skip-full-table 가드를
+  # **켠다**. 그 폴백을 부르는 트리거가 이 가드 하나뿐인데 운영 권장 preset 은
+  # `--no-skip-full-table` 이라, preset 그대로면 경로에 원리상 도달하지 못하고
+  # suite 가 `llm-patch=0 skip-full-table=0` 으로 매번 실패한다 (2026-10-14 실측,
+  # #1143 이 옵션을 preset 에서 받게 된 뒤부터). BooleanOptionalAction 이라 뒤에
+  # 붙인 값이 이긴다. 운영과 다른 조건임을 argv 로그에 그대로 남긴다.
+  skip_full_table_opt=()
+  if (( FORCE_SKIP_FULL_TABLE )); then skip_full_table_opt=(--skip-full-table); fi
 
   # preset → argv + env. env 전용 플래그(--engine/--model)는 helper 가
   # `export K=V` 줄로 내보내고, 나머지는 PRESET_ARGS 배열로 온다.
@@ -980,7 +993,7 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   # 실제로 넘기는 argv 를 한 줄로 굳혀 두고 그것을 찍는다 — preset args 만
   # 찍으면 뒤에 붙는 unit-preserve·reconcile 플래그가 로그에서 빠져, 무엇으로
   # 돌았는지 로그로 되짚을 수 없다 (api 쪽 body 로깅과 같은 이유).
-  TRANSLATE_ARGV=("${PRESET_ARGS[@]}" "${unit_preserve_opt[@]}" "${reconcile_opt[@]}")
+  TRANSLATE_ARGV=("${PRESET_ARGS[@]}" "${unit_preserve_opt[@]}" "${reconcile_opt[@]}" "${skip_full_table_opt[@]}")
   echo "  translate argv: ${TRANSLATE_ARGV[*]}"
   set +e
   # engine·model 은 argv 가 아니라 **env** 로 간다 — 위 `eval "$preset_eval"` 이
@@ -1043,6 +1056,12 @@ if (( UNIT_PRESERVE )); then
     | python3 -c 'import json,sys; b=json.load(sys.stdin); b["unit_preserve"]=True; print(json.dumps(b, ensure_ascii=False))')"
 fi
 
+# LLM-patch 경로 plan 은 skip-full-table 가드를 켠다 — local 쪽 `skip_full_table_opt` 주석 참고.
+if (( FORCE_SKIP_FULL_TABLE )); then
+  translate_body="$(printf '%s' "$translate_body" \
+    | python3 -c 'import json,sys; b=json.load(sys.stdin); b["skip_full_table"]=True; print(json.dumps(b, ensure_ascii=False))')"
+fi
+
 # 로그는 **마지막 override 까지 얹은** body 다. 앞에서 찍으면 --unit-preserve 로
 # 돌린 실행의 로그가 그 필드 없이 남아, 무엇으로 돌았는지 로그로 되짚을 수 없다 —
 # 이 변경이 없애려던 결함("권장 preset 으로 돌렸다"는 보고와 실제가 다름)과 같은 부류다.
@@ -1089,7 +1108,7 @@ fi
 
 # ── 17) claude CLI(fable)로 번역 PR 검증 → 결과를 PR 댓글로 등록 ───────
 echo
-echo "[17/17] claude CLI (fable model) 번역 PR 검증 (PR=$trans_pr_url)"
+echo "[17/17] claude CLI (${E2E_JUDGE_MODEL:-fable}) 번역 PR 검증 (PR=$trans_pr_url)"
 
 trans_head_ref="$(gh pr view "$trans_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$trans_head_ref"
@@ -1140,7 +1159,7 @@ if [[ "$VERIFY_MODE" == "py" ]]; then
   set -e
 else
   trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
-    --model fable \
+    --model "${E2E_JUDGE_MODEL:-fable}" \
     --allowedTools "Bash,Read,Grep,Glob")"
 fi
 

@@ -18,7 +18,6 @@
 #   trap 'restore_filters' EXIT
 #   extend_filters_for_branch "$SESSION"
 
-declare -A ORIG_BASE_BRANCHES=()
 FILTER_EXTENDED=0
 
 _get_filters() {
@@ -64,43 +63,62 @@ print(json.dumps(result))
 PY
 }
 
-# $1 = 세션 브랜치. translate + ko-review 두 필터의 base_branches 에 append.
-extend_filters_for_branch() {
-  local br="$1" filters_json cur new job
-  echo "  [filter] appending '$br' to filter.base_branches (translate + ko-review)"
-  filters_json="$(_get_filters)"
-  for job in translate ko-review; do
-    cur="$(printf '%s' "$filters_json" | python3 -c "
+# 필터 갱신은 "읽고 → 고치고 → 쓰는" 완전 치환이라, 같은 머신에서 두 e2e 가 겹치면
+# 한쪽의 갱신이 다른 쪽 것을 덮는다. 그래서 갱신 구간을 flock 으로 감싸고, 원복은
+# "시작 시점 값으로 되돌리기" 가 아니라 **내가 넣은 브랜치만 빼기** 로 한다.
+# 예전 방식(ORIG 값 복원)은 병렬 실행에서 먼저 끝난 쪽이 아직 도는 쪽의 세션
+# 브랜치까지 지웠다 — suite 가 webhook-lag-order 의 케이스 넷을 동시에 돌리면서
+# 생긴 요구다. 단독 실행에서는 두 방식의 결과가 같다 (빈 값 '' = 모든 base 허용도
+# 그대로 '' 로 돌아온다).
+E2E_FILTER_LOCK="${E2E_FILTER_LOCK:-/tmp/e2e-webhook-filter.lock}"
+FILTER_BRANCH=""
+declare -A FILTER_ADDED=()   # job → 1 (이 프로세스가 실제로 append 한 job)
+
+# $1=job $2=add|remove $3=branch — 잠금 안에서 현재값을 읽어 브랜치 하나만 더하거나 뺀다.
+_edit_filter_branch() {
+  local job="$1" op="$2" br="$3" cur new
+  cur="$(_get_filters | python3 -c "
 import json, sys
 d = json.load(sys.stdin)
-f = (d.get('filters') or {}).get('$job') or {}
-print(f.get('base_branches') or '')
-")"
-    ORIG_BASE_BRANCHES[$job]="$cur"
-    if [[ ",$cur," == *",$br,"* ]]; then
-      new="$cur"
-    else
-      new="${cur:+$cur,}$br"
-    fi
-    echo "    $job: '$cur' → '$new'"
-    _set_filter "$job" "$new" >/dev/null
+print(((d.get('filters') or {}).get('$job') or {}).get('base_branches') or '')
+")" || return 1
+  if [[ "$op" == add ]]; then
+    if [[ ",$cur," == *",$br,"* ]]; then echo "    $job: '$cur' (이미 포함)"; return 2; fi
+    new="${cur:+$cur,}$br"
+  else
+    new="$(python3 -c "import sys; print(','.join(x for x in sys.argv[1].split(',') if x.strip() and x.strip() != sys.argv[2]))" "$cur" "$br")"
+    [[ "$new" == "$cur" ]] && return 0
+  fi
+  echo "    $job: '$cur' → '$new'"
+  _set_filter "$job" "$new" >/dev/null
+}
+
+# $1 = 세션 브랜치. translate + ko-review 두 필터의 base_branches 에 append.
+extend_filters_for_branch() {
+  local br="$1" job rc
+  FILTER_BRANCH="$br"
+  echo "  [filter] appending '$br' to filter.base_branches (translate + ko-review)"
+  for job in translate ko-review; do
+    ( flock -w 60 9 || { echo "  [filter] WARN: 잠금 대기 초과 — 잠금 없이 진행" >&2; }
+      _edit_filter_branch "$job" add "$br" ) 9>"$E2E_FILTER_LOCK"
+    rc=$?
+    (( rc == 0 )) && FILTER_ADDED[$job]=1
   done
   FILTER_EXTENDED=1
 }
 
 restore_filters() {
-  # trap 에서 호출. 이미 원복돼 있으면 no-op.
+  # trap 에서 호출. 이미 원복돼 있으면 no-op. 내가 넣은 브랜치만 뺀다.
   (( FILTER_EXTENDED )) || return 0
   local job
   for job in translate ko-review; do
-    # `+set` — 원래 값이 빈 문자열(= 모든 base 허용)이어도 되돌린다. `-n` 으로
-    # 보면 그 경우 세션 브랜치 하나만 남아 운영 delivery 가 전부 막힌다.
-    if [[ -n "${ORIG_BASE_BRANCHES[$job]+set}" ]]; then
-      echo "  [cleanup] restoring filter[$job].base_branches = '${ORIG_BASE_BRANCHES[$job]}'"
-      _set_filter "$job" "${ORIG_BASE_BRANCHES[$job]}" >/dev/null || \
-        echo "  [cleanup] WARN: 필터 원복 실패 ($job) — dashboard 어드민에서 수동 확인 필요" >&2
-    fi
+    [[ -n "${FILTER_ADDED[$job]:-}" ]] || continue
+    echo "  [cleanup] removing '$FILTER_BRANCH' from filter[$job].base_branches"
+    ( flock -w 60 9 || echo "  [cleanup] WARN: 잠금 대기 초과 — 잠금 없이 진행" >&2
+      _edit_filter_branch "$job" remove "$FILTER_BRANCH" ) 9>"$E2E_FILTER_LOCK" || \
+      echo "  [cleanup] WARN: 필터 원복 실패 ($job) — dashboard 어드민에서 수동 확인 필요" >&2
   done
+  FILTER_ADDED=()
   FILTER_EXTENDED=0
 }
 

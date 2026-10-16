@@ -13,7 +13,7 @@
 #   6) PR reviews · review comments 를 gh api 로 조회
 #      → 구조 검증: format_summary() 규격 요약 리뷰 본문 · 인라인 코멘트
 #      존재 · `` `suggestion `` 블록 존재
-#   7) claude CLI (fable model) 로 검수 결과의 의미 품질 검증 —
+#   7) claude CLI (fable · E2E_JUDGE_MODEL 로 변경) 로 검수 결과의 의미 품질 검증 —
 #      검출 항목이 실제로 위반을 짚었는지, 요약 표가 형식을 지켰는지.
 #      마지막 줄에 KO_REVIEW: OK 또는 KO_REVIEW: FAIL 만 출력.
 #      (다른 plan 의 fable check 과 동일한 last-line 계약.)
@@ -289,7 +289,7 @@ else:
     print("STRUCT_CHECK: PASS")
 PYEOF
 
-# ── 7) claude CLI (fable) 로 의미 품질 검증 ──────────────────────────
+# ── 7) claude CLI (fable · E2E_JUDGE_MODEL 로 변경) 로 의미 품질 검증 ──────────────────────────
 if (( SKIP_FABLE )); then
   echo
   echo "[7/7] --skip-fable — fable 의미 검증 건너뜀"
@@ -306,7 +306,7 @@ if (( SKIP_FABLE )); then
 fi
 
 echo
-echo "[7/7] claude CLI (fable) 로 검수 결과 의미 품질 검증 (PR=$ko_pr_url)"
+echo "[7/7] claude CLI (${E2E_JUDGE_MODEL:-fable}) 로 검수 결과 의미 품질 검증 (PR=$ko_pr_url)"
 
 # fable 워크트리에 넣을 컨텍스트: (a) 요약 리뷰 본문들 (b) 인라인 코멘트들
 # JSON.  파일/줄 매핑을 사람이 읽기 좋게 정돈.
@@ -383,7 +383,7 @@ check_prompt='이 저장소는 NHN Cloud 사용자 가이드 픽스처입니다.
 KO_REVIEW: FAIL 인 경우 그 근거를 판정 표에 명확히 남기세요.'
 
 koreview_check_out="$(cd "$check_wt" && claude -p "$check_prompt" \
-  --model fable \
+  --model "${E2E_JUDGE_MODEL:-fable}" \
   --allowedTools "Bash,Read,Grep,Glob")"
 
 echo "$koreview_check_out"
@@ -426,7 +426,7 @@ echo "==================================================================="
 echo "  ko PR         : $ko_pr_url"
 echo "  ko-review job : $koreview_job_id"
 echo "  구조 검증     : PASS"
-echo "  fable 판정    : $(grep -oE '^KO_REVIEW: (OK|FAIL)' <<<"$koreview_check_out" | tail -n1)"
+echo "  판정(${E2E_JUDGE_MODEL:-fable}) : $(grep -oE '^KO_REVIEW: (OK|FAIL)' <<<"$koreview_check_out" | tail -n1)"
 echo "==================================================================="
 
 exit $overall_rc

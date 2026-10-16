@@ -46,6 +46,9 @@
 #   5. **외부 URL 이 공백 없이 바로 앞에 붙은** 가이드 URL
 #      (`[https://external…/docs](https://docs…/ko/…/ko/…/)`) → 가이드 URL 만 이동
 #   6. **URL 안의 URL** (리디렉터 `?u=<가이드 URL>`) → 어느 쪽도 손대지 않음
+#   7. **ko 원문이 이미 대상 언어 세그먼트를 쓴 비가이드 절대 URL**
+#      (`dev.mysql.com/…/8.0/en/` · `docs.toast.com/en/…/en/` · `docs.python.org/ja/`)
+#      → ko 원문과 바이트 동일 (아래 "케이스 restore-ext")
 #
 # 5·6 은 규칙끼리 서로의 토큰을 침범하지 않는지 보는 모양이다. "외부 URL 복원"
 # 을 호스트 negative lookahead 로만 막으면 매치 **시작 위치** 만 검사하게 되어,
@@ -65,11 +68,34 @@
 #   (8) 같은 유닛의 한글 대조군이 실제로 번역됨 (수정이 번역을 삼키지 않는지)
 #   (9) 인접 외부 URL 뒤의 가이드 URL 이 두 자리 모두 자기 언어
 #  (10) URL 안의 URL 이 짝 불일치가 아니다
+#  (11) [restore-ext] en/ja 의 비가이드 절대 URL 이 ko 원문 URL 과 바이트 동일
+#  (S)  [restore-ext] 정적 체크 — 모델 없이 `rewrite_links` 를 ko 픽스처 문단에
+#       직접 돌려 같은 판정. 번역 전에 돈다 (`--static-only` 면 이것만 돌고 끝)
+#
+# ── 케이스 restore-ext — 비가이드 절대 URL 의 "외부 URL 복원" ──────────────
+# 실제 사고: TOAST-DOCS/Gamebase#433 → 번역 PR #434 (2026-10-12 머지,
+# https://github.com/TOAST-DOCS/Gamebase/pull/434). ko 원문 코드 블록의
+# `<see href="https://docs.toast.com/en/Game/Gamebase/en/api-guide/#purchase-iap">`
+# (ko 가 이미 `/en/` 을 썼다) 가 en 결과에서 `…/en/Game/Gamebase/ko/…` 가 됐다.
+# 원인은 결정적이다: `_rewrite_url_tokens` → `_restore_external_url` 이 가이드
+# 호스트(docs.*nhncloud.com)가 아닌 절대 URL 의 **마지막 `/{target}/`** 을 무조건
+# `/ko/` 로 되돌린다 — "모델이 외부 URL 의 언어를 번역했다" 고 가정할 뿐, ko 원문이
+# 처음부터 그 세그먼트를 썼는지는 보지 않는다. en 은 `/en/` 을, ja 는 `/ja/` 를
+# 가진 URL 이 깨진다 (ko 코퍼스의 비가이드 URL 중 `/en/` 113개).
+#
+# 기존 케이스(1~10)가 못 잡은 이유: 외부 URL 대조군(yaml.org)에 로케일 세그먼트가
+# 없어 복원 패스가 손댈 자리가 아예 없었다.
+#
+# 이 케이스는 **수정 전에는 FAIL 이 정상**이다. 이 스크립트는 `e2e-suite.sh` 의
+# plan 에 없어 all 을 빨갛게 만들지 않는다. 원래 계약(1~10)만 보려면
+# `--skip-restore-ext`.
 #
 # Usage:
 #   source ./load_env.sh
 #   bash scripts/e2e-docs-url-locale.sh
 #   bash scripts/e2e-docs-url-locale.sh --keep
+#   bash scripts/e2e-docs-url-locale.sh --static-only       # 모델·PR 없이 (S) 만
+#   bash scripts/e2e-docs-url-locale.sh --skip-restore-ext  # (11)·(S) 제외
 #
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
 #     bash scripts/e2e-docs-url-locale.sh
@@ -85,6 +111,8 @@ SESSION_BRANCH="e2e-docsurl/$TS"
 HEAD_BRANCH="translate-test-docsurl/$TS"
 DOC="overview.md"          # ko/en/ja 세 벌이 다 있는 작은 문서
 KEEP=0
+RESTORE_EXT=1
+STATIC_ONLY=0
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
@@ -95,7 +123,9 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --keep) KEEP=1; shift ;;
     --doc)  DOC="$2"; shift 2 ;;
-    -h|--help) sed -n '1,70p' "$0"; exit 0 ;;
+    --skip-restore-ext) RESTORE_EXT=0; shift ;;
+    --static-only) STATIC_ONLY=1; shift ;;
+    -h|--help) sed -n '1,100p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -131,7 +161,26 @@ EXT_LABEL_URL="https://external.example.com/docs"
 # 시드도 ko 를 품은 채로 심는다 (이것이 "이미 올바른 상태" 다).
 RED_URL="https://link.example.com/r?u=https://docs.nhncloud.com/ko/${SLUG}/ko/console-guide/"
 OLD_FRAG="#e2e-old-anchor"
+# 케이스 restore-ext — ko 원문이 이미 대상 언어 세그먼트를 쓴 비가이드 절대 URL.
+# en/ja 모두 ko 와 **같은 바이트**가 정답이다 (원문이 정한 링크다).
+#   GB : Gamebase#434 사고 그대로 (`/en/` 두 자리, 마지막 것이 되돌려졌다) → en 결함
+#   SQL: 코퍼스 최다 모양 (dev.mysql.com/doc/refman/8.0/en/)               → en 결함
+#   PY : `/ja/` 세그먼트                                                   → ja 결함
+EXT_GB_URL="https://docs.toast.com/en/Game/Gamebase/en/api-guide/#purchase-iap"
+EXT_SQL_URL="https://dev.mysql.com/doc/refman/8.0/en/replication.html"
+EXT_PY_URL="https://docs.python.org/ja/3/library/re.html"
 NEW_FRAG="#create-a-key-store"
+
+# restore-ext 문장 — 같은 문단(= ko 가 바꿔 재번역되는 유닛) 끝에 붙는다. URL 은
+# 세 언어 모두 ko 원문과 같은 바이트로 심는다 (그것이 "이미 올바른 상태" 다).
+ext_sentence() {  # $1: lang
+  (( RESTORE_EXT )) || return 0
+  case "$1" in
+    ko) printf ' 결제 콜백은 `<see href="%s">` 를, 복제는 [MySQL 문서](%s)를, 정규식은 [Python 문서](%s)를 참고합니다.' "$EXT_GB_URL" "$EXT_SQL_URL" "$EXT_PY_URL" ;;
+    en) printf ' For the payment callback, see `<see href="%s">`; for replication, see the [MySQL documentation](%s); for regular expressions, see the [Python documentation](%s).' "$EXT_GB_URL" "$EXT_SQL_URL" "$EXT_PY_URL" ;;
+    ja) printf ' 決済コールバックは `<see href="%s">` を、レプリケーションは [MySQL ドキュメント](%s)を、正規表現は [Python ドキュメント](%s)を参照してください。' "$EXT_GB_URL" "$EXT_SQL_URL" "$EXT_PY_URL" ;;
+  esac
+}
 
 # 픽스처 — ko 는 원문, en/ja 는 **이미 올바른** 번역 상태.
 # 링크 4종이 한 문단 안에 있다 (block granularity 에서 한 유닛 = 한 번의 재번역).
@@ -141,7 +190,7 @@ fixture_ko() {  # $1: fragment
 <a id="e2e-docs-url-locale"></a>
 ### 암호화 키 저장소 설정
 
-암호화 볼륨을 만들려면 미리 [키 저장소를 생성](https://docs.nhncloud.com/ko/${SLUG}/ko/getting-started/$1)해야 합니다. 공공 환경은 [공공 가이드](${GOV_URL})를 참고합니다. 오브젝트 스토리지 인증은 [인증 및 권한](/Storage/Object%20Storage/ko/api-guide/#auth)을, YAML 형식은 [Yaml 홈페이지](${EXT_URL})를 참고합니다. 콘솔 사용법은 [${EXT_LABEL_URL}](https://docs.nhncloud.com/ko/${SLUG}/ko/console-guide/)에서, 리디렉터를 거치는 주소는 ${RED_URL} 에서 확인합니다.
+암호화 볼륨을 만들려면 미리 [키 저장소를 생성](https://docs.nhncloud.com/ko/${SLUG}/ko/getting-started/$1)해야 합니다. 공공 환경은 [공공 가이드](${GOV_URL})를 참고합니다. 오브젝트 스토리지 인증은 [인증 및 권한](/Storage/Object%20Storage/ko/api-guide/#auth)을, YAML 형식은 [Yaml 홈페이지](${EXT_URL})를 참고합니다. 콘솔 사용법은 [${EXT_LABEL_URL}](https://docs.nhncloud.com/ko/${SLUG}/ko/console-guide/)에서, 리디렉터를 거치는 주소는 ${RED_URL} 에서 확인합니다.$(ext_sentence ko)
 EOF
 }
 
@@ -151,7 +200,7 @@ fixture_en() {  # $1: fragment
 <a id="e2e-docs-url-locale"></a>
 ### Encryption Key Store Settings
 
-To create an encrypted volume, you must first [create a key store](https://docs.nhncloud.com/en/${SLUG}/en/getting-started/$1). For the public sector environment, see the [public sector guide](${GOV_URL}). For Object Storage authentication, see [Authentication and Authorization](/Storage/Object%20Storage/en/api-guide/#auth), and for the YAML format, see the [Yaml homepage](${EXT_URL}). For console usage, see [${EXT_LABEL_URL}](https://docs.nhncloud.com/en/${SLUG}/en/console-guide/), and see ${RED_URL} for the redirector form.
+To create an encrypted volume, you must first [create a key store](https://docs.nhncloud.com/en/${SLUG}/en/getting-started/$1). For the public sector environment, see the [public sector guide](${GOV_URL}). For Object Storage authentication, see [Authentication and Authorization](/Storage/Object%20Storage/en/api-guide/#auth), and for the YAML format, see the [Yaml homepage](${EXT_URL}). For console usage, see [${EXT_LABEL_URL}](https://docs.nhncloud.com/en/${SLUG}/en/console-guide/), and see ${RED_URL} for the redirector form.$(ext_sentence en)
 EOF
 }
 
@@ -161,7 +210,7 @@ fixture_ja() {  # $1: fragment
 <a id="e2e-docs-url-locale"></a>
 ### 暗号化キーストア設定
 
-暗号化ボリュームを作成するには、あらかじめ[キーストアを作成](https://docs.nhncloud.com/ja/${SLUG}/ja/getting-started/$1)する必要があります。公共環境は[公共ガイド](${GOV_URL})を参照してください。オブジェクトストレージの認証は[認証および権限](/Storage/Object%20Storage/ja/api-guide/#auth)を、YAML 形式は [Yaml ホームページ](${EXT_URL})を参照してください。コンソールの使い方は [${EXT_LABEL_URL}](https://docs.nhncloud.com/ja/${SLUG}/ja/console-guide/) を、リダイレクタ経由のアドレスは ${RED_URL} を参照してください。
+暗号化ボリュームを作成するには、あらかじめ[キーストアを作成](https://docs.nhncloud.com/ja/${SLUG}/ja/getting-started/$1)する必要があります。公共環境は[公共ガイド](${GOV_URL})を参照してください。オブジェクトストレージの認証は[認証および権限](/Storage/Object%20Storage/ja/api-guide/#auth)を、YAML 形式は [Yaml ホームページ](${EXT_URL})を参照してください。コンソールの使い方は [${EXT_LABEL_URL}](https://docs.nhncloud.com/ja/${SLUG}/ja/console-guide/) を、リダイレクタ経由のアドレスは ${RED_URL} を参照してください。$(ext_sentence ja)
 EOF
 }
 
@@ -169,6 +218,54 @@ echo "repo    : $REPO"
 echo "session : $SESSION_BRANCH"
 echo "doc     : $DOC"
 echo
+
+# ── S) 정적 체크 (restore-ext) — 모델·PR 없이 결정적 판정 ──────────────────
+# 번역 후처리 `rewrite_links` 를 ko 픽스처 문단에 직접 돌린다. 모델이 URL 을
+# 바이트 그대로 복사해 와도(= 이상적 모델) 후처리가 깨뜨리는지를 본다.
+static_rc=0
+if (( RESTORE_EXT )); then
+  echo "[S] 정적 체크 — rewrite_links(ko 픽스처 문단, en|ja) 의 비가이드 URL 보존"
+  echo "    ($CLOUD_TRANSLATE_DIR/translate/app/postprocess.py)"
+  static_py="$tmpdir/static_restore_ext.py"
+  cat > "$static_py" <<'PY'
+import re, sys
+sys.path[:0] = [sys.argv[1], sys.argv[1] + "/.."]
+from app.postprocess import rewrite_links
+urls = sys.argv[2:]
+ko = sys.stdin.read()
+for u in urls:
+    assert u in ko, f"픽스처에 {u} 없음"
+rc = 0
+for lang in ("en", "ja"):
+    out = rewrite_links(ko, lang)
+    for u in urls:
+        if u in out:
+            print(f"  PASS  (S) {lang} {u}")
+            continue
+        rc = 1
+        host = u.split("/")[2]
+        got = re.findall(r'https?://' + re.escape(host) + r"[^\s)\"'<>`]*", out)
+        print(f"  FAIL  (S) {lang} {u}")
+        for g in got:
+            print(f"              → {g}")
+raise SystemExit(rc)
+PY
+  set +e
+  fixture_ko "$NEW_FRAG" | "$CLOUD_TRANSLATE_PY" "$static_py" \
+    "$CLOUD_TRANSLATE_DIR/translate" "$EXT_GB_URL" "$EXT_SQL_URL" "$EXT_PY_URL"
+  static_rc=$?
+  set -e
+  if (( static_rc == 0 )); then
+    echo "  (S) PASS"
+  else
+    echo "  (S) FAIL — 후처리가 ko 원문의 비가이드 URL 을 바꾼다 (Gamebase#434 결함 재현)"
+  fi
+  echo
+fi
+if (( STATIC_ONLY )); then
+  trap - EXIT
+  exit $static_rc
+fi
 
 # ── 0) webhook 비활성화 ───────────────────────────────────────────────────
 # 실제 PR 을 만들므로 배포된 webhook pod 가 같은 PR 로 Jenkins 잡을 중복
@@ -263,9 +360,12 @@ for lang in en ja; do
     || bad "(2) $lang/$DOC 를 번역 브랜치에서 못 읽음"
 done
 
-python3 - "$tmpdir" "$SLUG" "$NEW_FRAG" "$GOV_URL" "$EXT_URL" "$EXT_LABEL_URL" <<'PY' || fails=$((fails + 1))
+python3 - "$tmpdir" "$SLUG" "$NEW_FRAG" "$GOV_URL" "$EXT_URL" "$EXT_LABEL_URL" \
+  "$RESTORE_EXT" "$EXT_GB_URL" "$EXT_SQL_URL" "$EXT_PY_URL" <<'PY' || fails=$((fails + 1))
 import io, re, sys, pathlib
 tmp, slug, frag, gov_url, ext_url, ext_label_url = sys.argv[1:7]
+restore_ext = sys.argv[7] == "1"
+ext_loc_urls = sys.argv[8:11]
 DOCS = re.compile(r'https?://docs\.[a-z0-9.-]*nhncloud\.com/[^\s)"\'<>\]]*')
 rc = 0
 for lang in ("en", "ja"):
@@ -358,6 +458,21 @@ for lang in ("en", "ja"):
             print(f"  PASS  (10) {lang} URL 안의 URL 이 짝 불일치가 아님")
         else:
             print(f"  FAIL  (10) {lang} URL 안의 URL 이 짝 불일치 — {inner}"); rc = 1
+
+    # (11) [restore-ext] ko 원문이 이미 대상 언어 세그먼트를 쓴 비가이드 절대 URL 은
+    #      ko 와 바이트 동일. 수정 전에는 `_restore_external_url` 이 마지막
+    #      `/{lang}/` 을 `/ko/` 로 되돌린다 (Gamebase#434).
+    if restore_ext:
+        for u in ext_loc_urls:
+            if u in t:
+                print(f"  PASS  (11) {lang} 비가이드 URL 보존 {u}")
+                continue
+            host = u.split("/")[2]
+            got = re.findall(r'https?://' + re.escape(host) + r"""[^\s)"'<>`]*""", t)
+            print(f"  FAIL  (11) {lang} 비가이드 URL 이 바뀜 {u}")
+            for g in got:
+                print(f"              → {g}")
+            rc = 1
 raise SystemExit(rc)
 PY
 
@@ -368,6 +483,11 @@ if grep -q '대조군' "$tmpdir/en.md" 2>/dev/null; then
   grep -n '대조군' "$tmpdir/en.md" | head -3 | sed 's/^/        /'
 else
   ok "(8) 대조군 산문이 en 에서 번역됨 (한글 잔류 없음)"
+fi
+
+# (S) 정적 체크 결과도 최종 판정에 넣는다
+if (( RESTORE_EXT && static_rc != 0 )); then
+  bad "(S) 정적 체크 — rewrite_links 가 비가이드 URL 을 바꾼다"
 fi
 
 echo

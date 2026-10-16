@@ -130,6 +130,7 @@
 # Usage:
 #   bash scripts/e2e-list-items.sh
 #   bash scripts/e2e-list-items.sh --verbose
+#   bash scripts/e2e-list-items.sh --ref origin/alpha   # 워킹 트리 대신 그 ref 의 픽스처
 #
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
 #     bash scripts/e2e-list-items.sh
@@ -142,11 +143,18 @@ CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$CLOUD_TRANSLATE_DIR/.venv/bin/python}"
 DOC="list-items-sample.md"
 VERBOSE=0
+# 픽스처를 읽을 git ref. 비우면 워킹 트리 (손으로 고친 픽스처를 바로 재 볼 때).
+# suite 는 `origin/alpha` 를 넘긴다 — 공유 체크아웃은 직전 plan 이 남긴 세션
+# 브랜치 위에 있기 일쑤이고, 그 브랜치의 픽스처는 pre-align 이 앵커를 찍어 유닛
+# 수가 달라 (6) 이 실패한다 (2026-10-14 실측: jinja-mask 세션 위에서 47/48 · 2콜 80자,
+# alpha 픽스처로는 46/47 · 1콜 36자).
+FIXTURE_REF=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --verbose|-v) VERBOSE=1; shift ;;
     --doc) DOC="$2"; shift 2 ;;
+    --ref) FIXTURE_REF="$2"; shift 2 ;;
     -h|--help) sed -n '2,134p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
@@ -156,17 +164,27 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 [[ -x "$CLOUD_TRANSLATE_PY" ]] || { echo "python 없음: $CLOUD_TRANSLATE_PY" >&2; exit 1; }
+FIXTURE_ROOT="$REPO_ROOT"
+if [[ -n "$FIXTURE_REF" ]]; then
+  FIXTURE_ROOT="$(mktemp -d)"
+  trap 'rm -rf "$FIXTURE_ROOT"' EXIT
+  for l in ko en ja; do
+    mkdir -p "$FIXTURE_ROOT/$l"
+    git show "$FIXTURE_REF:$l/$DOC" > "$FIXTURE_ROOT/$l/$DOC" \
+      || { echo "픽스처 없음: $FIXTURE_REF:$l/$DOC" >&2; exit 1; }
+  done
+fi
 for l in ko en ja; do
-  [[ -f "$l/$DOC" ]] || { echo "픽스처 없음: $l/$DOC" >&2; exit 1; }
+  [[ -f "$FIXTURE_ROOT/$l/$DOC" ]] || { echo "픽스처 없음: $l/$DOC" >&2; exit 1; }
 done
 
 echo "=== 목록 항목 splice e2e ==="
 echo "  cloud-translate : $CLOUD_TRANSLATE_DIR"
-echo "  픽스처          : {ko,en,ja}/$DOC"
+echo "  픽스처          : {ko,en,ja}/$DOC @ ${FIXTURE_REF:-워킹 트리}"
 echo
 
 CT_DIR="$CLOUD_TRANSLATE_DIR" DOCNAME="$DOC" VERBOSE="$VERBOSE" \
-  "$CLOUD_TRANSLATE_PY" - "$REPO_ROOT" <<'PY'
+  "$CLOUD_TRANSLATE_PY" - "$FIXTURE_ROOT" <<'PY'
 import asyncio, os, pathlib, re, sys
 from unittest.mock import AsyncMock
 
