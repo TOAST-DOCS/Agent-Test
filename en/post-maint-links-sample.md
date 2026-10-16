@@ -13,11 +13,11 @@ It is used by `scripts/e2e-post-maint-links.sh`. It is not registered in the use
 
 <a id="post-maint-links-ios"></a>
 #### iOS { #post-maint-links-ios }
-* See [Guide for NHN Cloud Log & Crash Search iOS](https://docs.nhncloud.com/en/nhncloud-sdk/en/log-collector-ios/).
+* See [Guide for NHN Cloud Log & Crash Search iOS](/nhncloud-sdk/en/log-collector-ios/).
 
 <a id="post-maint-links-android"></a>
 #### Android { #post-maint-links-android }
-* See [NHN Cloud Log & Crash Search Android Guide](https://docs.nhncloud.com/en/nhncloud-sdk/en/log-collector-android/).
+* See [NHN Cloud Log & Crash Search Android Guide](/nhncloud-sdk/en/log-collector-android/).
 
 <a id="post-maint-links-control"></a>
 ### Others { #post-maint-links-control }
