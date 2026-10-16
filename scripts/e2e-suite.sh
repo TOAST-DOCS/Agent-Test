@@ -235,6 +235,18 @@
 #                 exit 1 = B 콘텐츠 유실(버그 재현), 2 = 하네스 오류.
 #   round1      — 일반 종합 (heading/anchor/섹션/문단/표 기본 변형 15항목).
 #                 기대: exit 0 (전 파일 PASS).
+#   translate-queue — repo × base 순차 번역 큐 (e2e-translate-queue.sh, cloud-translate#1048).
+#                 한 세션 위에서 네 장면: S1 대기→차례 (#89→#90 모양, [BEFORE]/[AFTER]) ·
+#                 S2 번역 PR 닫힘은 완료가 아님 · S3 앞 번역 실패→재번역 ([BEFORE]/[AFTER])
+#                 · S4 대조군. 차례의 번역은 자기 변경만 담는다. 판정 전부 결정적. 로컬
+#                 translate_pr.py 전용이고 CLOUD_TRANSLATE_DIR 에 번역 큐 코드
+#                 (shared/translate_queue.py) 가 있어야 한다 — 없으면 exit 2. 큐의 webhook
+#                 배선은 webhook-lag-order 가 따로 본다. medium, ~15~20분.
+#   translate-queue-ordinary — 큐를 켜도 일반 흐름 (ko → 번역 머지 → ko …) 이 큐 끔과
+#                 바이트 동일한지 (e2e-translate-queue-ordinary.sh). 라운드 4개를 큐 켬
+#                 (카세트 기록)·큐 끔(재생)으로 두 번 번역해 모델 입력·트리·기점·Files
+#                 changed·PR 본문을 비교한다. **all 밖** — 큐 도입 때의 일회성 동일성
+#                 증명이라 명시 지정으로만 돌린다 (출력 자체는 round1·concurrent 가 본다).
 #   lag-order   — 앞선 번역 PR 이 **미머지** 인 창 안에서 다른 ko PR 이 머지되는
 #                 시나리오 (e2e-translation-lag-order.sh). B 생성 → A 생성 →
 #                 B 머지·번역(열어 둠) → A 머지·번역 → 검증 1(A 번역이 B 섹션을
@@ -454,7 +466,7 @@
 #                 medium = webhook-concurrent webhook-lag-order workflow-ignore
 #                          korean-review-mkdocs korean-review-markup korean-review-links
 #                          korean-review-line-anchors
-#                          row-drop-repro markup-churn retranslate lag-order notation
+#                          row-drop-repro markup-churn retranslate lag-order translate-queue notation
 #                          list-items table-tag-trail table-tag-gaps date-headings
 #                 low    = llm-patch fill-stubs split-docs fix-links fix-tables
 #                          table-name-keys table-cell-mirror file-by-file full-retranslate-images
@@ -553,7 +565,7 @@ ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-r
            korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links
            korean-review-line-anchors
            round1 table-suite row-drop-repro llm-patch markup-churn retranslate concurrent
-           lag-order fill-stubs split-docs fix-links fix-tables jinja-mask notation list-items
+           lag-order translate-queue fill-stubs split-docs fix-links fix-tables jinja-mask notation list-items
            table-name-keys table-cell-mirror table-tag-trail table-tag-gaps file-by-file full-retranslate-images
            date-headings)
 # 중요도 묶음 (2026-10-16 확정). 시간이 없을 때는 `high` 만 돌린다 — 10-14·16 실측으로
@@ -568,7 +580,7 @@ ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-r
 TIER_HIGH=(webhook korean-review korean-review-no-targets round1 table-suite concurrent jinja-mask)
 TIER_MEDIUM=(webhook-concurrent webhook-lag-order workflow-ignore korean-review-mkdocs
              korean-review-markup korean-review-links korean-review-line-anchors row-drop-repro markup-churn retranslate
-             lag-order notation list-items table-tag-trail table-tag-gaps date-headings)
+             lag-order translate-queue notation list-items table-tag-trail table-tag-gaps date-headings)
 TIER_LOW=(llm-patch fill-stubs split-docs fix-links fix-tables table-name-keys table-cell-mirror file-by-file
           full-retranslate-images)
 _tier_check="$(comm -3 <(printf '%s\n' "${ALL_PLANS[@]}" | sort) \
@@ -621,7 +633,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-name-keys|table-cell-mirror|table-tag-trail|table-tag-gaps|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings)
+    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-name-keys|table-cell-mirror|table-tag-trail|table-tag-gaps|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings|translate-queue|translate-queue-ordinary)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -855,6 +867,20 @@ for plan in "${PLANS[@]}"; do
     ec=$?
     verdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$log" | tail -n1 || true)"
     trans_pr="$(grep -oE '^  A 번역 PR:\s+https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "translate-queue-ordinary" ]]; then
+    # 번역 큐를 켜도 일반 흐름(ko → 번역 머지 → ko …)은 큐 끔과 바이트 동일한가.
+    bash "$REPO_ROOT/scripts/e2e-translate-queue-ordinary.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$log" | tail -n1 || true)"
+    trans_pr="$(grep -oE 'ON https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
+  elif [[ "$plan" == "translate-queue" ]]; then
+    # 번역 큐 — lag-order 처럼 로컬 translate_pr.py 전용.
+    bash "$REPO_ROOT/scripts/e2e-translate-queue.sh" > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^RESULT: (PASS|FAIL).*' "$log" | tail -n1 || true)"
+    trans_pr="$(grep -oE '\[AFTER\] https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${trans_pr:-<no-pr>}")
   elif [[ "$plan" == "lag-order" ]]; then
     # 번역 지연 순서 시나리오 — concurrent 와 같이 로컬 translate_pr.py 전용.
@@ -1238,6 +1264,8 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" == "round1" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "concurrent" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "lag-order" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "translate-queue" && $ec -ne 0 ]]; then overall=1; fi
+  if [[ "$plan" == "translate-queue-ordinary" && $ec -ne 0 ]]; then overall=1; fi
   # table-tag-gaps 의 exit 3(REPRO) 은 #1264 머지 뒤라 회귀다 — 허용하지 않는다.
   if [[ "$plan" == "table-tag-gaps" && $ec -ne 0 ]]; then overall=1; fi
   # table-name-keys 도 같다 — #1042 머지 뒤의 exit 3(REPRO) 은 회귀다.
@@ -1269,6 +1297,7 @@ for plan in "${PLANS[@]}"; do
         && "$plan" != "korean-review-links" && "$plan" != "korean-review-line-anchors" \
         && "$plan" != "anchor-audit" \
         && "$plan" != "concurrent" && "$plan" != "lag-order" && "$plan" != "fill-stubs" \
+        && "$plan" != "translate-queue" && "$plan" != "translate-queue-ordinary" \
         && "$plan" != "fix-tables" \
         && "$plan" != "preserve" && "$plan" != "table-tag-gaps" && "$plan" != "table-name-keys" \
         && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
@@ -1338,6 +1367,7 @@ echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
 echo "  (lag-order: exit 0 = A 번역이 B 섹션을 넣지 않고 최종 1회. exit 1 = 중복(버그 재현), 2 = 하네스 오류)"
+echo "  (translate-queue: exit 0 = 머지 순서대로 하나씩 · 앞 번역 전엔 대기 · 차례의 번역은 자기 변경만 · en/ja anchor == ko. 1 = 판정 실패, 2 = 하네스 오류)"
 echo "  (fill-stubs: exit 0 = OK. stub 섹션만 채우고 그 밖은 바이트 보존 · id 없는 stub 은 건너뜀)"
 echo "  (fill-stubs: exit 4 = HELD — 도구가 보고한 보류만 남음. ⚠️ 로 집계하고 suite 는 실패시키지 않는다)"
 echo "  (fix-tables: exit 0 = FIX_TABLES: OK. 표가 어긋난 section 만 ko 로 다시 만들고 대조군은 바이트 보존)"
