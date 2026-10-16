@@ -342,6 +342,12 @@
 #                 **두 plan 모두 all 에서 제외** — 검증 대상 수정이 머지되기 전에는
 #                 main 에 대해 항상 REPRO 다 (table-malformed 와 같은 이유). 머지되면
 #                 all 에 넣는다.
+#   table-name-keys — 첫 열이 이름인 표 reconcile (e2e-table-name-keys.sh,
+#                 cloud-translate#1042). 중첩 필드 `- senderKey` · 음수 코드 `-40070` ·
+#                 공백 든 이름 · 이스케이프 네 모양의 실제 행 + 대조군 둘(한글 첫 열 →
+#                 여전히 표 전체 재번역, 필드 경로 → 행 단위). [A] reconcile 경로를 모델
+#                 없이, [B] 기존 행 바이트 보존. 기대: exit 0 / TABLE_NAME_KEYS: OK.
+#                 #1042 가 머지돼 all 에 있다 (low). ~5~10분.
 #   table-cell-mirror — 언어 중립 셀 미러 M7 (e2e-table-cell-mirror.sh, cloud-translate
 #                 #1261 · TOAST-Cloud#416 모양). ko 가 필드 표 `필수` 열만 Yes/No → Y/N
 #                 으로 바꾸면 그 행은 모델로 가지 않고 en/ja 의 그 셀만 바뀌는가. [A]
@@ -451,7 +457,7 @@
 #                          row-drop-repro markup-churn retranslate lag-order notation
 #                          list-items table-tag-trail table-tag-gaps date-headings
 #                 low    = llm-patch fill-stubs split-docs fix-links fix-tables
-#                          table-cell-mirror file-by-file full-retranslate-images
+#                          table-name-keys table-cell-mirror file-by-file full-retranslate-images
 #   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
 #                 / anchor-audit 를 제외한 plan 전체
 #                 = webhook workflow-ignore korean-review korean-review-no-targets
@@ -548,7 +554,7 @@ ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-r
            korean-review-line-anchors
            round1 table-suite row-drop-repro llm-patch markup-churn retranslate concurrent
            lag-order fill-stubs split-docs fix-links fix-tables jinja-mask notation list-items
-           table-cell-mirror table-tag-trail table-tag-gaps file-by-file full-retranslate-images
+           table-name-keys table-cell-mirror table-tag-trail table-tag-gaps file-by-file full-retranslate-images
            date-headings)
 # 중요도 묶음 (2026-10-16 확정). 시간이 없을 때는 `high` 만 돌린다 — 10-14·16 실측으로
 # high 약 51분(align 캐시 적중 시 약 44분) · medium 약 70분 · low 약 20분.
@@ -563,7 +569,7 @@ TIER_HIGH=(webhook korean-review korean-review-no-targets round1 table-suite con
 TIER_MEDIUM=(webhook-concurrent webhook-lag-order workflow-ignore korean-review-mkdocs
              korean-review-markup korean-review-links korean-review-line-anchors row-drop-repro markup-churn retranslate
              lag-order notation list-items table-tag-trail table-tag-gaps date-headings)
-TIER_LOW=(llm-patch fill-stubs split-docs fix-links fix-tables table-cell-mirror file-by-file
+TIER_LOW=(llm-patch fill-stubs split-docs fix-links fix-tables table-name-keys table-cell-mirror file-by-file
           full-retranslate-images)
 _tier_check="$(comm -3 <(printf '%s\n' "${ALL_PLANS[@]}" | sort) \
   <(printf '%s\n' "${TIER_HIGH[@]}" "${TIER_MEDIUM[@]}" "${TIER_LOW[@]}" | sort))"
@@ -615,7 +621,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-cell-mirror|table-tag-trail|table-tag-gaps|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings)
+    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-name-keys|table-cell-mirror|table-tag-trail|table-tag-gaps|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -952,13 +958,14 @@ for plan in "${PLANS[@]}"; do
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${pairs:-<no-pairs>}")
   elif [[ "$plan" == "unit-pairing" || "$plan" == "table-field-rows" \
           || "$plan" == "table-cell-mirror" || "$plan" == "table-tag-trail" \
-          || "$plan" == "table-tag-gaps" \
+          || "$plan" == "table-tag-gaps" || "$plan" == "table-name-keys" \
           || "$plan" == "file-by-file" ]]; then
     # 자체 스크립트 — 번역은 로컬 translate_pr.py 로만 돈다 (검증 대상이 체크아웃의
     # 코드라서). 엔진은 스크립트가 CLI 로 고정하고 옵션은 권장 preset 에서 받는다.
     case "$plan" in
       unit-pairing)     _sc=e2e-unit-pairing.sh;     _tag=UNIT_PAIRING ;;
       table-field-rows) _sc=e2e-table-field-rows.sh; _tag=TABLE_FIELD_ROWS ;;
+      table-name-keys)  _sc=e2e-table-name-keys.sh;  _tag=TABLE_NAME_KEYS ;;
       table-cell-mirror) _sc=e2e-table-cell-mirror.sh; _tag=TABLE_CELL_MIRROR ;;
       table-tag-trail)  _sc=e2e-table-tag-trail.sh;  _tag=TABLE_TAG_TRAIL ;;
       table-tag-gaps)   _sc=e2e-table-tag-gaps.sh;   _tag=TABLE_TAG_GAPS ;;
@@ -1233,6 +1240,8 @@ for plan in "${PLANS[@]}"; do
   if [[ "$plan" == "lag-order" && $ec -ne 0 ]]; then overall=1; fi
   # table-tag-gaps 의 exit 3(REPRO) 은 #1264 머지 뒤라 회귀다 — 허용하지 않는다.
   if [[ "$plan" == "table-tag-gaps" && $ec -ne 0 ]]; then overall=1; fi
+  # table-name-keys 도 같다 — #1042 머지 뒤의 exit 3(REPRO) 은 회귀다.
+  if [[ "$plan" == "table-name-keys" && $ec -ne 0 ]]; then overall=1; fi
   # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
   # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
   # fill-stubs: exit 4 = HELD — 채우기는 동작했고 남은 실패가 전부 도구가
@@ -1261,7 +1270,7 @@ for plan in "${PLANS[@]}"; do
         && "$plan" != "anchor-audit" \
         && "$plan" != "concurrent" && "$plan" != "lag-order" && "$plan" != "fill-stubs" \
         && "$plan" != "fix-tables" \
-        && "$plan" != "preserve" && "$plan" != "table-tag-gaps" \
+        && "$plan" != "preserve" && "$plan" != "table-tag-gaps" && "$plan" != "table-name-keys" \
         && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
   # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
   # 마크업 미러링이 동작하지 않은 것이므로 suite 실패로 잡는다.
