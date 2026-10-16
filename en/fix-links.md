@@ -158,3 +158,8 @@ This section was added by the translation queue e2e (queue-a1). It must appear e
 ## Translation Queue Test Section queue-a2 { #queue-a2 }
 
 This section has been added by translation queue e2e (queue-a2). It must appear exactly once in the translation.
+
+<a id="queue-a3"></a>
+## Translation Queue Test Section queue-a3 { #queue-a3 }
+
+This section was added by the translation queue e2e (queue-a3). It must appear exactly once in the translation.
