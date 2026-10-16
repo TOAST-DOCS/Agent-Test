@@ -11,11 +11,11 @@
 
 <a id="post-maint-links-ios"></a>
 #### iOS { #post-maint-links-ios }
-* [NHN Cloud Log & Crash Search iOS 가이드](/nhncloud-sdk/ko/log-collector-ios/)를 참고하십시오.
+* [NHN Cloud Log & Crash Search iOS 가이드](https://docs.nhncloud.com/ko/nhncloud-sdk/ko/log-collector-ios/)를 참고하세요.
 
 <a id="post-maint-links-android"></a>
 #### Android { #post-maint-links-android }
-* [NHN Cloud Log & Crash Search Android 가이드](/nhncloud-sdk/ko/log-collector-android/)를 참고하십시오.
+* [NHN Cloud Log & Crash Search Android 가이드](https://docs.nhncloud.com/ko/nhncloud-sdk/ko/log-collector-android/)를 참고하세요.
 
 <a id="post-maint-links-control"></a>
 ### 기타 { #post-maint-links-control }
