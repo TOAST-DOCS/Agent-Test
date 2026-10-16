@@ -141,7 +141,7 @@
 #                 load/ko-diff 비율 cap 초과 → LLM-patch fallback 경로를 태운다.
 #                 대조군으로 overview.md 에 정상 문단 추가. 결함 상태에서는
 #                 en/ja 가 stale 행을 유지(FAIL), 수정 배포 후에는 backfill
-#                 또는 todo-stub 으로 해소(exit 0). exit 3 도 정상 허용.
+#                 또는 todo-stub 으로 해소(exit 0). exit 3 은 실패 (2026-10-17 — 성공 기준은 exit 0 만).
 #   row-drop-repro-noreconcile
 #               — 위와 같은 ko 픽스처를 **표 행 reconcile OFF** 로 돌리는 변형
 #                 (--no-table-reconcile). reconcile 이 켜져 있으면 stale 행이
@@ -152,7 +152,7 @@
 #                 제외하려다 LLM-patch fallback 을 태운다 — 그 경로가 검증 대상.
 #                 dashboard /api/translate 에 table_reconcile 필드가 없어
 #                 **--translate local 전용** (api 모드와 함께 주면 하드 실패).
-#                 판정: exit 0/3 허용, 단 로그에 LLM-patch fallback 이 0건이면
+#                 판정: exit 0 만 성공 (2026-10-17 — 아래 '성공 기준'), 단 로그에 LLM-patch fallback 이 0건이면
 #                 suite 실패 — 경로를 안 태운 실행은 검증한 게 없으므로.
 #
 #                 **2026-08-24 실측: 이 가설은 틀렸다 — reconcile 을 꺼도
@@ -194,7 +194,7 @@
 #                 확인: en/ja 양쪽 1, reconcile on/off 무관(표 개수가 달라
 #                 reconcile 이 bail), 대조군(stale 없음)은 0.
 #                 그래서 --translate api/local 양쪽에서 동작한다.
-#                 판정: exit 0/3 허용 (LLM-patch 가 declined 하면 파일이 제외되어
+#                 판정: exit 0 만 성공 (2026-10-17 — 아래 '성공 기준') (LLM-patch 가 declined 하면 파일이 제외되어
 #                 구조 검사가 FAIL 할 수 있고, 그 자체가 #585 류 결함의 신호다),
 #                 단 로그에 LLM-patch 호출이 0건이면 **suite 실패** — 경로를 안
 #                 태운 실행은 검증한 게 없다. verdict 에 llm-patch=/ok=/declined=
@@ -1252,7 +1252,15 @@ for plan in "${PLANS[@]}"; do
   fi
   echo "=== [$plan] 종료: exit=$ec ${verdict:-}"
   # webhook / korean-review / round1 은 전부 통과(exit 0)가 기대값 — 실패면 suite 실패
-  # table-suite 는 번역 로직에 따라 기대값이 다르므로 exit 3 도 정상 허용
+  # table-suite 의 exit 3 은 예전 허용이었다 — 2026-10-17 부터 exit 0 만 성공
+  # ── 성공 기준: exit 0 만 성공이다 (2026-10-17). ─────────────────────────
+  # 예전에는 공통 규칙이 exit 3(결함 재현) 을 허용했다 — 검증 대상 수정이 머지되기 전의
+  # 기대값이었고, 수정 전 코드로 일부러 재현하는 BEFORE 실행의 기대값이기도 했다. 지금
+  # suite 가 도는 plan 은 대상 수정이 전부 머지돼 있으므로 결함 재현은 곧 회귀이고,
+  # BEFORE 는 개별 스크립트를 --label BEFORE / --expect-fail 로 돌리는 일이다. 그래서
+  # plan 이 무엇이든 exit≠0 이면 suite 실패다. 아래의 plan 별 규칙은 그 위에 더하는 조건
+  # (카운터 0 이면 실패 등) 이다.
+  (( ec != 0 )) && overall=1
   if [[ "$plan" == "webhook" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "webhook-concurrent" && $ec -ne 0 ]]; then overall=1; fi
   if [[ "$plan" == "webhook-lag-order" && $ec -ne 0 ]]; then overall=1; fi
@@ -1278,16 +1286,14 @@ for plan in "${PLANS[@]}"; do
   # fill-stubs 는 기대값이 하나뿐이다 — 채우기는 번역 품질이 아니라 구조를
   # 보는 plan 이라 "코드에 따라 exit 3 도 정상" 같은 여지가 없다.
   # fill-stubs: exit 4 = HELD — 채우기는 동작했고 남은 실패가 전부 도구가
-  # **보고한 보류** 다 (블록 구조 검증에 걸려 쓰지 않음 = 백스톱 동작). 모델
-  # 편차로 게이트를 붉히면 신호가 죽으므로 suite 실패로 잡지 않고 경고만 낸다.
-  # 조용히 빠진 경우는 스크립트가 1 을 돌려주므로 그대로 실패다.
+  # **보고한 보류** 다 (블록 구조 검증에 걸려 쓰지 않음 = 백스톱 동작). 2026-10-17 부터
+  # 이것도 실패다 — suite 는 exit 0 만 성공으로 친다 (아래 '성공 기준'). 안내만 덧붙인다.
   if [[ "$plan" == "fill-stubs" ]]; then
     if (( ec == 4 )); then
-      echo "    ! 보류(HELD) — 채우기는 동작, 남은 실패는 도구가 보고한 보류뿐." >&2
+      echo "    ! 보류(HELD) — 채우기는 동작, 남은 실패는 도구가 보고한 보류뿐. 실패로 집계한다." >&2
       echo "      구제 경로는 재실행이다. 같은 stub 이 계속 보류되면 그때 조사할 것." >&2
-    elif (( ec != 0 )); then
-      overall=1
     fi
+    (( ec != 0 )) && overall=1
   fi
   # fix-tables 도 기대값이 하나다 — 구조를 보는 plan 이라 exit 3 여지가 없다.
   if [[ "$plan" == "fix-tables" && $ec -ne 0 ]]; then overall=1; fi
@@ -1305,10 +1311,10 @@ for plan in "${PLANS[@]}"; do
         && "$plan" != "translate-queue" && "$plan" != "translate-queue-ordinary" \
         && "$plan" != "fix-tables" \
         && "$plan" != "preserve" && "$plan" != "table-tag-gaps" && "$plan" != "table-name-keys" \
-        && $ec -ne 0 && $ec -ne 3 ]]; then overall=1; fi
+        && $ec -ne 0 ]]; then overall=1; fi
   # markup-churn 은 exit 0 만으로는 부족하다 — 가드가 한 번이라도 걸렸다면
   # 마크업 미러링이 동작하지 않은 것이므로 suite 실패로 잡는다.
-  # row-drop-repro-noreconcile: exit 0/3 은 둘 다 허용 (todo-stub 으로 해소되면
+  # row-drop-repro-noreconcile: exit 3 도 예전엔 허용했다 (todo-stub 으로 해소되면
   # 구조 검사가 표 개수 불일치로 FAIL 을 낼 수 있고, 그건 회귀가 아니라 완전성
   # 검사가 유실을 가시화한 것). 대신 **LLM-patch fallback 이 0건이면 실패** —
   # 그 경로를 태우지 못한 실행은 이 변형이 검증하려던 것을 검증하지 않았다.
@@ -1345,7 +1351,7 @@ for plan in "${PLANS[@]}"; do
     echo "    ! LLM-patch fallback 미발동 — 이 변형은 그 경로 검증이 목적이므로 실패로 집계" >&2
     overall=1
   fi
-  # jinja-mask: exit 0/3 은 위 공통 규칙대로지만 그것만으로는 아무것도 재지
+  # jinja-mask: exit 0 은 위 성공 기준대로지만 그것만으로는 아무것도 재지
   # 않는다 — check_jinja_mask.py 가 하나라도 FAIL 이면 suite 실패.
   if [[ "$plan" == "jinja-mask" ]] && (( ${jm_ec:-1} != 0 )); then
     echo "    ! jinja-mask 판정 FAIL — $outdir/$plan.verdict.log 참고" >&2
@@ -1368,16 +1374,16 @@ echo
 echo "===== e2e suite 요약 ($outdir) ====="
 (( ALL_HAIKU )) && echo "(all-haiku — 모든 로컬 모델 호출 $E2E_HAIKU_MODEL · 운영과 다른 조건. webhook 계열은 배포 모델)"
 for r in "${RESULTS[@]}"; do echo "  $r"; done
-echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포함이면 exit 3 이 정상)"
+echo "  (성공 기준: 모든 plan 은 exit 0 만 성공. exit 3(결함 재현) · 4(HELD) 도 실패로 집계)"
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
 echo "  (concurrent: exit 0 = B 콘텐츠 보존. exit 1 = 유실(버그 재현), 2 = 하네스 오류)"
 echo "  (lag-order: exit 0 = A 번역이 B 섹션을 넣지 않고 최종 1회. exit 1 = 중복(버그 재현), 2 = 하네스 오류)"
 echo "  (translate-queue: exit 0 = 머지 순서대로 하나씩 · 앞 번역 전엔 대기 · 차례의 번역은 자기 변경만 · en/ja anchor == ko. 1 = 판정 실패, 2 = 하네스 오류)"
 echo "  (fill-stubs: exit 0 = OK. stub 섹션만 채우고 그 밖은 바이트 보존 · id 없는 stub 은 건너뜀)"
-echo "  (fill-stubs: exit 4 = HELD — 도구가 보고한 보류만 남음. ⚠️ 로 집계하고 suite 는 실패시키지 않는다)"
+echo "  (fill-stubs: exit 4 = HELD — 도구가 보고한 보류만 남음. 실패로 집계, 구제는 재실행)"
 echo "  (fix-tables: exit 0 = FIX_TABLES: OK. 표가 어긋난 section 만 ko 로 다시 만들고 대조군은 바이트 보존)"
-echo "  (row-drop-repro-noreconcile: exit 0/3 허용, 단 llm-patch=0 이면 실패 — 그 경로를 안 태운 실행)"
-echo "  (llm-patch: exit 0/3 허용, 단 llm-patch=0 이면 실패. ok/declined 로 fallback 판단을 확인)"
+echo "  (row-drop-repro-noreconcile: exit 0, 그리고 llm-patch>0 — 그 경로를 안 태운 실행은 실패)"
+echo "  (llm-patch: exit 0, 그리고 llm-patch>0. ok/declined 로 fallback 판단을 확인)"
 echo "  (jinja-mask: JINJA_MASK: OK 가 PASS — mismatch·fallback 0, 마스크 두 경로 도달(local), 번역 PR 태그 검사 통과. '?' 는 미측정)"
 [[ -n "$ALIGNED_BRANCH" ]] && echo "  (align 스냅샷: $ALIGNED_BRANCH — 재현/디버그용, 정리는 수동)"
 exit $overall
