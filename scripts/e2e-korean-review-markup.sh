@@ -280,7 +280,7 @@ EXPECTED = {
     ("ko/markup-followup-leak.md", "마크업 누출", 4),
     ("ko/markup-followup-leak.md", "마크업 누출", 6),
     ("ko/markup-followup-leak.md", "마크업 누출", 8),
-    ("ko/markup-followup-adm.md", "빈 admonition 상자", 4),
+    ("ko/markup-followup-adm.md", "깨진 admonition 상자", 4),
 }
 # 침묵해야 하는 문서 — 대조군, 그리고 **PR 이 안 건드린 문단에만 결함이 있는 문서**.
 SILENT = {"ko/markup-followup-control.md", "ko/markup-followup-existing.md"}
@@ -333,7 +333,7 @@ check("안전한 자동 수정이 없습니다" in lines.get(8, "") and "수정:
 for doc in sorted(SILENT):
     check(doc not in body, f"침묵: {doc} 가 후속 조치 리뷰에 없음")
 
-for label in ("마크업 누출", "빈 admonition 상자"):
+for label in ("마크업 누출", "깨진 admonition 상자"):
     check(bool(re.search(rf"^\|\s*{re.escape(label)}\s*\|", body, re.M)),
           f"점검 표에 '{label}' 행")
 

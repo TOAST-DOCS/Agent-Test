@@ -317,6 +317,9 @@ while [[ $# -gt 0 ]]; do
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
+# LLM-patch 경로를 검증하는 plan 은 skip-full-table 가드를 켠다 (15단계 주석 참고).
+FORCE_SKIP_FULL_TABLE=0
+if [[ "$PLAN_NAME" == "llm-patch" ]] || (( ! TABLE_RECONCILE )); then FORCE_SKIP_FULL_TABLE=1; fi
 
 # ── ko-review 실행 여부 (plan 기본값) ────────────────────────────────
 if [[ "$KO_REVIEW_MODE" == "auto" ]]; then
@@ -965,6 +968,14 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   # argparse 가 같은 store_true 를 두 번 받아도 결과는 같다.
   unit_preserve_opt=()
   if (( UNIT_PRESERVE )); then unit_preserve_opt=(--unit-preserve); fi
+  # LLM-patch 경로 plan(llm-patch · reconcile-off 변형)은 skip-full-table 가드를
+  # **켠다**. 그 폴백을 부르는 트리거가 이 가드 하나뿐인데 운영 권장 preset 은
+  # `--no-skip-full-table` 이라, preset 그대로면 경로에 원리상 도달하지 못하고
+  # suite 가 `llm-patch=0 skip-full-table=0` 으로 매번 실패한다 (2026-10-14 실측,
+  # #1143 이 옵션을 preset 에서 받게 된 뒤부터). BooleanOptionalAction 이라 뒤에
+  # 붙인 값이 이긴다. 운영과 다른 조건임을 argv 로그에 그대로 남긴다.
+  skip_full_table_opt=()
+  if (( FORCE_SKIP_FULL_TABLE )); then skip_full_table_opt=(--skip-full-table); fi
 
   # preset → argv + env. env 전용 플래그(--engine/--model)는 helper 가
   # `export K=V` 줄로 내보내고, 나머지는 PRESET_ARGS 배열로 온다.
@@ -982,7 +993,7 @@ if [[ "$TRANSLATE_VIA" == "local" ]]; then
   # 실제로 넘기는 argv 를 한 줄로 굳혀 두고 그것을 찍는다 — preset args 만
   # 찍으면 뒤에 붙는 unit-preserve·reconcile 플래그가 로그에서 빠져, 무엇으로
   # 돌았는지 로그로 되짚을 수 없다 (api 쪽 body 로깅과 같은 이유).
-  TRANSLATE_ARGV=("${PRESET_ARGS[@]}" "${unit_preserve_opt[@]}" "${reconcile_opt[@]}")
+  TRANSLATE_ARGV=("${PRESET_ARGS[@]}" "${unit_preserve_opt[@]}" "${reconcile_opt[@]}" "${skip_full_table_opt[@]}")
   echo "  translate argv: ${TRANSLATE_ARGV[*]}"
   set +e
   # engine·model 은 argv 가 아니라 **env** 로 간다 — 위 `eval "$preset_eval"` 이
@@ -1043,6 +1054,12 @@ translate_body="$(python3 "$(dirname "$0")/preset_options.py" \
 if (( UNIT_PRESERVE )); then
   translate_body="$(printf '%s' "$translate_body" \
     | python3 -c 'import json,sys; b=json.load(sys.stdin); b["unit_preserve"]=True; print(json.dumps(b, ensure_ascii=False))')"
+fi
+
+# LLM-patch 경로 plan 은 skip-full-table 가드를 켠다 — local 쪽 `skip_full_table_opt` 주석 참고.
+if (( FORCE_SKIP_FULL_TABLE )); then
+  translate_body="$(printf '%s' "$translate_body" \
+    | python3 -c 'import json,sys; b=json.load(sys.stdin); b["skip_full_table"]=True; print(json.dumps(b, ensure_ascii=False))')"
 fi
 
 # 로그는 **마지막 override 까지 얹은** body 다. 앞에서 찍으면 --unit-preserve 로
