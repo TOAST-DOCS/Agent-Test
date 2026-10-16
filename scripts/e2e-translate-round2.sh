@@ -284,7 +284,7 @@ fi
 
 # ── 6) claude CLI(fable)로 번역 PR 검증 → 결과를 PR 댓글로 등록 ────────
 echo
-echo "[6/6] claude CLI (fable model) 번역 PR 검증 (PR=$trans_pr_url)"
+echo "[6/6] claude CLI (${E2E_JUDGE_MODEL:-fable}) 번역 PR 검증 (PR=$trans_pr_url)"
 
 trans_head_ref="$(gh pr view "$trans_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$trans_head_ref"

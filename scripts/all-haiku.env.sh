@@ -28,6 +28,6 @@ export TRANSLATE_ANTHROPIC_MODEL="$E2E_HAIKU_MODEL"
 # pre-align align-v2 outline 분류 (pre-align/align_verify.py — 기본 claude-opus-4-5).
 export TRANSLATE_DEBUG_VERIFY_MODEL="$E2E_HAIKU_MODEL"
 # 하네스가 직접 부르는 `claude -p` 판정 (e2e-korean-review.sh 등 — 기본 fable).
-export E2E_JUDGE_MODEL="haiku"
+export E2E_JUDGE_MODEL="$E2E_HAIKU_MODEL"   # 별칭 "haiku" 는 최신(haiku-5-5)으로 풀려 버전이 갈린다
 # check_term_pin.py 의 probe 모델.
 export TERM_PIN_PROBE_MODEL="$E2E_HAIKU_MODEL"

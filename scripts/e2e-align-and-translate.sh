@@ -698,7 +698,7 @@ fi
 
 # ── 8) claude CLI(fable)로 align PR heading·anchor-id 정렬 검사 ───────
 echo
-echo "[8/17] claude CLI (fable model) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
+echo "[8/17] claude CLI (${E2E_JUDGE_MODEL:-fable}) heading/anchor-id 정렬 검사 (PR=$align_pr_url)"
 
 head_ref="$(gh pr view "$align_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$head_ref"
@@ -1108,7 +1108,7 @@ fi
 
 # ── 17) claude CLI(fable)로 번역 PR 검증 → 결과를 PR 댓글로 등록 ───────
 echo
-echo "[17/17] claude CLI (fable model) 번역 PR 검증 (PR=$trans_pr_url)"
+echo "[17/17] claude CLI (${E2E_JUDGE_MODEL:-fable}) 번역 PR 검증 (PR=$trans_pr_url)"
 
 trans_head_ref="$(gh pr view "$trans_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$trans_head_ref"
