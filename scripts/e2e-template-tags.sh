@@ -73,6 +73,7 @@ DOC="template-tags.md"
 ROUNDS=3
 PATHS="splice full"
 MODEL="claude-sonnet-4-6"       # 프로덕션 .env 와 같은 모델 — 태그 구조 충실도는 모델 의존
+[[ -n "${E2E_ALL_HAIKU:-}" ]] && MODEL="$E2E_HAIKU_MODEL"   # scripts/all-haiku.env.sh (--model 로 다시 덮을 수 있다)
 KEEP=0
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
