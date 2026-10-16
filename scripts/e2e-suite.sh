@@ -426,6 +426,17 @@
 #                 scripts/check_date_headings.py). cloud-translate#1301 이전 코드는
 #                 REPRO (2). 기대: exit 0 / DATE_HEADINGS: OK. 로컬 translate_pr.py (~10분).
 # 별칭:
+#   high · medium · low — 중요도 묶음. 시간이 없을 때는 `high` 만 돌린다 (정의와 기준은
+#                 스크립트 본문 TIER_* 옆 주석). `high medium` 처럼 이어 붙일 수 있고,
+#                 셋을 합치면 all 과 같다. 돌기 전에 목록만 보려면 `--list`.
+#                 high   = webhook korean-review korean-review-no-targets round1
+#                          table-suite concurrent jinja-mask
+#                 medium = webhook-concurrent webhook-lag-order workflow-ignore
+#                          korean-review-mkdocs korean-review-markup korean-review-links
+#                          row-drop-repro markup-churn retranslate lag-order notation
+#                          list-items table-tag-trail date-headings
+#                 low    = llm-patch fill-stubs split-docs fix-links fix-tables
+#                          table-cell-mirror file-by-file full-retranslate-images
 #   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
 #                 / anchor-audit 를 제외한 plan 전체
 #                 = webhook workflow-ignore korean-review korean-review-no-targets
@@ -513,6 +524,37 @@ LI_ARGS=()   # list-items 로 넘길 인자 (--translate/--pipeline-branch; 옵�
 UP_ARGS=()   # unit-preserve 로 넘길 인자 (--translate/--pipeline-branch)
 PLANS=()
 SLEEP_BETWEEN=0
+LIST_ONLY=0       # --list — 돌 plan 목록만 출력하고 끝낸다
+
+# `all` 의 plan 과 그 순서. 순서가 의미를 가진다 — 첫 align 기반 plan(round1)이
+# 만든 스냅샷을 뒤 plan 이 재사용한다.
+ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-review
+           korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links
+           round1 table-suite row-drop-repro llm-patch markup-churn retranslate concurrent
+           lag-order fill-stubs split-docs fix-links fix-tables jinja-mask notation list-items
+           table-cell-mirror table-tag-trail file-by-file full-retranslate-images date-headings)
+# 중요도 묶음 (2026-10-16 확정). 시간이 없을 때는 `high` 만 돌린다 — 10-14·16 실측으로
+# high 약 51분(align 캐시 적중 시 약 44분) · medium 약 70분 · low 약 20분.
+#   high   — 머지된 ko PR 이 운영에서 매번 지나는 경로(webhook → 한글 검수 → 번역), 또는
+#            깨지면 조용히 큰 피해가 나는 것(빌드 실패 · 내용 유실 · 번역이 안 돎).
+#   medium — 운영 경로지만 빈도가 낮거나, 실패가 리뷰 코멘트·PR 에서 드러나는 것.
+#   low    — 사람이 PR 을 검토하는 정비 도구, 운영에서 도달하지 않는 경로(llm-patch:
+#            운영 preset 이 skip-full-table 을 끈다), 단위 테스트가 덮는 좁은 기능.
+# 세 묶음의 합은 ALL_PLANS 와 정확히 같아야 한다 — 시작할 때 검사한다 (새 plan 을 all 에만
+# 넣고 묶음에 빠뜨리면 실패한다).
+TIER_HIGH=(webhook korean-review korean-review-no-targets round1 table-suite concurrent jinja-mask)
+TIER_MEDIUM=(webhook-concurrent webhook-lag-order workflow-ignore korean-review-mkdocs
+             korean-review-markup korean-review-links row-drop-repro markup-churn retranslate
+             lag-order notation list-items table-tag-trail date-headings)
+TIER_LOW=(llm-patch fill-stubs split-docs fix-links fix-tables table-cell-mirror file-by-file
+          full-retranslate-images)
+_tier_check="$(comm -3 <(printf '%s\n' "${ALL_PLANS[@]}" | sort) \
+  <(printf '%s\n' "${TIER_HIGH[@]}" "${TIER_MEDIUM[@]}" "${TIER_LOW[@]}" | sort))"
+if [[ -n "$_tier_check" ]] || (( ${#ALL_PLANS[@]} != ${#TIER_HIGH[@]} + ${#TIER_MEDIUM[@]} + ${#TIER_LOW[@]} )); then
+  echo "error: 중요도 묶음(TIER_*) 의 합이 all 과 다릅니다 — 묶음에 빠졌거나 두 번 든 plan:" >&2
+  echo "$_tier_check" | sed 's/^\s*/  /' >&2
+  exit 1
+fi
 ALL_HAIKU=0       # --all-haiku — 모든 모델 호출을 haiku 로 (scripts/all-haiku.env.sh)
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
 ALIGN_CACHE=1     # 그 스냅샷을 실행 사이에도 재사용 (local 모드만) — --no-align-cache
@@ -574,11 +616,12 @@ while [[ $# -gt 0 ]]; do
       # anchor-audit 도 같은 이유로 제외 (2026-09-21) — `anchor_audit.py` 가
       # 미머지 브랜치(#750)에만 있다. 이쪽은 검수 LLM 3패스를 태운 뒤 마커
       # 코멘트가 없어 규칙 (1) 에서 멈춘다. #750 이 머지되면 되돌린다.
-      PLANS+=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-review korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links round1 table-suite row-drop-repro
-              llm-patch markup-churn retranslate concurrent lag-order fill-stubs
-              split-docs fix-links fix-tables jinja-mask
-              notation list-items table-cell-mirror table-tag-trail file-by-file
-              full-retranslate-images date-headings); shift ;;
+      PLANS+=("${ALL_PLANS[@]}"); shift ;;
+    high|medium|low)
+      # 중요도 묶음 — 정의와 기준은 아래 ALL_PLANS 옆 TIER_* 주석. 순서는 all 과 같다.
+      _tier="TIER_${1^^}[@]"; PLANS+=("${!_tier}"); shift ;;
+    --list)
+      LIST_ONLY=1; shift ;;
     -h|--help) sed -n '3,189p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1 (plan 이름/all 또는 --translate/--engine/--model...)" >&2; exit 1 ;;
   esac
@@ -593,6 +636,7 @@ if (( ${#PLANS[@]} )); then
   PLANS=("${_dedup[@]}")
 fi
 (( ${#PLANS[@]} )) || PLANS=(webhook round1 table-suite markup-churn)
+if (( LIST_ONLY )); then printf '%s\n' "${PLANS[@]}"; exit 0; fi
 
 if (( ALL_HAIKU )); then
   # --model 이 haiku 가 아니면 두 지정이 서로 어긋난다 — 어느 쪽을 뜻했는지 추측하지 않는다.
