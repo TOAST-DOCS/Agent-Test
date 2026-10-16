@@ -315,7 +315,7 @@ fenced code block(```)을 제외하고 다음 다섯 가지가 세 언어에서 
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 
 trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
-  --model fable \
+  --model "${E2E_JUDGE_MODEL:-fable}" \
   --allowedTools "Bash,Read,Grep,Glob")"
 
 echo "$trans_check_out"

@@ -739,7 +739,7 @@ if [[ "$VERIFY_MODE" == "py" ]]; then
   set -e
 else
   check_out="$(cd "$check_wt" && claude -p "$check_prompt" \
-    --model fable \
+    --model "${E2E_JUDGE_MODEL:-fable}" \
     --allowedTools "Bash,Read,Grep,Glob")"
 fi
 
@@ -915,7 +915,7 @@ if [[ "$VERIFY_MODE" == "py" ]]; then
   set -e
 else
   trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
-    --model fable \
+    --model "${E2E_JUDGE_MODEL:-fable}" \
     --allowedTools "Bash,Read,Grep,Glob")"
 fi
 

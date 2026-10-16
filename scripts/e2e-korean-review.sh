@@ -383,7 +383,7 @@ check_prompt='이 저장소는 NHN Cloud 사용자 가이드 픽스처입니다.
 KO_REVIEW: FAIL 인 경우 그 근거를 판정 표에 명확히 남기세요.'
 
 koreview_check_out="$(cd "$check_wt" && claude -p "$check_prompt" \
-  --model fable \
+  --model "${E2E_JUDGE_MODEL:-fable}" \
   --allowedTools "Bash,Read,Grep,Glob")"
 
 echo "$koreview_check_out"

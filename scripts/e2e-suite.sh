@@ -3,7 +3,7 @@
 # e2e 전체 suite 러너 — 여러 plan 을 순차 실행하고 결과를 요약한다.
 #
 #   scripts/e2e-suite.sh [--translate api|local] [--engine api|cli] [--model haiku|sonnet|opus] \
-#                        [--verify py|fable] [--no-reuse-align] \
+#                        [--verify py|fable] [--no-reuse-align] [--all-haiku] \
 #                        [--translate-pipeline-branch <jenkins-child>] \
 #                        [--sleep-between <sec>] [plan ...]
 #
@@ -11,6 +11,13 @@
 #       에서 돌려 plan 로그에 translator 줄이 없다. 이 토큰이 있으면 러너가 번역
 #       PR 본문의 build 콘솔을 받아 llm-patch·markup-churn 카운터를 실측하고,
 #       없으면 '?' 로 남기고 suite 를 실패시키지 않는다. 획득 방법은 CLAUDE.md.
+#
+#   --all-haiku — 번역뿐 아니라 **모든 모델 호출**을 haiku 로 (scripts/all-haiku.env.sh 를
+#       source). 한글 검수·깨진 표 정비·전체 재번역·align heading 번역(기본 .env 의 sonnet),
+#       align-v2 outline 분류(opus), 하네스 판정(fable)이 대상이다 — 2026-10-14 실측으로
+#       그 넷이 비용의 62% 였다. 운영과 다른 조건이므로 요약 첫 줄에 남긴다. webhook 계열
+#       plan 과 --translate api 의 Jenkins 잡은 배포 파이프라인이라 닿지 않는다.
+#       --model 은 haiku 만 같이 줄 수 있다.
 #
 #   --sleep-between <sec> — plan 과 plan 사이 대기 (기본 0). Jenkins agent 의
 #       claude CLI (OAuth) 가 연속 실행으로 usage limit 에 걸려 align/ko-review
@@ -486,6 +493,7 @@ LI_ARGS=()   # list-items 로 넘길 인자 (--translate/--pipeline-branch; 옵�
 UP_ARGS=()   # unit-preserve 로 넘길 인자 (--translate/--pipeline-branch)
 PLANS=()
 SLEEP_BETWEEN=0
+ALL_HAIKU=0       # --all-haiku — 모든 모델 호출을 haiku 로 (scripts/all-haiku.env.sh)
 REUSE_ALIGN=1     # align 프롤로그(2~9단계) 를 첫 plan 에서만 돌리고 재사용
 ALIGNED_BRANCH="" # 그 스냅샷 브랜치 (첫 align 기반 plan 의 로그에서 파싱)
 TRANSLATE_MODE=local  # --translate 의 현재값. api 모드에서는 번역 로그가 Jenkins
@@ -504,6 +512,8 @@ while [[ $# -gt 0 ]]; do
       shift 2 ;;
     --no-reuse-align)
       REUSE_ALIGN=0; shift ;;
+    --all-haiku)
+      ALL_HAIKU=1; shift ;;
     --translate-pipeline-branch)
       # translate 잡만 특정 cloud-translate 브랜치에서 — align/retranslate 양쪽에 전달.
       # list-items·unit-preserve 의 전용 스크립트는 플래그 이름이 `--pipeline-branch`
@@ -556,6 +566,18 @@ if (( ${#PLANS[@]} )); then
   PLANS=("${_dedup[@]}")
 fi
 (( ${#PLANS[@]} )) || PLANS=(webhook round1 table-suite markup-churn)
+
+if (( ALL_HAIKU )); then
+  # --model 이 haiku 가 아니면 두 지정이 서로 어긋난다 — 어느 쪽을 뜻했는지 추측하지 않는다.
+  for ((i=0; i<${#PASS_ARGS[@]}; i++)); do
+    if [[ "${PASS_ARGS[$i]}" == "--model" && "${PASS_ARGS[$((i+1))]:-}" != "haiku" ]]; then
+      echo "error: --all-haiku 와 --model ${PASS_ARGS[$((i+1))]:-} 은 함께 쓸 수 없습니다" >&2; exit 1
+    fi
+  done
+  # shellcheck source=all-haiku.env.sh
+  source "$REPO_ROOT/scripts/all-haiku.env.sh"
+  echo "all-haiku: 모든 모델 호출을 $E2E_HAIKU_MODEL 로 (판정 claude -p 는 --model $E2E_JUDGE_MODEL)"
+fi
 
 ts="$(date +%Y%m%d-%H%M%S)"
 outdir="/tmp/e2e-suite-$ts"
@@ -1133,6 +1155,7 @@ done
 
 echo
 echo "===== e2e suite 요약 ($outdir) ====="
+(( ALL_HAIKU )) && echo "(all-haiku — 모든 로컬 모델 호출 $E2E_HAIKU_MODEL · 운영과 다른 조건. webhook 계열은 배포 모델)"
 for r in "${RESULTS[@]}"; do echo "  $r"; done
 echo "  (table-suite: reconcile 포함 로직이면 exit 0 이 기대값, 미포함이면 exit 3 이 정상)"
 echo "  (markup-churn: exit 0 + guard-skips=0 + pr-excl=0 이 PASS. api 모드에서는 pr-excl 이 실질 지표)"
