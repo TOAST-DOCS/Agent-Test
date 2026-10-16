@@ -1054,7 +1054,8 @@ for plan in "${PLANS[@]}"; do
     # 잡의 파라미터가 아니라 전달하지 않는다.
     bash "$REPO_ROOT/scripts/e2e-korean-review.sh" "${KR_ARGS[@]}" > "$log" 2>&1
     ec=$?
-    verdict="$(grep -oE '^KO_REVIEW: (OK|FAIL)' "$log" | tail -n1 || true)"
+    # 줄 끝까지 — all-haiku 에서 완화된 판정은 `KO_REVIEW: OK (all-haiku — …)` 로 끝난다.
+    verdict="$(grep -oE '^KO_REVIEW: (OK|FAIL).*' "$log" | tail -n1 || true)"
     ko_pr="$(grep -oE '  ko PR         : https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${ko_pr:-<no-pr>}")
   elif [[ "$plan" == "korean-review-mkdocs" ]]; then

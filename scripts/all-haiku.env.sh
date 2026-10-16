@@ -11,6 +11,10 @@
 # "all-haiku" 로 돌렸다고 적는다. 모델 의존 판정(예: template-tags 의 태그 구조
 # 충실도)은 haiku 에서 다르게 나올 수 있다.
 #
+# korean-review plan 은 이 모드에서 **의미 판정을 참고로만** 쓴다 — 검수를 haiku 가 해서
+# 오탐이 나오는 것이 예상 결과이기 때문이다 (구조 검증은 그대로 게이트, 요약 줄에
+# `KO_REVIEW: OK (all-haiku — 의미 판정 FAIL 은 참고만)`).
+#
 # 덮지 못하는 것: webhook 계열 plan(webhook · webhook-concurrent · webhook-lag-order ·
 # workflow-ignore)과 `--translate api` 의 Jenkins 잡은 배포된 파이프라인이 운영 모델로
 # 돈다 — 로컬 env 가 닿지 않는다.
