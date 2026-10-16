@@ -180,6 +180,9 @@
 #                 달라 skip-full-table 이 걸리고 LLM-patch 가 호출된다) —
 #                 create-translate-test-pr.sh 에 그 변형을 추가하는 별도 작업.
 #   llm-patch   — **skip-full-table 가드 -> LLM-patch fallback** 경로 검증.
+#                 **all 밖 (2026-10-16)** — 운영 권장 preset 이 `--no-skip-full-table` 이라
+#                 이 경로는 운영에서 도달하지 않는다 (llm_patch.py: "enabled in production
+#                 but dormant"). 명시 지정(`scripts/e2e-suite.sh llm-patch`)으로만 돌린다.
 #                 지금 LLM-patch 를 호출하는 트리거는 이 가드 **하나뿐**이다 —
 #                 부하 가드는 더 이상 파일을 제외하지 않고 (worker.py 의
 #                 skipped-load 는 legacy) 정보성 `load signal:` 로만 알린다.
@@ -468,16 +471,17 @@
 #                          korean-review-line-anchors
 #                          row-drop-repro markup-churn retranslate lag-order translate-queue notation
 #                          list-items table-tag-trail table-tag-gaps date-headings
-#                 low    = llm-patch fill-stubs split-docs fix-links fix-tables
+#                 low    = fill-stubs split-docs fix-links fix-tables
 #                          table-name-keys table-cell-mirror file-by-file full-retranslate-images
 #   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
 #                 / anchor-audit 를 제외한 plan 전체
 #                 = webhook workflow-ignore korean-review korean-review-no-targets
 #                   korean-review-mkdocs korean-review-markup korean-review-links
-#                   round1 table-suite row-drop-repro llm-patch
+#                   round1 table-suite row-drop-repro
 #                   markup-churn retranslate concurrent lag-order fill-stubs
 #                   split-docs fix-links fix-tables jinja-mask notation
 #                   full-retranslate-images date-headings
+#                 llm-patch 는 운영에서 도달하지 않는 경로라 제외 — 위 plan 설명 참고.
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
 #                 preserve 는 전제(CLI 섹션 슬라이스)가 폐기되어 제외 — 위 plan 설명 참고.
@@ -564,7 +568,7 @@ LIST_ONLY=0       # --list — 돌 plan 목록만 출력하고 끝낸다
 ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-review
            korean-review-no-targets korean-review-mkdocs korean-review-markup korean-review-links
            korean-review-line-anchors
-           round1 table-suite row-drop-repro llm-patch markup-churn retranslate concurrent
+           round1 table-suite row-drop-repro markup-churn retranslate concurrent
            lag-order translate-queue fill-stubs split-docs fix-links fix-tables jinja-mask notation list-items
            table-name-keys table-cell-mirror table-tag-trail table-tag-gaps file-by-file full-retranslate-images
            date-headings)
@@ -573,15 +577,15 @@ ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-r
 #   high   — 머지된 ko PR 이 운영에서 매번 지나는 경로(webhook → 한글 검수 → 번역), 또는
 #            깨지면 조용히 큰 피해가 나는 것(빌드 실패 · 내용 유실 · 번역이 안 돎).
 #   medium — 운영 경로지만 빈도가 낮거나, 실패가 리뷰 코멘트·PR 에서 드러나는 것.
-#   low    — 사람이 PR 을 검토하는 정비 도구, 운영에서 도달하지 않는 경로(llm-patch:
-#            운영 preset 이 skip-full-table 을 끈다), 단위 테스트가 덮는 좁은 기능.
+#   low    — 사람이 PR 을 검토하는 정비 도구, 단위 테스트가 덮는 좁은 기능.
+#   (운영에서 도달하지 않는 경로 — llm-patch — 는 all 에서 뺐다. 명시 지정 전용.)
 # 세 묶음의 합은 ALL_PLANS 와 정확히 같아야 한다 — 시작할 때 검사한다 (새 plan 을 all 에만
 # 넣고 묶음에 빠뜨리면 실패한다).
 TIER_HIGH=(webhook korean-review korean-review-no-targets round1 table-suite concurrent jinja-mask)
 TIER_MEDIUM=(webhook-concurrent webhook-lag-order workflow-ignore korean-review-mkdocs
              korean-review-markup korean-review-links korean-review-line-anchors row-drop-repro markup-churn retranslate
              lag-order translate-queue notation list-items table-tag-trail table-tag-gaps date-headings)
-TIER_LOW=(llm-patch fill-stubs split-docs fix-links fix-tables table-name-keys table-cell-mirror file-by-file
+TIER_LOW=(fill-stubs split-docs fix-links fix-tables table-name-keys table-cell-mirror file-by-file
           full-retranslate-images)
 _tier_check="$(comm -3 <(printf '%s\n' "${ALL_PLANS[@]}" | sort) \
   <(printf '%s\n' "${TIER_HIGH[@]}" "${TIER_MEDIUM[@]}" "${TIER_LOW[@]}" | sort))"
@@ -1054,7 +1058,8 @@ for plan in "${PLANS[@]}"; do
     # 잡의 파라미터가 아니라 전달하지 않는다.
     bash "$REPO_ROOT/scripts/e2e-korean-review.sh" "${KR_ARGS[@]}" > "$log" 2>&1
     ec=$?
-    verdict="$(grep -oE '^KO_REVIEW: (OK|FAIL)' "$log" | tail -n1 || true)"
+    # 줄 끝까지 — all-haiku 에서 완화된 판정은 `KO_REVIEW: OK (all-haiku — …)` 로 끝난다.
+    verdict="$(grep -oE '^KO_REVIEW: (OK|FAIL).*' "$log" | tail -n1 || true)"
     ko_pr="$(grep -oE '  ko PR         : https://[^ ]+' "$log" | tail -n1 | awk '{print $NF}' || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${ko_pr:-<no-pr>}")
   elif [[ "$plan" == "korean-review-mkdocs" ]]; then
