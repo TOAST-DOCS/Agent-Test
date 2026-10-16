@@ -1,5 +1,7 @@
+<!-- pre-align:aligned sig=28a7da0909f0 -->
+
 <a id="compute-instance-pricing-guide"></a>
-## Compute > Instance > 요금 가이드
+## Compute > Instance > 요금 가이드 { #compute-instance-pricing-guide }
 
 인스턴스 요금제와 요금제별 제공 한도를 정리한 문서입니다. 요금은 리전과 결제 방식에 따라 달라질 수 있으며, 자세한 금액은 콘솔의 요금 계산기에서 확인할 수 있습니다.
 
