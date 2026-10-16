@@ -284,7 +284,7 @@ fi
 
 # ── 6) claude CLI(fable)로 번역 PR 검증 → 결과를 PR 댓글로 등록 ────────
 echo
-echo "[6/6] claude CLI (fable model) 번역 PR 검증 (PR=$trans_pr_url)"
+echo "[6/6] claude CLI (${E2E_JUDGE_MODEL:-fable}) 번역 PR 검증 (PR=$trans_pr_url)"
 
 trans_head_ref="$(gh pr view "$trans_pr_url" --repo "$REPO" --json headRefName --jq .headRefName)"
 git fetch origin "$trans_head_ref"
@@ -315,7 +315,7 @@ fenced code block(```)을 제외하고 다음 다섯 가지가 세 언어에서 
 마지막 줄에는 다른 텍스트 없이 전체 판정만 "ALIGNMENT: OK" 또는 "ALIGNMENT: FAIL" 로 출력해.'
 
 trans_check_out="$(cd "$trans_wt" && claude -p "$trans_check_prompt" \
-  --model fable \
+  --model "${E2E_JUDGE_MODEL:-fable}" \
   --allowedTools "Bash,Read,Grep,Glob")"
 
 echo "$trans_check_out"

@@ -291,7 +291,7 @@ round() {  # $1 이름 · $2.. mutate ops (마지막 = 제목)
   # (e) 큐 판정
   grep -q "en/ja unchanged since the merge" "$LON" && ok "ON 큐 판정: 차례 · 머지 커밋 기준 (기존 경로)" \
     || bad "ON 이 기존 경로가 아니다 — $(grep -m1 'Queue:' "$LON")"
-  grep -qE "DEFERRED:|QUEUED:|en/ja moved since" "$LON" && bad "ON 에 대기/중복/base 끝 판정" || ok "대기·중복·base 끝 없음"
+  grep -qE "DEFERRED:|QUEUED:|en/ja changed since the merge|translations landed after this merge" "$LON" && bad "ON 에 대기/중복/base 끝 판정" || ok "대기·중복·base 끝 없음"
 
   # (a)(b) 트리·기점
   local hon hoff; hon="$(head_ref "$TON")"; hoff="$(head_ref "$TOFF")"

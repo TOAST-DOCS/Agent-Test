@@ -96,8 +96,10 @@ ConflictToken を確認します。
 NoEvidenceToken を作成します。
 A が正しい場合に選択します。
 EOF
-# 기대값: 4번째 줄의 공백 하나만 사라진다. 나머지 바이트는 동일.
-sed '4s/NotationSample サービス/NotationSampleサービス/' \
+# 기대값: 4번째 줄의 공백 둘(`この NotationSample` · `NotationSample サービス`)만 사라진다.
+# 나머지 바이트는 동일. 가나→라틴(`この NotationSample`) 은 cloud-translate#<PR> 부터
+# 같은 토큰 근거로 고친다 — 그 전에는 라틴→가나 한 방향만 봤다.
+sed '4s/この NotationSample サービス/このNotationSampleサービス/' \
     "$SCRATCH/ja/notation.md" > "$SCRATCH/expected-ja.md"
 
 cp "$SCRATCH/ja/notation.md" "$SCRATCH/ja/work.md"
@@ -105,7 +107,7 @@ cp "$SCRATCH/ja/notation.md" "$SCRATCH/ja/work.md"
 if diff -q "$SCRATCH/ja/work.md" "$SCRATCH/expected-ja.md" >/dev/null; then
   ok "ja 공백 정규화가 기대 결과와 바이트 동일"
 else
-  bad "ja 공백 정규화 결과가 기대와 다르다"; diff "$SCRATCH/expected-ja.md" "$SCRATCH/ja/work.md" | head -12
+  bad "ja 공백 정규화 결과가 기대와 다르다"; diff "$SCRATCH/expected-ja.md" "$SCRATCH/ja/work.md" | head -12 || true
 fi
 
 # 대조군을 개별로도 못 박는다 (위 diff 가 통과해도 이유를 남긴다).
@@ -126,6 +128,64 @@ cp "$SCRATCH/ja/work.md" "$SCRATCH/ja/again.md"
 diff -q "$SCRATCH/ja/work.md" "$SCRATCH/ja/again.md" >/dev/null \
   && ok "정규화는 멱등" || bad "두 번째 실행이 또 바꿨다"
 
+# 숫자↔일본어 경계 — SMS#278 `最大 5 件` 의 모양. 앞 9줄이 이 문서의 무공백 관례를
+# 세우고(숫자→가나 · 가나→숫자 각 3회 이상), 그 아래가 결함 3줄과 대조군.
+# 지침(`guidelines-unified_ja.md:75`)이 2026-10-06 까지 `3〜63 文字` 처럼 공백을
+# 지시해 9월 이후 번역의 새 줄은 숫자 경계 무공백이 약 50% 였다 (코퍼스는 약 92%).
+cat > "$SCRATCH/ja/digits.md" <<'EOF'
+プロジェクトごとに最大5個のリソースを作成できます。
+1回のリクエストにつき最大100件まで照会できます。
+データは30日間保管されます。
+最大10個のタグを指定できます。
+合計3回まで再試行します。
+約2日で承認されます。
+SMSとMMSを送信します。
+画面でSMSを選択し、APIを呼び出します。
+コンソールでAPIキーを確認します。
+発信番号は最大 5 件です。
+次の 2 項目を指定します。
+- SMSと Notification Hub がどちらも無効なプロジェクト
+ISO 8601 形式で送信します。
+10:30 に送信します。
+1. 手順を確認します。
+`最大 5 件` はコードなので保護されます。
+EOF
+cat > "$SCRATCH/expected-digits.md" <<'EOF'
+プロジェクトごとに最大5個のリソースを作成できます。
+1回のリクエストにつき最大100件まで照会できます。
+データは30日間保管されます。
+最大10個のタグを指定できます。
+合計3回まで再試行します。
+約2日で承認されます。
+SMSとMMSを送信します。
+画面でSMSを選択し、APIを呼び出します。
+コンソールでAPIキーを確認します。
+発信番号は最大5件です。
+次の2項目を指定します。
+- SMSとNotification Hubがどちらも無効なプロジェクト
+ISO 8601形式で送信します。
+10:30 に送信します。
+1. 手順を確認します。
+`最大 5 件` はコードなので保護されます。
+EOF
+# 근거는 기존 번역본(앞 9줄)이다 — 워커와 같다. 파일 자신을 근거로 쓰면 결함 줄의
+# 공백이 근거로 세여 판정이 흐려진다 (3 : 7 은 3배 우세가 아니다).
+head -9 "$SCRATCH/ja/digits.md" > "$SCRATCH/ja/digits-base.md"
+cp "$SCRATCH/ja/digits.md" "$SCRATCH/ja/digits-work.md"
+"$PY" "$CHECK" "$SCRATCH/ja/digits-work.md" --baseline "$SCRATCH/ja/digits-base.md" \
+  --fix >/dev/null 2>&1 || true
+if diff -q "$SCRATCH/ja/digits-work.md" "$SCRATCH/expected-digits.md" >/dev/null; then
+  ok "숫자↔일본어 · 가나→라틴 공백 정규화가 기대 결과와 바이트 동일"
+else
+  bad "숫자↔일본어 공백 정규화 결과가 기대와 다르다"
+  diff "$SCRATCH/expected-digits.md" "$SCRATCH/ja/digits-work.md" | head -16 || true
+fi
+grep -q 'Notification Hubが' "$SCRATCH/ja/digits-work.md" \
+  && ok "처음 나온 토큰(Hub)도 문서의 방향 근거로 고친다 — 한 문장 안 반쪽 정규화 없음" \
+  || bad "처음 나온 토큰 'Hub が' 를 남겼다 (SMS#278 의 반쪽 정규화)"
+grep -q '10:30 に送信' "$SCRATCH/ja/digits-work.md" \
+  && ok "시각 10:30 의 뒤 공백은 숫자 경계로 세지 않는다" || bad "시각을 숫자 토큰으로 잘랐다"
+
 # 한글 잔존 — 결함 3종과 정상 3종
 cat > "$SCRATCH/en/hangul.md" <<'EOF'
 On the details screen, select `변경` to change the value.
@@ -142,6 +202,10 @@ RES="$("$PY" -c 'import json,sys; print(len(json.load(open(sys.argv[1]))[0]["han
                  || bad "한글 잔존 검출 수가 3이 아니다 (=$RES)"
 
 # ─────────────────────────────────────────────────────────────────────────
+# Part A-2 는 `notation_check.py --source`(용어 갈림 축)가 있는 cloud-translate 에서만
+# 돈다. 그 옵션이 없는 체크아웃(2026-10-06 origin/main 포함)에서는 `terms_json` 이 빈
+# JSON 을 내고 set -e 로 스크립트 전체가 죽어 Part B·C 까지 못 간다 — SKIP 으로 알린다.
+if "$PY" "$CHECK" --help 2>/dev/null | grep -q -- '--source'; then
 step "Part A-2 — 용어 갈림과 그 판정 (결정적, 모델 없음)"
 mkdir -p "$SCRATCH/ko"
 
@@ -380,6 +444,10 @@ terms_json "$SCRATCH/en/uneven.md" "$SCRATCH/ko/uneven.md" "$SCRATCH/uneven.json
 "$PY" -c 'import json,sys; sys.exit(0 if "term_split" not in json.load(open(sys.argv[1]))[0] else 1)' \
   "$SCRATCH/nosource.json" \
   && ok "--source 없으면 용어 축은 돌지 않는다" || bad "--source 없이도 용어 축이 돌았다"
+else
+  step "Part A-2 — 용어 갈림과 그 판정 (결정적, 모델 없음)"
+  echo "  SKIP  이 체크아웃의 notation_check.py 에 --source 가 없다 ($CHECK)"
+fi
 
 if [ "$UNIT_ONLY" = "1" ]; then
   echo; echo "Part A 결과: PASS=$PASS FAIL=$FAIL"
@@ -398,12 +466,20 @@ cd "$WORK"
 git checkout -q -b "$SESSION_BRANCH"
 
 # 시드 — ja 가 `NotationSample` 을 무공백으로 쓰는 문서를 세션 base 에 심는다.
+# 두 번째 절은 숫자↔일본어 경계의 무공백 관례를 세운다 (각 방향 3회 이상).
 cat > "ko/$DOC" <<'EOF'
 ## NotationSample 개요 { #notation-sample-overview }
 
 NotationSample 서비스를 사용합니다.
 NotationSample 서비스의 설정을 확인합니다.
 NotationSample 서비스의 목록을 표시합니다.
+
+## 제한 { #notation-sample-limits }
+
+프로젝트당 최대 5개의 리소스를 만들 수 있습니다.
+1회 요청에 최대 100건까지 조회할 수 있습니다.
+데이터는 30일 동안 보관됩니다.
+최대 10개의 태그를 지정할 수 있습니다.
 EOF
 cat > "ja/$DOC" <<'EOF'
 ## NotationSample概要 { #notation-sample-overview }
@@ -411,6 +487,13 @@ cat > "ja/$DOC" <<'EOF'
 NotationSampleサービスを使用します。
 NotationSampleサービスの設定を確認します。
 NotationSampleサービスの一覧を表示します。
+
+## 制限 { #notation-sample-limits }
+
+プロジェクトごとに最大5個のリソースを作成できます。
+1回のリクエストにつき最大100件まで照会できます。
+データは30日間保管されます。
+最大10個のタグを指定できます。
 EOF
 cat > "en/$DOC" <<'EOF'
 ## NotationSample Overview { #notation-sample-overview }
@@ -418,6 +501,13 @@ cat > "en/$DOC" <<'EOF'
 Use the NotationSample service.
 Check the NotationSample service settings.
 Display the NotationSample service list.
+
+## Limits { #notation-sample-limits }
+
+You can create up to 5 resources per project.
+You can query up to 100 items per request.
+Data is retained for 30 days.
+You can specify up to 10 tags.
 EOF
 git add "ko/$DOC" "ja/$DOC" "en/$DOC"
 git -c user.email=e2e@local -c user.name=e2e commit -q -m "e2e(notation): 세션 시드"
@@ -425,7 +515,7 @@ git push -q origin "$SESSION_BRANCH"
 
 # head — ko 에 문장 하나를 더해 그 유닛이 재번역되게 한다.
 git checkout -q -b "$HEAD_BRANCH"
-printf 'NotationSample 서비스의 상태를 새로 조회합니다.\n' >> "ko/$DOC"
+printf 'NotationSample 서비스의 상태를 새로 조회합니다.\n계정당 최대 5개의 발신 번호를 등록할 수 있으며, 3일 이내에 승인됩니다.\n' >> "ko/$DOC"
 git add "ko/$DOC"
 git -c user.email=e2e@local -c user.name=e2e commit -q -m "test(notation): ko 문장 추가"
 git push -q origin "$HEAD_BRANCH"
@@ -474,6 +564,20 @@ EOF
   else
     bad "번역 산출물에 공백형 'NotationSample <가나>' 가 $SPACED곳 남았다"
   fi
+  DSPACED="$("$PY" - "$OUT" <<'EOF'
+import re, sys
+t = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+J = r"[\u3041-\u30fa\u4e00-\u9fff]"
+n2j = re.findall(r"(?<![A-Za-z0-9._\-:/,])\d+(?:[.,]\d+)*[ \t]+" + J, t)
+j2n = re.findall(J + r"[ \t]+\d", t)
+print(len(n2j) + len(j2n))
+EOF
+)"
+  if [ "$DSPACED" = "0" ]; then
+    ok "번역 산출물에 숫자↔일본어 공백형이 없다 (문서 관례 유지)"
+  else
+    bad "번역 산출물에 숫자↔일본어 공백형이 $DSPACED곳 남았다 (예: '最大 5 件')"
+  fi
   HAN="$("$PY" - "$OUT" <<'EOF'
 import re, sys
 t = open(sys.argv[1], encoding="utf-8", errors="replace").read()
@@ -481,7 +585,7 @@ print(len(re.findall(r"[\uac00-\ud7a3]", t)))
 EOF
 )"
   [ "$HAN" = "0" ] && ok "산출물에 한글 잔존 없음" || bad "산출물에 한글이 $HAN자 남았다"
-  if grep -q 'notation: ja 라틴↔가나 공백' "$LOG"; then
+  if grep -qE 'notation: ja (라틴↔가나|영숫자↔일본어) 공백' "$LOG"; then
     echo "  (정규화가 실제로 발동: $(grep -c 'notation: ja' "$LOG")회 — 모델이 공백을 넣었다)"
   else
     echo "  (정규화 미발동 — 모델이 이미 무공백을 냈다. 판정은 산출물 성질이므로 유효)"

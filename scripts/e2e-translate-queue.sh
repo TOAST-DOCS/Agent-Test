@@ -324,7 +324,7 @@ B2="$(make_pr "translate-test/${TS}-q-b2" body:QUEUE-S2-B-TOKEN "[e2e] queue S2 
 merge_pr "$B2"
 L="$(translate "$B2" s2-defer on)"
 grep -q "DEFERRED:" "$L" && ok "B2 DEFERRED" || bad "B2 가 대기하지 않음 — $L"
-close_pr "$TA2"; echo "  TA2 닫음 (미머지) — webhook 은 아무것도 하지 않는다"
+close_pr "$TA2"; echo "  TA2 닫음 (미머지) — 닫힘은 완료가 아니다 (배포 webhook 은 소스 PR 에 조치 안내 코멘트만 단다 — 이 로컬 e2e 는 흉내 내지 않음)"
 has_label "$A2" && ok "A2 는 줄에 남음" || bad "A2 라벨이 떨어짐"
 L="$(translate "$B2" s2-still on)"
 grep -q "DEFERRED:" "$L" && grep -q "failed or closed" "$L" \
