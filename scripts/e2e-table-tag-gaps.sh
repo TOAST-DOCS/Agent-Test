@@ -129,11 +129,17 @@ ct() { (cd "$CLOUD_TRANSLATE_DIR" && "$CLOUD_TRANSLATE_PY" "$CHECK" "$@"); }
 # judge <lang> <result> <baseline> — (가)·(나) 두 축을 한 번에. 수치는 stderr 로,
 # `GA=… NA=…` 만 stdout 으로 (호출부가 eval). `tee /dev/stderr` 를 쓰면 안 된다 —
 # stderr 가 파일로 리다이렉트돼 있으면 /dev/stderr 를 다시 열면서 로그를 처음부터 덮는다.
+#
+# 판정기가 실패하면 `JUDGE_ERR=1` 을 낸다 — 이 함수는 `$(…)` 안에서 불리므로 종료 코드가
+# 호출부에 닿지 않는다. 그 표시 없이 빈 출력이면 eval 이 아무것도 안 바꿔, 앞 언어의
+# GA/NA 가 그대로 더해져 거짓 PASS 가 됐다 (Agent-Test#1511 검토).
 judge() {
   local lang="$1" res="$2" base="$3" j
-  j="$(ct measure "$FIX/ko-fixed.md" "$res" "$base")"
+  if ! j="$(ct measure "$FIX/ko-fixed.md" "$res" "$base")"; then
+    echo "    [$lang] measure 실패" >&2; echo "JUDGE_ERR=1"; return 0
+  fi
   echo "    [$lang] $j" >&2
-  python3 - "$j" <<'PY'
+  python3 - "$j" <<'PY' || echo "JUDGE_ERR=1"
 import json, sys
 r = json.loads(sys.argv[1]); k = r["ko"]
 a = all(r[x] == k[x] for x in ("tables", "tag_blank", "leak"))
@@ -142,12 +148,23 @@ print(f"GA={int(a)} NA={int(b)}")
 PY
 }
 
+# eval_judge <lang> <result> <baseline> — judge 를 부르고 GA/NA 를 언어마다 새로 채운다.
+# 판정기가 실패하면 하네스 오류(exit 2) — 측정하지 못한 것을 통과로 세지 않는다.
+eval_judge() {
+  GA=0; NA=0; JUDGE_ERR=0
+  eval "$(judge "$@")"
+  if (( JUDGE_ERR )); then echo "error: [$1] 판정기 실패 — 하네스 오류" >&2; exit 2; fi
+}
+
 # ── [A] 결정적 층 ──────────────────────────────────────────────────────────
 echo "[A] 결정적 층 — 이상적 모델로 translate_diff (모델 편차 없음)"
 A_GA=0; A_NA=0
 for lang in en ja; do
-  echo "  $(ct replay "$FIX/ko-broken.md" "$FIX/ko-fixed.md" "$FIX/$lang.md" "$lang" "$tmpdir/a_$lang.md")" | sed "s/^/  [$lang] replay /"
-  eval "$(judge "$lang" "$tmpdir/a_$lang.md" "$FIX/$lang.md")"
+  if ! rp="$(ct replay "$FIX/ko-broken.md" "$FIX/ko-fixed.md" "$FIX/$lang.md" "$lang" "$tmpdir/a_$lang.md")"; then
+    echo "error: [$lang] replay 실패 — 하네스 오류" >&2; exit 2
+  fi
+  echo "  $rp" | sed "s/^/  [$lang] replay /"
+  eval_judge "$lang" "$tmpdir/a_$lang.md" "$FIX/$lang.md"
   A_GA=$((A_GA + GA)); A_NA=$((A_NA + NA))
 done
 (( A_GA == 2 )) && ok "(1) en/ja 표 수 · 태그 옆 빈 줄 · 새는 행이 ko 와 같다" \
@@ -231,7 +248,7 @@ echo
 echo "[3] 산출물 판정"
 B_GA=0; B_NA=0
 for lang in en ja; do
-  eval "$(judge "$lang" "$tmpdir/tx/$lang/$DOC" "$FIX/$lang.md")"
+  eval_judge "$lang" "$tmpdir/tx/$lang/$DOC" "$FIX/$lang.md"
   B_GA=$((B_GA + GA)); B_NA=$((B_NA + NA))
 done
 (( B_GA == 2 )) && ok "(4) 번역 PR en/ja 의 표 수 · 태그 옆 빈 줄 · 새는 행이 ko 와 같다" \
