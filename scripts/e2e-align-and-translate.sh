@@ -189,6 +189,7 @@
 # 의존성: git, gh (로그인), curl, python3 (--verify fable 일 때만 claude CLI)
 
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/e2e-api-model.sh"   # e2e_api_body (--all-haiku → 본문에 model)
 
 # ── 사용자 입력 ───────────────────────────────────────────────────────
 DASHBOARD_BASE_URL="${DASHBOARD_BASE_URL:-}"   # 예: https://docs.internal.nhncloud.com
@@ -654,7 +655,7 @@ JSON
 align_resp="$(curl -sS -X POST \
   -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d "$align_body" \
+  -d "$(e2e_api_body "$align_body")" \
   "$DASHBOARD_BASE_URL/api/align")"
 
 echo "$align_resp" | python3 -m json.tool
@@ -809,7 +810,7 @@ JSON
 koreview_resp="$(curl -sS -X POST \
   -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
   -H "Content-Type: application/json" \
-  -d "$koreview_body" \
+  -d "$(e2e_api_body "$koreview_body")" \
   "$DASHBOARD_BASE_URL/api/ko-review")"
 
 echo "$koreview_resp" | python3 -m json.tool

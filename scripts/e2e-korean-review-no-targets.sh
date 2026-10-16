@@ -42,6 +42,7 @@
 # 의존성: git, gh (로그인), curl, python3
 
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/e2e-api-model.sh"   # e2e_api_body (--all-haiku → 본문에 model)
 
 DASHBOARD_BASE_URL="${DASHBOARD_BASE_URL:-}"
 DASHBOARD_API_TOKEN="${DASHBOARD_API_TOKEN:-}"
@@ -190,7 +191,7 @@ run_review() {   # $1: PR URL
   fi
   local resp job_id status deadline
   resp="$(curl -sS -X POST -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-    -H "Content-Type: application/json" -d "{\"pr_url\": \"$pr\"}" \
+    -H "Content-Type: application/json" -d "$(e2e_api_body "{\"pr_url\": \"$pr\"}")" \
     "$DASHBOARD_BASE_URL/api/ko-review")"
   job_id="$(printf '%s' "$resp" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("job_id") or "")')"
   [[ -n "$job_id" ]] || { echo "  error: job_id 없음: $resp" >&2; return 2; }
