@@ -9,8 +9,8 @@
 
 이 문서는 사용자 가이드 메뉴(`ko/nav.yml`) 에 등록하지 않습니다. 배포되는 문서가 아니라 파이프라인 픽스처입니다.
 
-<a id="fix-links-self"></a>
-## self-link { #fix-links-self }
+<a id="fix-links-self-renamed"></a>
+## self-link { #fix-links-self-renamed }
 
 같은 파일을 배포 URL 모양의 경로로 가리키는 링크입니다. 순수 in-file `#slug` 만 남아야 합니다.
 
@@ -139,3 +139,8 @@ PR 본문의 "사람이 직접 확인해야 하는 부분" 표에 사유와 함�
 [펜스 안의 깨진 링크](./no-such-doc-e2e.md#nowhere)
 [펜스 안의 self-path](./fix-links/#fix-links-controls)
 ```
+
+<a id="queue-a1"></a>
+## 번역 큐 테스트 섹션 queue-a1 { #queue-a1 }
+
+이 섹션은 번역 큐 e2e 가 추가했습니다 (queue-a1). 번역본에 정확히 한 번 있어야 합니다.
