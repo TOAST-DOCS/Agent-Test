@@ -392,14 +392,18 @@ git worktree remove "$check_wt" --force
 
 # 결과를 ko PR 댓글로 등록
 RELAXED=0
-if grep -q '^KO_REVIEW: OK' <<<"$koreview_check_out"; then
+# 판정 줄은 마크다운 강조를 걷어 내고 읽는다 — haiku 판정은 `**KO_REVIEW: FAIL**` 처럼
+# 굵게 쓴다 (2026-10-16 실측). 그대로 `^KO_REVIEW:` 로 찾으면 판정이 '없음' 으로 읽힌다.
+judge_verdict="$(sed 's/\*//g' <<<"$koreview_check_out" | grep -oE '^[[:space:]]*KO_REVIEW: (OK|FAIL)' | tail -n1 | sed -E 's/^[[:space:]]+//' || true)"
+if [[ "$judge_verdict" == "KO_REVIEW: OK" ]]; then
   verdict_line="✅ ko-review 자동 검증 통과 (요약 규격 · 인라인 코멘트 스팟체크 · 정합성)"
   overall_rc=0
-elif [[ -n "${E2E_ALL_HAIKU:-}" ]]; then
+elif [[ -n "${E2E_ALL_HAIKU:-}" && "$judge_verdict" == "KO_REVIEW: FAIL" ]]; then
   # --all-haiku(scripts/all-haiku.env.sh)에서는 검수 자체를 haiku 가 해서 오탐이 나오는
   # 것이 예상 결과다 (2026-10-16 실측: 일반 명사를 서비스명으로 오인 등 3건 → 판정 FAIL).
   # 의미 판정은 참고로만 남기고 plan 을 실패시키지 않는다 — 구조 검증(앞 단계)은 그대로
-  # 게이트다. 검수 품질을 재는 실행은 기본 모드(운영 모델)로 돌린다.
+  # 게이트다. 검수 품질을 재는 실행은 기본 모드(운영 모델)로 돌린다. 판정 줄이 아예 없으면
+  # (판정 모델이 끝까지 못 갔다) 완화하지 않는다 — 측정하지 못한 것을 통과로 세지 않는다.
   verdict_line="⚠️ 의미 판정 FAIL — all-haiku 모드(검수도 haiku)라 참고만 합니다. 검수 품질은 기본 모드로 확인하세요"
   overall_rc=0
   RELAXED=1
@@ -435,7 +439,7 @@ echo "==================================================================="
 echo "  ko PR         : $ko_pr_url"
 echo "  ko-review job : $koreview_job_id"
 echo "  구조 검증     : PASS"
-echo "  판정(${E2E_JUDGE_MODEL:-fable}) : $(grep -oE '^KO_REVIEW: (OK|FAIL)' <<<"$koreview_check_out" | tail -n1)"
+echo "  판정(${E2E_JUDGE_MODEL:-fable}) : ${judge_verdict:-<판정 줄 없음>}"
 echo "==================================================================="
 (( RELAXED )) && echo "KO_REVIEW: OK (all-haiku — 의미 판정 FAIL 은 참고만)"
 
