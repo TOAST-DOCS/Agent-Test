@@ -34,6 +34,7 @@
 # 의존성: git, gh (로그인), curl, python3
 
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/e2e-api-model.sh"   # e2e_api_body (--all-haiku → 본문에 model)
 
 REPO="TOAST-DOCS/Agent-Test"
 DOC="ko/review-line-anchors.md"
@@ -168,7 +169,7 @@ body="$(python3 -c 'import json,sys; print(json.dumps({"pr_url":sys.argv[1],"pip
   "opts":{"apply":"suggest","review_passes":"2","engine":"default"},
   "label":f"한글 검수 e2e 줄 위치 [{sys.argv[3]}]: {sys.argv[1]}"}))' "$pr_url" "$PIPELINE_BRANCH" "$LABEL")"
 resp="$(curl -sS -X POST -H "Authorization: Bearer $DASHBOARD_API_TOKEN" \
-  -H "Content-Type: application/json" -d "$body" "$DASHBOARD_BASE_URL/api/ko-review")"
+  -H "Content-Type: application/json" -d "$(e2e_api_body "$body")" "$DASHBOARD_BASE_URL/api/ko-review")"
 job_id="$(printf '%s' "$resp" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("job_id") or "")')"
 [[ -n "$job_id" ]] || { echo "  error: job_id 없음: $resp" >&2; exit 2; }
 echo "  job: $job_id"
