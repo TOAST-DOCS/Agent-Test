@@ -5,7 +5,7 @@
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
 
-This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`).
+This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`). (Order test A: This sentence is for lag-order-a-edit validation.)
 Each section below targets one deterministic rule with a **deliberately malformed link**, and
 `scripts/e2e-fix-links.sh` judges the repair rule by rule.
 
