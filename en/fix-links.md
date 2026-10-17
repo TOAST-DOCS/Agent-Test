@@ -153,3 +153,8 @@ Links inside a code fence are not links, so they must survive untouched as well.
 ## Translation Queue Test Section queue-a1 { #queue-a1 }
 
 This section was added by the translation queue e2e (queue-a1). It must appear exactly once in the translated version.
+
+<a id="queue-a2"></a>
+## Translation Queue Test Section queue-a2 { #queue-a2 }
+
+This section was added by the translation queue e2e (queue-a2). It must appear exactly once in the translated version.
