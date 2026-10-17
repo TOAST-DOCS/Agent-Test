@@ -1,7 +1,15 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=7d092c19ae89 -->
 
 <a id="cloudtrail-release-notes"></a>
 ## CloudTrail > リリースノート { #cloudtrail-release-notes }
+
+<a id="2026-10-14"></a>
+### 2026. 10. 14. { #2026-10-14 }
+<a id="2026-10-14-more-events"></a>
+#### イベント追加
+* Network Firewallサービス関連のイベントが追加されました。
 
 <a id="2025-11-25"></a>
 ### 2025. 11. 25. { #2025-11-25 }
@@ -20,4 +28,4 @@
 ### 2025. 11. 11. { #2025-11-11 }
 <a id="2025-11-11-more-events"></a>
 #### イベント追加
-* Cloud Access サービス関連イベントを追加しました。
+* Cloud Access サービス関連イベントが新たに追加されました。
