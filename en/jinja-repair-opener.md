@@ -21,6 +21,7 @@ These endpoints are provided only in the public institution environment.
 
 The following note differs by environment.
 
+{% if "gov" not in build_flags %}
 !!! tip "Note"
     In the general environment, you can apply directly in the console.
 {% else %}
