@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e7a97a11 -->
 
 <a id="ttt"></a>
@@ -11,7 +13,10 @@
 | 名前 | 説明 |
 | --- | --- |
 | sort_dir | ソート方向 |
+{%- if "public" in build_flags %}
 | member_status | メンバーの状態 |
+{% else %}
+{% endif %}
 
 リストをソートするときに使用します。
 
@@ -21,17 +26,23 @@
 | 名前 | 説明 |
 | --- | --- |
 | limit | 一度に照会する件数 |
-| offset | 照会開始位置 |
+| offset | 照会開始位置(0から) |
+{% if "gov" in build_flags %}
+{% endif %}
 
 リストを分けて照会するときに使用します。
 
 <a id="ttt-append"></a>
 ## フィルタパラメータ { #ttt-append }
 
+{%- if "public" in build_flags %}
 | 名前 | 説明 |
 | --- | --- |
 | name | 名前フィルタ |
 | status | 状態フィルタ |
+| createdFrom | 作成日時開始 |
+| createdTo | 作成日時終了 |
+{% endif %}
 
 リストを絞り込むときに使用します。
 
@@ -43,6 +54,10 @@
 | keyword | 検索キーワード |
 | scope | 検索範囲 |
 
+{% if "gov" in build_flags %}
+公共環境では検索範囲が制限されます。
+{% endif %}
+
 リストを検索するときに使用します。
 
 <a id="ttt-plain"></a>
@@ -50,7 +65,7 @@
 
 | 名前 | 説明 |
 | --- | --- |
-| totalCount | 全体件数 |
+| totalCount | 条件に合う全体件数 |
 | items | 項目リスト |
 
 レスポンス本文のフィールドです。
