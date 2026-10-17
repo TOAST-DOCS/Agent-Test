@@ -24,8 +24,8 @@
 * [과금 (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ko/overview.md#pricing)
 * [과금 (repo-rooted 경로)](/ko/overview.md#pricing)
 
-<a id="fix-links-langdir"></a>
-## lang-dir { #fix-links-langdir }
+<a id="fix-links-langdir-renamed"></a>
+## lang-dir { #fix-links-langdir-renamed }
 
 다른 언어 폴더를 가리키는 in-repo 링크입니다. 이 문서의 언어 짝이 실재하므로 같은 언어로 바뀌어야 합니다.
 
