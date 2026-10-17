@@ -44,6 +44,7 @@
     2026년 11월 출시 예정인 기능은 스냅숏 예약입니다.
 
 출시 일정은 사정에 따라 바뀔 수 있습니다.
+{% endif %}
 
 <a id="jinja-repair-typo"></a>
 ### 리전 목록 { #jinja-repair-typo }
