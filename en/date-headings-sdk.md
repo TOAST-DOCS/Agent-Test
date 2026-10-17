@@ -5,6 +5,16 @@
 <a id="nhn-cloud-sdk-user-guide-release-notes-ios"></a>
 ## NHN Cloud > SDK User Guide > Release Notes > iOS { #nhn-cloud-sdk-user-guide-release-notes-ios }
 
+<a id="110-2026-10-14"></a>
+## 1.11.0 (October 14, 2026) { #110-2026-10-14 }
+
+<a id="110-2026-10-14-nhn-cloud-push"></a>
+### NHN Cloud Push { #110-2026-10-14-nhn-cloud-push }
+
+<a id="110-2026-10-14-nhn-cloud-push-bugfix"></a>
+#### Bug Fixes
+* Fixed an issue where push token registration fails in specific situations
+
 <a id="100-2026-09-15"></a>
 ## 1.10.0 (September 15, 2026) { #100-2026-09-15 }
 
