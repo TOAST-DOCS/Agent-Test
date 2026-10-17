@@ -31,13 +31,6 @@
 
 * [과금 (다른 언어 폴더)](../en/overview.md#pricing)
 
-<a id="fix-links-nested"></a>
-## nested-frag { #fix-links-nested }
-
-배포 URL 조각이 fragment 안으로 끌려 들어가 `#a/#b` 로 겹친 링크입니다. 마지막 `/#` 뒤만 남아야 합니다.
-
-* [과금 (겹친 fragment)](./overview.md#overview/#pricing)
-
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
 
@@ -139,3 +132,10 @@ PR 본문의 "사람이 직접 확인해야 하는 부분" 표에 사유와 함�
 [펜스 안의 깨진 링크](./no-such-doc-e2e.md#nowhere)
 [펜스 안의 self-path](./fix-links/#fix-links-controls)
 ```
+
+<a id="fix-links-nested"></a>
+## nested-frag { #fix-links-nested }
+
+배포 URL 조각이 fragment 안으로 끌려 들어가 `#a/#b` 로 겹친 링크입니다. 마지막 `/#` 뒤만 남아야 합니다.
+
+* [과금 (겹친 fragment)](./overview.md#overview/#pricing)
