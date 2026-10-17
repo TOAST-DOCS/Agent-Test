@@ -5,7 +5,7 @@
 <a id="fix-links-overview"></a>
 ## Link Fix Test { #fix-links-overview }
 
-This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`). (Translation queue test: This sentence is for QUEUE-S1-B-TOKEN confirmation.) (Translation queue test: This sentence is for QUEUE-S2-B-TOKEN confirmation.)
+This document is an e2e fixture for **link fix** (`dashboard/links/fix.py`, Jenkins `fix-links`). (Translation queue test: This sentence is for QUEUE-S1-B-TOKEN confirmation.) (Translation queue test: This sentence is for QUEUE-S2-B-TOKEN confirmation.) (Translation queue test: This sentence is for QUEUE-S3-B-TOKEN confirmation.)
 Each section below targets one deterministic rule with a **deliberately malformed link**, and
 `scripts/e2e-fix-links.sh` judges the repair rule by rule.
 
