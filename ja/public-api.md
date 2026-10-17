@@ -3,7 +3,6 @@
 <!-- pre-align:aligned sig=8e6d00d3460b -->
 
 <a id="compute-instance-api-v2-guide"></a>
-
 ## Compute > Instance > API v2 ガイド { #compute-instance-api-v2-guide }
 
 インスタンスはAPI呼び出し時の認証/認可にIaaSトークンを使用します。IaaSトークンはNHN CloudのOpenStackベースのインフラストラクチャサービス(IaaS)で使用される認証トークンです。IaaSトークンの発行および使用に関する詳細については、[IaaSトークン](/nhncloud/ja/public-api/iaas-token)を参照してください。
@@ -17,7 +16,6 @@
 API応答にガイドに明記されていないフィールドが表示される場合があります。このようなフィールドはNHN Cloudの内部用途で使用され、事前通知なく変更される可能性があるため、使用しないでください。
 
 <a id="instance-flavors"></a>
-
 ## インスタンス型 { #instance-flavors }
 
 <a id="list-flavors"></a>
@@ -199,7 +197,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="availability-zones"></a>
-
 ## アベイラビリティゾーン { #availability-zones }
 
 <a id="list-availability-zones"></a>
@@ -256,7 +253,6 @@ X-Auth-Token: {tokenId}
 ---
 
 <a id="key-pairs"></a>
-
 ## キーペア { #key-pairs }
 
 <a id="list-key-pairs"></a>
@@ -453,7 +449,6 @@ X-Auth-Token: {tokenId}
 
 
 <a id="instance"></a>
-
 ## インスタンス { #instance }
 
 <a id="instance-status"></a>
