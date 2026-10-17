@@ -14,6 +14,7 @@ These endpoints are provided only in the public institution environment.
 | Region | Endpoint |
 |---|---|
 | Korea (Pangyo) Region | https://kr1-api.gov-nhncloudservice.com |
+{% endif %}
 
 <a id="jinja-repair-opener"></a>
 ### Notes by Environment { #jinja-repair-opener }
