@@ -44,6 +44,7 @@ The currently provided features are as follows.
     The feature scheduled for November 2026 is scheduled snapshots.
 
 The release schedule may change depending on circumstances.
+{% endif %}
 
 <a id="jinja-repair-typo"></a>
 ### Region List { #jinja-repair-typo }
