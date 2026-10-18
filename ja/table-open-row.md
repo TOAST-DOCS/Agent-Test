@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e09e4r0w -->
 
 <a id="tor"></a>
@@ -12,11 +14,11 @@
 
 | 名前 | タイプ | 必須 | 説明 |
 |------------ | ------------- | ----- | ------------ |
-|   authId | String| No | 内部で管理する認証手段ID |
-|   userAccessKeyID | String| No | User Access Key ID |
-|   secretAccessKey | String| No | 秘密鍵 |
-|   tokenExpiryPeriod | Long| No | トークン有効期限(秒単位) |
-|   tokenFormatCode | String| No | トークンフォーマットコード(OPAQUE、JWT) |
+|   authId | String| N | 内部で管理する認証手段ID |
+|   userAccessKeyID | String| N | User Access Key ID |
+|   secretAccessKey | String| N | 秘密鍵 |
+|   tokenExpiryPeriod | Long| N | トークン有効期間(秒単位) |
+|   tokenFormatCode | String| N | トークンフォーマットコード(OPAQUE、JWT) |
 
 
 <a id="tor-mid"></a>
@@ -27,7 +29,7 @@
 | 名前 | タイプ | 必須 | 説明 |
 |------------ | ------------- | ----- | ------------ |
 |   projectId | String| No | プロジェクトID |
-|   projectName | String| No | プロジェクト名 |
+|   projectName | String| No | コンソールに表示されるプロジェクト名
 |   ownerUuid | String| No | プロジェクトオーナーUUID |
 |   regDatetime | Date| No | 作成日時 |
 
@@ -40,7 +42,7 @@
 | 名前 | タイプ | 必須 | 説明 |
 |------------ | ------------- | ----- | ------------ |
 |   uuid | String| No | メンバーUUID |
-|   name | String| No | 名前 |
+|   name | String| No | メンバー名 |
 |   emailAddress | String| No | メンバーのメールアドレス |
 |   joinYmdt | Date| No | 加入日時 |
 
