@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=e2e09e4r0w -->
 
 <a id="tor"></a>
@@ -12,11 +14,12 @@ Fields of the authentication registration response.
 
 | Name | Type | Required | Description |
 |------------ | ------------- | ----- | ------------ |
-|   authId | String| No | Internally managed authentication method ID |
-|   userAccessKeyID | String| No | User Access Key ID |
-|   secretAccessKey | String| No | Secret key |
-|   tokenExpiryPeriod | Long| No | Token expiration period (in seconds) |
-|   tokenFormatCode | String| No | Token format code (OPAQUE, JWT) |
+|   authId | String| N | Internally managed authentication method ID |
+|   userAccessKeyID | String| N | User Access Key ID |
+|   secretAccessKey | String| N | Secret key |
+|   tokenExpiryPeriod | Long| N | Token expiration period (in seconds) |
+
+|   tokenFormatCode | String| N | Token format code (OPAQUE, JWT) |
 
 
 <a id="tor-mid"></a>
@@ -27,7 +30,8 @@ Fields of the project query response.
 | Name | Type | Required | Description |
 |------------ | ------------- | ----- | ------------ |
 |   projectId | String| No | Project ID |
-|   projectName | String| No | Project name |
+|   projectName | String| No | Project name displayed in the Console
+
 |   ownerUuid | String| No | Project owner UUID |
 |   regDatetime | Date| No | Date and time of creation |
 
@@ -40,7 +44,7 @@ Fields of the member query response.
 | Name | Type | Required | Description |
 |------------ | ------------- | ----- | ------------ |
 |   uuid | String| No | Member UUID |
-|   name | String| No | Name |
+|   name | String| No | Member name |
 |   emailAddress | String| No | Member email address |
 |   joinYmdt | Date| No | Date and time of joining |
 
