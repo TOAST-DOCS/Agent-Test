@@ -12,11 +12,11 @@
 
 | 이름 | 타입 | 필수 | 설명 |
 |------------ | ------------- | ----- | ------------ |
-|   authId | String| No | 내부적으로 관리하는 인증 수단 아이디 |
-|   userAccessKeyID | String| No | User Access Key ID |
-|   secretAccessKey | String| No | 비밀 키 |
-|   tokenExpiryPeriod | Long| No | 토큰 만료 기간(초 단위)
-|   tokenFormatCode | String| No | 토큰 포맷 코드(OPAQUE, JWT) |
+|   authId | String| N | 내부적으로 관리하는 인증 수단 아이디 |
+|   userAccessKeyID | String| N | User Access Key ID |
+|   secretAccessKey | String| N | 비밀 키 |
+|   tokenExpiryPeriod | Long| N | 토큰 만료 기간(초 단위)
+|   tokenFormatCode | String| N | 토큰 포맷 코드(OPAQUE, JWT) |
 
 
 <a id="tor-mid"></a>
@@ -27,7 +27,7 @@
 | 이름 | 타입 | 필수 | 설명 |
 |------------ | ------------- | ----- | ------------ |
 |   projectId | String| No | 프로젝트 아이디 |
-|   projectName | String| No | 프로젝트 이름
+|   projectName | String| No | 콘솔에 표시되는 프로젝트 이름
 |   ownerUuid | String| No | 프로젝트 소유자 UUID |
 |   regDatetime | Date| No | 생성 일시 |
 
@@ -40,7 +40,7 @@
 | 이름 | 타입 | 필수 | 설명 |
 |------------ | ------------- | ----- | ------------ |
 |   uuid | String| No | 멤버 UUID |
-|   name | String| No | 이름 |
+|   name | String| No | 멤버 이름 |
 |   emailAddress | String| No | 멤버 이메일 주소 |
 |   joinYmdt | Date| No | 가입 일시 |
 
