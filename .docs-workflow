@@ -1,0 +1,6 @@
+# e2e(console-glossary-tools) — 세션 브랜치에만 있다. URL 은 시드 커밋 SHA 로 고정.
+console_glossary:
+  - messages: https://github.com/TOAST-DOCS/Agent-Test/blob/9a6de24637be10c8a42d2c6a506bb55f8c9691dc/console-glossary/messages.json
+  - ko: https://github.com/TOAST-DOCS/Agent-Test/blob/9a6de24637be10c8a42d2c6a506bb55f8c9691dc/console-glossary/ko_lang.ts
+    en: https://github.com/TOAST-DOCS/Agent-Test/blob/9a6de24637be10c8a42d2c6a506bb55f8c9691dc/console-glossary/en_lang.ts
+    ja: https://github.com/TOAST-DOCS/Agent-Test/blob/9a6de24637be10c8a42d2c6a506bb55f8c9691dc/console-glossary/ja_lang.ts
