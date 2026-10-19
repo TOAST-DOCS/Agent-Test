@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=86fc80138a36 -->
+<!-- pre-align:aligned sig=2c31fb7ec903 -->
 
 <a id="fix-tables-sample"></a>
 ## 깨진 표 정비 샘플 { #fix-tables-sample }
@@ -63,7 +63,8 @@ en/ja 의 같은 섹션은 표에서 식별자 행 하나가 빠져 있습니다
 | 인스턴스 타입 | 생성할 인스턴스의 CPU/메모리 사양 |
 | 블록 스토리지 | 루트 볼륨의 크기 |
 
-### 앵커가 없는 하위 섹션
+<a id="child-section-without-an-anchor"></a>
+### 앵커가 없는 하위 섹션 { #child-section-without-an-anchor }
 
 **두 번째 부정 대조군입니다. 이 heading 에는 `<a id>` 앵커도 `{ #id }` 속성도 붙이지 마세요.**
 
