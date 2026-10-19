@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=9c2916322ac3 -->
+
 # Console Glossary Sample
 
 This document is a console glossary e2e fixture.
