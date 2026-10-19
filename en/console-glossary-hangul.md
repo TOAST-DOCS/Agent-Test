@@ -37,4 +37,4 @@
 <a id="cgh-notify"></a>
 ## Notification
 
-To receive the cause of a failure by email, select **실패 사유 포함**.
+To receive the cause of a failure by email, select **Include Reason for Failure**.
