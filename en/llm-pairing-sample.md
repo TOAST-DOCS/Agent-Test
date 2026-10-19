@@ -7,11 +7,11 @@
 
 This document checks that the fix-links LLM pass applies each answer to the document that asked it.
 
-To set up event subscriptions, see [How to subscribe to events](./llm-pairing-target/#_3).
+To set up event subscriptions, see [How to subscribe to events](./llm-pairing-target/#event-subscription).
 
 <a id="llm-pairing-control"></a>
 ## Control { #llm-pairing-control }
 
 This paragraph exists only in English.
 
-Choose who gets notified in [Managing notification groups](./llm-pairing-target/#_4).
+Choose who gets notified in [Managing notification groups](./llm-pairing-target/#notification-group).
