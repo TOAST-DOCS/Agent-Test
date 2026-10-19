@@ -146,3 +146,8 @@ Links inside a code fence are not links, so they must survive untouched as well.
 [broken link inside a fence](./no-such-doc-e2e.md#nowhere)
 [self-path inside a fence](./fix-links/#fix-links-controls)
 ```
+
+The options are listed below.
+| Option | Value |
+| --- | --- |
+| mode | fast |
