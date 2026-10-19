@@ -460,6 +460,12 @@
 #                 ko 가 안 바꾼 헤딩 바이트 동일을 판정 (모델 없음,
 #                 scripts/check_date_headings.py). cloud-translate#1301 이전 코드는
 #                 REPRO (2). 기대: exit 0 / DATE_HEADINGS: OK. 로컬 translate_pr.py (~10분).
+#   console-glossary — 콘솔 용어집 (e2e-console-glossary.sh, cloud-user-guide-agent/584).
+#                 세션 브랜치에 콘솔 문자열(카탈로그 JSON · 언어별 TS)과 그 SHA 로 고정한
+#                 `.docs-workflow` console_glossary 를 심고, 굵게 쓴 콘솔 라벨이 콘솔 문자열로
+#                 번역되는지 판정 (모델 없음, scripts/check_console_glossary.py — [A] 프롬프트
+#                 선택 · [B] 산출물, 대조군: 산문 '다음 중' · ko 가 안 바꾼 절). 기능 이전 코드는
+#                 REPRO. 기대: exit 0 / CONSOLE_GLOSSARY: OK. 로컬 translate_pr.py (~10분).
 # 별칭:
 #   high · medium · low — 중요도 묶음. 시간이 없을 때는 `high` 만 돌린다 (정의와 기준은
 #                 스크립트 본문 TIER_* 옆 주석). `high medium` 처럼 이어 붙일 수 있고,
@@ -470,7 +476,7 @@
 #                          korean-review-mkdocs korean-review-markup korean-review-links
 #                          korean-review-line-anchors
 #                          row-drop-repro markup-churn retranslate lag-order translate-queue notation
-#                          list-items table-tag-trail table-tag-gaps date-headings
+#                          list-items table-tag-trail table-tag-gaps date-headings console-glossary
 #                 low    = fill-stubs split-docs fix-links fix-tables
 #                          table-name-keys table-cell-mirror file-by-file full-retranslate-images
 #   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
@@ -480,7 +486,7 @@
 #                   round1 table-suite row-drop-repro
 #                   markup-churn retranslate concurrent lag-order fill-stubs
 #                   split-docs fix-links fix-tables jinja-mask notation
-#                   full-retranslate-images date-headings
+#                   full-retranslate-images date-headings console-glossary
 #                 llm-patch 는 운영에서 도달하지 않는 경로라 제외 — 위 plan 설명 참고.
 #                 round2 는 round1 후처리(수동 머지)가 필요해 제외 —
 #                 필요하면 명시적으로 `scripts/e2e-suite.sh all round2` 로 이어붙임.
@@ -571,7 +577,7 @@ ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-r
            round1 table-suite row-drop-repro markup-churn retranslate concurrent
            lag-order translate-queue fill-stubs split-docs fix-links fix-tables jinja-mask notation list-items
            table-name-keys table-cell-mirror table-tag-trail table-tag-gaps file-by-file full-retranslate-images
-           date-headings)
+           date-headings console-glossary)
 # 중요도 묶음 (2026-10-16 확정). 시간이 없을 때는 `high` 만 돌린다 — 10-14·16 실측으로
 # high 약 51분(align 캐시 적중 시 약 44분) · medium 약 70분 · low 약 20분.
 #   high   — 머지된 ko PR 이 운영에서 매번 지나는 경로(webhook → 한글 검수 → 번역), 또는
@@ -584,7 +590,8 @@ ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-r
 TIER_HIGH=(webhook korean-review korean-review-no-targets round1 table-suite concurrent jinja-mask)
 TIER_MEDIUM=(webhook-concurrent webhook-lag-order workflow-ignore korean-review-mkdocs
              korean-review-markup korean-review-links korean-review-line-anchors row-drop-repro markup-churn retranslate
-             lag-order translate-queue notation list-items table-tag-trail table-tag-gaps date-headings)
+             lag-order translate-queue notation list-items table-tag-trail table-tag-gaps date-headings
+             console-glossary)
 TIER_LOW=(fill-stubs split-docs fix-links fix-tables table-name-keys table-cell-mirror file-by-file
           full-retranslate-images)
 _tier_check="$(comm -3 <(printf '%s\n' "${ALL_PLANS[@]}" | sort) \
@@ -637,7 +644,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-name-keys|table-cell-mirror|table-tag-trail|table-tag-gaps|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings|translate-queue|translate-queue-ordinary)
+    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-name-keys|table-cell-mirror|table-tag-trail|table-tag-gaps|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings|console-glossary|translate-queue|translate-queue-ordinary)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -909,6 +916,14 @@ for plan in "${PLANS[@]}"; do
     verdict="$(grep -oE '^DATE_HEADINGS: (OK|REPRO.*)' "$log" | tail -n1 || true)"
     dh_pr="$(grep -oE 'TX_PR=https://[^ ]+' "$log" | tail -n1 | cut -d= -f2 || true)"
     RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${dh_pr:-<no-pr>}")
+  elif [[ "$plan" == "console-glossary" ]]; then
+    # 콘솔 용어집 — 자체 스크립트. 콘솔 파일·.docs-workflow 를 세션 브랜치에 직접 심는다.
+    # suite 에서는 번역 PR 을 닫는다 (BEFORE/AFTER 증거가 필요하면 직접 실행).
+    bash "$REPO_ROOT/scripts/e2e-console-glossary.sh" --cleanup > "$log" 2>&1
+    ec=$?
+    verdict="$(grep -oE '^CONSOLE_GLOSSARY: (OK|REPRO).*' "$log" | tail -n1 || true)"
+    cg_pr="$(grep -oE 'TX_PR=https://[^ ]+' "$log" | tail -n1 | cut -d= -f2 || true)"
+    RESULTS+=("$plan|exit=$ec|${verdict:-<no-verdict>}|${cg_pr:-<no-pr>}")
   elif [[ "$plan" == "full-retranslate-images" ]]; then
     # 전체 재번역 이미지 링크 유지 — 자체 스크립트. 픽스처를 세션 브랜치에
     # 직접 심으므로 align 프롤로그가 필요 없다. 엔진은 스크립트가 CLI 로 고정.
