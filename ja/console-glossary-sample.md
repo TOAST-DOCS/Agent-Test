@@ -1,5 +1,7 @@
 <!-- machine_translated: true -->
 
+<!-- pre-align:aligned sig=9c2916322ac3 -->
+
 # コンソール用語集サンプル
 
 このドキュメントはコンソール用語集 e2e フィクスチャです。
