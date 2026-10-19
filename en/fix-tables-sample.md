@@ -1,6 +1,6 @@
 <!-- machine_translated: true -->
 
-<!-- pre-align:aligned sig=86fc80138a36 -->
+<!-- pre-align:aligned sig=2c31fb7ec903 -->
 
 <a id="fix-tables-sample"></a>
 ## Fix Broken Tables Sample { #fix-tables-sample }
