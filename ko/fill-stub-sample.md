@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=28e448e4e890 -->
+<!-- pre-align:aligned sig=dc7f43ef0b72 -->
 
 <a id="fill-stub-sample"></a>
 ## 빈 번역 채우기 샘플 { #fill-stub-sample }
