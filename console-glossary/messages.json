@@ -1,0 +1,13 @@
+{
+  "MESSAGE": {
+    "Notification.sendToggle": {"koKr": "알림 전송", "enUs": "Notification sent", "jaJp": "通知送信", "zhCn": "", "description": "SERVICE_SCHEDULER 실제 문자열"},
+    "Notification.criteria": {"koKr": "발송 기준", "enUs": "Send Criteria", "jaJp": "送信基準", "zhCn": "", "description": "같은 ko 에 en 이 둘 — 모델이 고른다"},
+    "Notification.criteriaLabel": {"koKr": "발송 기준", "enUs": "Send Trigger", "jaJp": "送信基準", "zhCn": "", "description": ""},
+    "Notification.onFailure": {"koKr": "실패 시", "enUs": "On failure", "jaJp": "失敗時", "zhCn": "", "description": ""},
+    "Notification.withReason": {"koKr": "실패 사유 포함", "enUs": "Reason for failure included", "jaJp": "失敗の理由を含める", "zhCn": "", "description": ""},
+    "Wizard.next": {"koKr": "다음", "enUs": "Next", "jaJp": "次へ", "zhCn": "", "description": "굵게 버튼 ↔ 산문 '다음 중'"},
+    "Common.set": {"koKr": "설정", "enUs": "Set", "jaJp": "設定", "zhCn": "", "description": "문서가 굵게 쓰지 않는 낱말 — 콘솔 절에 실리면 안 된다"},
+    "Detail.tab": {"koKr": "상세 정보", "enUs": "Detailed Info", "jaJp": "詳細内容", "zhCn": "", "description": "필수 용어집(상세 정보 → Details)과 충돌 — 콘솔이 이긴다"},
+    "Long.message": {"koKr": "설정 가능한 범위를 확인하세요.", "enUs": "See what ranges you can set.", "jaJp": "設定可能な範囲をご確認ください。", "zhCn": "", "description": ""}
+  }
+}
