@@ -11,3 +11,5 @@
 | 名前 | 種類 | 説明 |
 |---|---|---|
 | scheduleId | Path | スケジュールID |
+| notifyEnabled | Body | 通知送信の使用可否 |
+| withReason | Body | 失敗理由を含めるかどうか |

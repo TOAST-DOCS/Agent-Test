@@ -11,3 +11,5 @@
 | Name | Type | Description |
 |---|---|---|
 | scheduleId | Path | Schedule ID |
+| notifyEnabled | Body | Whether to send notifications |
+| withReason | Body | Whether to include failure reason |
