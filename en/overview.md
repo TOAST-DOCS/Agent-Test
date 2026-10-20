@@ -242,7 +242,7 @@ $ sudo update-grub
 ```
 
 <a id="e2e-table-malformed"></a>
-### Table selection guard fixture
+### Table selection guard fixture { #e2e-table-malformed }
 
 The tables below are e2e fixtures. They are for selection guard validation (20261020-023945).
 
@@ -273,7 +273,7 @@ The third table.
 | SVC-104 | Dedicated | This is a dedicated service. |
 
 <a id="e2e-table-target-hardbreak"></a>
-### Target-side cell hard break fixture
+### Target-side cell hard break fixture { #e2e-table-target-hardbreak }
 
 Fields of the signature header.
 
