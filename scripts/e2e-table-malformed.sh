@@ -71,10 +71,43 @@
 #   부르므로 D 를 켜지 않고, A/B/C 판정은 오늘과 같다. 수정이 머지되면 [D] OK 를
 #   확인한 뒤 기본값으로 올릴지 정한다.
 #
+# ── (E) 대상 쪽 셀 중간 줄바꿈 절단 — opt-in (`--case E`, 기본 꺼짐) ─────────
+# 재현하는 사고 (2026-10-19): TOAST-DOCS/E-mail ko PR
+#   https://github.com/TOAST-DOCS/E-mail/pull/162 → 번역 PR
+#   https://github.com/TOAST-DOCS/E-mail/pull/163
+#   en/dkim-record.md 의 DKIM-Signature 표(ko 10행)에서 en 의 `s` 행 설명 셀이
+#   **하드 줄바꿈**으로 끊겨 있었다 — 다음 줄 `public key this ... '. |` 은 `|` 로
+#   시작하지 않으므로 `_table_region` 이 거기서 표를 끝내고, `_doc_table_regions` 는
+#   en 표를 3행(v, a, s)으로 읽는다. 기본 켜짐인 `_reconcile_table_rows` 가 그 3행
+#   region 만 ko 10행으로 수리하고, region 밖의 옛 조각(`s` 행의 꼬리 + 옛 h, b, bh,
+#   l, d, t, x 행)은 그대로 남아 배포 페이지에 같은 필드가 **두 번** 나온다.
+#   이상적 모델 재생(모델이 완벽한 10행 표를 돌려줌)으로도 조각이 남으므로 모델과
+#   무관한 결정적 파이프라인 결함이다. ko 는 멀쩡하고 대상 쪽만 끊긴 세 번째 모양
+#   — (A) 는 ko 쪽 절단, (D) 는 대상 쪽 빈 줄 절단, (E) 는 대상 쪽 셀 안 줄바꿈 절단.
+#   코퍼스 노출 (master, 대상 리포 101): en/ja 표 7개 · ko 0.
+# 픽스처 E: 첫 열이 ASCII 짧은 키(v, a, s, h, b, bh, l, d, t, x)인 필드 표. ko 10행
+#   연속 · en/ja 는 같은 표를 번역하되 3번째 행(`s`)의 설명 셀을 하드 줄바꿈으로
+#   끊는다 (다음 줄은 텍스트로 시작해 ` |` 로 끝남). 구분 행은 헤더와 셀 수가 같아
+#   절단이 유일한 결함이다. 시드 기준 `_doc_table_regions` 는 ko 10행 / en·ja 3행.
+#   시드는 A/B/C/D 와 같이 세션 base 에만.
+# 판정 (결정적, 모델 판단 없음 — en/ja 각각, 범위는 E 절):
+#   (15) ko 표의 첫 열 키가 E 절의 표 행 첫 셀로 **각각 정확히 1번** (중복 없음 —
+#        결함은 h…x 를 두 번 남긴다)
+#   (16) E 절에 끊긴 셀의 꼬리 문구로 **시작하는 줄이 없다** (고아 조각이 지워졌거나
+#        한 행으로 합쳐졌다)
+#   (17) 사이트 렌더러(`shared.markup_lint._converter`)로 E 절을 렌더하면 `<table>`
+#        정확히 1개, `<tr>` 수 == ko 행 수 + 1(헤더), 표 밖에 `| x |` 모양 텍스트 없음
+#   (18) E 절에 `<todo` 마커 없음
+#   요약으로 `[E] REPRO` (하나라도 실패) / `[E] OK` 를 찍는다.
+# 현재 기대 결과: **[E] REPRO → RESULT: FAIL** (파이프라인 수정 전). opt-in 인 이유는
+#   (D) 와 같다 — e2e-suite.sh 의 table-malformed plan 은 인자 없이 부르므로 E 를
+#   켜지 않고 A/B/C 판정은 오늘과 같다.
+#
 # Usage:
 #   source ./load_env.sh
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
-#     bash scripts/e2e-table-malformed.sh [--keep] [--case D | --with-target-cut]
+#     bash scripts/e2e-table-malformed.sh [--keep] [--case D|E|D,E ...] [--with-target-cut]
+#   (`--case` 는 반복하거나 쉼표로 묶을 수 있다. `--with-target-cut` = `--case D`)
 #
 # 의존성: git, gh (로그인), python3
 set -eo pipefail
@@ -88,6 +121,7 @@ HEAD_BRANCH="translate-test-tablemal/$TS"
 DOC="overview.md"
 KEEP=0
 CASE_D=0   # (D) 대상 쪽 절단 — opt-in, 기본 꺼짐 (헤더 주석 참고)
+CASE_E=0   # (E) 대상 쪽 셀 중간 줄바꿈 절단 — opt-in, 기본 꺼짐 (헤더 주석 참고)
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
@@ -100,9 +134,17 @@ while [[ $# -gt 0 ]]; do
     --doc)  DOC="$2"; shift 2 ;;
     --with-target-cut) CASE_D=1; shift ;;
     --case)
-      [[ "${2:-}" == "D" || "${2:-}" == "d" ]] || { echo "unknown --case: ${2:-} (D 만 지원)" >&2; exit 1; }
-      CASE_D=1; shift 2 ;;
-    -h|--help) sed -n '1,95p' "$0"; exit 0 ;;
+      IFS=',' read -r -a _cases <<< "${2:-}"
+      [[ ${#_cases[@]} -gt 0 ]] || { echo "unknown --case: (D, E 지원)" >&2; exit 1; }
+      for _c in "${_cases[@]}"; do
+        case "$_c" in
+          D|d) CASE_D=1 ;;
+          E|e) CASE_E=1 ;;
+          *) echo "unknown --case: $_c (D, E 지원)" >&2; exit 1 ;;
+        esac
+      done
+      shift 2 ;;
+    -h|--help) sed -n '1,112p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -293,10 +335,81 @@ fixture_d_ja() { cat <<'EOF'
 EOF
 }
 
+# 표 E (opt-in): 대상 쪽 셀 중간 줄바꿈 절단 — E-mail#163 의 DKIM-Signature 표 모양.
+#       ko 10행 연속. en/ja 는 3번째 행(`s`)의 설명 셀이 하드 줄바꿈으로 끊겨, 다음
+#       줄(꼬리 문구 + ` |`)이 `|` 로 시작하지 않는다 → `_doc_table_regions` 는 3행.
+#       꼬리 문구는 판정 (16) 이 찾으므로 아래 E_TAIL 과 같아야 한다.
+fixture_e_ko() { cat <<'EOF'
+
+<a id="e2e-table-target-hardbreak"></a>
+### 대상 쪽 셀 줄바꿈 절단 픽스처
+
+서명 헤더의 필드입니다.
+
+| 필드 | 필수 여부 | 값 | 설명 |
+|---|---|---|---|
+| v | 필수 | 1 | 버전입니다. |
+| a | 필수 | rsa-sha256 | 서명 알고리즘입니다. |
+| s | 필수 | - | 지정자입니다. 수신 서버에 어떤 공개 키로 검증할지 알려 줍니다. |
+| h | 필수 | - | 서명할 헤더입니다. |
+| b | 필수 | - | 헤더를 서명한 값입니다. |
+| bh | 필수 | - | 본문을 서명한 값입니다. |
+| l | 선택 | - | 서명에 사용한 본문의 길이입니다. |
+| d | 필수 | - | 도메인입니다. |
+| t | 선택 | - | 서명 생성 일시입니다. |
+| x | 선택 | - | 서명 만료 일시입니다. |
+EOF
+}
+fixture_e_en() { cat <<'EOF'
+
+<a id="e2e-table-target-hardbreak"></a>
+### Target-side cell hard break fixture
+
+Fields of the signature header.
+
+| Field | Required | Value | Description |
+|---|---|---|---|
+| v | Required | 1 | Version. |
+| a | Required | rsa-sha256 | Signature algorithm. |
+| s | Required | - | Selector. Tells the receiving server
+which public key to use for verification. |
+| h | Required | - | Headers to sign. |
+| b | Required | - | Signed value of the headers. |
+| bh | Required | - | Signed value of the body. |
+| l | Optional | - | Length of the body used for the signature. |
+| d | Required | - | Domain. |
+| t | Optional | - | Time the signature was created. |
+| x | Optional | - | Time the signature expires. |
+EOF
+}
+fixture_e_ja() { cat <<'EOF'
+
+<a id="e2e-table-target-hardbreak"></a>
+### 対象側セル改行切断のフィクスチャ
+
+署名ヘッダーのフィールドです。
+
+| フィールド | 必須かどうか | 値 | 説明 |
+|---|---|---|---|
+| v | 必須 | 1 | バージョンです。 |
+| a | 必須 | rsa-sha256 | 署名アルゴリズムです。 |
+| s | 必須 | - | セレクタです。受信サーバーに
+検証に使う公開鍵を知らせます。 |
+| h | 必須 | - | 署名するヘッダーです。 |
+| b | 必須 | - | ヘッダーを署名した値です。 |
+| bh | 必須 | - | 本文を署名した値です。 |
+| l | 任意 | - | 署名に使った本文の長さです。 |
+| d | 必須 | - | ドメインです。 |
+| t | 任意 | - | 署名の生成日時です。 |
+| x | 任意 | - | 署名の有効期限です。 |
+EOF
+}
+
 echo "repo    : $REPO"
 echo "session : $SESSION_BRANCH"
 echo "doc     : $DOC"
 echo "case D  : $( (( CASE_D )) && echo 'on (대상 쪽 절단 — 현재 REPRO 기대)' || echo off )"
+echo "case E  : $( (( CASE_E )) && echo 'on (대상 쪽 셀 줄바꿈 절단 — 현재 REPRO 기대)' || echo off )"
 echo "translate: $CLOUD_TRANSLATE_DIR"
 echo
 
@@ -313,7 +426,8 @@ for lang in ko en ja; do
   [[ -f "$lang/$DOC" ]] || { echo "error: $lang/$DOC 없음" >&2; exit 1; }
   "fixture_$lang" >> "$lang/$DOC"
   if (( CASE_D )); then "fixture_d_$lang" >> "$lang/$DOC"; fi
-  echo "  시드: $lang/$DOC$( (( CASE_D )) && echo ' (+표 D)' )"
+  if (( CASE_E )); then "fixture_e_$lang" >> "$lang/$DOC"; fi
+  echo "  시드: $lang/$DOC$( (( CASE_D )) && echo ' (+표 D)' )$( (( CASE_E )) && echo ' (+표 E)' )"
 done
 cp "en/$DOC" "$tmpdir/en.seed"; cp "ja/$DOC" "$tmpdir/ja.seed"
 git add -- "ko/$DOC" "en/$DOC" "ja/$DOC"
@@ -390,9 +504,10 @@ for l in ko en ja; do
 done
 
 set +e
-python3 - "$LOG" "$tmpdir" "$tx_rc" "$tx_pr_url" "$REPO" "$CASE_D" <<'PY'
-import re, subprocess, sys
-log_p, tmp, rc, pr_url, repo, case_d = sys.argv[1:7]
+python3 - "$LOG" "$tmpdir" "$tx_rc" "$tx_pr_url" "$REPO" "$CASE_D" "$CASE_E" \
+  "$CLOUD_TRANSLATE_DIR" "$CLOUD_TRANSLATE_PY" <<'PY'
+import json, re, subprocess, sys
+log_p, tmp, rc, pr_url, repo, case_d, case_e, ct_dir, ct_py = sys.argv[1:10]
 log = open(log_p, encoding="utf-8", errors="replace").read()
 def rd(lang, side):
     return open(f"{tmp}/{lang}.{side}.md", encoding="utf-8", newline="").read()
@@ -528,6 +643,80 @@ if case_d == "1":
         if not (once and n_tbl == ko_n and n_pipe == ko_n and not has_todo):
             d_fail.append(lang)
 
+# ── [E] 대상 쪽 셀 중간 줄바꿈 절단 (opt-in) ───────────────────────────────
+# 끊긴 셀의 꼬리 문구 — fixture_e_en/ja 의 `s` 행 다음 줄 머리와 같아야 한다.
+E_TAIL = {"en": "which public key to use", "ja": "検証に使う公開鍵"}
+E_ANCHOR = '<a id="e2e-table-target-hardbreak"></a>'
+
+def anchored_section(text, anchor):
+    """앵커부터 다음 heading(앵커 다음의 자기 heading 제외) 또는 EOF 까지."""
+    ls = text.split("\n")
+    try:
+        i = next(k for k, l in enumerate(ls) if l.strip() == anchor)
+    except StopIteration:
+        return None
+    j = i + 2
+    while j < len(ls) and not ls[j].startswith("#"):
+        j += 1
+    return ls[i:j]
+
+def first_cells(sec):
+    return [l.split("|")[1].strip() for l in sec
+            if l.strip().startswith("|") and l.count("|") >= 2 and not is_sep(l)]
+
+# 사이트 렌더러(python-markdown + 사이트 확장)는 cloud-translate 쪽에 있으므로 그
+# 인터프리터로 E 절만 렌더해 구조 수치를 받는다.
+RENDER = r"""
+import json, re, sys
+sys.path[:0] = [sys.argv[1], sys.argv[1] + "/translate"]
+from shared.markup_lint import _converter
+html = _converter().convert(sys.stdin.read())
+outside = re.sub(r"<table>.*?</table>", "", html, flags=re.S)
+stray = re.findall(r"\|[^|\n<]*\|", outside)
+print(json.dumps({"tables": html.count("<table"), "trs": html.count("<tr"),
+                  "stray": stray[:3], "n_stray": len(stray)}))
+"""
+
+def render_stats(sec):
+    p = subprocess.run([ct_py, "-c", RENDER, ct_dir], input="\n".join(sec),
+                       capture_output=True, text=True)
+    if p.returncode != 0:
+        return {"error": (p.stderr.strip().splitlines() or ["?"])[-1]}
+    return json.loads(p.stdout)
+
+e_fail = []
+if case_e == "1":
+    ko_sec = anchored_section(rd("ko", "head"), E_ANCHOR)
+    ko_keys = first_cells(ko_sec)[1:] if ko_sec else []   # [0] = 헤더
+    for lang in ("en", "ja"):
+        sec = anchored_section(rd(lang, "head"), E_ANCHOR)
+        if sec is None or not ko_keys:
+            rule(15, f"[E/{lang}] E 절을 찾았다", False,
+                 f"앵커/표 없음 (ko={'O' if ko_keys else 'X'}, {lang}={'O' if sec else 'X'})")
+            e_fail.append(lang); continue
+        cells = first_cells(sec)
+        counts = {k: cells.count(k) for k in ko_keys}
+        bad = {k: v for k, v in counts.items() if v != 1}
+        r15 = not bad
+        rule(15, f"[E/{lang}] ko 키 {len(ko_keys)}개가 E 절 표 행 첫 셀로 각각 정확히 1번", r15,
+             "" if r15 else "어긋남 " + ", ".join(f"{k}={v}" for k, v in bad.items()))
+        orphan = [l for l in sec if l.lstrip().startswith(E_TAIL[lang])]
+        r16 = not orphan
+        rule(16, f"[E/{lang}] 끊긴 셀의 꼬리 문구로 시작하는 고아 줄 없음", r16,
+             "" if r16 else f"{len(orphan)}줄: {orphan[0][:50]!r}")
+        st = render_stats(sec)
+        want_tr = len(ko_keys) + 1
+        r17 = ("error" not in st and st["tables"] == 1 and st["trs"] == want_tr
+               and st["n_stray"] == 0)
+        rule(17, f"[E/{lang}] 렌더: <table> 1개 · <tr> == ko+1 · 표 밖 `| x |` 없음", r17,
+             st.get("error") or f"table={st['tables']} tr={st['trs']} (기대 {want_tr}) "
+             f"stray={st['n_stray']}")
+        has_todo = any("<todo" in l for l in sec)
+        rule(18, f"[E/{lang}] E 절에 <todo 마커 없음", not has_todo,
+             "<todo 있음" if has_todo else "")
+        if not (r15 and r16 and r17 and not has_todo):
+            e_fail.append(lang)
+
 body = subprocess.run(["gh", "pr", "view", pr_url, "--repo", repo, "--json", "body",
                        "--jq", ".body"], capture_output=True, text=True).stdout
 rule(10, "번역 PR 본문에 '수리하지 않았습니다' 공개",
@@ -542,6 +731,10 @@ print()
 if case_d == "1":
     print(f"[D] REPRO  대상 쪽 절단 — 고아 행 중복/잔존 ({', '.join(d_fail)})" if d_fail
           else "[D] OK     대상 쪽 절단 — 고아 행이 표로 합쳐지고 중복 없음")
+    print()
+if case_e == "1":
+    print(f"[E] REPRO  대상 쪽 셀 줄바꿈 절단 — 옛 조각 중복/잔존 ({', '.join(e_fail)})" if e_fail
+          else "[E] OK     대상 쪽 셀 줄바꿈 절단 — 한 표로 수리되고 중복 없음")
     print()
 print(f"TABLE-MALFORMED: {ok}/{len(results)} rules passed")
 print("RESULT: OK" if ok == len(results) else "RESULT: FAIL")
