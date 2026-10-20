@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=f2414300858d -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=1557cce77e71 -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > Overview { #compute-instance-overview }
@@ -240,15 +242,18 @@ $ sudo update-grub
 ```
 
 <a id="e2e-table-malformed"></a>
-### Table selection guard fixture
+### Table selection guard fixture { #e2e-table-malformed }
 
-The tables below are e2e fixtures.
+The tables below are e2e fixtures. They are for selection guard verification (20261020-051221).
 
 | Number | Item | Example |
 |---|---|---|
 | 1 | Request rate limit | http {<BR>   limit_req_zone $binary_remote_addr zone=z:10m;<BR>} |
-| 2 | Connection limit | limit_conn z 10; |
-| 3 | Request body size limit | client_max_body_size 1m; |
+
+   limit_req_zone $binary_remote_addr zone=z:10m;
+}
+| 2 | Concurrent Connection Limit | limit_conn z 10; |
+| 3 | Body Size Limit | client_max_body_size 1m; |
 
 The second table.
 
@@ -265,9 +270,10 @@ The third table.
 | SVC-101 | Basic | Basic service. |
 | SVC-102 | Standard | Standard service. |
 | SVC-103 | Advanced | Advanced service. |
+| SVC-104 | Dedicated | This is a dedicated service. |
 
 <a id="e2e-table-target-hardbreak"></a>
-### Target-side cell hard break fixture
+### Target-side cell hard break fixture { #e2e-table-target-hardbreak }
 
 Fields of the signature header.
 
@@ -275,7 +281,14 @@ Fields of the signature header.
 |---|---|---|---|
 | v | Required | 1 | Version. |
 | a | Required | rsa-sha256 | Signature algorithm. |
-| s | Required | - | Selector. Tells the receiving server
+| s | Required | - | Selector. Tells the receiving server which public key to use for verification. |
+| h | Required | - | Header to sign. |
+| b | Required | - | Value of the signed header. |
+| bh | Required | - | Value of the signed body. |
+| l | Optional | - | Length of the body used for signing. |
+| d | Required | - | Domain. |
+| t | Optional | - | Timestamp when the signature was created. |
+| x | Optional | - | Timestamp when the signature expires. |
 which public key to use for verification. |
 | h | Required | - | Headers to sign. |
 | b | Required | - | Signed value of the headers. |

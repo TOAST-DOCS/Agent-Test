@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=f2414300858d -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=1557cce77e71 -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 概要 { #compute-instance-overview }
@@ -134,7 +136,7 @@ PuTTYではキーペアの秘密鍵をPuTTYの秘密鍵形式に変更して使�
 
 ![イメージ1](http://static.toastoven.net/prod_instance/putty-ssh-001-en.png)
 
-** PuTTY Key Generator**ダイアログボックスの一番下**パラメータ**の**「Type of key to generate」欄**で**RSA**を選択して**「Number of bits in a generated key」**はデフォルト値の「2048」を入力します。**Actions**下の**「Load an existing private key file 」**横の**「Load」**ボタンをクリックしてキーペアの秘密鍵ファイルを読み込みます。
+**PuTTY Key Generator**ダイアログボックスの一番下**パラメータ**の**「Type of key to generate」欄**で**RSA**を選択して**「Number of bits in a generated key」**はデフォルト値の「2048」を入力します。**Actions**下の**「Load an existing private key file 」**横の**「Load」**ボタンをクリックしてキーペアの秘密鍵ファイルを読み込みます。
 
 ![イメージ2](http://static.toastoven.net/prod_instance/putty002-en.png)
 
@@ -247,13 +249,16 @@ $ sudo update-grub
 ```
 
 <a id="e2e-table-malformed"></a>
-### テーブル選定ガードのフィクスチャ
+### テーブル選定ガードのフィクスチャ { #e2e-table-malformed }
 
-以下のテーブルはe2eフィクスチャです。
+以下のテーブルはe2eフィクスチャです。選定ガード検証用です(20261020-051221)。
 
 | 番号 | 項目 | 例 |
 |---|---|---|
 | 1 | リクエスト速度制限 | http {<BR>   limit_req_zone $binary_remote_addr zone=z:10m;<BR>} |
+
+   limit_req_zone $binary_remote_addr zone=z:10m;
+}
 | 2 | 同時接続制限 | limit_conn z 10; |
 | 3 | 本文サイズ制限 | client_max_body_size 1m; |
 
@@ -272,9 +277,10 @@ $ sudo update-grub
 | SVC-101 | 基本 | 基本サービスです。 |
 | SVC-102 | 標準 | 標準サービスです。 |
 | SVC-103 | 高級 | 高級サービスです。 |
+| SVC-104 | 専用 | 専用サービスです。 |
 
 <a id="e2e-table-target-hardbreak"></a>
-### 対象側セル改行切断のフィクスチャ
+### 対象側セル改行切断のフィクスチャ { #e2e-table-target-hardbreak }
 
 署名ヘッダーのフィールドです。
 
@@ -282,7 +288,14 @@ $ sudo update-grub
 |---|---|---|---|
 | v | 必須 | 1 | バージョンです。 |
 | a | 必須 | rsa-sha256 | 署名アルゴリズムです。 |
-| s | 必須 | - | セレクタです。受信サーバーに
+| s | 必須 | - | セレクタです。受信サーバーが検証に使用する公開キーを指定します。 |
+| h | 必須 | - | 署名するヘッダです。 |
+| b | 必須 | - | ヘッダに署名した値です。 |
+| bh | 必須 | - | 本文に署名した値です。 |
+| l | 選択 | - | 署名に使用した本文の長さです。 |
+| d | 必須 | - | ドメインです。 |
+| t | 選択 | - | 署名生成日時です。 |
+| x | 選択 | - | 署名有効期限日時です。 |
 検証に使う公開鍵を知らせます。 |
 | h | 必須 | - | 署名するヘッダーです。 |
 | b | 必須 | - | ヘッダーを署名した値です。 |
