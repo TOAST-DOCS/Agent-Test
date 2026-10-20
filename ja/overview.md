@@ -136,7 +136,7 @@ PuTTYではキーペアの秘密鍵をPuTTYの秘密鍵形式に変更して使�
 
 ![イメージ1](http://static.toastoven.net/prod_instance/putty-ssh-001-en.png)
 
-** PuTTY Key Generator**ダイアログボックスの一番下**パラメータ**の**「Type of key to generate」欄**で**RSA**を選択して**「Number of bits in a generated key」**はデフォルト値の「2048」を入力します。**Actions**下の**「Load an existing private key file 」**横の**「Load」**ボタンをクリックしてキーペアの秘密鍵ファイルを読み込みます。
+**PuTTY Key Generator**ダイアログボックスの一番下**パラメータ**の**「Type of key to generate」欄**で**RSA**を選択して**「Number of bits in a generated key」**はデフォルト値の「2048」を入力します。**Actions**下の**「Load an existing private key file 」**横の**「Load」**ボタンをクリックしてキーペアの秘密鍵ファイルを読み込みます。
 
 ![イメージ2](http://static.toastoven.net/prod_instance/putty002-en.png)
 
@@ -287,8 +287,7 @@ $ sudo update-grub
 |---|---|---|---|
 | v | 必須 | 1 | バージョンです。 |
 | a | 必須 | rsa-sha256 | 署名アルゴリズムです。 |
-| s | 必須 | - | セレクタです。受信サーバーに
-検証に使う公開鍵を知らせます。 |
+| s | 必須 | - | セレクタです。受信サーバーに検証に使う公開鍵を知らせます。 |
 | h | 必須 | - | 署名するヘッダーです。 |
 | b | 必須 | - | ヘッダーを署名した値です。 |
 | bh | 必須 | - | 本文を署名した値です。 |
