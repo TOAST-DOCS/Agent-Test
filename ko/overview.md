@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=f2414300858d -->
+<!-- pre-align:aligned sig=1557cce77e71 -->
 
 <a id="compute-instance-overview"></a>
 ## Compute > Instance > 개요 { #compute-instance-overview }
@@ -243,7 +243,7 @@ $ sudo update-grub
 ```
 
 <a id="e2e-table-malformed"></a>
-### 표 선정 가드 픽스처
+### 표 선정 가드 픽스처 { #e2e-table-malformed }
 
 아래 표들은 e2e 픽스처입니다. 선정 가드 검증용입니다 (20261020-051616).
 
@@ -273,7 +273,7 @@ $ sudo update-grub
 | SVC-104 | 전용 | 전용 서비스입니다. |
 
 <a id="e2e-table-target-hardbreak"></a>
-### 대상 쪽 셀 줄바꿈 절단 픽스처
+### 대상 쪽 셀 줄바꿈 절단 픽스처 { #e2e-table-target-hardbreak }
 
 서명 헤더의 필드입니다.
 
