@@ -20,6 +20,22 @@
 # 그래서 `ko/markup-followup-existing.md` 는 **base 브랜치에** 결함 문단(L4)을 든 채
 # 커밋되고, head 는 그 파일의 *다른* 문단(L6)만 고친다 — 기대는 그 파일에 대한 **침묵**.
 #
+# **표 범위 suggestion (M7 · M16) — `[RANGE]` 판정.** 표 결함 둘은 고치는 데 **두 줄**을
+# 바꿔야 해서 한 줄 suggestion 으로는 클릭형이 안 된다:
+#   M7  — 셀 안 줄바꿈으로 표 한 행이 두 줄로 쪼개짐 (E-mail#163 모양). 수리 = 두 줄을 한 줄로.
+#   M16 — 표 마지막 행 아래 빈 줄 하나로 표가 둘로 갈려, 아래 행들이 구분행 없이 `| … |`
+#         글자로 보임 (Log-Crash-Search#134→#137 모양). 수리 = 빈 줄 삭제.
+# 후속 조치가 이 둘에 **범위 앵커**(`start_line`~`line`) + ```suggestion(그 범위를 대신할
+# 한 줄) 을 다는지 본다 — Dooray cloud-user-guide-agent
+# https://nhnent.dooray.com/task/4348075927010176060/4447230630228664471 .
+# 픽스처: head 에 새로 만드는 `ko/markup-followup-table.md` (두 결함이 한 표에), 대조군:
+# base 의 `ko/markup-followup-existing.md` 에 같은 모양의 빈 줄로 갈린 표 — PR 이 안 건드리므로
+# 침묵해야 한다. 규칙 R-a~R-e 는 판정 python 의 `[RANGE]` 절 참고.
+#   기대: cloud-translate main(범위 suggestion · M16 없음) = `[RANGE] REPRO`,
+#         feat/followup-table-range-suggestions = `[RANGE] OK`.
+# 기존 4건 판정(KO_REVIEW_MARKUP)은 새 표 문서를 빼고 그대로 본다 — 총 건수만 표 문서의
+# 검출 수를 더해 센다.
+#
 # 픽스처는 세션 head 브랜치에서 만든다(alpha 는 절대 오염되지 않는다). 마크업 결함은
 # 빌드를 멈추지 않지만, alpha 는 canonical 이라 실험 커밋을 두지 않는 규약은 같다.
 #
@@ -59,7 +75,7 @@ while [[ $# -gt 0 ]]; do
         *) echo "error: --translate 는 api|local 만 지원합니다 (got: ${2:-})" >&2; exit 1 ;;
       esac
       shift 2 ;;
-    -h|--help)       sed -n '3,33p' "$0"; exit 0 ;;
+    -h|--help)       sed -n '3,49p' "$0"; exit 0 ;;
     *) echo "unknown option: $1" >&2; exit 1 ;;
   esac
 done
@@ -95,6 +111,15 @@ write_existing() {   # $1 = L6 문장
 이 문단의 ** 기존 결함** 은 base 부터 있었습니다.
 
 $1
+
+| 항목 | 값 |
+| --- | --- |
+| 기존 행 1 | 값 1 |
+
+| 기존 행 2 | 값 2 |
+| 기존 행 3 | 값 3 |
+
+기존 표 아래 문단입니다.
 EOF
 }
 
@@ -179,12 +204,35 @@ echo "** x** 코드 안은 글자입니다"
 EOF
 
 # (d) 기존 결함 문서 — L6 만 고친다. L4 의 결함은 이 PR 이 안 건드렸으니 침묵.
+#     L8~L14 의 빈 줄로 갈린 표(M16 모양)도 base 부터 있던 것이라 침묵 (R-d).
 write_existing "이 문단은 이 PR 이 고친 문장입니다 — 마크업은 멀쩡합니다."
+
+# (e) 표 범위 suggestion — 한 표에 두 결함. 줄번호는 판정 python 의 RANGE_* 에 박혀 있다.
+#     L7-L8  M7  : secretKey 행의 설명 셀이 줄바꿈으로 쪼개짐 → 이어 붙인 한 줄
+#     L9-L10 M16 : region 행(L9) 아래 빈 줄(L10) 로 표가 갈려 L11·L12 가 글자로 보임
+#                  → suggestion = L9 그대로 (적용하면 L10 이 지워진다)
+cat > ko/markup-followup-table.md <<'EOF'
+<a id="markup-followup-table"></a>
+## Sample > 표 범위 수리 { #markup-followup-table }
+
+| 이름 | 설명 |
+| --- | --- |
+| appKey | 앱 키입니다. |
+| secretKey | 비밀 키는 콘솔에서
+확인합니다. |
+| region | 리전입니다. |
+
+| zone | 가용성 영역입니다. |
+| flavor | 인스턴스 타입입니다. |
+
+표 아래 닫는 문단입니다.
+EOF
 
 git add ko/markup-followup-*.md
 git commit -q -m "e2e(ko-review 후속 조치): markup lint 픽스처
 
-leak 3(M2·M1·M3) · admonition 1(M4) + 대조군 + 기존 결함 문서의 다른 문단 수정."
+leak 3(M2·M1·M3) · admonition 1(M4) + 대조군 + 기존 결함 문서의 다른 문단 수정
++ 표 범위 suggestion 픽스처(M7 · M16)."
 git push -q -u origin "$head_branch"
 
 e2e_ensure_label "$REPO"
@@ -193,7 +241,10 @@ ko_pr_url="$(gh pr create --repo "$REPO" --base "$BASE_BRANCH" --head "$head_bra
   --body "한글 검수 **후속 조치**(markup lint) e2e 픽스처입니다.
 
 기대: 후속 조치 리뷰에 **4건**(전부 확인 필요), 대조군 \`ko/markup-followup-control.md\` 와
-다른 문단만 고친 \`ko/markup-followup-existing.md\` 는 **침묵**." \
+다른 문단만 고친 \`ko/markup-followup-existing.md\` 는 **침묵**.
+
+표 범위 suggestion: \`ko/markup-followup-table.md\` 의 L7-L8(M7 셀 안 줄바꿈) ·
+L9-L10(M16 표 안 빈 줄) 에 범위 suggestion." \
   --label "$E2E_LABEL")"
 ko_pr_number="${ko_pr_url##*/}"
 echo "  ko PR: $ko_pr_url"
@@ -255,7 +306,8 @@ echo
 echo "[5/6] 후속 조치 리뷰 판정 · [6/6] 기존 검수 리뷰 무간섭 판정"
 echo "==================================================================="
 set +e
-TMPDIR_PATH="$tmpdir" HEAD_BRANCH="$head_branch" KO_PR_NUMBER="$ko_pr_number" python3 - <<'PYEOF'
+TMPDIR_PATH="$tmpdir" HEAD_BRANCH="$head_branch" KO_PR_NUMBER="$ko_pr_number" \
+CT_DIR="$CLOUD_TRANSLATE_DIR" CT_PY="$CLOUD_TRANSLATE_PY" python3 - <<'PYEOF'
 import json, os, re, sys
 from urllib.parse import parse_qs, urlparse
 
@@ -291,16 +343,22 @@ print("후속 조치 리뷰")
 check(len(followup) == 1, "후속 조치 리뷰가 정확히 1건", f"{len(followup)}건")
 body = (followup[0].get("body") or "") if followup else ""
 
-check("## 🧩 한글 검수 후속 조치 — 4건" in body, "헤더의 총 건수가 4건",
+# 표 범위 픽스처(ko/markup-followup-table.md)의 검출은 [RANGE] 절이 따로 본다 — 여기서는
+# 총 건수에 그 수만 더하고(기존 4건 + 표 문서 n건), 기대 밖 검출 판정에서 뺀다.
+TABLE_DOC = "ko/markup-followup-table.md"
+n_table = len(re.findall(rf"^- `{re.escape(TABLE_DOC)}` L\d", body, re.M))
+total = 4 + n_table
+check(f"## 🧩 한글 검수 후속 조치 — {total}건" in body,
+      f"헤더의 총 건수가 4건 (+ 표 문서 {n_table}건)",
       (re.search(r"후속 조치 — \S+", body) or [""])[0] if body else "(본문 없음)")
-check("차단 항목은 없고, **4건**이 확인 대상입니다" in body,
+check(f"차단 항목은 없고, **{total}건**이 확인 대상입니다" in body,
       "차단 항목 없음 — 마크업 결함은 빌드를 멈추지 않는다")
 
 item_re = re.compile(
     r"^- `(?P<file>[^`]+)` L(?P<line>\d+) `\[(?P<label>[^\]]+)\]`.*?"
     r"\((?P<tag>빌드 실패|확인 필요|확정)\)\s*$", re.M)
 items = {(m.group("file"), m.group("label"), int(m.group("line")))
-         for m in item_re.finditer(body)}
+         for m in item_re.finditer(body) if m.group("file") != TABLE_DOC}
 tag_of = {(m.group("file"), int(m.group("line"))): m.group("tag")
           for m in item_re.finditer(body)}
 
@@ -346,7 +404,7 @@ anchored = {(c.get("path"), c.get("line") or c.get("original_line")) for c in fu
 for f, label, line in sorted(EXPECTED):
     check((f, line) in anchored, f"인라인 앵커: {f} L{line} [{label}]")
 check(all(p not in SILENT for p, _ in anchored), "침묵 문서에 인라인 없음",
-      ", ".join(sorted({p for p, _ in anchored})))
+      ", ".join(sorted({p for p, _ in anchored} - {TABLE_DOC})))
 check(all("빌드가 실패" not in (c.get("body") or "") for c in fu_inline),
       "인라인 코멘트가 빌드 실패를 주장하지 않음")
 
@@ -407,11 +465,83 @@ check(PREVIEW_MARKER not in pr_body and "📖 Preview in viewer" not in pr_body,
 check("한글 검수 **후속 조치** e2e 픽스처" in pr_body or "e2e 픽스처" in pr_body,
       "개발팀이 쓴 본문이 그대로 남아 있음")
 
+base_problems = list(problems)
+problems.clear()
+
+# ── [RANGE] 표 범위 suggestion (M7 · M16) ─────────────────────────────
+# 픽스처 ko/markup-followup-table.md 의 줄번호에 박혀 있다 (스크립트 [2/6] (e)).
+print()
+print("[RANGE] 표 범위 suggestion (M7 · M16)")
+RANGE_M7 = (7, 8, "| secretKey | 비밀 키는 콘솔에서 확인합니다. |")
+RANGE_M16 = (9, 10, "| region | 리전입니다. |")
+sugg_re = re.compile(r"(`{3,})suggestion\n(.*?)\n\1", re.S)
+tbl_inline = [c for c in fu_inline if c.get("path") == TABLE_DOC]
+for c in tbl_inline:
+    print(f"    observed: start_line={c.get('start_line')} line={c.get('line')} "
+          f"suggestion={[m.group(2) for m in sugg_re.finditer(c.get('body') or '')]}")
+
+
+def range_comment(start, end):
+    return next((c for c in tbl_inline
+                 if c.get("start_line") == start and c.get("line") == end), None)
+
+
+applied = []
+for tag, (start, end, want) in (("R-a M7", RANGE_M7), ("R-b M16", RANGE_M16)):
+    c = range_comment(start, end)
+    got = [m.group(2) for m in sugg_re.finditer((c or {}).get("body") or "")]
+    check(c is not None, f"{tag}: {TABLE_DOC} 범위 코멘트 start_line={start} line={end}",
+          "있음" if c else "없음")
+    check(got == [want], f"{tag}: suggestion == {want!r}", repr(got))
+    if c and got:
+        applied.append((start, end, got[0]))
+
+# R-c — 두 suggestion 을 head 파일에 적용(아래 범위부터)하고 사이트 렌더러로 그린다.
+import subprocess
+src_lines = open(TABLE_DOC, encoding="utf-8").read().split("\n")
+for start, end, repl in sorted(applied, reverse=True):
+    src_lines[start - 1:end] = [repl]
+fixed = "\n".join(src_lines)
+render_py = (
+    "import sys, re\n"
+    "sys.path.insert(0, '.')\n"
+    "from shared.markup_lint import _converter\n"
+    "html = _converter().convert(sys.stdin.read())\n"
+    "print(html.count('<table'), html.count('<tr'),"
+    " len(re.findall(r'<p>\\s*\\|', html)))\n")
+res = subprocess.run([os.environ["CT_PY"], "-c", render_py], cwd=os.environ["CT_DIR"],
+                     input=fixed, capture_output=True, text=True)
+try:
+    n_tbl, n_tr, n_pipe_p = map(int, res.stdout.split())
+except ValueError:
+    n_tbl = n_tr = n_pipe_p = -1
+    print("    render error:", res.stderr[-500:])
+check(n_tbl == 1 and n_tr == 6 and n_pipe_p == 0,
+      "R-c: suggestion 적용본이 표 1개 · <tr> 6 (머리 1 + 행 5) · `|` 로 시작하는 <p> 0",
+      f"table={n_tbl} tr={n_tr} pipe_p={n_pipe_p}")
+
+# R-d — 대조군: base 부터 있던 빈 줄로 갈린 표(existing L8~L14)는 침묵.
+existing_c = [c for c in fu_inline if c.get("path") == "ko/markup-followup-existing.md"]
+check(not existing_c and "ko/markup-followup-existing.md" not in body,
+      "R-d: base 의 빈 줄로 갈린 표(PR 이 안 건드림)에 후속 조치 코멘트 없음",
+      f"inline {len(existing_c)}건")
+
+# R-e — 요약 리뷰가 범위를 L<a>-L<b> 로 적는다.
+for start, end, _ in (RANGE_M7, RANGE_M16):
+    check(f"`{TABLE_DOC}` L{start}-L{end}" in body,
+          f"R-e: 후속 조치 요약에 `{TABLE_DOC}` L{start}-L{end}")
+
+print()
+print("[RANGE] OK" if not problems else f"[RANGE] REPRO ({len(problems)}건)")
+range_problems = list(problems)
+problems = base_problems
 print()
 if problems:
     print(f"KO_REVIEW_MARKUP: FAIL ({len(problems)}건)")
+if not problems:
+    print("KO_REVIEW_MARKUP: OK")
+if problems or range_problems:
     sys.exit(3)
-print("KO_REVIEW_MARKUP: OK")
 PYEOF
 verdict_rc=$?
 set -e
