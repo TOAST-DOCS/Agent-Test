@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=f2414300858d -->
 
 <a id="compute-instance-overview"></a>
@@ -242,13 +244,16 @@ $ sudo update-grub
 <a id="e2e-table-malformed"></a>
 ### Table selection guard fixture
 
-The tables below are e2e fixtures.
+The tables below are e2e fixtures. They are for selection guard validation (20261020-023945).
 
 | Number | Item | Example |
 |---|---|---|
 | 1 | Request rate limit | http {<BR>   limit_req_zone $binary_remote_addr zone=z:10m;<BR>} |
-| 2 | Connection limit | limit_conn z 10; |
-| 3 | Request body size limit | client_max_body_size 1m; |
+
+   limit_req_zone $binary_remote_addr zone=z:10m;
+}
+| 2 | Concurrent connection limit | limit_conn z 10; |
+| 3 | Body size limit | client_max_body_size 1m; |
 
 The second table.
 
@@ -265,6 +270,7 @@ The third table.
 | SVC-101 | Basic | Basic service. |
 | SVC-102 | Standard | Standard service. |
 | SVC-103 | Advanced | Advanced service. |
+| SVC-104 | Dedicated | This is a dedicated service. |
 
 <a id="e2e-table-target-hardbreak"></a>
 ### Target-side cell hard break fixture
@@ -275,7 +281,14 @@ Fields of the signature header.
 |---|---|---|---|
 | v | Required | 1 | Version. |
 | a | Required | rsa-sha256 | Signature algorithm. |
-| s | Required | - | Selector. Tells the receiving server
+| s | Required | - | Selector. Tells the receiving server which public key to use for verification. |
+| h | Required | - | Headers to be signed. |
+| b | Required | - | Signed value of the headers. |
+| bh | Required | - | Signed value of the body. |
+| l | Optional | - | Length of the body used for signing. |
+| d | Required | - | Domain. |
+| t | Optional | - | Timestamp of signature generation. |
+| x | Optional | - | Signature expiration timestamp. |
 which public key to use for verification. |
 | h | Required | - | Headers to sign. |
 | b | Required | - | Signed value of the headers. |
