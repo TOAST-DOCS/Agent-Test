@@ -40,7 +40,10 @@
 #   (1) 번역 성공 (exit 0, PARTIAL 없음)
 #   (2) [A] en/ja 표 A 의 3개 행이 **전부 남아 있다** — 수정 전엔 2행이 삭제된다
 #   (3) [A] en/ja 표 A 가 시드와 **바이트 동일** (수리도, churn 도 없어야 한다)
-#   (4) [A] 로그에 "skipped ... malformed" — 건너뛴 직접 증거
+#   (4) [E] 로그에 표 reconcile 의 끊긴 표 건너뜀 (`Table reconcile (lang=en|ja): skipped N
+#       cut table(s)`, cloud-translate#1331) — en·ja 양쪽. 건너뛴 직접 증거. 예전에는 미머지
+#       #697 의 `skipped 1 malformed` 를 찾았다 (#697 은 #1331 로 대체돼 닫혔고, 케이스 A 는
+#       main 에서 행이 보존돼 가드가 발동할 자리가 아니다). E 를 끄면 해당 없음(PASS)
 #   (5) [B] en/ja 표 B 가 시드와 **바이트 동일** (이상치 행까지 그대로)
 #   (6) [B] 로그의 column-synced 가 0 — 열 동기화가 선정되지 않았다
 #   (7) [C] en/ja 표 C 에 ko 의 4번째 행이 **추가** 되었다 (가드가 진짜 수리를
@@ -71,7 +74,7 @@
 #   부르므로 D 를 켜지 않고, A/B/C 판정은 오늘과 같다. 수정이 머지되면 [D] OK 를
 #   확인한 뒤 기본값으로 올릴지 정한다.
 #
-# ── (E) 대상 쪽 셀 중간 줄바꿈 절단 — opt-in (`--case E`, 기본 꺼짐) ─────────
+# ── (E) 대상 쪽 셀 중간 줄바꿈 절단 — **기본 켜짐** (`--no-case-e` 로 끔) ────────
 # 재현하는 사고 (2026-10-19): TOAST-DOCS/E-mail ko PR
 #   https://github.com/TOAST-DOCS/E-mail/pull/162 → 번역 PR
 #   https://github.com/TOAST-DOCS/E-mail/pull/163
@@ -99,15 +102,19 @@
 #        정확히 1개, `<tr>` 수 == ko 행 수 + 1(헤더), 표 밖에 `| x |` 모양 텍스트 없음
 #   (18) E 절에 `<todo` 마커 없음
 #   요약으로 `[E] REPRO` (하나라도 실패) / `[E] OK` 를 찍는다.
-# 현재 기대 결과: **[E] REPRO → RESULT: FAIL** (파이프라인 수정 전). opt-in 인 이유는
-#   (D) 와 같다 — e2e-suite.sh 의 table-malformed plan 은 인자 없이 부르므로 E 를
-#   켜지 않고 A/B/C 판정은 오늘과 같다.
+# 현재 기대 결과: **[E] OK** — cloud-translate#1331 (2026-10-20 머지) 이 끊긴 표의
+#   reconcile 을 건너뛰고, post-maint 의 마크업 정정(M7)이 줄을 잇는다. 실측: main(#1331
+#   이전) Agent-Test#1880 `[E] REPRO` → #1331 #1882 `[E] OK` (둘 다 TRANSLATE_POST_MAINT=true).
+#   그래서 기본으로 켜 회귀 판정으로 쓴다. post-maint 를 끄고 돌리면 표는 끊긴 채 남아
+#   (16)(17) 이 FAIL 한다 — 중복(15)은 그래도 생기지 않아야 한다.
 #
 # Usage:
 #   source ./load_env.sh
 #   CLOUD_TRANSLATE_DIR=~/works/cloud-translate/.claude/worktrees/<wt> \
-#     bash scripts/e2e-table-malformed.sh [--keep] [--case D|E|D,E ...] [--with-target-cut]
-#   (`--case` 는 반복하거나 쉼표로 묶을 수 있다. `--with-target-cut` = `--case D`)
+#     TRANSLATE_POST_MAINT=true \
+#     bash scripts/e2e-table-malformed.sh [--keep] [--case D|E|D,E ...] [--with-target-cut] [--no-case-e]
+#   (`--case` 는 반복하거나 쉼표로 묶을 수 있다. `--with-target-cut` = `--case D`.
+#    E 는 기본 켜짐 — `--no-case-e` 로 끈다)
 #
 # 의존성: git, gh (로그인), python3
 set -eo pipefail
@@ -121,7 +128,7 @@ HEAD_BRANCH="translate-test-tablemal/$TS"
 DOC="overview.md"
 KEEP=0
 CASE_D=0   # (D) 대상 쪽 절단 — opt-in, 기본 꺼짐 (헤더 주석 참고)
-CASE_E=0   # (E) 대상 쪽 셀 중간 줄바꿈 절단 — opt-in, 기본 꺼짐 (헤더 주석 참고)
+CASE_E=1   # (E) 대상 쪽 셀 중간 줄바꿈 절단 — 기본 켜짐 (#1331 머지, 헤더 주석 참고)
 
 CLOUD_TRANSLATE_DIR="${CLOUD_TRANSLATE_DIR:-$HOME/works/cloud-translate}"
 CLOUD_TRANSLATE_PY="${CLOUD_TRANSLATE_PY:-$HOME/works/cloud-translate/.venv/bin/python}"
@@ -133,6 +140,7 @@ while [[ $# -gt 0 ]]; do
     --keep) KEEP=1; shift ;;
     --doc)  DOC="$2"; shift 2 ;;
     --with-target-cut) CASE_D=1; shift ;;
+    --no-case-e) CASE_E=0; shift ;;
     --case)
       IFS=',' read -r -a _cases <<< "${2:-}"
       [[ ${#_cases[@]} -gt 0 ]] || { echo "unknown --case: (D, E 지원)" >&2; exit 1; }
@@ -144,7 +152,7 @@ while [[ $# -gt 0 ]]; do
         esac
       done
       shift 2 ;;
-    -h|--help) sed -n '1,112p' "$0"; exit 0 ;;
+    -h|--help) sed -n '1,121p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 1 ;;
   esac
 done
@@ -409,7 +417,7 @@ echo "repo    : $REPO"
 echo "session : $SESSION_BRANCH"
 echo "doc     : $DOC"
 echo "case D  : $( (( CASE_D )) && echo 'on (대상 쪽 절단 — 현재 REPRO 기대)' || echo off )"
-echo "case E  : $( (( CASE_E )) && echo 'on (대상 쪽 셀 줄바꿈 절단 — 현재 REPRO 기대)' || echo off )"
+echo "case E  : $( (( CASE_E )) && echo 'on (대상 쪽 셀 줄바꿈 절단 — OK 기대, #1331)' || echo off )"
 echo "translate: $CLOUD_TRANSLATE_DIR"
 echo
 
@@ -565,10 +573,14 @@ for lang in ("en", "ja"):
     rule(8, f"[C/{lang}] 표 C 의 기존 3행은 바이트 그대로", kept,
          "" if kept else "기존 행이 재작성되었습니다")
 
-n_skip = len(re.findall(r"skipped 1 malformed", log))
-n_warn = len(re.findall(r"truncated by a malformed row", log))
-rule(4, "로그에 malformed skip 증거 (en·ja 양쪽)",
-     n_skip >= 2 and n_warn >= 2, f"skip={n_skip} warn={n_warn}")
+# (4) 끊긴 표 건너뜀의 직접 증거 — cloud-translate#1331 의 reconcile 로그 (E 의 표).
+cut_langs = sorted(set(re.findall(
+    r"Table reconcile \(lang=(en|ja)\): skipped \d+ cut table\(s\)", log)))
+if case_e == "1":
+    rule(4, "[E] 로그에 끊긴 표 건너뜀 (#1331, en·ja 양쪽)",
+         cut_langs == ["en", "ja"], f"langs={cut_langs or '(없음)'}")
+else:
+    rule(4, "[E] 로그에 끊긴 표 건너뜀 — E 꺼짐, 해당 없음", True, "n/a")
 m = re.findall(r"\((\d+) column-synced to ko schema\)", log)
 rule(6, "열 동기화가 선정되지 않았다 (column-synced = 0)",
      bool(m) and all(x == "0" for x in m), f"관측값={m or ['(없음)']}")
