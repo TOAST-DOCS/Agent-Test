@@ -249,7 +249,7 @@ $ sudo update-grub
 ```
 
 <a id="e2e-table-malformed"></a>
-### テーブル選定ガードのフィクスチャ
+### テーブル選定ガードのフィクスチャ { #e2e-table-malformed }
 
 以下のテーブルはe2eフィクスチャです。選定ガード検証用です(20261020-051221)。
 
@@ -280,7 +280,7 @@ $ sudo update-grub
 | SVC-104 | 専用 | 専用サービスです。 |
 
 <a id="e2e-table-target-hardbreak"></a>
-### 対象側セル改行切断のフィクスチャ
+### 対象側セル改行切断のフィクスチャ { #e2e-table-target-hardbreak }
 
 署名ヘッダーのフィールドです。
 
