@@ -280,8 +280,7 @@ Fields of the signature header.
 |---|---|---|---|
 | v | Required | 1 | Version. |
 | a | Required | rsa-sha256 | Signature algorithm. |
-| s | Required | - | Selector. Tells the receiving server
-which public key to use for verification. |
+| s | Required | - | Selector. Tells the receiving server which public key to use for verification. |
 | h | Required | - | Headers to sign. |
 | b | Required | - | Signed value of the headers. |
 | bh | Required | - | Signed value of the body. |
