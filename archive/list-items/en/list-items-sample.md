@@ -101,3 +101,34 @@ The e2e edits only **one sentence in the body** of the box below. The box is re-
         - **Subject alternative name**: Enter an additional identifying name in domain format.
 
 2. Click **OK** to create the certificate.
+
+<a id="list-fence-edit"></a>
+## Editing one line of a code block inside a list
+
+The code blocks below are the body of numbered list items, so they sit at a 4-space indent. The e2e edits only the **second line** of the second code block. ko is the source of truth for the indentation of every line of a code block (opening fence, body and closing fence).
+
+1. Request the first page without `cursor`.
+
+    ```text
+    GET /{API path}?{query conditions}&size=20
+    → 20 items in the list, "nextCursor": "Y3Vyc29yLWV4YW1wbGU"
+    ```
+
+2. Use the `nextCursor` value from the response as the `cursor` in the next request.
+
+    ```text
+    GET /{API path}?{query conditions}&size=20&cursor=Y3Vyc29yLWV4YW1wbGU
+    → 7 items in the list, "nextCursor": null
+    ```
+
+3. Repeat step 2 until the `nextCursor` in the response becomes `null`.
+
+<a id="list-fence-control"></a>
+## Code block outside a list (control)
+
+The e2e also edits the second line of the code block below. A code block outside a list (column 0) has no indentation to lose, so it must match ko even with the code before the fix.
+
+```text
+GET /{API path}?{query conditions}&size=20
+→ 20 items in the list, "nextCursor": "Y3Vyc29yLWV4YW1wbGU"
+```
