@@ -14,29 +14,29 @@
 
 같은 파일을 배포 URL 모양의 경로로 가리키는 링크입니다. 순수 in-file `#slug` 만 남아야 합니다.
 
-* [정상 링크 모음](./fix-links/#fix-links-controls)
+* [정상 링크 모음](#fix-links-controls)
 
 <a id="fix-links-relativize"></a>
 ## relativize { #fix-links-relativize }
 
 같은 repo 안 파일을 절대 URL · repo-rooted 경로로 가리키는 링크입니다. 둘 다 `./overview.md#pricing` 이 되어야 합니다.
 
-* [과금 (github blob URL)](https://github.com/TOAST-DOCS/Agent-Test/blob/alpha/ko/overview.md#pricing)
-* [과금 (repo-rooted 경로)](/ko/overview.md#pricing)
+* [과금 (github blob URL)](./overview/#pricing)
+* [과금 (repo-rooted 경로)](./overview/#pricing)
 
 <a id="fix-links-langdir"></a>
 ## lang-dir { #fix-links-langdir }
 
 다른 언어 폴더를 가리키는 in-repo 링크입니다. 이 문서의 언어 짝이 실재하므로 같은 언어로 바뀌어야 합니다.
 
-* [과금 (다른 언어 폴더)](../en/overview.md#pricing)
+* [과금 (다른 언어 폴더)](./overview/#pricing)
 
 <a id="fix-links-nested"></a>
 ## nested-frag { #fix-links-nested }
 
 배포 URL 조각이 fragment 안으로 끌려 들어가 `#a/#b` 로 겹친 링크입니다. 마지막 `/#` 뒤만 남아야 합니다.
 
-* [과금 (겹친 fragment)](./overview.md#overview/#pricing)
+* [과금 (겹친 fragment)](./overview.md#pricing)
 
 <a id="fix-links-heading"></a>
 ## heading-frag { #fix-links-heading }
@@ -44,7 +44,7 @@
 fragment 은 죽었지만 링크 텍스트가 대상 문서의 heading 과 정확히 일치하는 링크입니다.
 heading 의 canonical id 로 바뀌어야 합니다.
 
-* [키페어(Key-pair)](./overview.md#keypair-legacy-slug)
+* [키페어(Key-pair)](./overview.md#key-pair)
 
 <a id="fix-links-langsite"></a>
 ## lang-site { #fix-links-langsite }
@@ -53,7 +53,7 @@ site-root 축약형이 **다른 언어**를 가리키는 링크입니다. 로케
 배포 시 앞자리가 이 문서의 언어로 채워져 `/ko/…/en/…` 가 되므로 죽은 링크입니다.
 같은 언어 짝으로 바뀌어야 합니다.
 
-* [과금 (site-root 타언어)](/Open%20Source/agent-test/en/overview/#pricing)
+* [과금 (site-root 타언어)](./overview/#pricing)
 
 <a id="fix-links-absdocs"></a>
 ## abs-docs · abs-docs-env { #fix-links-absdocs }
@@ -62,8 +62,8 @@ site-root 축약형이 **다른 언어**를 가리키는 링크입니다. 로케
 셋 다에 배포되므로 어떤 host 를 박아도 최소 두 환경에서 틀립니다. 둘 다 상대 경로가 되어야
 하고, 비운영 host 는 별도 표기 코드(`abs-docs-env`)로 판정됩니다.
 
-* [과금 (운영 host)](https://docs.nhncloud.com/ko/Open%20Source/agent-test/ko/overview/#pricing)
-* [과금 (alpha host)](https://docs.alpha-nhncloud.com/ko/Open%20Source/agent-test/ko/overview/#pricing)
+* [과금 (운영 host)](./overview/#pricing)
+* [과금 (alpha host)](./overview/#pricing)
 
 <a id="fix-links-legacyjp"></a>
 ## legacy-jp { #fix-links-legacyjp }
@@ -71,7 +71,7 @@ site-root 축약형이 **다른 언어**를 가리키는 링크입니다. 로케
 2026-08 이전 일본어 세그먼트 `jp` 가 남은 링크입니다. `jp` 는 두 자리 모두 죽은 로케일이므로
 이 문서의 언어로 바뀌어야 합니다.
 
-* [과금 (레거시 jp)](/Open%20Source/agent-test/jp/overview/#pricing)
+* [과금 (레거시 jp)](./overview/#pricing)
 
 <a id="fix-links-fragslash"></a>
 ## frag-slash { #fix-links-fragslash }
@@ -80,7 +80,7 @@ fragment 뒤에 `/` 가 붙은 링크입니다. mkdocs 의 디렉터리 URL 이 
 붙이는데, 페이지는 200 으로 열리고 **스크롤만 안 됩니다** — 응답으로 판정하는 어떤 점검에도 안 걸립니다.
 경로 표기는 그대로 두고 뒤 슬래시만 떨어져야 합니다.
 
-* [과금 (fragment 뒤 슬래시)](./overview.md#pricing/)
+* [과금 (fragment 뒤 슬래시)](./overview.md#pricing)
 
 <a id="fix-links-parenthop"></a>
 ## parent-hop { #fix-links-parenthop }
@@ -89,7 +89,7 @@ fragment 뒤에 `/` 가 붙은 링크입니다. mkdocs 의 디렉터리 URL 이 
 짝을 못 찾으면 링크를 그대로 내보내고, 그러면 브라우저가 페이지 URL 기준(소스 디렉터리보다 한 단계 깊다)
 으로 풀어 배포본에서는 **살아 있습니다**. 소스 기준으로는 없는 경로라 `./` 로 바뀌어야 합니다.
 
-* [과금 (한 단계 위로)](../overview/#pricing)
+* [과금 (한 단계 위로)](./overview/#pricing)
 
 <a id="fix-links-sitelang"></a>
 ## site-lang { #fix-links-sitelang }
@@ -98,7 +98,7 @@ fragment 뒤에 `/` 가 붙은 링크입니다. mkdocs 의 디렉터리 URL 이 
 URL 이라 죽은 링크는 아니지만 site 언어가 박히므로 번역본 독자가 원문 언어로 넘어갑니다. 앞 언어
 세그먼트가 빠지고 같은 언어의 상대 경로가 되어야 합니다.
 
-* [과금 (site 언어까지 박힌 경로)](/ko/Open%20Source/agent-test/ko/overview/#pricing)
+* [과금 (site 언어까지 박힌 경로)](./overview/#pricing)
 
 <a id="fix-links-report"></a>
 ## 고치지 말고 보고만 해야 하는 링크 { #fix-links-report }
