@@ -35,10 +35,14 @@
 #
 # Usage:
 #   source ./load_env.sh
-#   bash scripts/e2e-post-maint.sh [--timeout 3600] [--pipeline-branch PR-1294]
+#   bash scripts/e2e-post-maint.sh [--timeout 3600] [--pipeline-branch PR-1294] [--via-global]
 #
 # --pipeline-branch: 번역 잡을 그 Jenkins multibranch 잡으로 돌린다 (미머지 코드 검증).
 #   그 잡이 있고 빌드가 1회 이상이어야 한다 (파라미터 등록).
+# --via-global: repo override 를 켜지 않고 **글로벌 번역 필터**의 '번역 PR 문서 정비'
+#   (cloud-translate#1323) 로 돌린다. 글로벌이 켜져 있고 이 리포의 override 가 post_maint
+#   를 정하지 않은(상속) 상태여야 하며, 아니면 시작 전에 멈춘다 — 글로벌 값을 이 e2e 가
+#   바꾸지 않는다 (모든 리포에 걸리는 운영 설정이라).
 #
 # webhook repo 등록(번역만 켜고 한글 검수는 끈다 — 이 e2e 의 판정 밖이다)·pipeline
 # 브랜치·override 는 세션 동안만 바꾸고 trap 에서 원래 값으로 되돌린다. 세션 브랜치·PR 은
@@ -55,10 +59,12 @@ source "$SCRIPT_DIR/e2e-label.sh"
 
 TIMEOUT=3600
 PIPELINE_BRANCH=""
+VIA_GLOBAL=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --timeout) TIMEOUT="$2"; shift 2 ;;
     --pipeline-branch) PIPELINE_BRANCH="$2"; shift 2 ;;
+    --via-global) VIA_GLOBAL=1; shift ;;
     -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
@@ -119,6 +125,13 @@ for k,v in (d.get('repo_overrides') or {}).items():
 else: print('null')" "$REPO"
 }
 
+_read_global_pm() {
+  curl -sS -H "Authorization: Bearer $DASHBOARD_API_TOKEN" "$DASHBOARD_BASE_URL/api/webhooks/repos" \
+  | python3 -c "
+import json,sys
+print(json.dumps(((json.load(sys.stdin).get('filters') or {}).get('translate') or {}).get('post_maint')))"
+}
+
 cleanup() {
   local rc=$?
   trap - EXIT INT TERM
@@ -135,7 +148,11 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "== [0] webhook repo 켜기 + override post_maint 켜기 ($REPO)"
+if (( VIA_GLOBAL )); then
+  echo "== [0] webhook repo 켜기 + 글로벌 post_maint 확인 ($REPO)"
+else
+  echo "== [0] webhook repo 켜기 + override post_maint 켜기 ($REPO)"
+fi
 # webhook e2e 규약 (e2e-webhook-toggle.sh): 실행 중에만 켜고 끝나면 원래 행으로 되돌린다.
 WEBHOOK_ROW="$(_webhook_row)"
 echo "  webhook repo 원래 행: $WEBHOOK_ROW"
@@ -143,10 +160,17 @@ _set_webhook_row "$(python3 -c "
 import json,sys; r=json.loads(sys.argv[1])
 print(json.dumps({'translate_enabled': True, 'ko_review_enabled': False,
                   'pipeline_branch': sys.argv[2] or r['pipeline_branch']}))" "$WEBHOOK_ROW" "$PIPELINE_BRANCH")"
-ORIG_PM="$(_read_pm)"
-echo "  원래 값: $ORIG_PM"
-_override '{"post_maint": true}'
-[[ "$(_read_pm)" == "true" ]] || { echo "FAIL: override 가 켜지지 않았다" >&2; exit 1; }
+if (( VIA_GLOBAL )); then
+  GPM="$(_read_global_pm)"; RPM="$(_read_pm)"
+  echo "  글로벌 post_maint: $GPM · repo override: $RPM"
+  [[ "$GPM" == "true" ]] || { echo "error: --via-global 인데 글로벌 번역 필터의 post_maint 가 꺼져 있다" >&2; exit 2; }
+  [[ "$RPM" == "null" ]] || { echo "error: --via-global 인데 repo override 가 post_maint=$RPM 로 덮고 있다 (상속이어야 한다)" >&2; exit 2; }
+else
+  ORIG_PM="$(_read_pm)"
+  echo "  원래 값: $ORIG_PM"
+  _override '{"post_maint": true}'
+  [[ "$(_read_pm)" == "true" ]] || { echo "FAIL: override 가 켜지지 않았다" >&2; exit 1; }
+fi
 
 echo "== [1] 세션 base $BASE (alpha + 결함 시드)"
 git -C "$REPO_DIR" fetch -q origin +refs/heads/alpha:refs/remotes/origin/alpha
