@@ -21,7 +21,7 @@ The following fields are added for each log type.
 
     | Name | Description |
     | --- | --- |
-    | endpointId | Endpoint ID |
+    | hyperparameterTuningId | Hyperparameter Tuning ID |
 
 - **Endpoint Log Fields**
 
@@ -36,10 +36,10 @@ The following fields are added for each log type.
 1. Write the request body.
     - **Required Fields**
 
-        | Name | Format | Description |
-        | --- | --- | --- |
-        | UUID | UUID | Cluster UUID |
-        | Integer | Integer | Number of nodes |
+        | Name      | Format  | Description  |
+        | --------- | ------- | ------------ |
+        | clusterId | UUID    | Cluster UUID |
+        | nodeCount | Integer | Number of nodes |
 
 2. Send the request.
 
@@ -50,8 +50,8 @@ The table in this section is outside a list. It must stay at column 0 after the 
 
 | Name | Format | Description |
 | --- | --- | --- |
-| String | String | Region ID |
-| String | String | Availability zone ID |
+| regionId | String | Region ID |
+| zoneId | String | Availability zone ID |
 
 <a id="fix-tables-nested-untouched"></a>
 ## Correct Table in a List { #fix-tables-nested-untouched }

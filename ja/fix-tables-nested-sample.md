@@ -21,7 +21,7 @@ en/jaのコピーにはkoと最初の列の識別子が異なる表があり、�
 
     | 名前 | 説明 |
     | --- | --- |
-    | endpointId | エンドポイントID |
+    | hyperparameterTuningId | ハイパーパラメータチューニングID |
 
 - **エンドポイントログフィールド**
 
@@ -38,8 +38,8 @@ en/jaのコピーにはkoと最初の列の識別子が異なる表があり、�
 
         | 名前 | 形式 | 説明 |
         | --- | --- | --- |
-        | UUID | UUID | クラスタUUID |
-        | Integer | Integer | ノード数 |
+        | clusterId | UUID | クラスタUUID |
+        | nodeCount | Integer | ノード数 |
 
 2. リクエストを送信します。
 
@@ -50,8 +50,8 @@ en/jaのコピーにはkoと最初の列の識別子が異なる表があり、�
 
 | 名前 | 形式 | 説明 |
 | --- | --- | --- |
-| String | String | リージョンID |
-| String | String | アベイラビリティゾーンID |
+| regionId | String | リージョンID |
+| zoneId | String | アベイラビリティゾーンID |
 
 <a id="fix-tables-nested-untouched"></a>
 ## 正しいリスト内の表 { #fix-tables-nested-untouched }
