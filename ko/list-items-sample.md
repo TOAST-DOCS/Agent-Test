@@ -112,10 +112,27 @@ e2e 는 아래 상자의 **본문 한 문장**만 고친다. 상자는 다시 �
 
     ```text
     GET /{API 경로}?{조회 조건}&size=20&cursor=Y3Vyc29yLWV4YW1wbGU
-    → 목록 7건, "nextCursor": null
+    → 목록 7건, nextCursor 없음
     ```
 
 3. 응답의 `nextCursor`가 `null`이 될 때까지 2를 반복합니다.
+
+<a id="list-fence-new"></a>
+## 목록 안 코드 블록이 든 새 절
+
+1. 토큰을 발급합니다.
+
+    ```text
+    POST /oauth2/token?grant_type=client_credentials
+    → 토큰 발급, "expiresIn": 86400
+    ```
+
+2. 발급받은 토큰을 헤더에 넣어 요청합니다.
+
+    ```text
+    GET /{API 경로}
+    → 조회 결과 반환
+    ```
 
 <a id="list-fence-control"></a>
 ## 목록 밖 코드 블록 (대조군)
@@ -124,5 +141,5 @@ e2e 는 아래 코드 블록의 둘째 줄도 고친다. 목록 밖(0칸) 코드
 
 ```text
 GET /{API 경로}?{조회 조건}&size=20
-→ 목록 20건, "nextCursor": "Y3Vyc29yLWV4YW1wbGU"
+→ 목록 20건, nextCursor 있음
 ```
