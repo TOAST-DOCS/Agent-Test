@@ -1,0 +1,22 @@
+{
+  "_comment": "사내 다국어 DB TOASTCloud/console-i18n-translate@main catalog/SERVICE_SCHEDULER(·_SERVER)/messages.json 의 값 (2026-10-21 스냅샷). 픽스처 문서가 **굵게** 쓴 콘솔 라벨만 — 번역은 이 중 하나를 써야 한다. 카탈로그가 바뀌면 이 표도 바꾼다.",
+  "bold": {
+    "일정 생성":       {"en": ["Create Schedule"], "ja": ["スケジュールの作成", "スケジュール作成"]},
+    "실행 유형":       {"en": ["Execution Type"], "ja": ["実行タイプ"]},
+    "일회성":          {"en": ["One time"], "ja": ["1回だけ"]},
+    "반복":            {"en": ["Recurring"], "ja": ["繰り返し"]},
+    "결과 검증 조건":   {"en": ["Result Verification Condition"], "ja": ["結果検証条件"]},
+    "조건 결합 방식":   {"en": ["Conditional Combination Method"], "ja": ["条件結合方式"]},
+    "모든 조건 일치":   {"en": ["All Conditions Matched"], "ja": ["全ての条件に一致"]},
+    "일부 조건 일치":   {"en": ["Some Conditions Matched"], "ja": ["いずれかの条件に一致"]},
+    "결과 알림":       {"en": ["Result Notification"], "ja": ["結果通知"]},
+    "발송 기준":       {"en": ["Send Criteria", "Send Trigger"], "ja": ["送信基準"]},
+    "실패 사유 포함":   {"en": ["Reason for failure included"], "ja": ["失敗の理由を含める"]},
+    "다음":            {"en": ["Next"], "ja": ["次へ"]}
+  },
+  "not_bold": {
+    "재시도 정책":     {"en": ["Retry Policy", "Retry policy"], "ja": ["再試行ポリシー"]},
+    "재시도 간격":     {"en": ["Retry Interval", "Retry interval"], "ja": ["再試行間隔"]}
+  },
+  "categories": ["SERVICE_SCHEDULER", "SERVICE_SCHEDULER_SERVER"]
+}
