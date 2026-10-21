@@ -380,6 +380,11 @@
 #                 세 경로에서 en/ja 의 태그 줄 앞뒤 빈 줄이 ko 와 같은가 + 대조군 둘
 #                 (ko 가 빈 줄을 둔 태그 · 태그 없는 표). 기대: exit 0 / TABLE_TAG_TRAIL: OK
 #                 (#1258 이전 코드의 [A] 는 6곳 REPRO).
+#   table-open-row — 닫는 `|` 없이 끝나는 표 행 (e2e-table-open-row.sh, TOAST-Cloud#421 재발
+#                 방지). ko 행이 닫는 `|` 없이 끝나도 그 행을 다시 번역한 en/ja 에서 그 행과
+#                 아래 행이 표에 남는가 — 마지막 행 앞 · 표 중간 + 대조군(닫힌 표). 절별
+#                 렌더 `<tr>` 수를 ko 와 비교. 기대: exit 0 / TABLE_OPEN_ROW: OK
+#                 (수정 이전 코드는 [A]·[B] 모두 REPRO).
 #   file-by-file — 큰 ko 변경 (e2e-file-by-file.sh, cloud-translate #1261 · #1263 ·
 #                 TOAST-Cloud#416 모양). (a) 파일별 번역: 시간이 넘친 파일만 '번역 실패로
 #                 제외된 파일' 로 빠지고 나머지는 한 PR 에 커밋 (b) 폴링 타임아웃: ko PR 에
@@ -470,7 +475,7 @@
 #                          korean-review-mkdocs korean-review-markup korean-review-links
 #                          korean-review-line-anchors
 #                          row-drop-repro markup-churn retranslate lag-order translate-queue notation
-#                          list-items table-tag-trail table-tag-gaps date-headings
+#                          list-items table-tag-trail table-tag-gaps table-open-row date-headings
 #                 low    = fill-stubs split-docs fix-links fix-tables
 #                          table-name-keys table-cell-mirror file-by-file full-retranslate-images
 #   all         — round2 / row-drop-repro-noreconcile / preserve / table-malformed
@@ -570,8 +575,8 @@ ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-r
            korean-review-line-anchors
            round1 table-suite row-drop-repro markup-churn retranslate concurrent
            lag-order translate-queue fill-stubs split-docs fix-links fix-tables jinja-mask notation list-items
-           table-name-keys table-cell-mirror table-tag-trail table-tag-gaps file-by-file full-retranslate-images
-           date-headings)
+           table-name-keys table-cell-mirror table-tag-trail table-tag-gaps table-open-row file-by-file
+           full-retranslate-images date-headings)
 # 중요도 묶음 (2026-10-16 확정). 시간이 없을 때는 `high` 만 돌린다 — 10-14·16 실측으로
 # high 약 51분(align 캐시 적중 시 약 44분) · medium 약 70분 · low 약 20분.
 #   high   — 머지된 ko PR 이 운영에서 매번 지나는 경로(webhook → 한글 검수 → 번역), 또는
@@ -584,7 +589,8 @@ ALL_PLANS=(webhook webhook-concurrent webhook-lag-order workflow-ignore korean-r
 TIER_HIGH=(webhook korean-review korean-review-no-targets round1 table-suite concurrent jinja-mask)
 TIER_MEDIUM=(webhook-concurrent webhook-lag-order workflow-ignore korean-review-mkdocs
              korean-review-markup korean-review-links korean-review-line-anchors row-drop-repro markup-churn retranslate
-             lag-order translate-queue notation list-items table-tag-trail table-tag-gaps date-headings)
+             lag-order translate-queue notation list-items table-tag-trail table-tag-gaps table-open-row
+             date-headings)
 TIER_LOW=(fill-stubs split-docs fix-links fix-tables table-name-keys table-cell-mirror file-by-file
           full-retranslate-images)
 _tier_check="$(comm -3 <(printf '%s\n' "${ALL_PLANS[@]}" | sort) \
@@ -637,7 +643,7 @@ while [[ $# -gt 0 ]]; do
       TRANSLATE_MODE="$2"; shift 2 ;;
     --tm-top-k|--chunk-workers)
       PASS_ARGS+=("$1" "$2"); shift 2 ;;
-    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-name-keys|table-cell-mirror|table-tag-trail|table-tag-gaps|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings|translate-queue|translate-queue-ordinary)
+    webhook|webhook-concurrent|webhook-lag-order|workflow-ignore|korean-review|korean-review-no-targets|korean-review-mkdocs|korean-review-markup|korean-review-links|korean-review-line-anchors|anchor-audit|round1|round2|row-drop-repro|row-drop-repro-noreconcile|llm-patch|table-suite|markup-churn|retranslate|concurrent|lag-order|fill-stubs|split-docs|fix-links|fix-tables|table-malformed|preserve|jinja-mask|notation|list-items|unit-preserve|unit-pairing|table-field-rows|table-name-keys|table-cell-mirror|table-tag-trail|table-tag-gaps|table-open-row|file-by-file|term-pin|term-pin-existing|term-pin-splice|term-pin-guards|full-retranslate-images|date-headings|translate-queue|translate-queue-ordinary)
       PLANS+=("$1"); shift ;;
     all)
       # round2 는 round1 후 수동 머지가 전제라 all 에서 제외 — 필요하면
@@ -989,7 +995,7 @@ for plan in "${PLANS[@]}"; do
   elif [[ "$plan" == "unit-pairing" || "$plan" == "table-field-rows" \
           || "$plan" == "table-cell-mirror" || "$plan" == "table-tag-trail" \
           || "$plan" == "table-tag-gaps" || "$plan" == "table-name-keys" \
-          || "$plan" == "file-by-file" ]]; then
+          || "$plan" == "table-open-row" || "$plan" == "file-by-file" ]]; then
     # 자체 스크립트 — 번역은 로컬 translate_pr.py 로만 돈다 (검증 대상이 체크아웃의
     # 코드라서). 엔진은 스크립트가 CLI 로 고정하고 옵션은 권장 preset 에서 받는다.
     case "$plan" in
@@ -999,6 +1005,7 @@ for plan in "${PLANS[@]}"; do
       table-cell-mirror) _sc=e2e-table-cell-mirror.sh; _tag=TABLE_CELL_MIRROR ;;
       table-tag-trail)  _sc=e2e-table-tag-trail.sh;  _tag=TABLE_TAG_TRAIL ;;
       table-tag-gaps)   _sc=e2e-table-tag-gaps.sh;   _tag=TABLE_TAG_GAPS ;;
+      table-open-row)   _sc=e2e-table-open-row.sh;   _tag=TABLE_OPEN_ROW ;;
       file-by-file)     _sc=e2e-file-by-file.sh;     _tag=FILE_BY_FILE ;;
     esac
     bash "$REPO_ROOT/scripts/$_sc" > "$log" 2>&1
