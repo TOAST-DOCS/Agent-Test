@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=5e542d265d9e -->
+<!-- pre-align:aligned sig=08049cd93fda -->
 
 <a id="fix-links-overview"></a>
 ## 링크 정정 테스트 { #fix-links-overview }
@@ -142,14 +142,17 @@ PR 본문의 "사람이 직접 확인해야 하는 부분" 표에 사유와 함�
 [펜스 안의 self-path](./fix-links/#fix-links-controls)
 ```
 
-## 전처리 검증 절
+<a id="preprocessing-validation-section"></a>
+## 전처리 검증 절 { #preprocessing-validation-section }
 
 이 절은 e2e 가 id 없이 추가한 h2 입니다. 전처리가 `<a id>` 와 `{ #id }` 를 함께 붙여야 합니다.
 
-### 하위 절 하나
+<a id="a-subsection"></a>
+### 하위 절 하나 { #a-subsection }
 
 h3 — 역시 id 없이 추가됐습니다.
 
+<a id="a-subsection-details"></a>
 #### 세부 항목
 
 h4 — `<a id>` 만, 상위 h3 id 를 접두로 받아야 합니다.
