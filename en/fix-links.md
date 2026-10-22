@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=5e542d265d9e -->
 
 <a id="fix-links-overview"></a>
@@ -130,6 +132,8 @@ missing, the comparison did not run.
 <a id="fix-links-controls"></a>
 ## Valid Links { #fix-links-controls }
 
+(e2e anchor-preassign control group — modify existing section body 20261022-075021)
+
 **Negative controls.** Every link below is already correct, so it must stay **byte-for-byte identical**
 after a fix run. If even one changed, the fixer touched a healthy link.
 
@@ -146,3 +150,15 @@ Links inside a code fence are not links, so they must survive untouched as well.
 [broken link inside a fence](./no-such-doc-e2e.md#nowhere)
 [self-path inside a fence](./fix-links/#fix-links-controls)
 ```
+
+## Preprocessing Validation Section
+
+This section is an h2 added by e2e without an id. Preprocessing should attach both `<a id>` and `{ #id }` together.
+
+### A Subsection
+
+h3 — Added without an id as well.
+
+#### Details
+
+h4 — `<a id>` only, should receive the parent h3 id as a prefix.
