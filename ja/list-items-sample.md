@@ -1,5 +1,3 @@
-<!-- machine_translated: true -->
-
 # リスト項目splice フィクスチャ — 触っていない兄弟箇条書き
 
 Markdownのリストは項目の間に空行がないため、**1つのブロック**として捉えられます。そのため
@@ -116,10 +114,27 @@ e2eは下のボックスの**本文1文**だけを変更します。ボックス
 
     ```text
     GET /{APIパス}?{照会条件}&size=20&cursor=Y3Vyc29yLWV4YW1wbGU
-    → リスト7件, "nextCursor": null
+    → リスト7件, nextCursor なし
     ```
 
 3. レスポンスの`nextCursor`が`null`になるまで2を繰り返します。
+
+<a id="list-fence-new"></a>
+## リスト内のコードブロックを含む新しいセクション
+
+1. トークンを発行します。
+
+    ```text
+    POST /oauth2/token?grant_type=client_credentials
+    → トークン発行、"expiresIn": 86400
+    ```
+
+2. 発行されたトークンをヘッダーに入れてリクエストします。
+
+    ```text
+    GET /{APIパス}
+    → 検索結果を返す
+    ```
 
 <a id="list-fence-control"></a>
 ## リスト外のコードブロック(対照群)
@@ -128,5 +143,5 @@ e2eは以下のコードブロックの2行目も修正する。リスト外(0�
 
 ```text
 GET /{APIパス}?{照会条件}&size=20
-→ リスト20件, "nextCursor": "Y3Vyc29yLWV4YW1wbGU"
+→ リスト20件, nextCursor あり
 ```
