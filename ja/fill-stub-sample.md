@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=28e448e4e890 -->
 
 <a id="fill-stub-sample"></a>
@@ -7,7 +9,7 @@
 en/ja のコピーには pre-align が残す 2 種類の stub をわざと残してあり、埋め込み実行がその stub だけを正確に
 埋め、ほかのセクションをバイト単位で保存するかを確認します。
 
-この文書はユーザーガイドメニュー(`ko/nav.yml`)には登録しません。配布される文書ではなくパイプラインのフィクスチャです。
+この文書はユーザーガイドメニュー(`ko/nav.yml`)には登録しません。配布される文書ではなくパイプラインのフィクスチャです。文書整備e2eがこの文を追加しました。
 
 <a id="fill-stub-untouched"></a>
 ## すでに翻訳済みのセクション { #fill-stub-untouched }
