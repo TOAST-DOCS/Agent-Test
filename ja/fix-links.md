@@ -1,3 +1,5 @@
+<!-- machine_translated: true -->
+
 <!-- pre-align:aligned sig=5e542d265d9e -->
 
 <a id="fix-links-overview"></a>
@@ -125,6 +127,10 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 <a id="fix-links-controls"></a>
 ## 正常なリンク集 { #fix-links-controls }
 
+(e2e anchor-preassign 対照群 — 既存セクション本文の修正 20261022-074401)
+
+(e2e anchor-preassign 対照群 — 既存セクション本文の修正 20261022-073751)
+
 **負の対照群です。** 以下のリンクはすべて正常なので、訂正実行のあとも**バイト単位で同一**でなければなりません。
 1 つでも変わっていれば、訂正が健全なリンクに触れたということです。
 
@@ -141,3 +147,15 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 [フェンス内の壊れたリンク](./no-such-doc-e2e.md#nowhere)
 [フェンス内の self-path](./fix-links/#fix-links-controls)
 ```
+<a id="pre-processing-validation-section"></a>
+## 前処理検証セクション
+
+このセクションはe2eがIDなしで追加したh2です。前処理は`<a id>`と`{ #id }`を一緒に付加する必要があります。
+
+### 1つの下位セクション
+
+h3 — やはりIDなしで追加されました。
+
+#### 詳細項目
+
+h4 — `<a id>` のみ、上位 h3 id をプレフィックスとして受け取る必要があります。
