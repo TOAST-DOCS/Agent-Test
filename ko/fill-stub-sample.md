@@ -1,4 +1,4 @@
-<!-- pre-align:aligned sig=28e448e4e890 -->
+<!-- pre-align:aligned sig=dc7f43ef0b72 -->
 
 <a id="fill-stub-sample"></a>
 ## 빈 번역 채우기 샘플 { #fill-stub-sample }
@@ -60,7 +60,8 @@ en/ja 의 같은 섹션은 heading 이 아직 한국어인 heading stub 입니�
 heading stub 이 연달아 나오는 경우입니다. 부모 섹션과 독립적으로 각각 채워져야 하고,
 `###` 레벨이 `##` 로 승격되거나 강등되면 안 됩니다.
 
-## 앵커가 없는 섹션
+<a id="section-1"></a>
+## 앵커가 없는 섹션 { #section-1 }
 
 **부정 대조군입니다. 이 heading 에는 `<a id>` 앵커도 `{ #id }` 속성도 붙이지 마세요.**
 
@@ -76,6 +77,7 @@ pre-align 을 이 문서에 다시 돌리면 이 heading 에도 id 가 붙어 �
 stub 뒤에 오는 섹션입니다. 앞 섹션들이 채워진 뒤에도 이 섹션은 바이트 단위로 보존되어야 합니다.
 
 옵션은 아래와 같습니다.
+
 | 옵션 | 값 |
 | --- | --- |
 | mode | fast |
