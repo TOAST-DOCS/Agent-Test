@@ -1,5 +1,3 @@
-<!-- machine_translated: true -->
-
 # List-item splice fixture — untouched sibling bullets
 
 A Markdown list has no blank line between its items, so it is captured as a **single block**.
@@ -118,10 +116,27 @@ The code blocks below are the body of numbered list items, so they sit at a 4-sp
 
     ```text
     GET /{API path}?{query conditions}&size=20&cursor=Y3Vyc29yLWV4YW1wbGU
-    → 7 items in the list, "nextCursor": null
-    ```
+    → 7 items in the list, no nextCursor
+        ```
 
 3. Repeat step 2 until the `nextCursor` in the response becomes `null`.
+
+<a id="list-fence-new"></a>
+## Code Blocks in List Items
+
+1. Issue a token.
+
+    ```text
+POST /oauth2/token?grant_type=client_credentials
+→ Token issuance, "expiresIn": 86400
+    ```
+
+2. Add the issued token to the header and send the request.
+
+    ```text
+GET /{API path}
+→ Returns View Result
+    ```
 
 <a id="list-fence-control"></a>
 ## Code block outside a list (control)
@@ -130,5 +145,5 @@ The e2e also edits the second line of the code block below. A code block outside
 
 ```text
 GET /{API path}?{query conditions}&size=20
-→ 20 items in the list, "nextCursor": "Y3Vyc29yLWV4YW1wbGU"
+→ 20 items in the list, nextCursor exists
 ```
