@@ -148,14 +148,16 @@ PR 本文の「人が直接確認すべき部分」の表に理由付きで載�
 [フェンス内の self-path](./fix-links/#fix-links-controls)
 ```
 <a id="pre-processing-validation-section"></a>
-## 前処理検証セクション
+## 前処理検証セクション { #pre-processing-validation-section }
 
 このセクションはe2eがIDなしで追加したh2です。前処理は`<a id>`と`{ #id }`を一緒に付加する必要があります。
 
-### 1つの下位セクション
+<a id="single-sub-section"></a>
+### 1つの下位セクション { #single-sub-section }
 
 h3 — やはりIDなしで追加されました。
 
+<a id="single-sub-section-sub-items"></a>
 #### 詳細項目
 
 h4 — `<a id>` のみ、上位 h3 id をプレフィックスとして受け取る必要があります。
