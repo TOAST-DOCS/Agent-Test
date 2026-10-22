@@ -12,9 +12,17 @@
 #   6) 판정 B (--phase translate): 번역 PR 이 ko 를 **안 건드리고** en/ja 의 <a id>
 #      순서가 ko 와 같다
 #
-# --label BEFORE 는 전처리를 끄고 돌려 오늘 동작을 REPRO 로 잡는다 — review 단계에서
-# head 가 그대로, translate 단계에서 번역 PR 에 `Assign id anchors to new sections in ko/`
-# 커밋이 생긴다. 같은 base 를 `--base-branch` 로 재사용하면 BEFORE/AFTER 가 같은 픽스처다.
+# --label BEFORE 는 전처리를 끄고 돌려 오늘 동작을 잡는다 — review 단계에서 head 가
+# 그대로, translate 단계에서 번역 PR 에 `Assign id anchors to new sections in ko/` 커밋이
+# 생기는 것이 BEFORE 의 기대(= 판정 OK)다. **BEFORE 와 AFTER 는 base 를 따로 쓴다** — 각
+# 실행이 자기 ko PR 을 base 에 머지하므로 같은 base 를 재사용하면 두 번째 실행의 픽스처가
+# 첫 실행이 머지한 같은 제목의 절(id 있음) 위에 겹쳐 판정이 오염된다 (실측 #1910/#1911:
+# 판정기가 AFTER 쪽 heading 을 보고 "BEFORE 인데 { #id } 가 있다" 로 잘못 REPRO).
+# `--base-branch` 재사용은 `--skip-translate`(머지 안 함)와 함께일 때만 뜻이 있다.
+#
+# 실측 (2026-10-22, 로컬 review_pr.py + translate_pr.py, CLI 엔진):
+#   AFTER  #1907 → 전처리 커밋 e6b20d61 (id 3 · marker sig · 대조군 불변) → 번역 #1909 en/ja 만 · id 17/17
+#   BEFORE #1912 → head 그대로 → 번역 #1913 이 ko 에 `Assign id anchors…` 1커밋 (오늘 동작)
 #
 # 601 모양(순차 큐 × 머지 순서) 자체는 여기서 재현하지 않는다 — 그건 Agent-Test#1889
 # 의 몫이고, 이 e2e 는 그 모양의 **전제**(번역 PR 이 ko 에 id 를 커밋한다)를 없앴는지만
