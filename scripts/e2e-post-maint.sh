@@ -32,6 +32,10 @@
 #   [7] 깨진 표: en/ja fix-tables-sample.md 의 절별 표 수 == ko
 #   [8] 정상 절 보존: en/ja `#fix-tables-untouched` 가 base 와 바이트 동일
 #   [9] Jinja 줄은 고치지 않았다 (ja 에 미닫힘 `{% if` 그대로)
+#   [10] before/after 스크린샷 (cloud-translate#1362): 정비 댓글의 '스크린샷' 절에 before ·
+#       after 이미지 짝, pr-attach-screenshot 키 모양(<owner>__<repo>/PR-<n>/), URL 이 200
+#       PNG, 찍은 절의 파일 ⊆ PR 파일, 커밋한 렌더 도구(마크업 · 채우기 · 표)가 전부 찍혔다,
+#       preview 링크 ref 가 이 PR 의 커밋 SHA
 #
 # Usage:
 #   source ./load_env.sh
@@ -298,6 +302,41 @@ for l in ("en", "ja"):
           secs.get("fix-tables-untouched") == base_secs.get("fix-tables-untouched"))
 ja_ft = raw("ja/fix-tables-sample.md", head) or ""
 check("9 Jinja 줄 미수정 (ja)", '{% if "gov" in build_flags %}' in ja_ft and "{% endif" not in ja_ft)
+
+# [10] before/after 스크린샷 (cloud-translate#1362) — 렌더를 바꾼 절마다 before · after (+ 대조군)
+import urllib.request
+shot_part = note.split("### 스크린샷 — 정비 before / after", 1)
+check("10a 정비 댓글에 스크린샷 절", len(shot_part) == 2)
+shot_note = shot_part[1] if len(shot_part) == 2 else ""
+imgs = re.findall(r"!\[(before|after|대조군)\]\((https?://[^)\s]+)\)", shot_note)
+nb = sum(1 for k, _ in imgs if k == "before")
+na = sum(1 for k, _ in imgs if k == "after")
+check("10b before·after 이미지 짝", nb >= 1 and nb == na, f"before {nb} · after {na} · 대조군 {len(imgs) - nb - na}")
+scope = f"{repo.replace('/', '__')}/PR-{num}/"
+check("10c pr-attach-screenshot 키 모양", bool(imgs) and all(scope in u for _, u in imgs), scope)
+bad = []
+for _, u in imgs:
+    try:
+        with urllib.request.urlopen(urllib.request.Request(u, method="GET"), timeout=30) as r:
+            if r.status != 200 or not r.headers.get("Content-Type", "").startswith("image/png") \
+                    or not r.read(8).startswith(b"\x89PNG"):
+                bad.append(u)
+    except Exception:  # noqa: BLE001
+        bad.append(u)
+check("10d 이미지 URL 200 · PNG", bool(imgs) and not bad, ", ".join(bad[:3]) or f"{len(imgs)}장")
+sec_paths = set(re.findall(r"^#### `([^`]+)`", shot_note, re.M))
+check("10e 찍은 절의 파일 ⊆ PR 파일", bool(sec_paths) and sec_paths <= files, ", ".join(sorted(sec_paths)))
+shot_tools = set(re.findall(r"^#### `[^`]+`.* — (.+)$", shot_note, re.M))
+shot_tools = {t.strip() for line in shot_tools for t in line.split("·")}
+want = {lbl for tool, lbl in (("fix-markup", "마크업 정정"), ("fill-empty", "빈 번역 채우기"),
+                              ("fix-tables", "깨진 표 정비"))
+        if any(m.startswith(f"post-maint({tool})") for m in msgs)}
+check("10g 커밋한 렌더 도구가 전부 스크린샷에", want <= shot_tools,
+      "누락 " + ", ".join(sorted(want - shot_tools)) if want - shot_tools else ", ".join(sorted(shot_tools)))
+shas = set(re.findall(r"(?:tx|ko)_ref=([0-9a-f]{40})", shot_note))
+pr_shas = {c["oid"] for c in pr["commits"]}
+check("10f preview 링크 ref = 이 PR 의 커밋 SHA", bool(shas) and shas <= pr_shas | {base_sha},
+      ", ".join(s[:7] for s in sorted(shas)))
 
 print(f"\n  번역 PR: {pr['url']}")
 print("POST_MAINT:", "OK" if all(res) else f"FAIL ({res.count(False)}/{len(res)})")
