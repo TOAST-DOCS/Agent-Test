@@ -42,7 +42,8 @@ en/ja のコピーには pre-align が残す 2 種類の stub をわざと残し
 
 <!-- TODO: translate -->
 
-## 앵커가 없는 섹션
+<a id="section-1"></a>
+## 앵커가 없는 섹션 { #section-1 }
 
 <!-- TODO: translate -->
 
