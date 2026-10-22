@@ -151,14 +151,17 @@ Links inside a code fence are not links, so they must survive untouched as well.
 [self-path inside a fence](./fix-links/#fix-links-controls)
 ```
 
-## Preprocessing Validation Section
+<a id="preprocessing-validation-section"></a>
+## Preprocessing Validation Section { #preprocessing-validation-section }
 
 This section is an h2 added by e2e without an id. Preprocessing should attach both `<a id>` and `{ #id }` together.
 
-### A Subsection
+<a id="a-subsection"></a>
+### A Subsection { #a-subsection }
 
 h3 — Added without an id as well.
 
+<a id="a-subsection-details"></a>
 #### Details
 
 h4 — `<a id>` only, should receive the parent h3 id as a prefix.
