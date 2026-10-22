@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=28e448e4e890 -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=dc7f43ef0b72 -->
 
 <a id="fill-stub-sample"></a>
 ## 空の翻訳埋めサンプル { #fill-stub-sample }
@@ -7,7 +9,7 @@
 en/ja のコピーには pre-align が残す 2 種類の stub をわざと残してあり、埋め込み実行がその stub だけを正確に
 埋め、ほかのセクションをバイト単位で保存するかを確認します。
 
-この文書はユーザーガイドメニュー(`ko/nav.yml`)には登録しません。配布される文書ではなくパイプラインのフィクスチャです。
+この文書はユーザーガイドメニュー(`ko/nav.yml`)には登録しません。配布される文書ではなくパイプラインのフィクスチャです。文書整備e2eがこの文を追加しました。
 
 <a id="fill-stub-untouched"></a>
 ## すでに翻訳済みのセクション { #fill-stub-untouched }
@@ -23,26 +25,49 @@ en/ja のコピーには pre-align が残す 2 種類の stub をわざと残し
 <a id="fill-stub-table"></a>
 ## 表があるセクション { #fill-stub-table }
 
-<!-- TODO: translate body -->
+本文に表があるbody stubです。入力後も表の列数と行数はkoと同じである必要があります。
+
+| 項目 | 説明 | デフォルト値 |
+|---|---|---|
+| インスタンスタイプ | 作成するインスタンスのCPU/メモリスペック | m2.c1m2 |
+| ブロックストレージ | ルートボリュームのサイズ(GB) | 20 |
+| 起動スクリプト | インスタンスの初回起動時に実行するスクリプト | なし |
 
 <a id="fill-stub-code"></a>
 ## コードブロックがあるセクション { #fill-stub-code }
 
-<!-- TODO: translate body -->
+コードブロックは翻訳対象ではありません。以下のブロックは内容が入力された後も、そのままである必要があります。
+
+```bash
+# fill-stub-test: this line must be copied verbatim
+curl -X GET "https://api.example.com/v2.0/servers" \
+  -H "X-Auth-Token: ${TOKEN}"
+```
+
+ブロックの外にあるこの文章のみが翻訳対象であり、コマンドとコメント行には手を加えません。
 
 <a id="fill-stub-heading"></a>
-## 제목까지 비어 있는 섹션 { #fill-stub-heading }
+## 見出しまで空のセクション { #fill-stub-heading }
 
-<!-- TODO: translate -->
+en/jaの同じセクションは、見出しがまだ韓国語の見出しスタブです。
+入力の実行は見出しと本文を一緒に翻訳しますが、見出しのレベルと`{ #id }`はkoを正本として従う必要があります。
 
 <a id="fill-stub-heading-child"></a>
-### 하위 제목도 비어 있는 경우 { #fill-stub-heading-child }
+### 子見出しも空の場合 { #fill-stub-heading-child }
 
-<!-- TODO: translate -->
+heading stubが連続して現れる場合です。親セクションとは独立してそれぞれ埋める必要があり、
+`###`レベルが`##`に昇格または降格されてはなりません。
 
-## 앵커가 없는 섹션
+<a id="section-1"></a>
+## アンカーのないセクション { #section-1 }
 
-<!-- TODO: translate -->
+**否定対照群です。このheadingには`<a id>`アンカーも`{ #id }`属性も付けないでください。**
+
+補完処理は共有アンカーでkoセクションを検索するため、アンカーのないstubは補完せず、PR本文に
+「スキップ」として報告する必要があります。静かに補完されたり静かに消えたりすると欠陥です。
+
+pre-alignをこの文書に再度実行すると、このheadingにもidが付いて対照群がなくなるため、
+その場合は`archive/fill-stub/`のコピーに戻します。
 
 <a id="fill-stub-tail"></a>
 ## 最後のセクション { #fill-stub-tail }
@@ -50,6 +75,7 @@ en/ja のコピーには pre-align が残す 2 種類の stub をわざと残し
 stub のあとに来るセクションです。上のセクションが埋められたあとも、このセクションはバイト単位で保存されなければなりません。
 
 オプションは以下のとおりです。
+
 | オプション | 値 |
 | --- | --- |
 | mode | fast |

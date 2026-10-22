@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=28e448e4e890 -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=dc7f43ef0b72 -->
 
 <a id="fill-stub-sample"></a>
 ## Fill Empty Translation Sample { #fill-stub-sample }
@@ -7,7 +9,7 @@ This document is a test fixture for **Fill empty translations** (`translate/tran
 The en/ja copies deliberately keep the two kinds of stub that pre-align leaves behind, so a fill run
 can be checked for filling exactly those stubs and preserving every other section byte-for-byte.
 
-This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide.
+This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide. The document maintenance e2e added this sentence.
 
 <a id="fill-stub-untouched"></a>
 ## Already Translated Section { #fill-stub-untouched }
@@ -23,26 +25,47 @@ If even one character changes, the fill touched something outside a stub, which 
 <a id="fill-stub-table"></a>
 ## Section With a Table { #fill-stub-table }
 
-<!-- TODO: translate body -->
+This is a body stub with a table. After filling in, the number of columns and rows in the table must match the Korean source.
+
+| Item | Description | Default |
+|---|---|---|
+| Instance Type | CPU/memory specification of the instance to create | m2.c1m2 |
+| Block Storage | Size of the root volume (GB) | 20 |
+| Boot Script | Script to run on the first boot of the instance | None |
 
 <a id="fill-stub-code"></a>
 ## Section With a Code Block { #fill-stub-code }
 
-<!-- TODO: translate body -->
+Code blocks are not subject to translation. The block below must remain unchanged even after it is filled in.
+
+```bash
+# fill-stub-test: this line must be copied verbatim
+curl -X GET "https://api.example.com/v2.0/servers" \
+  -H "X-Auth-Token: ${TOKEN}"
+```
+
+Only this sentence outside the block is subject to translation; commands and comment lines are not modified.
 
 <a id="fill-stub-heading"></a>
-## 제목까지 비어 있는 섹션 { #fill-stub-heading }
+## Section with an Unfilled Heading { #fill-stub-heading }
 
-<!-- TODO: translate -->
+The corresponding section in en/ja is a heading stub where the heading is still in Korean.
+When filling, translate both the heading and the body together, but the heading level and `{ #id }` must follow the Korean source as the authoritative version.
 
 <a id="fill-stub-heading-child"></a>
-### 하위 제목도 비어 있는 경우 { #fill-stub-heading-child }
+### When the Subheading Is Also Empty { #fill-stub-heading-child }
 
-<!-- TODO: translate -->
+This is a case where heading stubs appear consecutively. Each must be filled in independently of the parent section,
+and the `###` level must not be promoted to `##` or demoted.
 
-## 앵커가 없는 섹션
+<a id="section-1"></a>
+## Section Without an Anchor { #section-1 }
 
-<!-- TODO: translate -->
+**This is a negative control. Do not attach an `<a id>` anchor or `{ #id }` attribute to this heading.**
+
+Because filling uses shared anchors to locate ko sections, stubs without anchors must not be filled and must be reported as "skipped" in the PR description. If they are silently filled or silently removed, that is a defect.
+
+If pre-align is run on this document again, an id will be attached to this heading as well, removing the control case, at which point it should be restored from the copy in `archive/fill-stub/`.
 
 <a id="fill-stub-tail"></a>
 ## Last Section { #fill-stub-tail }
@@ -50,6 +73,7 @@ If even one character changes, the fill touched something outside a stub, which 
 This section comes after the stubs. It must be preserved byte-for-byte once the sections above are filled.
 
 The options are listed below.
+
 | Option | Value |
 | --- | --- |
 | mode | fast |

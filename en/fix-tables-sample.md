@@ -1,4 +1,6 @@
-<!-- pre-align:aligned sig=86fc80138a36 -->
+<!-- machine_translated: true -->
+
+<!-- pre-align:aligned sig=2c31fb7ec903 -->
 
 <a id="fix-tables-sample"></a>
 ## Fix Broken Tables Sample { #fix-tables-sample }
@@ -7,7 +9,7 @@ This document is a test fixture for **Fix broken tables** (`translate/translate_
 The en/ja copies deliberately keep three shapes of table divergence from ko, so a fix run can be checked
 for rebuilding exactly those section bodies from ko and preserving every other section byte-for-byte.
 
-This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide.
+This document is not registered in the user guide menu (`ko/nav.yml`). It is a pipeline fixture, not a published guide. The document maintenance e2e added this sentence.
 
 <a id="fix-tables-untouched"></a>
 ## Section With a Healthy Table { #fix-tables-untouched }
@@ -23,7 +25,13 @@ The table in this section is translated with the same identifier rows as ko. It 
 <a id="fix-tables-missing"></a>
 ## Section Whose Table Went Missing { #fix-tables-missing }
 
-The same section in en/ja has no table below. Because the table count inside the section differs from ko, a fix run must rebuild this section body from ko.
+The same section in en/ja does not have the table below. Since the number of tables in the section differs from ko, the maintenance run must rebuild the body of this section based on ko.
+
+| Name | Type | Format | Description |
+|---|---|---|---|
+| clusterId | Body | UUID | Cluster UUID |
+| clusterName | Body | String | Cluster name |
+| nodeCount | Body | Integer | Node count |
 
 <a id="fix-tables-shifted"></a>
 ## Section Whose First Column Was Overwritten { #fix-tables-shifted }
@@ -32,9 +40,9 @@ The same section in en/ja has a table with ko's row and column count, but the id
 
 | Name | Type | Format | Description |
 |---|---|---|---|
-| UUID | Body | UUID | Instance type UUID |
-| UUID | Body | UUID | Image UUID |
-| String | Body | String | Key pair name |
+| flavorId | Body | UUID | Instance type UUID |
+| imageId | Body | UUID | Image UUID |
+| keyName | Body | String | Key pair name |
 
 <a id="fix-tables-rows"></a>
 ## Section Missing a Row { #fix-tables-rows }
@@ -44,6 +52,7 @@ The same section in en/ja lost one identifier row from its table. The remaining 
 | Name | Type | Format | Description |
 |---|---|---|---|
 | volumeId | Body | UUID | Block storage UUID |
+| volumeSize | Body | Integer | Size (GB) |
 | volumeType | Body | String | Storage type |
 
 <a id="fix-tables-prose-keys"></a>
@@ -56,7 +65,8 @@ The same section in en/ja lost one identifier row from its table. The remaining 
 | Instance type | CPU/memory spec of the instance to create |
 | Block storage | Size of the root volume |
 
-### Child Section Without an Anchor
+<a id="child-section-without-an-anchor"></a>
+### Child Section Without an Anchor { #child-section-without-an-anchor }
 
 **Second negative control. Do not add an `<a id>` anchor or a `{ #id }` attribute to this heading.**
 
@@ -65,6 +75,7 @@ The table below is missing one identifier row in en/ja. But this heading has no 
 | Name | Type | Format | Description |
 |---|---|---|---|
 | metricName | Body | String | Metric name |
+| thresholdValue | Body | Integer | Threshold |
 | duration | Body | Integer | Duration (minutes) |
 
 <a id="fix-tables-tail"></a>
